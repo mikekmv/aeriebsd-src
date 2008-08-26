@@ -1,0 +1,9 @@
+#
+# name	getty				type	status		comments
+#
+console	"/usr/libexec/getty std.57600"	unknown	off secure	# for serial
+ttya	"/usr/libexec/getty std.9600"	unknown	off secure
+ttyb	"/usr/libexec/getty std.9600"	unknown	off
+tty00	"/usr/libexec/getty std.9600"	unknown	off
+tty01	"/usr/libexec/getty std.9600"	unknown	off
+ttyC0	"/usr/libexec/getty std.9600"	vt220	on  secure

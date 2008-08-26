@@ -1,0 +1,3 @@
+
+CFLAGS += -fPIC
+AFLAGS += -fpic

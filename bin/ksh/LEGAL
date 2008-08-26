@@ -1,0 +1,11 @@
+
+pdksh is provided AS IS, with NO WARRANTY, either expressed or implied.
+
+The vast majority of the code that makes pdksh is in the public domain.
+The exceptions are:
+	sigact.c and sigact.h
+		[REMOVED]
+	aclocal.m4
+		[REMOVED]
+
+That's it.  Short and simple.

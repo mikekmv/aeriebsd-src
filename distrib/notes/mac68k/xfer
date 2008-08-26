@@ -1,0 +1,16 @@
+Installation is supported from several media types, including:
+
+	CD-ROM
+	FFS partitions (for upgrades only)
+	Tape
+	Remote NFS partition
+	FTP
+	HTTP
+
+OpenBSDXferShortPrelude
+
+OpenBSDXferBareTape(xbase xetc xfont xserv xshare)
+
+OpenBSDXferNFS
+
+OpenBSDXferFFS

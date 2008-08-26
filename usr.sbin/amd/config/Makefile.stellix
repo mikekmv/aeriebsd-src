@@ -1,0 +1,8 @@
+#	from: @(#)Makefile.stellix	8.1 (Berkeley) 6/6/93
+#
+# Extra Makefile definitions for STELLIX
+#
+
+DEBUG = #-g -DDEBUG
+CCOPTS = -DSTELLIX
+RESOLV = -lrpcsvc

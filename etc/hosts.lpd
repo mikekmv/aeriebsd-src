@@ -1,0 +1,2 @@
+# As described in lpd(8), place one legal access hostname per line.
+# See hosts.equiv(5) for syntax and examples.

@@ -1,0 +1,11 @@
+#
+# SuperH internal devices.
+#
+device	shb { }
+attach	shb at mainbus
+
+file	arch/sh/dev/shb.c		shb
+
+device	scif: tty
+attach	scif at shb
+file	arch/sh/dev/scif.c		scif	needs-flag

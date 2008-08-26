@@ -1,0 +1,8 @@
+
+# Note: `wsfont_glue' is only here to force the header file's name
+#	hence it must be mentioned first.
+#	This is similar to what rasops does - actually we are only interested
+#	in getting the rasops_rotation attribute, without having to depend
+#	on rasops being configured.
+file	dev/wsfont/wsfont.c	((wsfont_glue & rasops_rotation) | wsdisplay)
+				needs-flag

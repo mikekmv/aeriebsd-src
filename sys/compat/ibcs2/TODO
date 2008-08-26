@@ -1,0 +1,6 @@
+
+* handle directory reads for filenames > 14 char
+
+* finish implementing ioctl()'s:
+
+	IBCS2_TCSBRK, IBCS2_TCXONC, IBCS2_TCFLSH

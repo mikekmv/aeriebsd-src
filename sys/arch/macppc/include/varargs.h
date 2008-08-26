@@ -1,0 +1,2 @@
+
+#include <powerpc/varargs.h>

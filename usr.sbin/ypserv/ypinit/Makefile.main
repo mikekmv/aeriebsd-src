@@ -1,0 +1,6 @@
+
+SUBDIR=
+
+passwd group hosts ethers networks rpc services protocols netid netgroup amd.home aliases : _SUBDIRUSE
+
+.include <bsd.subdir.mk>

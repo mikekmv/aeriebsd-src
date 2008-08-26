@@ -1,0 +1,10 @@
+
+PROG=	yppush
+SRCS=	yppush.c yplib_host.c yppush_svc.c yppush_proc.c ypdb.c yppush_err.c
+MAN=	yppush.8
+LDADD=	-lrpcsvc
+DPADD=	${LIBRPCSVC}
+.PATH:	${.CURDIR}/../common ${.CURDIR}/../ypserv
+CFLAGS+=-I${.CURDIR}/../common
+
+.include <bsd.prog.mk>

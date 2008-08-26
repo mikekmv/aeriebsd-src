@@ -1,0 +1,32 @@
+
+LIB=	z
+NOPIC=
+NOPROFILE=
+
+# Tweak knobs to generate small libz code
+CPPFLAGS+=	-DSLOW -DSMALL -DNOBYFOUR -DNO_GZIP -DDYNAMIC_CRC_TABLE
+CPPFLAGS+=	-I. ${ZCPPFLAGS}
+
+# files to be copied down from libz.
+LIBZSRCS= adler32.c crc32.c inflate.c inftrees.c
+LIBZHDRS= crc32.h inflate.h inffixed.h inftrees.h zconf.h zlib.h zutil.h
+
+# Other stuff
+SRCS=	${LIBZSRCS}
+
+# Files to clean up
+CLEANFILES+= lib${LIB}.o
+
+install:
+
+.include <bsd.lib.mk>
+
+lib${LIB}.o:: ${OBJS}
+	@echo building standard ${LIB} library
+	@rm -f lib${LIB}.o
+	@${LD} -r -o lib${LIB}.o `lorder ${OBJS} | tsort`
+
+update-sources:
+	for file in ${LIBZSRCS} ${LIBZHDRS}; do \
+		cp ${.CURDIR}/../../../lib/libz/$$file ${.CURDIR}; \
+	done

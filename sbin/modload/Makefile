@@ -1,0 +1,16 @@
+
+PROG=	modload
+MAN=	modload.8
+
+SRCS=	modload.c
+
+.include <bsd.own.mk>	# for ELF_TOOLCHAIN
+
+.if (${ELF_TOOLCHAIN:L} == "yes")
+SRCS+=	elf.c
+.else
+SRCS+=	a.out.c
+CFLAGS+=	-DUSE_AOUT
+.endif
+
+.include <bsd.prog.mk>

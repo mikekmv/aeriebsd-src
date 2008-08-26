@@ -1,0 +1,2 @@
+
+LIBEXECDIR?=	/usr/libexec

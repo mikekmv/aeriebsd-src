@@ -1,0 +1,11 @@
+#	from: @(#)Makefile.hpux	8.1 (Berkeley) 6/6/93
+#
+# Extra Makefile definitions for HP-UX
+#
+
+#CC = gcc ${GCCOPTS}
+# Works only on HP300
+CC = cc -Wc,-Nd2000
+SYSCC = $(CC)
+# Works only Hp800
+# CC = cc

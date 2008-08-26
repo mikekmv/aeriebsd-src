@@ -1,0 +1,4 @@
+
+OpenBSD/MACHINE runs on computers equipped with AMD Athlon64 processors.
+Machines with compatible processors (such as Intel's EM64T processors)
+are also supported.

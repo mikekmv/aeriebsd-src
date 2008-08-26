@@ -1,0 +1,8 @@
+
+# This Makefile should fail, the syntax is bogus
+
+A=1
+.if defined anything goes (A)
+a:
+	@true
+.endif

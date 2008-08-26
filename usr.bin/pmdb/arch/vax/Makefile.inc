@@ -1,0 +1,2 @@
+
+SRCS+=	vax.c

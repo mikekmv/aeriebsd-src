@@ -1,0 +1,11 @@
+
+a.b: a.a
+	echo $< >$@
+
+a.a:
+	touch $@
+
+.SUFFIXES: .b .a
+
+.a.b:
+	@echo "something" >$@

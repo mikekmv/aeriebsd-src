@@ -1,0 +1,2 @@
+$Id: seed1.txt,v 1.1.1.1 2008/08/26 14:40:14 root Exp $
+a test file for the seed repository

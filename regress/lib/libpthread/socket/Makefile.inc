@@ -1,0 +1,2 @@
+
+.include "${.CURDIR}/../../Makefile.inc"

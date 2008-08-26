@@ -1,0 +1,6 @@
+#
+# Configuration file for devices found on Sun machines.
+#
+define	sunkbd
+file	dev/sun/sunkbd.c			sunkbd
+file	dev/sun/sunkbdmap.c			sunkbd

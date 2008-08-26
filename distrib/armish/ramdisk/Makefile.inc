@@ -1,0 +1,3 @@
+
+CRUNCHGENOPTS= -E
+

@@ -1,0 +1,9 @@
+#
+# SH7751{,R} integrated PCI controller
+#
+device  shpcic: pcibus
+attach  shpcic at mainbus
+
+file    arch/sh/dev/shpcic.c		sh4 & shpcic
+file    arch/sh/dev/pci_addr_fixup.c		sh4 & shpcic
+file    arch/sh/dev/pciide_machdep.c	pciide

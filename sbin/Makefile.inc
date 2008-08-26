@@ -1,0 +1,2 @@
+BINDIR?=	/sbin
+LDSTATIC=	${STATIC}
