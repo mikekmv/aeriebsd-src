@@ -1,4 +1,4 @@
-vers(a, {-$ABSD$-})dnl
+vers(a, {-$ABSD: MAKEDEV.common,v 1.1.1.1 2008/08/26 14:36:38 root Exp $-})dnl
 dnl
 dnl Copyright (c) 2001-2006 Todd T. Fries <todd@OpenBSD.org>
 dnl
@@ -157,6 +157,7 @@ target(all, joy, 0, 1)dnl
 twrget(all, rnd, random)dnl
 target(all, uk, 0)dnl
 twrget(all, au, audio, 0)dnl
+twrget(all, vi, video, 0)dnl
 twrget(all, speak, speaker)dnl
 target(all, asc, 0)dnl
 target(all, music, 0)dnl
@@ -382,6 +383,8 @@ _mkdev(pty, pty*, {-if [ $U -gt 15 ]; then
 		n=Add($n, 1)
 	done-})dnl
 __devitem(dc, dc*, {-4 channel serial interface (keyboard{-,-} mouse{-,-}modem{-,-} printer)-})dnl
+__devitem(drm, drm*, {-Direct Rendering Manager-})dnl
+_mcdev({-drm-}, drm*, {-drm-}, {-major_drm_c-}, 660)dnl
 __devtitle(prn, Printers)dnl
 __devitem(lpt, lpt*, IEEE 1284 centronics printer)dnl
 _mkdev(lpt, lpt*|lpa*,
@@ -471,6 +474,9 @@ _mkdev(au, audio*, {-M sound$U	c major_au_c $U
 	MKlist[${#MKlist[*]}]=";[ -e mixer ] || ln -s mixer$U mixer"
 	MKlist[${#MKlist[*]}]=";[ -e sound ] || ln -s sound$U sound"
 	MKlist[${#MKlist[*]}]=";[ -e audioctl ] || ln -s audioctl$U audioctl"-})dnl
+__devitem(vi, video*, Video V4L devices,video)dnl
+_mkdev(vi, video*, {-M video$U  c major_vi_c $U
+	MKlist[${#MKlist[*]}]=";[ -e video ] || ln -s video$U video"-})dnl
 __devitem(asc, asc*, ASC Audio device)dnl
 _mkdev(asc, asc*, {-M asc$U major_asc_c 0-})dnl
 __devitem(bio, bio, {-ioctl tunnel pseudo-device-})dnl
@@ -555,7 +561,7 @@ _mcdev(rmidi, rmidi*, rmidi, {-major_rmidi_c-}, 666)dnl
 __devtitle(plat, Platform-specific devices)dnl
 __devitem(bktr, bktr*, Video frame grabbers)dnl
 _mcdev(bktr, bktr*, bktr, {-major_bktr_c-}, 644)dnl
-__devitem(tuner, tuner*, Tuner devices)dnl
+__devitem(tuner, tuner*, Tuner devices, bktr)dnl
 _mkdev(tuner, tuner*, {-M tuner$U c major_bktr_c Add(Mult($U, 2), 16) 644-}, 644)dnl
 __devitem(pci, pci*, PCI bus devices)dnl
 _mkdev(pci, pci*, {-M pci$U	c major_pci_c $U 600

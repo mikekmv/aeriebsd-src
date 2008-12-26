@@ -1,4 +1,5 @@
-vers(__file__, {-$ABSD$-},
+define(MACHINE,macppc)dnl
+vers(__file__, {-$ABSD: MAKEDEV.md,v 1.1.1.1 2008/08/26 14:36:40 root Exp $-},
 etc.MACHINE)dnl
 dnl
 dnl Copyright (c) 2001-2006 Todd T. Fries <todd@OpenBSD.org>
@@ -95,6 +96,7 @@ _DEV(systrace, 50)
 _DEV(tun, 23)
 _DEV(tuner, 75)
 _DEV(uk, 41)
+_DEV(vi, 45)
 _DEV(xfs, 51)
 dnl
 divert(__mddivert)dnl
@@ -129,3 +131,4 @@ target(all, bthub, 0, 1, 2)dnl
 target(ramd, ttya, 0, 1)dnl
 target(ramd, ttyb, 0, 1)dnl
 target(ramd, pty, 0)dnl
+target(ramd, bio)dnl

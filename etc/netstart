@@ -34,9 +34,14 @@ ifstart() {
 	fi
 
 	file=/etc/hostname.$if
-	if [ "$(stat -f "%SLp" $file)" != "---" ]; then
+	if ! [ -f $file ]; then
+		echo "netstart: $file: No such file or directory"
+		return
+	fi
+	if [ "$(stat -Lf "%SLp %u %g" $file)" != "--- 0 0" ]; then
 		echo "WARNING: $file is insecure, fixing permissions"
-		chmod o-rwx $file
+		chmod -LR o-rwx $file
+		chown -LR root.wheel $file
 	fi
 	ifconfig $if > /dev/null 2>&1
 	if [ "$?" != "0" ]; then

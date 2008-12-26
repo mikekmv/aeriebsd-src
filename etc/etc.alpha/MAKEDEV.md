@@ -1,4 +1,5 @@
-vers(__file__, {-$ABSD$-},
+define(MACHINE,alpha)dnl
+vers(__file__, {-$ABSD: MAKEDEV.md,v 1.1.1.1 2008/08/26 14:36:39 root Exp $-},
 etc.MACHINE)dnl
 dnl
 dnl Copyright (c) 2001-2006 Todd T. Fries <todd@OpenBSD.org>
@@ -80,13 +81,14 @@ _DEV(systrace, 50)
 _DEV(tun, 7)
 _DEV(tuner, 58)
 _DEV(uk, 33)
+_DEV(vi, 44)
 _DEV(xfs, 51)
 dnl
 divert(__mddivert)dnl
 dnl
 ramdisk)
 	_recurse std fd0 wd0 wd1 wd2 sd0 sd1 sd2
-	_recurse st0 cd0 ttyC0 random rd0
+	_recurse st0 cd0 ttyC0 rd0 bio
 	;;
 
 _std(1, 2, 39, 3, 6)

@@ -11,17 +11,13 @@ NOOBJ=	oobj
 BINOWN= root
 BINGRP= wheel
 BIN1=	changelist ccd.conf csh.cshrc csh.login csh.logout daily dhcpd.conf \
-	dhcpd.interfaces exports ftpusers ftpchroot gettytab group hosts \
-	hosts.lpd inetd.conf ksh.kshrc locate.rc man.conf monthly motd \
-	mrouted.conf myname netstart networks newsyslog.conf phones printcap \
-	protocols rbootd.conf rc rc.conf rc.local rc.securelevel rc.shutdown \
+	exports ftpusers ftpchroot gettytab group hosts hosts.lpd inetd.conf \
+	ksh.kshrc locate.rc man.conf monthly motd mrouted.conf myname \
+	netstart networks newsyslog.conf phones printcap protocols \
+	rbootd.conf rc rc.conf rc.local rc.securelevel rc.shutdown \
 	remote rpc security services shells syslog.conf weekly \
 	etc.${MACHINE}/disktab dhclient.conf mailer.conf ntpd.conf \
-	moduli pf.os sensorsd.conf ifstated.conf
-
-.if ${MACHINE} != "landisk"
-BIN1+=	wsconsctl.conf
-.endif
+	moduli pf.os sensorsd.conf ifstated.conf wsconsctl.conf
 
 # -rw-rw-r--
 BIN2=	motd
@@ -182,45 +178,45 @@ distribution-etc-root-var: distrib-dirs
 	/bin/rm -f ${DESTDIR}/etc/rmt
 	ln -s /usr/sbin/rmt ${DESTDIR}/etc/rmt
 	${INSTALL} -c -o root -g wheel -m 644 minfree \
-		${DESTDIR}/var/crash
+	    ${DESTDIR}/var/crash
 	${INSTALL} -c -o ${BINOWN} -g operator -m 664 /dev/null \
-		${DESTDIR}/etc/dumpdates
+	    ${DESTDIR}/etc/dumpdates
 	${INSTALL} -c -o root -g crontab -m 660 /dev/null \
-		${DESTDIR}/var/cron/at.deny
+	    ${DESTDIR}/var/cron/at.deny
 	${INSTALL} -c -o root -g crontab -m 660 /dev/null \
-		${DESTDIR}/var/cron/cron.deny
+	    ${DESTDIR}/var/cron/cron.deny
 	${INSTALL} -c -o root -g wheel -m 600 /dev/null \
-		${DESTDIR}/var/cron/log
+	    ${DESTDIR}/var/cron/log
 	${INSTALL} -c -o root -g wheel -m 444 /dev/null \
-		${DESTDIR}/var/db/locate.database
+	    ${DESTDIR}/var/db/locate.database
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 640 /dev/null \
-		${DESTDIR}/var/log/authlog
+	    ${DESTDIR}/var/log/authlog
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 640 /dev/null \
-		${DESTDIR}/var/log/daemon
+	    ${DESTDIR}/var/log/daemon
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 600 /dev/null \
-		${DESTDIR}/var/log/failedlogin
+	    ${DESTDIR}/var/log/failedlogin
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 640 /dev/null \
-		${DESTDIR}/var/log/ftpd
+	    ${DESTDIR}/var/log/ftpd
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 644 /dev/null \
-		${DESTDIR}/var/log/lastlog
+	    ${DESTDIR}/var/log/lastlog
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 640 /dev/null \
-		${DESTDIR}/var/log/lpd-errs
+	    ${DESTDIR}/var/log/lpd-errs
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 600 /dev/null \
-		${DESTDIR}/var/log/maillog
+	    ${DESTDIR}/var/log/maillog
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 644 /dev/null \
-		${DESTDIR}/var/log/messages
+	    ${DESTDIR}/var/log/messages
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 600 /dev/null \
-		${DESTDIR}/var/log/secure
+	    ${DESTDIR}/var/log/secure
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 664 /dev/null \
-		${DESTDIR}/var/log/sendmail.st
+	    ${DESTDIR}/var/log/sendmail.st
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 644 /dev/null \
-		${DESTDIR}/var/log/wtmp
+	    ${DESTDIR}/var/log/wtmp
 	${INSTALL} -c -o ${BINOWN} -g wheel -m 640 /dev/null \
-		${DESTDIR}/var/log/xferlog
+	    ${DESTDIR}/var/log/xferlog
 	${INSTALL} -c -o daemon -g staff -m 664 /dev/null \
-		${DESTDIR}/var/msgs/bounds
+	    ${DESTDIR}/var/msgs/bounds
 	${INSTALL} -c -o ${BINOWN} -g utmp -m 664 /dev/null \
-		${DESTDIR}/var/run/utmp
+	    ${DESTDIR}/var/run/utmp
 .if ${MACHINE} == "vax"
 	uudecode -p etc.vax/${PCS}.uu > ${DESTDIR}/${PCS} && \
 	    chown ${BINOWN} ${DESTDIR}/${PCS} && \
@@ -237,9 +233,9 @@ distribution-etc-root-var: distrib-dirs
 	cd ../usr.bin/mail && exec ${MAKE} distribution
 	cd mail && exec ${MAKE} distribution
 	${INSTALL} -c -o root -g wheel -m 600 root/root.mail \
-		${DESTDIR}/var/mail/root
+	    ${DESTDIR}/var/mail/root
 	${INSTALL} -c -o root -g wheel -m 440 ../usr.bin/sudo/sudoers \
-		${DESTDIR}/etc/sudoers
+	    ${DESTDIR}/etc/sudoers
 
 distribution:
 	exec ${SUDO} ${MAKE} distribution-etc-root-var
@@ -273,7 +269,7 @@ release: distribution snap_pre snap_md
 	-cp ${DESTDIR}/snapshot/*.fs ${DESTDIR}/snapshot/*.fs.gz ${RELEASEDIR}
 	-cd ${RELEASEDIR}; \
 		md5 *bsd!(*.gz) *boot* cdbr *BOOT* INSTALL.* Packages *.fs \
-		*.iso *.gz *.tgz > MD5
+		    *.iso *.gz *.tgz > MD5
 	-cd ${RELEASEDIR} && sort -o MD5 MD5
 
 snap_pre:
@@ -283,49 +279,6 @@ snap_pre:
 .endif
 
 .endif	# DESTDIR check
-
-MAKEDEVARCHS+= alpha
-MAKEDEVARCHS+= amd64
-MAKEDEVARCHS+= armish
-MAKEDEVARCHS+= hp300
-MAKEDEVARCHS+= hppa
-MAKEDEVARCHS+= hppa64
-MAKEDEVARCHS+= i386
-MAKEDEVARCHS+= landisk
-MAKEDEVARCHS+= luna88k
-MAKEDEVARCHS+= mac68k
-MAKEDEVARCHS+= macppc
-MAKEDEVARCHS+= sgi
-MAKEDEVARCHS+= sparc
-MAKEDEVARCHS+= sparc64
-MAKEDEVARCHS+= vax
-MAKEDEVARCHS+= zaurus
-
-clean:
-	rm -f etc.${MACHINE}/MAKEDEV
-
-cleandir:
-	cd ${.CURDIR}; for m in ${MAKEDEVARCHS}; do \
-	    ${MAKE} MACHINE=$$m clean; done
-
-MAKEDEVSRC=	MAKEDEV.mi MAKEDEV.sub MAKEDEV.common
-MAKEDEVDOC=	MAKEDEV.man MAKEDEV.mansub MAKEDEV.common
-m4: etc.${M}/MAKEDEV
-man: ${.CURDIR}/../share/man/man8/man.${M}/MAKEDEV.8
-
-etc.${M}/MAKEDEV: ${MAKEDEVSRC} etc.${M}/MAKEDEV.md
-	@echo "==> etc.${M}/MAKEDEV"
-	m4 -DMACHINE=${M} MAKEDEV.mi > etc.${M}/.MAKEDEV.tmp && \
-	    mv etc.${M}/.MAKEDEV.tmp etc.${M}/MAKEDEV || \
-	    rm etc.${M}/.MAKEDEV.tmp
-
-${.CURDIR}/../share/man/man8/man.${M}/MAKEDEV.8: ${MAKEDEVDOC} etc.${M}/MAKEDEV.md
-	m4 -DMACHINE=${M} MAKEDEV.man > \
-	    ${.CURDIR}/../share/man/man8/man8.${M}/MAKEDEV.8
-
-allarchs: ${MAKEDEVSRC} ${MAKEDEVDOC}
-	cd ${.CURDIR}; for m in ${MAKEDEVARCHS}; do \
-	    ${MAKE} M=$$m m4 man; done
 
 distrib:
 	cd ${.CURDIR}/../distrib && \
@@ -344,4 +297,11 @@ update-moduli:
 
 .PHONY: distribution-etc-root-var distribution distrib-dirs \
 	release allarchs snap_md m4 snap_pre
+
+SUBDIR+= etc.alpha etc.amd64 etc.armish etc.hp300 etc.hppa
+SUBDIR+= etc.hppa64 etc.i386 etc.landisk etc.mac68k
+SUBDIR+= etc.sgi etc.sparc etc.sparc64
+SUBDIR+= etc.vax etc.zaurus
+
+.include <bsd.subdir.mk>
 .include <bsd.prog.mk>

@@ -3,9 +3,9 @@
 # THIS FILE AUTOMATICALLY GENERATED.  DO NOT EDIT.
 # generated from:
 #
-#	OpenBSD: etc.sparc64/MAKEDEV.md,v 1.44 2007/05/28 22:26:02 todd Exp 
-#	OpenBSD: MAKEDEV.common,v 1.36 2007/07/23 23:21:25 todd Exp 
-#	OpenBSD: MAKEDEV.mi,v 1.77 2005/10/06 06:43:19 otto Exp 
+#	OpenBSD: etc.sparc64/MAKEDEV.md,v 1.49 2008/06/28 21:46:05 mglocker Exp 
+#	OpenBSD: MAKEDEV.common,v 1.38 2008/06/12 22:38:14 todd Exp 
+#	OpenBSD: MAKEDEV.mi,v 1.78 2008/06/14 23:09:05 todd Exp 
 #	OpenBSD: MAKEDEV.sub,v 1.14 2005/02/07 06:14:18 david Exp 
 #
 #
@@ -92,6 +92,7 @@
 #	tun*	Network tunnel driver
 #	uk*	Unknown SCSI devices
 #	uperf	Performance counters
+#	video*	Video V4L devices
 #	xfs*	XFS filesystem node
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 T=$0
@@ -220,7 +221,7 @@ U=`unt $i`
 case $i in
 ramdisk)
 	R std fd0 wd0 wd1 wd2 sd0 sd1 sd2 rd0
-	R st0 cd0 bpf0 random
+	R st0 cd0 bpf0 bio
 	;;
 
 std)
@@ -241,6 +242,11 @@ std)
 
 xfs*)
 	M xfs$U c 51 $U 600
+	;;
+
+video*)
+	M video$U  c 44 $U
+	MKlist[${#MKlist[*]}]=";[ -e video ] || ln -s video$U video"
 	;;
 
 uperf)
@@ -592,10 +598,10 @@ all)
 	R bpf0 bpf1 bpf2 bpf3 bpf4 bpf5 bpf6 bpf7 bpf8 bpf9 pty0 fd1
 	R fd1B fd1C fd1D fd1E fd1F fd1G fd1H fd0 fd0B fd0C fd0D fd0E
 	R fd0F fd0G fd0H xfs0 ss0 ss1 ch0 ccd0 ccd1 ccd2 ccd3 hotplug
-	R ptm local wscons pci0 pci1 pci2 pci3 uall audio0 uk0 random
-	R lpa0 lpa1 lpa2 lpt0 lpt1 lpt2 lkm tty00 tty01 tty02 tty03
-	R ttyh0 ttyh1 crypto pf systrace wd0 wd1 wd2 wd3 raid0 raid1
-	R raid2 raid3 std st0 st1 fd
+	R ptm local wscons pci0 pci1 pci2 pci3 uall video0 audio0 uk0
+	R random lpa0 lpa1 lpa2 lpt0 lpt1 lpt2 lkm tty00 tty01 tty02
+	R tty03 ttyh0 ttyh1 crypto pf systrace wd0 wd1 wd2 wd3 raid0
+	R raid1 raid2 raid3 std st0 st1 fd
 	;;
 
 wd*|sd*|raid*|ccd*)

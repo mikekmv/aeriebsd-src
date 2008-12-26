@@ -1,4 +1,5 @@
-vers(__file__, {-$ABSD$-},
+define(MACHINE,i386)dnl
+vers(__file__, {-$ABSD: MAKEDEV.md,v 1.1.1.1 2008/08/26 14:36:40 root Exp $-},
 etc.MACHINE)dnl
 dnl
 dnl Copyright (c) 2001-2006 Todd T. Fries <todd@OpenBSD.org>
@@ -18,10 +19,12 @@ dnl
 dnl
 __devitem(agp, agp*, AGP bridge)dnl
 __devitem(apm, apm, Power management device)dnl
+__devitem(amdmsr, amdmsr, AMD MSR access device)dnl
 __devitem(nvram, nvram, NVRAM access)dnl
 _mkdev(agp, agp*, {-M agp$U c major_agp_c $U
 	MKlist[${#MKlist[*]}]=";[ -e agpgart ] || ln -s agp$U agpgart"-})dnl
 _mkdev(nvram, nvram, {-M nvram c major_nvram_c 0 440 kmem-})dnl
+_mkdev(amdmsr, amdmsr*, {-M amdmsr c major_amdmsr_c $U -})dnl
 _TITLE(make)
 _DEV(all)
 _DEV(ramdisk)
@@ -48,8 +51,9 @@ _DEV(ptm, 81)
 _DEV(pty, 6)
 _DEV(tty, 5)
 _TITLE(cons)
-_DEV(wscons)
+_DEV(drm, 88)
 _DEV(wsdisp, 12)
+_DEV(wscons)
 _DEV(wskbd, 67)
 _DEV(wsmux, 69)
 _TITLE(point)
@@ -69,6 +73,7 @@ _DEV(uscan, 77)
 _TITLE(spec)
 _DEV(agp, 87)
 _DEV(apm, 21)
+_DEV(amdmsr, 89)
 _DEV(au, 42)
 _DEV(bio, 79)
 _DEV(bktr, 49)
@@ -96,13 +101,14 @@ _DEV(systrace, 78)
 _DEV(tun, 40)
 _DEV(tuner, 49)
 _DEV(uk, 20)
+_DEV(vi, 44)
 _DEV(xfs, 51)
 dnl
 divert(__mddivert)dnl
 dnl
 ramdisk)
-	_recurse std bpf0 fd0 wd0 sd0 tty00 tty01 rd0
-	_recurse st0 cd0 ttyC0 random wskbd0 wskbd1 wskbd2 apm
+	_recurse std bpf0 fd0 wd0 sd0 tty00 tty01 rd0 bio
+	_recurse st0 cd0 ttyC0 wskbd0 wskbd1 wskbd2 apm
 	;;
 
 _std(1, 2, 50, 4, 7)
@@ -136,5 +142,7 @@ target(all, gpio, 0, 1, 2)dnl
 target(all, nvram)dnl
 target(all, bthub, 0, 1, 2)dnl
 target(all, agp, 0)dnl
+target(all, drm, 0)dnl
+target(all, amdmsr)dnl
 twrget(ramd, wsdisp, ttyC, 0)dnl
 target(ramd, mcd, 0)dnl

@@ -1,4 +1,5 @@
-vers(__file__, {-$ABSD$-},
+define(MACHINE,sgi)dnl
+vers(__file__, {-$ABSD: MAKEDEV.md,v 1.1.1.1 2008/08/26 14:36:40 root Exp $-},
 etc.MACHINE)dnl
 dnl
 dnl Copyright (c) 2001-2006 Todd T. Fries <todd@OpenBSD.org>
@@ -52,9 +53,10 @@ _DEV(wskbd, 26)
 _DEV(wsmux, 28)
 _TITLE(point)
 _DEV(wsmouse, 27)
+_TITLE(usb)
 _TITLE(spec)
 _DEV(au, 44)
-_DEV(bio, 14)
+_DEV(bio, 49)
 _DEV(bpf, 12)
 _DEV(cry, 47)
 _DEV(fdesc, 7)
@@ -66,6 +68,7 @@ _DEV(ss, 34)
 _DEV(systrace, 50)
 _DEV(tun, 13)
 _DEV(uk, 32)
+_DEV(vi, 45)
 _DEV(xfs, 51)
 dnl
 divert(__mddivert)dnl
@@ -91,3 +94,4 @@ target(all, sd, 0, 1, 2, 3, 4)dnl
 target(all, vnd, 0, 1, 2, 3)dnl
 target(all, ccd, 0, 1, 2, 3)dnl
 target(ramd, pty, 0)dnl
+target(ramd, bio)dnl
