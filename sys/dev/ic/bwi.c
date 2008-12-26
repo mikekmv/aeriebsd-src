@@ -7724,7 +7724,7 @@ bwi_dma_txstats_alloc(struct bwi_softc *sc, uint32_t ctrl_base,
 		return (error);
 	}
 
-	bzero(&st->stats_ring, dma_size);
+	bzero(st->stats_ring, dma_size);
 	st->stats_ring_paddr = st->stats_ring_dmap->dm_segs[0].ds_addr;
 
 	/*
@@ -7763,7 +7763,7 @@ bwi_dma_txstats_alloc(struct bwi_softc *sc, uint32_t ctrl_base,
 		return (error);
 	}
 
-	bzero(&st->stats, dma_size);
+	bzero(st->stats, dma_size);
 	st->stats_paddr = st->stats_dmap->dm_segs[0].ds_addr;
 	st->stats_ctrl_base = ctrl_base;
 
@@ -8210,6 +8210,7 @@ bwi_rxeof(struct bwi_softc *sc, int end_idx)
 		struct bwi_rxbuf *rb = &rbd->rbd_buf[idx];
 		struct bwi_rxbuf_hdr *hdr;
 		struct ieee80211_frame *wh;
+		struct ieee80211_rxinfo rxi;
 		struct ieee80211_node *ni;
 		struct mbuf *m;
 		void *plcp;
@@ -8286,8 +8287,9 @@ bwi_rxeof(struct bwi_softc *sc, int end_idx)
 		ni = ieee80211_find_rxnode(ic, wh);
 		type = wh->i_fc[0] & IEEE80211_FC0_TYPE_MASK;
 
-		ieee80211_input(ifp, m, ni, hdr->rxh_rssi,
-		    letoh16(hdr->rxh_tsf));
+		rxi.rxi_rssi = hdr->rxh_rssi;
+		rxi.rxi_tstamp = letoh16(hdr->rxh_tsf);
+		ieee80211_input(ifp, m, ni, &rxi);
 
 		ieee80211_release_node(ic, ni);
 

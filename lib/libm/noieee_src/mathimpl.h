@@ -30,14 +30,13 @@
  */
 
 #include <sys/cdefs.h>
-#include <math.h>
 
-#if defined(__vax__)||defined(tahoe)
+#if defined(__vax__)
 
 /* Deal with concatenation in cpp */
 #  define	cat3(a,b,c) a ## b ## c
 
-/* Deal with vax/tahoe byte order issues */
+/* Deal with vax byte order issues */
 #  ifdef __vax__
 #    define	cat3t(a,b,c) cat3(a,b,c)
 #  else
@@ -51,7 +50,7 @@
     *
     * Args are the name to define, the decimal floating point value,
     * four 16-bit chunks of the float value in hex
-    * (because the vax and tahoe differ in float format!), the power
+    * (because the vax differ in float format!), the power
     * of 2 of the hex-float exponent, and the hex-float mantissa.
     * Most of these arguments are not used at compile time; they are
     * used in a post-check to make sure the constants were compiled
@@ -67,7 +66,7 @@
 
 #  define ic(name, value, bexp, xval) ;
 
-#else	/* vax or tahoe */
+#else	/* defined(__vax__) */
 
    /* Hooray, we have an IEEE machine */
 #  undef vccast
@@ -76,7 +75,7 @@
 #  define ic(name, value, bexp, xval) \
 	const static double name = value;
 
-#endif	/* defined(__vax__)||defined(tahoe) */
+#endif	/* defined(__vax__) */
 
 
 /*

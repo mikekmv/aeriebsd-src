@@ -161,11 +161,7 @@ server_dispatch(int fd, struct ntpd_conf *lconf)
 	reply.xmttime = d_to_lfp(gettime_corrected());
 	reply.orgtime = query.xmttime;
 	reply.rootdelay = d_to_sfp(lconf->status.rootdelay);
-
-	if (version > 3)
-		reply.refid = lconf->status.refid4;
-	else
-		reply.refid = lconf->status.refid;
+	reply.refid = lconf->status.refid;
 
 	ntp_sendmsg(fd, (struct sockaddr *)&fsa, &reply, size, 0);
 	return (0);

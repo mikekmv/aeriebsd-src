@@ -20,11 +20,6 @@ _thread_malloc_unlock()
 }
 
 void
-_thread_malloc_init()
-{
-}
-
-void
 _thread_atexit_lock()
 {
 	_SPINLOCK(&atexit_lock);

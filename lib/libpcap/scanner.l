@@ -22,7 +22,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: scanner.l,v 1.1.1.1 2008/08/26 14:38:59 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -225,6 +225,8 @@ not		return '!';
 len|length	return LEN;
 inbound		return INBOUND;
 outbound	return OUTBOUND;
+
+vlan		return VLAN;
 
 on|ifname	return PF_IFNAME;
 rset|ruleset	return PF_RSET;

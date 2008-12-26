@@ -51,6 +51,7 @@
 #include "vnd.h"
 #include "sd.h"
 #include "cd.h"
+#include "st.h"
 #include "wd.h"
 bdev_decl(wd);
 #include "ccd.h"
@@ -68,7 +69,7 @@ struct bdevsw	bdevsw[] =
 	bdev_notdef(),			/* 7:  */
 	bdev_disk_init(NRD,rd),		/* 8: RAM disk (for install) */
 	bdev_notdef(),			/* 9:  */
-	bdev_notdef(),			/* 10:  */
+	bdev_tape_init(NST,st),		/* 10: SCSI tape */
 	bdev_notdef(),			/* 11:  */
 	bdev_notdef(),			/* 12:  */
 	bdev_notdef(),			/* 13:  */
@@ -107,6 +108,7 @@ cdev_decl(lpt);
 #include "uk.h"
 cdev_decl(wd);
 #include "audio.h"
+#include "video.h"
 #ifdef XFS
 #include <xfs/nxfs.h>
 cdev_decl(xfs_dev);
@@ -176,7 +178,7 @@ cdev_wsdisplay_init(NWSDISPLAY, wsdisplay),	/* 25: */
 	cdev_notdef(),			/* 42: */
 	cdev_notdef(),			/* 33: */
 	cdev_audio_init(NAUDIO,audio),	/* 44: /dev/audio */
-	cdev_notdef(),			/* 45: */
+	cdev_video_init(NVIDEO,video),	/* 45: generic video I/O */
 	cdev_notdef(),			/* 46: */
 	cdev_crypto_init(NCRYPTO,crypto),	/* 47: /dev/crypto */
 	cdev_notdef(),			/* 48: */
@@ -245,22 +247,22 @@ int chrtoblktbl[] =  {
 	/* 5 */		NODEV,
 	/* 6 */		NODEV,
 	/* 7 */		NODEV,
-	/* 8 */		3,
-	/* 9 */		0,
-	/* 10 */	NODEV,
-	/* 11 */	2,
+	/* 8 */		3,		/* cd */
+	/* 9 */		0,		/* sd */
+	/* 10 */	10,		/* st */
+	/* 11 */	2,		/* vnd */
 	/* 12 */	NODEV,
 	/* 13 */	NODEV,
 	/* 14 */	NODEV,
 	/* 15 */	NODEV,
 	/* 16 */	NODEV,
 	/* 17 */	NODEV,
-	/* 18 */	4,
+	/* 18 */	4,		/* wd */
 	/* 19 */	NODEV,
 	/* 20 */	NODEV,
 	/* 21 */	NODEV,
-	/* 22 */	8,
-	/* 23 */	6
+	/* 22 */	8,		/* rd */
+	/* 23 */	6		/* ccd */
 };
 
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(int);

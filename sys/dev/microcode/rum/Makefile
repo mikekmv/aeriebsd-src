@@ -11,7 +11,7 @@ CC=${HOSTCC}
     (${MACHINE} == "sparc64") || (${MACHINE} == "zaurus") || \
     (${MACHINE} == "landisk")
 
-FIRM=	rum-rt2573
+FIRM=	rum-rt2573 run-rt2870
 
 PROG=	build
 
@@ -29,6 +29,8 @@ afterinstall:
 	    ${FIRM} ${DESTDIR}/etc/firmware
 	${INSTALL} -c -o ${BINOWN} -g ${BINGRP} -m 644 \
 	    ${.CURDIR}/rum-license ${DESTDIR}/etc/firmware
+	ln -f ${DESTDIR}/etc/firmware/rum-license \
+	    ${DESTDIR}/etc/firmware/run-license
 
 .endif
 

@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -88,8 +81,7 @@
 #include <alpha/pci/siovar.h>
 #endif
 
-int	dec_eb64plus_intr_map(void *, pcitag_t, int, int,
-	    pci_intr_handle_t *);
+int	dec_eb64plus_intr_map(struct pci_attach_args *, pci_intr_handle_t *);
 const char *dec_eb64plus_intr_string(void *, pci_intr_handle_t);
 void	*dec_eb64plus_intr_establish(void *, pci_intr_handle_t,
 	    int, int (*func)(void *), void *, char *);
@@ -143,14 +135,13 @@ pci_eb64plus_pickintr(acp)
 }
 
 int     
-dec_eb64plus_intr_map(acv, bustag, buspin, line, ihp)
-	void *acv;
-	pcitag_t bustag;
-	int buspin, line;
+dec_eb64plus_intr_map(pa, ihp)
+	struct pci_attach_args *pa;
         pci_intr_handle_t *ihp;
 {
-	struct apecs_config *acp = acv;
-	pci_chipset_tag_t pc = &acp->ac_pc;
+	pcitag_t bustag = pa->pa_intrtag;
+	int buspin = pa->pa_intrpin, line = pa->pa_intrline;
+	pci_chipset_tag_t pc = pa->pa_pc;
 	int bus, device, function;
 
 	if (buspin == 0) {

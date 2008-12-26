@@ -108,7 +108,9 @@ int	connected;		/* 1 = connected to server, -1 = logged in */
 int	fromatty;		/* input is from a terminal */
 int	interactive;		/* interactively prompt on m* cmds */
 int	confirmrest;		/* confirm rest of current m* cmd */
+#ifndef SMALL
 int	debug;			/* debugging level */
+#endif /* !SMALL */
 int	bell;			/* ring bell on cmd completion */
 int	doglob;			/* glob local file names */
 int	autologin;		/* establish user account on connection */
@@ -174,7 +176,7 @@ char *ftpport;			/* port number to use for ftp connections */
 char *httpport;			/* port number to use for http connections */
 #ifndef SMALL
 char *httpsport;		/* port number to use for https connections */
-#endif
+#endif /* !SMALL */
 char *gateport;			/* port number to use for gateftp connections */
 
 jmp_buf	toplevel;		/* non-local goto stuff for cmd scanner */

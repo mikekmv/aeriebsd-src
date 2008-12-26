@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)stty.c	8.3 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: stty.c,v 1.1.1.1 2008/08/26 14:36:31 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -152,7 +152,7 @@ args:	argc -= optind;
 void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [-a|-e|-g] [-f file] [operands]\n",
+	fprintf(stderr, "usage: %s [-a | -e | -g] [-f file] [operands]\n",
 	    __progname);
 	exit (1);
 }

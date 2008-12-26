@@ -213,7 +213,7 @@ int chrtoblktbl[] = {
 	/*  0 */	NODEV,
 	/*  1 */	NODEV,
 	/*  2 */	NODEV,
-	/*  3 */	3,
+	/*  3 */	NODEV,
 	/*  4 */	NODEV,
 	/*  5 */	NODEV,
 	/*  6 */	NODEV,
@@ -223,14 +223,14 @@ int chrtoblktbl[] = {
 	/* 10 */	NODEV,
 	/* 11 */	NODEV,
 	/* 12 */	NODEV,
-	/* 13 */	4,
-	/* 14 */	5,
-	/* 15 */	6,
+	/* 13 */	4,		/* sd */
+	/* 14 */	5,		/* st */
+	/* 15 */	6,		/* cd */
 	/* 16 */	NODEV,
 	/* 17 */	NODEV,
-	/* 18 */	13,
-	/* 19 */	8,
-	/* 20 */	9,
+	/* 18 */	13,		/* rd */
+	/* 19 */	8,		/* vnd */
+	/* 20 */	9,		/* ccd */
 };
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);
 

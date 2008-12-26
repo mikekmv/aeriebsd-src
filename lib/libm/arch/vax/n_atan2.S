@@ -31,8 +31,10 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: n_atan2.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
 #endif /* LIBM_SCCS */
+
+#include <machine/asm.h>
 
 /*
  * ATAN2(Y,X)
@@ -74,11 +76,7 @@
  *	atan2(y,x) returns the exact ARG(x+iy) nearly rounded. 
  */
 
-	.text
-	.align 1
-	.globl	_atan2
-_atan2 :
-	.word	0x0ff4
+ENTRY(atan2, R2|R3|R4|R5|R6|R7|R8|R9|R10|R11)
 	movq	4(ap),r2		# r2 = y
 	movq	12(ap),r4		# r4 = x
 	bicw3	$0x7f,r2,r0

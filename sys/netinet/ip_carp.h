@@ -141,6 +141,7 @@ struct carpreq {
 	u_int8_t	carpr_balancing;
 	int		carpr_advbase;
 	unsigned char	carpr_key[CARP_KEY_LEN];
+	struct in_addr	carpr_peer;
 };
 
 /*
@@ -169,7 +170,7 @@ int		 carp6_proto_input(struct mbuf **, int *, int);
 int		 carp_iamatch(struct in_ifaddr *, u_char *, u_int8_t **,
 		     u_int8_t **);
 int		 carp_iamatch6(struct ifnet *, u_char *, struct sockaddr_dl **);
-struct ifnet	*carp_ourether(void *, struct ether_header *, u_char, int);
+struct ifnet	*carp_ourether(void *, struct ether_header *, int);
 int		 carp_input(struct mbuf *, u_int8_t *, u_int8_t *, u_int16_t);
 int		 carp_output(struct ifnet *, struct mbuf *, struct sockaddr *,
 		     struct rtentry *);

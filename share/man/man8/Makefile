@@ -1,5 +1,3 @@
-#	$NetBSD: Makefile,v 1.13 1996/03/28 21:36:40 mark Exp $
-#	@(#)Makefile	8.1 (Berkeley) 6/5/93
 
 MAN=	afterboot.8 boot_config.8 compat_aout.8 compat_bsdos.8 \
 	compat_freebsd.8 compat_hpux.8 compat_ibcs2.8 \

@@ -1616,7 +1616,6 @@ struct msk_status_desc {
 
 #define SK_JRAWLEN	(SK_JUMBO_FRAMELEN + ETHER_ALIGN)
 #define SK_JLEN		SK_JRAWLEN
-#define SK_MCLBYTES	SK_JLEN
 #define SK_JPAGESZ	PAGE_SIZE
 #define SK_RESID	(SK_JPAGESZ - (SK_JLEN * SK_JSLOTS) % SK_JPAGESZ)
 #define SK_JMEM		((SK_JLEN * SK_JSLOTS) + SK_RESID)
@@ -1626,7 +1625,6 @@ struct msk_status_desc {
 #define MSK_RESID	(SK_JPAGESZ - (SK_JLEN * MSK_JSLOTS) % SK_JPAGESZ)
 #define MSK_JMEM	((SK_JLEN * MSK_JSLOTS) + MSK_RESID)
 
-#define SK_MAXUNIT	256
 #define SK_TIMEOUT	1000
 
 /* YUKON registers */

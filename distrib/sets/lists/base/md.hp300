@@ -20,17 +20,17 @@
 ./usr/lib/apache/modules/mod_unique_id.so
 ./usr/lib/apache/modules/mod_usertrack.so
 ./usr/lib/apache/modules/mod_vhost_alias.so
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.3
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.3/2.95.3
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.3/2.95.3/cc1
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.3/2.95.3/collect2
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.3/2.95.3/cpp0
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.3/2.95.3/include
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.3/2.95.3/specs
+./usr/lib/gcc-lib/m68k-unknown-openbsd4.4
+./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3
+./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/cc1
+./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/collect2
+./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/cpp0
+./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/include
+./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/specs
 ./usr/lib/libasn1.so.16.0
-./usr/lib/libc.so.44.0
+./usr/lib/libc.so.48.0
 ./usr/lib/libcom_err.so.16.0
-./usr/lib/libcrypto.so.13.0
+./usr/lib/libcrypto.so.14.0
 ./usr/lib/libcurses.so.10.0
 ./usr/lib/libdes.so.9.0
 ./usr/lib/libedit.so.3.0
@@ -39,11 +39,11 @@
 ./usr/lib/libform.so.3.0
 ./usr/lib/libg2c.so.8.0
 ./usr/lib/libgssapi.so.5.0
-./usr/lib/libiberty.so.8.0
+./usr/lib/libiberty.so.9.0
 ./usr/lib/libkafs.so.16.0
 ./usr/lib/libkrb5.so.16.0
 ./usr/lib/libkvm.so.9.0
-./usr/lib/libm.so.2.3
+./usr/lib/libm.so.3.0
 ./usr/lib/libmenu.so.3.0
 ./usr/lib/libmilter.so.2.1
 ./usr/lib/libncurses.so.10.0
@@ -52,11 +52,11 @@
 ./usr/lib/libossaudio.so.3.1
 ./usr/lib/libotermcap.so.5.0
 ./usr/lib/libpanel.so.3.0
-./usr/lib/libpcap.so.5.0
+./usr/lib/libpcap.so.6.0
 ./usr/lib/libperl.so.10.1
-./usr/lib/libpthread.so.10.0
+./usr/lib/libpthread.so.11.0
 ./usr/lib/libreadline.so.3.0
-./usr/lib/librpcsvc.so.1.0
+./usr/lib/librpcsvc.so.1.2
 ./usr/lib/libsectok.so.6.0
 ./usr/lib/libskey.so.5.1
 ./usr/lib/libssl.so.11.0
@@ -616,6 +616,7 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/crypto/deflate.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/crypto/des.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/crypto/des_locl.ph
+./usr/libdata/perl5/site_perl/m68k-openbsd/crypto/idgen.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/crypto/md5.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/crypto/michael.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/crypto/podd.ph
@@ -738,8 +739,6 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/am79900reg.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/am7990reg.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/am7990var.ph
-./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/am79c930reg.ph
-./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/am79c930var.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/amireg.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/amivar.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/anreg.ph
@@ -756,8 +755,6 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/atwreg.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/atwvar.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/atxxreg.ph
-./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/awireg.ph
-./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/awivar.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/ax88190reg.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/ax88190var.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/ic/bhareg.ph
@@ -1054,6 +1051,7 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/drm.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/drmP.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/drm_atomic.ph
+./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/drm_internal.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/drm_linux_list.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/drm_pciids.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/drm_sarea.ph
@@ -1069,6 +1067,7 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/r300_reg.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/radeon_drm.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/radeon_drv.ph
+./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/radeon_microcode.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/savage_drm.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/savage_drv.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/drm/sis_drm.ph
@@ -1113,6 +1112,7 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/if_iwivar.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/if_iwnreg.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/if_iwnvar.ph
+./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/if_ix.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/if_ixgb.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/if_ixgb_osdep.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/if_lgereg.ph
@@ -1150,6 +1150,8 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/ixgb_ee.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/ixgb_hw.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/ixgb_ids.ph
+./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/ixgbe.ph
+./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/ixgbe_type.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/lofnreg.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/lofnvar.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/pci/musyccreg.ph
@@ -1417,6 +1419,7 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/vesa/vesafbvar.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/video_if.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/videovar.ph
+./usr/libdata/perl5/site_perl/m68k-openbsd/dev/vmtvar.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/vndioctl.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/wscons
 ./usr/libdata/perl5/site_perl/m68k-openbsd/dev/wscons/ascii.ph
@@ -1768,6 +1771,7 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net/route.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net/slcompress.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net/slip.ph
+./usr/libdata/perl5/site_perl/m68k-openbsd/net/trunklacp.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net/zlib.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net80211
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net80211/ieee80211.ph
@@ -1775,6 +1779,7 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net80211/ieee80211_crypto.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net80211/ieee80211_ioctl.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net80211/ieee80211_node.ph
+./usr/libdata/perl5/site_perl/m68k-openbsd/net80211/ieee80211_priv.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net80211/ieee80211_proto.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net80211/ieee80211_radiotap.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/net80211/ieee80211_regdomain.ph
@@ -1882,7 +1887,6 @@
 ./usr/libdata/perl5/site_perl/m68k-openbsd/objc/typedstream.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/ocurses.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/ohash.ph
-./usr/libdata/perl5/site_perl/m68k-openbsd/olf_abi.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/openssl
 ./usr/libdata/perl5/site_perl/m68k-openbsd/openssl/acss.ph
 ./usr/libdata/perl5/site_perl/m68k-openbsd/openssl/aes.ph

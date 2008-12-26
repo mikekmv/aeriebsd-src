@@ -120,5 +120,5 @@ ENTRY(_C_LABEL(longjmp))
 	lwz %r0, JMP_xer(%r3)
 	mtxer %r0
 	/* f14-f31, fpscr */
-	mr %r3, %r4
+	li %r3, 1
 	blr

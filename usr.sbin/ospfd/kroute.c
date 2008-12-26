@@ -908,8 +908,8 @@ prefixlen2mask(u_int8_t prefixlen)
 	return (htonl(0xffffffff << (32 - prefixlen)));
 }
 
-#define	ROUNDUP(a, size)	\
-    (((a) & ((size) - 1)) ? (1 + ((a) | ((size) - 1))) : (a))
+#define	ROUNDUP(a)	\
+    (((a) & (sizeof(long) - 1)) ? (1 + ((a) | (sizeof(long) - 1))) : (a))
 
 void
 get_rtaddrs(int addrs, struct sockaddr *sa, struct sockaddr **rti_info)
@@ -920,7 +920,7 @@ get_rtaddrs(int addrs, struct sockaddr *sa, struct sockaddr **rti_info)
 		if (addrs & (1 << i)) {
 			rti_info[i] = sa;
 			sa = (struct sockaddr *)((char *)(sa) +
-			    ROUNDUP(sa->sa_len, sizeof(long)));
+			    ROUNDUP(sa->sa_len));
 		} else
 			rti_info[i] = NULL;
 	}
@@ -1035,6 +1035,7 @@ send_rtmsg(int fd, int action, struct kroute *kroute)
 	hdr.rtm_version = RTM_VERSION;
 	hdr.rtm_type = action;
 	hdr.rtm_flags = RTF_PROTO2|RTF_MPATH;
+	hdr.rtm_priority = RTP_OSPF;
 	if (action == RTM_CHANGE)	/* force PROTO2 reset the other flags */
 		hdr.rtm_fmask = RTF_PROTO2|RTF_PROTO1|RTF_REJECT|RTF_BLACKHOLE;
 	hdr.rtm_seq = kr_state.rtseq++;	/* overflow doesn't matter */
@@ -1282,7 +1283,7 @@ fetchifs(u_short ifindex)
 			continue;
 		switch (rtm->rtm_type) {
 		case RTM_IFINFO:
-			bcopy(rtm, &ifm, sizeof ifm);
+			memcpy(&ifm, next, sizeof(ifm));
 			sa = (struct sockaddr *)(next + rtm->rtm_hdrlen);
 			get_rtaddrs(ifm.ifm_addrs, sa, rti_info);
 

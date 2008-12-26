@@ -282,9 +282,6 @@ cdnr_cballoc(top, type, input_func)
 	}
 
 	cb = malloc(size, M_DEVBUF, M_WAITOK|M_ZERO);
-	if (cb == NULL)
-		return (NULL);
-
 	cb->cb_len = size;
 	cb->cb_type = type;
 	cb->cb_ref = 0;

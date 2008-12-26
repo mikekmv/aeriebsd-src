@@ -835,8 +835,7 @@ pcic_power(why, arg)
 	struct pcic_event *pe;
 
 	if (why != PWR_RESUME) {
-		if (timeout_pending(&sc->poll_timeout))
-			timeout_del(&sc->poll_timeout);
+		timeout_del(&sc->poll_timeout);
 	}
 	else {
 		pcic_intr_socket(h);

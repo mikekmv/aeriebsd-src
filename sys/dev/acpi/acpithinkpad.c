@@ -26,6 +26,9 @@
 
 #define	THINKPAD_HKEY_VERSION		0x0100
 
+#define	THINKPAD_CMOS_VOLUME_DOWN	0x00
+#define	THINKPAD_CMOS_VOLUME_UP		0x01
+#define	THINKPAD_CMOS_VOLUME_MUTE	0x02
 #define	THINKPAD_CMOS_BRIGHTNESS_UP	0x04
 #define	THINKPAD_CMOS_BRIGHTNESS_DOWN	0x05
 
@@ -50,6 +53,9 @@
 #define	THINKPAD_BUTTON_BRIGHTNESS_DOWN	0x011
 #define	THINKPAD_BUTTON_THINKLIGHT	0x012
 #define	THINKPAD_BUTTON_FN_SPACE	0x014
+#define	THINKPAD_BUTTON_VOLUME_UP	0x015
+#define	THINKPAD_BUTTON_VOLUME_DOWN	0x016
+#define	THINKPAD_BUTTON_VOLUME_MUTE	0x017
 #define	THINKPAD_BUTTON_THINKVANTAGE	0x018
 #define	THINKPAD_BUTTON_FN_F11		0x00b
 #define	THINKPAD_BUTTON_HIBERNATE	0x00c
@@ -59,8 +65,12 @@
 #define	THINKPAD_LID_CLOSED		0x002
 #define	THINKPAD_TABLET_SCREEN_NORMAL	0x00a
 #define	THINKPAD_TABLET_SCREEN_ROTATED	0x009
+#define	THINKPAD_BRIGHTNESS_CHANGED	0x010
 #define	THINKPAD_TABLET_PEN_INSERTED	0x00b
 #define	THINKPAD_TABLET_PEN_REMOVED	0x00c
+
+/* type 7 events */
+#define	THINKPAD_SWITCH_WIRELESS	0x000
 
 struct acpithinkpad_softc {
 	struct device		sc_dev;
@@ -76,6 +86,9 @@ int	thinkpad_enable_events(struct acpithinkpad_softc *);
 int	thinkpad_toggle_bluetooth(struct acpithinkpad_softc *);
 int	thinkpad_toggle_wan(struct acpithinkpad_softc *);
 int	thinkpad_cmos(struct acpithinkpad_softc *sc, uint8_t);
+int	thinkpad_volume_down(struct acpithinkpad_softc *);
+int	thinkpad_volume_up(struct acpithinkpad_softc *);
+int	thinkpad_volume_mute(struct acpithinkpad_softc *);
 int	thinkpad_brightness_up(struct acpithinkpad_softc *);
 int	thinkpad_brightness_down(struct acpithinkpad_softc *);
 
@@ -93,34 +106,32 @@ thinkpad_match(struct device *parent, void *match, void *aux)
 	struct acpi_attach_args	*aa = aux;
 	struct cfdata		*cf = match;
 	struct aml_value	res;
+	int			rv = 0;
 
 	if (aa->aaa_name == NULL ||
 	    strcmp(aa->aaa_name, cf->cf_driver->cd_name) != 0 ||
 	    aa->aaa_table != NULL)
 		return (0);
 
-	if (aml_evalname((struct acpi_softc *)parent, aa->aaa_node->child,
+	if (aml_evalname((struct acpi_softc *)parent, aa->aaa_node,
 	    "MHKV", 0, NULL, &res))
-		goto fail;
+		return (0);
 
-	if (aml_val2int(&res) != THINKPAD_HKEY_VERSION)
-		goto fail;
+	if (aml_val2int(&res) == THINKPAD_HKEY_VERSION)
+		rv = 1;
 
-	return (1);
-
-fail:
 	aml_freevalue(&res);
-	return (0);
+	return (rv);
 }
 
 void
 thinkpad_attach(struct device *parent, struct device *self, void *aux)
 {
-	struct acpithinkpad_softc	*sc = (struct acpithinkpad_softc *)self;
-	struct acpi_attach_args *aa = aux;
+	struct acpithinkpad_softc *sc = (struct acpithinkpad_softc *)self;
+	struct acpi_attach_args	*aa = aux;
 
 	sc->sc_acpi = (struct acpi_softc *)parent;
-	sc->sc_devnode = aa->aaa_node->child;
+	sc->sc_devnode = aa->aaa_node;
 
 	printf("\n");
 
@@ -128,29 +139,27 @@ thinkpad_attach(struct device *parent, struct device *self, void *aux)
 	thinkpad_enable_events(sc);
 
 	/* run thinkpad_hotkey on button presses */
-	aml_register_notify(sc->sc_devnode->parent, aa->aaa_dev,
-		thinkpad_hotkey, sc, ACPIDEV_NOPOLL);
-
-	return;
+	aml_register_notify(sc->sc_devnode, aa->aaa_dev,
+	    thinkpad_hotkey, sc, ACPIDEV_NOPOLL);
 }
 
 int
 thinkpad_enable_events(struct acpithinkpad_softc *sc)
 {
-	struct aml_value res, arg, args[2];
-	int64_t mask;
-	int i;
+	struct aml_value	res, arg, args[2];
+	int64_t			mask;
+	int			i, rv = 1;
 
 	/* get the supported event mask */
 	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "MHKA", 0, NULL, &res)) {
 		printf("%s: no MHKA\n", DEVNAME(sc));
-		aml_freevalue(&res);
-		return (1);
+		goto fail;
 	}
 	mask = aml_val2int(&res);
+	aml_freevalue(&res);
 
 	/* update hotkey mask */
-	memset(&args, 0, sizeof(args));
+	bzero(args, sizeof(args));
 	args[0].type = args[1].type = AML_OBJTYPE_INTEGER;
 	for (i = 0; i < 32; i++) {
 		args[0].v_integer = i + 1;
@@ -159,39 +168,42 @@ thinkpad_enable_events(struct acpithinkpad_softc *sc)
 		if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "MHKM", 2, args,
 		    NULL)) {
 			printf("%s: couldn't toggle MHKM\n", DEVNAME(sc));
-			return (1);
+			goto fail;
 		}
 	}
 
 	/* enable hotkeys */
-	memset(&arg, 0, sizeof(arg));
+	bzero(&arg, sizeof(arg));
 	arg.type = AML_OBJTYPE_INTEGER;
 	arg.v_integer = 1;
 	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "MHKC", 1, &arg, NULL)) {
 		printf("%s: couldn't enable hotkeys\n", DEVNAME(sc));
-		return (1);
+		goto fail;
 	}
 
-	return (0);
+	rv = 0;
+fail:
+	return (rv);
 }
 
 int
 thinkpad_hotkey(struct aml_node *node, int notify_type, void *arg)
 {
 	struct acpithinkpad_softc *sc = arg;
-	struct aml_value res;
-	int val, type, event, handled;
+	struct aml_value	res;
+	int			val, type, event, handled, rv = 1, tot = 0;
+
+	if (notify_type != 0x80)
+		goto fail;
 
 	for (;;) {
 		if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "MHKP", 0, NULL,
-		    &res)) {
-			aml_freevalue(&res);
-			return (1);
-		}
-
+		    &res))
+			goto done;
 		val = aml_val2int(&res);
+		aml_freevalue(&res);
 		if (val == 0)
-			return (1);
+			goto done;
 
 		type = (val & 0xf000) >> 12;
 		event = val & 0x0fff;
@@ -229,102 +241,127 @@ thinkpad_hotkey(struct aml_node *node, int notify_type, void *arg)
 			case THINKPAD_BUTTON_EJECT:
 			case THINKPAD_BUTTON_THINKLIGHT:
 			case THINKPAD_BUTTON_FN_SPACE:
+				handled = 1;
+				break;
+			case THINKPAD_BUTTON_VOLUME_DOWN:
+				thinkpad_volume_down(sc);
+				handled = 1;
+				break;
+			case THINKPAD_BUTTON_VOLUME_UP:
+				thinkpad_volume_up(sc);
+				handled = 1;
+				break;
+			case THINKPAD_BUTTON_VOLUME_MUTE:
+				thinkpad_volume_mute(sc);
+				handled = 1;
+				break;
 			case THINKPAD_BUTTON_THINKVANTAGE:
 			case THINKPAD_BUTTON_FN_F11:
-				/* TODO: notify userland */
 				handled = 1;
 				break;
 			}
-
 			break;
 		case 5:
 			switch (event) {
-			case THINKPAD_TABLET_SCREEN_NORMAL:
-			case THINKPAD_TABLET_SCREEN_ROTATED:
 			case THINKPAD_LID_OPEN:
 			case THINKPAD_LID_CLOSED:
+			case THINKPAD_TABLET_SCREEN_NORMAL:
+			case THINKPAD_TABLET_SCREEN_ROTATED:
+			case THINKPAD_BRIGHTNESS_CHANGED:
 			case THINKPAD_TABLET_PEN_INSERTED:
 			case THINKPAD_TABLET_PEN_REMOVED:
-				/* TODO: notify userland */
 				handled = 1;
-
+				break;
+			}
+			break;
+		case 7:
+			switch (event) {
+			case THINKPAD_SWITCH_WIRELESS:
+				handled = 1;
 				break;
 			}
 			break;
 		}
 
-		if (!handled)
+		if (handled)
+			tot++;
+		else
 			printf("%s: unknown type %d event 0x%03x\n",
-				DEVNAME(sc), type, event);
+			    DEVNAME(sc), type, event);
 	}
+done:
+	if (tot)
+		rv = 0;
+fail:
+	return (rv);
 }
 
 int
 thinkpad_toggle_bluetooth(struct acpithinkpad_softc *sc)
 {
-	struct aml_value res, arg;
-	int bluetooth;
+	struct aml_value	res, arg;
+	int			bluetooth, rv = 1;
 
-	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "GBDC", 0, NULL, &res)) {
-		/* no bluetooth, oh well */
-		aml_freevalue(&res);
-		return (1);
-	}
+	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "GBDC", 0, NULL, &res))
+		goto fail;
 
 	bluetooth = aml_val2int(&res);
 	aml_freevalue(&res);
-	if (!(bluetooth & THINKPAD_BLUETOOTH_PRESENT))
-		return (1);
 
-	memset(&arg, 0, sizeof(arg));
+	if (!(bluetooth & THINKPAD_BLUETOOTH_PRESENT))
+		goto fail;
+
+	bzero(&arg, sizeof(arg));
 	arg.type = AML_OBJTYPE_INTEGER;
 	arg.v_integer = bluetooth ^= THINKPAD_BLUETOOTH_ENABLED;
 	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "SBDC", 1, &arg, NULL)) {
 		printf("%s: couldn't toggle bluetooth\n", DEVNAME(sc));
-		return (1);
+		goto fail;
 	}
 
-	return (0);
+	rv = 0;
+fail:
+	return (rv);
 }
 
 int
 thinkpad_toggle_wan(struct acpithinkpad_softc *sc)
 {
-	struct aml_value res, arg;
-	int wan;
+	struct aml_value	res, arg;
+	int			wan, rv = 1;;
 
-	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "GWAN", 0, NULL, &res)) {
-		aml_freevalue(&res);
-		return (1);
-	}
+	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "GWAN", 0, NULL, &res))
+		goto fail;
 
 	wan = aml_val2int(&res);
 	aml_freevalue(&res);
-	if (!(wan & THINKPAD_WAN_PRESENT))
-		return (1);
 
-	memset(&arg, 0, sizeof(arg));
+	if (!(wan & THINKPAD_WAN_PRESENT))
+		goto fail;
+
+	bzero(&arg, sizeof(arg));
 	arg.type = AML_OBJTYPE_INTEGER;
-	arg.v_integer = wan ^= THINKPAD_WAN_ENABLED;
+	arg.v_integer = (wan ^= THINKPAD_WAN_ENABLED);
 	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "SWAN", 1, &arg, NULL)) {
 		printf("%s: couldn't toggle wan\n", DEVNAME(sc));
-		return (1);
+		goto fail;
 	}
 
-	return (0);
+	rv = 0;
+fail:
+	return (rv);
 }
 
 int
 thinkpad_cmos(struct acpithinkpad_softc *sc, uint8_t cmd)
 {
-	struct aml_value arg;
+	struct aml_value	arg;
 
-	memset(&arg, 0, sizeof(arg));
+	bzero(&arg, sizeof(arg));
 	arg.type = AML_OBJTYPE_INTEGER;
 	arg.v_integer = cmd;
-
 	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "\\UCMS", 1, &arg,
-	NULL)) {
+	    NULL)) {
 		printf("%s: cmos command 0x%x failed\n", DEVNAME(sc), cmd);
 		return (1);
 	}
@@ -333,13 +370,31 @@ thinkpad_cmos(struct acpithinkpad_softc *sc, uint8_t cmd)
 }
 
 int
+thinkpad_volume_down(struct acpithinkpad_softc *sc)
+{
+	return (thinkpad_cmos(sc, THINKPAD_CMOS_VOLUME_DOWN));
+}
+
+int
+thinkpad_volume_up(struct acpithinkpad_softc *sc)
+{
+	return (thinkpad_cmos(sc, THINKPAD_CMOS_VOLUME_UP));
+}
+
+int
+thinkpad_volume_mute(struct acpithinkpad_softc *sc)
+{
+	return (thinkpad_cmos(sc, THINKPAD_CMOS_VOLUME_MUTE));
+}
+
+int
 thinkpad_brightness_up(struct acpithinkpad_softc *sc)
 {
-	return thinkpad_cmos(sc, THINKPAD_CMOS_BRIGHTNESS_UP);
+	return (thinkpad_cmos(sc, THINKPAD_CMOS_BRIGHTNESS_UP));
 }
 
 int
 thinkpad_brightness_down(struct acpithinkpad_softc *sc)
 {
-	return thinkpad_cmos(sc, THINKPAD_CMOS_BRIGHTNESS_DOWN);
+	return (thinkpad_cmos(sc, THINKPAD_CMOS_BRIGHTNESS_DOWN));
 }

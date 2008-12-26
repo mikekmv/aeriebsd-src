@@ -61,14 +61,14 @@ id=`basename ${d}`
 #	A month or so before release, select STATUS "-beta"
 
 ost="OpenBSD"
-osr="4.3"
+osr="4.4"
 
 cat >vers.c <<eof
-#define STATUS "-current"		/* just after a release */
 #if 0
-#define STATUS "-beta"			/* just before a release */
 #define STATUS ""			/* release */
+#define STATUS "-beta"			/* just before a release */
 #endif
+#define STATUS "-current"		/* just after a release */
 
 const char ostype[] = "${ost}";
 const char osrelease[] = "${osr}";

@@ -1,6 +1,6 @@
 
 SUBDIR+= __syscall accept dup2 dup2_self exec_self execve exit extent
-SUBDIR+= fcntl_dup getpeereid getrusage gettimeofday itimer 
+SUBDIR+= fcntl_dup flock getpeereid getrusage gettimeofday itimer 
 SUBDIR+= kqueue mbuf minherit
 SUBDIR+= mmap mmap2 mmap3 mmap-fail
 #SUBDIR+= mquery

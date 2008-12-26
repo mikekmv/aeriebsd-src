@@ -4007,15 +4007,8 @@ ahc_free(struct ahc_softc *ahc)
 		free(ahc->black_hole, M_DEVBUF);
 	}
 #endif
-#ifndef __NetBSD__
-	if (ahc->name != NULL)
-		free(ahc->name, M_DEVBUF);
-#endif
 	if (ahc->seep_config != NULL)
 		free(ahc->seep_config, M_DEVBUF);
-#ifndef __FreeBSD__
-	free(ahc, M_DEVBUF);
-#endif
 	return;
 }
 
@@ -4447,8 +4440,7 @@ ahc_controller_info(struct ahc_softc *ahc, char *buf, size_t buf_len)
 	len = strlen(buf);
 	if ((ahc->features & AHC_TWIN) != 0)
 		snprintf(buf + len, buf_len - len,
-			 "Twin Channel, A SCSI Id=%d, B SCSI Id=%d, "
-			 "primary %c, ", ahc->our_id, ahc->our_id_b,
+			 "Twin Channel, primary %c, ",
 			 (ahc->flags & AHC_PRIMARY_CHANNEL) + 'A');
 	else {
 		const char *speed;
@@ -4468,8 +4460,8 @@ ahc_controller_info(struct ahc_softc *ahc, char *buf, size_t buf_len)
 			type = "Single";
 		}
 		snprintf(buf + len, buf_len - len,
-			 "%s%s Channel %c, SCSI Id=%d, ",
-			 speed, type, ahc->channel, ahc->our_id);
+			 "%s%s Channel %c, ",
+			 speed, type, ahc->channel);
 	}
 	len = strlen(buf);
 

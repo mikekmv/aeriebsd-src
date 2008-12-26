@@ -285,7 +285,6 @@ vaddr_t ekdata;
 paddr_t ekdatap;
 
 static int npgs;
-static u_int nextavail;
 static struct mem_region memlist[8]; /* Pick a random size here */
 
 vaddr_t	vmmap;			/* one reserved MI vpage for /dev/mem */
@@ -844,15 +843,17 @@ remap_data:
 		physmem += atop(mp->size);
 	BDPRINTF(PDB_BOOT1, (" result %x or %d pages\r\n", 
 			     (int)physmem, (int)physmem));
+
 	/* 
-	 * Calculate approx TSB size.  This probably needs tweaking.
+	 * Calculate approx TSB size.
 	 */
-	if (physmem < atop(64 * 1024 * 1024))
-		tsbsize = 0;
-	else if (physmem < atop(512 * 1024 * 1024))
-		tsbsize = 1;
-	else
-		tsbsize = 2;
+	tsbsize = 0;
+#ifdef SMALL_KERNEL
+	while ((physmem >> tsbsize) > atop(64 * MEG) && tsbsize < 2)
+#else
+	while ((physmem >> tsbsize) > atop(64 * MEG) && tsbsize < 7)
+#endif
+		tsbsize++;
 
 	/*
 	 * Save the prom translations
@@ -881,12 +882,12 @@ remap_data:
 	 * Hunt for the kernel text segment and figure out it size and
 	 * alignment.  
 	 */
+	ktsize = 0;
 	for (i = 0; i < prom_map_size; i++) 
-		if (prom_map[i].vstart == ktext)
-			break;
-	if (i == prom_map_size) 
+		if (prom_map[i].vstart == ktext + ktsize)
+			ktsize += prom_map[i].vsize;
+	if (ktsize == 0)
 		panic("No kernel text segment!");
-	ktsize = prom_map[i].vsize;
 	ektext = ktext + ktsize;
 
 	if (ktextp & (4*MEG-1)) {
@@ -1316,7 +1317,7 @@ remap_data:
 	
 	BDPRINTF(PDB_BOOT1, ("Inserting PROM mappings into pmap_kernel()\r\n"));
 	data = 0;
-	if (CPU_ISSUN4U)
+	if (CPU_ISSUN4U || CPU_ISSUN4US)
 		data = SUN4U_TLB_EXEC;
 	for (i = 0; i < prom_map_size; i++)
 		if (prom_map[i].vstart && ((prom_map[i].vstart>>32) == 0))
@@ -1452,8 +1453,7 @@ remap_data:
 	/*
 	 * Set up bounds of allocatable memory for vmstat et al.
 	 */
-	nextavail = avail->start;
-	avail_start = nextavail;
+	avail_start = avail->start;
 	for (mp = avail; mp->size; mp++)
 		avail_end = mp->start+mp->size;
 	BDPRINTF(PDB_BOOT1, ("Finished pmap_bootstrap()\r\n"));
@@ -1670,8 +1670,7 @@ pmap_create(void)
 
 	DPRINTF(PDB_CREATE, ("pmap_create()\n"));
 
-	pm = pool_get(&pmap_pool, PR_WAITOK);
-	bzero((caddr_t)pm, sizeof *pm);
+	pm = pool_get(&pmap_pool, PR_WAITOK | PR_ZERO);
 	DPRINTF(PDB_CREATE, ("pmap_create(): created %p\n", pm));
 
 	pm->pm_refs = 1;
@@ -2328,7 +2327,7 @@ pmap_protect(pm, sva, eva, prot)
 		if (((data = pseg_get(pm, sva))&TLB_V) /*&& ((data&TLB_TSB_LOCK) == 0)*/) {
 			pa = data&TLB_PA_MASK;
 #ifdef DEBUG
-			if (pmapdebug & (PDB_CHANGEPROT|PDB_REF))
+			if (pmapdebug & (PDB_CHANGEPROT|PDB_REF)) {
 				printf("pmap_protect: va=%08x data=%x:%08x seg=%08x pte=%08x\r\n", 
 					    (u_int)sva, (int)(pa>>32), (int)pa, (int)va_to_seg(sva), (int)va_to_pte(sva));
 			}
@@ -3193,6 +3192,15 @@ pmap_count_res(pm)
 	paddr_t *pdir, *ptbl;
 	/* Almost the same as pmap_collect() */
 
+	/*
+	 * XXX On the SPARC Enterprise T5120, counting the number of
+	 * pages in the kernel pmap is ridiculously slow.  Since ps(1)
+	 * doesn't use the information for P_SYSTEM processes, we may
+	 * as well skip the counting and return zero immediately.
+	 */
+	if (pm == pmap_kernel())
+		return 0;
+
 	/* Don't want one of these pages reused while we're reading it. */
 	s = splvm();
 	simple_lock(&pm->pm_lock);
@@ -3533,7 +3541,7 @@ pmap_page_cache(pm, pa, mode)
 	pv_entry_t pv;
 	int s;
 
-	if (CPU_ISSUN4V)
+	if (CPU_ISSUN4US || CPU_ISSUN4V)
 		return;
 
 #ifdef DEBUG
@@ -3624,6 +3632,31 @@ pmap_free_page(paddr_t pa, struct pmap *pm)
 
 	pg->wire_count = 0;
 	uvm_pagefree(pg);
+}
+
+void
+pmap_remove_holes(struct vm_map *map)
+{
+	vaddr_t shole, ehole;
+
+	/*
+	 * Although the hardware only supports 44-bit virtual addresses
+	 * (and thus a hole from 1 << 43 to -1 << 43), this pmap
+	 * implementation itself only supports 43-bit virtual addresses,
+	 * so we have to narrow the hole a bit more.
+	 */
+	shole = 1L << (HOLESHIFT - 1);
+	ehole = -1L << (HOLESHIFT - 1);
+
+	shole = ulmax(vm_map_min(map), shole);
+	ehole = ulmin(vm_map_max(map), ehole);
+
+	if (ehole <= shole)
+		return;
+
+	(void)uvm_map(map, &shole, ehole - shole, NULL, UVM_UNKNOWN_OFFSET, 0,
+	    UVM_MAPFLAG(UVM_PROT_NONE, UVM_PROT_NONE, UVM_INH_NONE,
+	      UVM_ADV_RANDOM, UVM_FLAG_NOMERGE | UVM_FLAG_HOLE));
 }
 
 #ifdef DDB

@@ -455,14 +455,8 @@ lge_attach(struct device *parent, struct device *self, void *aux)
 	}
 #else
 	memtype = pci_mapreg_type(pc, pa->pa_tag, LGE_PCI_LOMEM);
-	switch (memtype) {
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT:
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT:
-		if (pci_mapreg_map(pa, LGE_PCI_LOMEM,
-				   memtype, 0, &sc->lge_btag, &sc->lge_bhandle,
-				   NULL, &size, 0) == 0)
-			break;
-	default:
+	if (pci_mapreg_map(pa, LGE_PCI_LOMEM, memtype, 0, &sc->lge_btag,
+	    &sc->lge_bhandle, NULL, &size, 0)) {
 		printf(": can't map mem space\n");
 		return;
 	}

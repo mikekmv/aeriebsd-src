@@ -228,7 +228,7 @@ pxa2x0_gpio_intr_establish(u_int gpio, int level, int spl, int (*func)(void *),
 	if (GPIO_FN_IS_OUT(pxa2x0_gpio_get_function(gpio)) != GPIO_IN)
 		panic("pxa2x0_gpio_intr_establish: Pin %d not GPIO_IN", gpio);
 
-	MALLOC(gh, struct gpio_irq_handler *, sizeof(struct gpio_irq_handler),
+	gh = (struct gpio_irq_handler *)malloc(sizeof(struct gpio_irq_handler),
 	    M_DEVBUF, M_NOWAIT);
 
 	gh->gh_func = func;
@@ -328,7 +328,7 @@ pxa2x0_gpio_intr_disestablish(void *cookie)
 #endif /* PXAGPIO_HAS_GPION_INTRS */
 	}
 
-	FREE(gh, M_DEVBUF); 
+	free(gh, M_DEVBUF); 
 }
 
 #ifdef PXAGPIO_HAS_GPION_INTRS

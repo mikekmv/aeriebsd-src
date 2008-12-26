@@ -9,7 +9,7 @@ MAN=	altq.9 aml_evalnode.9 atomic.9 audio.9 autoconf.9 bio_register.9 \
 	domountroothooks.9 doshutdownhooks.9 dostartuphooks.9 \
 	evcount.9 file.9 \
 	fork1.9 extent.9 getdevvp.9 getnewvnode.9 hash.9 hashinit.9 \
-	hardclock.9 hook_establish.9 hz.9 hzto.9 \
+	hardclock.9 hook_establish.9 hz.9 hzto.9 idgen32.9 \
 	ieee80211.9 ieee80211_crypto.9 ieee80211_input.9 ieee80211_ioctl.9 \
 	ieee80211_node.9 ieee80211_output.9 ieee80211_proto.9 \
 	ieee80211_radiotap.9 \
@@ -126,6 +126,7 @@ MLINKS+=file.9 falloc.9 file.9 fdrelease.9 file.9 FREF.9 file.9 FRELE.9 \
 MLINKS+=getdevvp.9 bdevvp.9 getdevvp.9 cdevvp.9
 MLINKS+=hook_establish.9 hook_disestablish.9
 MLINKS+=hz.9 tick.9 hz.9 tickadj.9 hz.9 stathz.9 hz.9 profhz.9
+MLINKS+=idgen32.9 idgen32_init.9
 MLINKS+=ieee80211.9 ieee80211_ifattach.9 \
 	ieee80211.9 ieee80211_ifdetach.9 \
 	ieee80211.9 ieee80211_mhz2ieee.9 \
@@ -253,7 +254,7 @@ MLINKS+=random.9 add_true_randomness.9 \
 	random.9 add_audio_randomness.9 \
 	random.9 get_random_bytes.9 \
 	random.9 arc4random.9 \
-	random.9 arc4random_bytes.9 \
+	random.9 arc4random_buf.9 \
 	random.9 arc4random_uniform.9
 MLINKS+=rasops.9 rasops_init.9 rasops.9 rasops_reconfig.9
 MLINKS+=rssadapt.9 ieee80211_rssadapt_choose.9 \
@@ -291,7 +292,10 @@ MLINKS+=time.9 boottime.9 time.9 mono_time.9 time.9 runtime.9
 MLINKS+=timeout.9 timeout_add.9 timeout.9 timeout_set.9 \
 	timeout.9 timeout_pending.9 timeout.9 timeout_del.9 \
 	timeout.9 timeout_initialized.9 timeout.9 untimeout.9 \
-	timeout.9 timeout_triggered.9
+	timeout.9 timeout_triggered.9 timeout.9 timeout_add_tv.9 \
+	timeout.9 timeout_add_ts.9 timeout.9 timeout_add_bt.9 \
+	timeout.9 timeout_add_sec.9 timeout.9 timeout_add_usec.9 \
+	timeout.9 timeout_add_nsec.9
 MLINKS+=uiomove.9 uio.9
 MLINKS+=uvm.9 uvm_init.9 uvm.9 uvm_init_limits.9 uvm.9 uvm_setpagesize.9 \
 	uvm.9 uvm_swap_init.9 uvm.9 uvm_map.9 uvm.9 uvm_map_pageable.9 \

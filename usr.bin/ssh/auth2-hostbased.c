@@ -149,15 +149,16 @@ hostbased_key_allowed(struct passwd *pw, const char *cuser, char *chost,
 	debug2("userauth_hostbased: chost %s resolvedname %s ipaddr %s",
 	    chost, resolvedname, ipaddr);
 
+	if (((len = strlen(chost)) > 0) && chost[len - 1] == '.') {
+		debug2("stripping trailing dot from chost %s", chost);
+		chost[len - 1] = '\0';
+	}
+
 	if (options.hostbased_uses_name_from_packet_only) {
 		if (auth_rhosts2(pw, cuser, chost, chost) == 0)
 			return 0;
 		lookup = chost;
 	} else {
-		if (((len = strlen(chost)) > 0) && chost[len - 1] == '.') {
-			debug2("stripping trailing dot from chost %s", chost);
-			chost[len - 1] = '\0';
-		}
 		if (strcasecmp(resolvedname, chost) != 0)
 			logit("userauth_hostbased mismatch: "
 			    "client sends %s, but we resolve %s to %s",

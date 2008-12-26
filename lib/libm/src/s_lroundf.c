@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2004
  *	Matthias Drochner. All rights reserved.
@@ -26,7 +25,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_lroundf.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 #include <math.h>

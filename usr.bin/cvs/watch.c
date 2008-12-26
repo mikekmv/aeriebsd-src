@@ -37,7 +37,7 @@ static int	watch_aflags = 0;
 
 struct cvs_cmd cvs_cmd_watch = {
 	CVS_OP_WATCH, CVS_USE_WDIR, "watch",
-	{ },
+	{ { 0 }, { 0 } },
 	"Set watches",
 	"on | off | add | remove [-lR] [-a action] [file ...]",
 	"a:lR",
@@ -47,7 +47,7 @@ struct cvs_cmd cvs_cmd_watch = {
 
 struct cvs_cmd cvs_cmd_watchers = {
 	CVS_OP_WATCHERS, CVS_USE_WDIR, "watchers",
-	{ },
+	{ { 0 }, { 0 } },
 	"See who is watching a file",
 	"[-lR] [file ...]",
 	"lR",

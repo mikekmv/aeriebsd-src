@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)util.c	8.4 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: util.c,v 1.1.1.1 2008/08/26 14:42:40 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -65,7 +65,6 @@ ttoa(char *buf, size_t len, time_t tval)
 int
 atot(char *p, time_t *store)
 {
-	static struct tm *lt;
 	struct tm tm;
 	time_t tval;
 	char *t;
@@ -73,11 +72,6 @@ atot(char *p, time_t *store)
 	if (!*p) {
 		*store = 0;
 		return (0);
-	}
-	if (!lt) {
-		unsetenv("TZ");
-		(void)time(&tval);
-		lt = localtime(&tval);
 	}
 	(void) memset(&tm, 0, sizeof(tm));
 	for (t = p; (t = strchr(t, ',')) != NULL; t++)

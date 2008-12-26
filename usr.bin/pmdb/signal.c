@@ -134,7 +134,7 @@ cmd_signal_ignore(int argc, char **argv, void *arg)
 
 	return 0;
 usage:
-	fprintf(stderr, "Usage: signal <ignore|stop> <signum|signame>\n");
+	fprintf(stderr, "usage: signal ignore|stop signum|signame\n");
 	return 0;
 }
 

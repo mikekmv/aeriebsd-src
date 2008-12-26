@@ -94,7 +94,7 @@ vmapbuf(bp, len)
 	uva = trunc_page((vaddr_t)bp->b_data);
 	off = (vaddr_t)bp->b_data - uva;
 	len = round_page(off + len);
-	kva = uvm_km_valloc_wait(kernel_map, len);
+	kva = uvm_km_valloc_prefer_wait(kernel_map, len, uva);
 	bp->b_data = (caddr_t)(kva + off);
 
 	/*

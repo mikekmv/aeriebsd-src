@@ -330,9 +330,6 @@ struct pmap {
 	u_int32_t pm_cpus;		/* mask of CPUs using pmap */
 };
 
-/* pm_flags */
-#define	PMF_USER_LDT	0x01	/* pmap has user-set LDT */
-
 /*
  * We keep mod/ref flags in struct vm_page->pg_flags.
  */
@@ -404,7 +401,7 @@ extern pd_entry_t *pdes[];
  * prototypes
  */
 
-void		pmap_bootstrap(vaddr_t, paddr_t);
+paddr_t		pmap_bootstrap(paddr_t, paddr_t);
 boolean_t	pmap_clear_attrs(struct vm_page *, unsigned long);
 static void	pmap_page_protect(struct vm_page *, vm_prot_t);
 void		pmap_page_remove (struct vm_page *);
@@ -428,7 +425,7 @@ void	pmap_tlb_shootwait(void);
 #define	pmap_tlb_shootwait()
 #endif
 
-void	pmap_prealloc_lowmem_ptps(void);
+paddr_t	pmap_prealloc_lowmem_ptps(paddr_t);
 
 void	pagezero(vaddr_t);
 
@@ -557,11 +554,6 @@ kvtopte(vaddr_t va)
 #define pmap_cpu_has_invlpg		(1)
 
 vaddr_t	pmap_map(vaddr_t, paddr_t, paddr_t, vm_prot_t);
-
-#if 0   /* XXXfvdl was USER_LDT, need to check if that can be supported */
-void	pmap_ldt_cleanup(struct proc *);
-#define	PMAP_FORK
-#endif /* USER_LDT */
 
 #define PMAP_DIRECT_MAP(pa)	((vaddr_t)PMAP_DIRECT_BASE + pa)
 #define PMAP_DIRECT_UNMAP(va)	((paddr_t)va - PMAP_DIRECT_BASE)

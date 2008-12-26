@@ -463,7 +463,8 @@ int l2cap_send_disconnect_req(struct l2cap_channel *);
 int l2cap_send_connect_rsp(struct hci_link *, uint8_t, uint16_t, uint16_t, uint16_t);
 
 /* l2cap_socket.c */
-int l2cap_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *);
+int l2cap_usrreq(struct socket *, int, struct mbuf *, struct mbuf *,
+    struct mbuf *, struct proc *);
 int l2cap_ctloutput(int, struct socket *, int, int, struct mbuf **);
 
 /* l2cap_upper.c */

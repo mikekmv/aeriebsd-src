@@ -21,6 +21,7 @@
 
 #include <sys/param.h>
 #include <sys/malloc.h>
+#include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/timeout.h>
 
@@ -86,6 +87,8 @@ usbf_realloc(void **pp, size_t *sizep, size_t newsize)
 	oldsize = MIN(*sizep, newsize);
 	if (oldsize > 0)
 		bcopy(*pp, p, oldsize);
+	if (*pp != NULL)
+		free(*pp, M_USB);
 	*pp = p;
 	*sizep = newsize;
 	return p;
@@ -1040,7 +1043,8 @@ usbf_transfer_complete(usbf_xfer_handle xfer)
 
 	pipe->methods->done(xfer);
 
-	/* XXX wake up any processes waiting for the transfer to complete */
+	if (xfer->flags & USBD_SYNCHRONOUS)
+		wakeup(xfer);
 
 	if (!repeat) {
 		if (xfer->status != USBF_NORMAL_COMPLETION &&

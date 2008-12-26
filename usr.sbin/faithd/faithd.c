@@ -881,7 +881,8 @@ update_myaddrs()
 static void
 usage()
 {
-	fprintf(stderr, "usage: %s [-dp] [-f conf] service [serverpath [serverargs]]\n",
+	fprintf(stderr,
+	    "usage: %s [-dp] [-f configfile] service [serverpath [serverargs]]\n",
 	    faithdname);
 	exit(0);
 }

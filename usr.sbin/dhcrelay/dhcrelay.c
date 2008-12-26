@@ -264,8 +264,8 @@ usage(void)
 {
 	extern char	*__progname;
 
-	fprintf(stderr, "Usage: %s [-d] ", __progname);
-	fprintf(stderr, "-i interface server1 [... serverN]\n");
+	fprintf(stderr, "usage: %s [-d] -i interface server1 [... serverN]\n",
+	    __progname);
 	exit(1);
 }
 

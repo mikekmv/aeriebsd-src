@@ -26,10 +26,9 @@
 .\"CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 .\"ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 .\"THE POSSIBILITY OF SUCH DAMAGE.
-\"
-.\" $FreeBSD: /repoman/r/ncvs/src/share/man/man4/bce.4,v 1.2 2006/04/10 20:12:17 brueffer Exp $
 .\"
-.Dd $Mdocdate: April 3 2008 $
+.\"
+.Dd $Mdocdate: August 26 2008 $
 .Dt BNX 4
 .Os
 .Sh NAME
@@ -121,6 +120,16 @@ or
 modes.
 .It Cm 1000baseT
 Set 1000baseT operation over twisted pair.
+Only
+.Cm full-duplex
+mode is supported.
+.It Cm 1000baseSX
+Set 1000Mbps (Gigabit Ethernet) operation.
+Only
+.Cm full-duplex
+mode is supported.
+.It Cm 2500baseSX
+Set 2500Mbps operation.
 Only
 .Cm full-duplex
 mode is supported.

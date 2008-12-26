@@ -40,7 +40,7 @@ int	  cvs_unlink(const char *);
 int	  cvs_rmdir(const char *);
 char	**cvs_makeargv(const char *, int *);
 void	  cvs_freeargv(char **, int);
-void	  cvs_exec(const char *);
+int	  cvs_exec(char *, const char *, int);
 u_int	  cvs_revision_select(RCSFILE *, char *);
 
 struct cvs_line {

@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)rmail.c	8.3 (Berkeley) 5/15/95";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: rmail.c,v 1.1.1.1 2008/08/26 14:36:31 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -289,7 +289,7 @@ main(int argc, char *argv[])
 	args[i] = 0;
 
 	if (debug) {
-		(void)fprintf(stderr, "Sendmail arguments:\n");
+		(void)fprintf(stderr, "sendmail arguments:\n");
 		for (i = 0; args[i]; i++)
 			(void)fprintf(stderr, "\t%s\n", args[i]);
 	}

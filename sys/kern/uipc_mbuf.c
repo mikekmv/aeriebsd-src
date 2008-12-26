@@ -194,6 +194,7 @@ m_gethdr(int nowait, int type)
 		SLIST_INIT(&m->m_pkthdr.tags);
 		m->m_pkthdr.csum_flags = 0;
 		m->m_pkthdr.pf.hdr = NULL;
+		m->m_pkthdr.pf.statekey = NULL;
 		m->m_pkthdr.pf.rtableid = 0;
 		m->m_pkthdr.pf.qid = 0;
 		m->m_pkthdr.pf.tag = 0;
@@ -216,6 +217,7 @@ m_inithdr(struct mbuf *m)
 	SLIST_INIT(&m->m_pkthdr.tags);
 	m->m_pkthdr.csum_flags = 0;
 	m->m_pkthdr.pf.hdr = NULL;
+	m->m_pkthdr.pf.statekey = NULL;
 	m->m_pkthdr.pf.rtableid = 0;
 	m->m_pkthdr.pf.qid = 0;
 	m->m_pkthdr.pf.tag = 0;

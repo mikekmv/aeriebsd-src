@@ -463,10 +463,13 @@ struct mount {
 #define VFS_MAXTYPENUM	1	/* int: highest defined filesystem type */
 #define VFS_CONF	2	/* struct: vfsconf for filesystem given
 				   as next argument */
+#define VFS_BCACHESTAT	3	/* struct: buffer cache statistics given 
+				   as next argument */
 #define	CTL_VFSGENCTL_NAMES { \
 	{ 0, 0 }, \
 	{ "maxtypenum", CTLTYPE_INT }, \
-	{ "conf", CTLTYPE_NODE } \
+	{ "conf", CTLTYPE_NODE }, \
+	{ "bcachestat", CTLTYPE_STRUCT } \
 }
 
 /*
@@ -482,6 +485,25 @@ struct vfsconf {
 	int	vfc_flags;		/* permanent flags */
 	struct	vfsconf *vfc_next;	/* next in list */
 };
+
+/* buffer cache statistics */
+struct bcachestats {
+	int64_t numbufs;		/* number of buffers allocated */
+	int64_t freebufs;		/* number of free buffers */
+	int64_t numbufpages;		/* number of pages in buffer cache */
+	int64_t numfreepages; 		/* number of free pages */
+	int64_t numdirtypages; 		/* number of dirty free pages */
+	int64_t numcleanpages; 		/* number of clean free pages */
+	int64_t pendingwrites;		/* number of pending writes */
+	int64_t pendingreads;		/* number of pending reads */
+	int64_t numwrites;		/* total writes started */
+	int64_t numreads;		/* total reads started */
+	int64_t cachehits;		/* total reads found in cache */
+};
+#ifdef _KERNEL
+extern struct bcachestats bcstats;
+#define BUFPAGES_DEFICIT (bufpages - bcstats.numbufpages)
+#endif
 
 /*
  * Operations supported on mounted file system.
@@ -613,7 +635,6 @@ void	vfs_shutdown(void);	/* unmount and sync file systems */
 long	makefstype(char *);
 int	dounmount(struct mount *, int, struct proc *, struct vnode *);
 void	vfsinit(void);
-void	vfs_bufstats(void);
 int	vfs_register(struct vfsconf *);
 int	vfs_unregister(struct vfsconf *);
 #else /* _KERNEL */

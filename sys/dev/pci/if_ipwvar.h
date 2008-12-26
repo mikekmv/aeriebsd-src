@@ -93,8 +93,6 @@ struct ipw_softc {
 	uint32_t			flags;
 #define IPW_FLAG_FW_INITED	(1 << 0)
 
-	struct resource			*irq;
-	struct resource			*mem;
 	bus_space_tag_t			sc_st;
 	bus_space_handle_t		sc_sh;
 	void 				*sc_ih;

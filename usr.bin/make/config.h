@@ -1,8 +1,3 @@
-#ifndef CONFIG_H
-#define CONFIG_H
-
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 1988, 1989, 1990 The Regents of the University of California.
  * Copyright (c) 1988, 1989 by Adam de Boor
@@ -38,6 +33,9 @@
  *
  *	from: @(#)config.h	8.1 (Berkeley) 6/6/93
  */
+
+#ifndef CONFIG_H
+#define CONFIG_H
 
 #define DEFSHELL	1			/* Bourne shell */
 

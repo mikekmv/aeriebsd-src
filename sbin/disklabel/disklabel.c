@@ -38,7 +38,7 @@ static const char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: disklabel.c,v 1.1.1.1 2008/08/26 14:40:21 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -112,6 +112,7 @@ int	donothing;
 
 #ifdef DOSLABEL
 struct dos_partition *dosdp;	/* DOS partition, if found */
+struct dos_partition *findopenbsd(int, off_t, struct dos_partition **, int *);
 struct dos_partition *readmbr(int);
 #endif
 
@@ -272,7 +273,7 @@ main(int argc, char *argv[])
 		if (tflag)
 			makedisktab(stdout, lp);
 		else
-			display(stdout, lp, NULL, print_unit, 0, 0);
+			display(stdout, lp, NULL, print_unit, 1);
 		error = checklabel(lp);
 		break;
 	case RESTORE:
@@ -387,12 +388,14 @@ writelabel(int f, char *boot, struct disklabel *lp)
 	int writeable;
 	off_t sectoffset = 0;
 
+#if NUMBOOT > 0
+	setbootflag(lp);
+#endif
 	lp->d_magic = DISKMAGIC;
 	lp->d_magic2 = DISKMAGIC;
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
 #if NUMBOOT > 0
-	setbootflag(lp);
 	if (installboot) {
 #ifdef DOSLABEL
 		struct partition *pp = &lp->d_partitions[2];
@@ -522,48 +525,31 @@ l_perror(char *s)
 }
 
 #ifdef DOSLABEL
-/*
- * Fetch DOS partition table from disk.
- */
 struct dos_partition *
-readmbr(int f)
+findopenbsd(int f, off_t mbroff, struct dos_partition **first, int *n)
 {
-	static int mbr[DEV_BSIZE / sizeof(int)];
-	struct dos_partition *dp;
+	static struct dos_partition res;
+	int mbr[DEV_BSIZE / sizeof(int)];
+	struct dos_partition *dp, *p;
 	u_int16_t signature;
+	u_int32_t start = 0;
 	int part;
+
+	/* Limit the number of recursions */
+	if (!(*n)--)
+		return (NULL);
 
 	/*
 	 * This must be done this way due to alignment restrictions
 	 * in for example mips processors.
 	 */
 	dp = (struct dos_partition *)mbr;
-	if (lseek(f, (off_t)DOSBBSECTOR * DEV_BSIZE, SEEK_SET) < 0 ||
+	if (lseek(f, (off_t)mbroff * DEV_BSIZE, SEEK_SET) < 0 ||
 	    read(f, mbr, sizeof(mbr)) != sizeof(mbr))
 		return (NULL);
 	signature = *((u_char *)mbr + DOSMBR_SIGNATURE_OFF) |
 	    (*((u_char *)mbr + DOSMBR_SIGNATURE_OFF + 1) << 8);
 	bcopy((char *)mbr+DOSPARTOFF, (char *)mbr, sizeof(*dp) * NDOSPART);
-
-	/*
-	 * Don't (yet) know disk geometry, use partition table to find OpenBSD
-	 * partition, and obtain disklabel from there.
-	 */
-	/* Check if table is valid. */
-	for (part = 0; part < NDOSPART; part++) {
-		if ((dp[part].dp_flag & ~0x80) != 0)
-			return (0);
-	}
-	/* Find OpenBSD partition. */
-	for (part = 0; part < NDOSPART; part++) {
-		if (letoh32(dp[part].dp_size) && dp[part].dp_typ == DOSPTYP_OPENBSD) {
-			fprintf(stderr, "# Inside MBR partition %d: "
-			    "type %02X start %u size %u\n",
-			    part, dp[part].dp_typ,
-			    letoh32(dp[part].dp_start), letoh32(dp[part].dp_size));
-			return (&dp[part]);
-		}
-	}
 
 	/*
 	 * If there is no signature and no OpenBSD partition this is probably
@@ -572,13 +558,69 @@ readmbr(int f)
 	if (signature != DOSMBR_SIGNATURE)
 		return (NULL);
 
-	/* If no OpenBSD partition, find first used partition. */
+	/*
+	 * Don't (yet) know disk geometry, use partition table to find OpenBSD
+	 * partition, and obtain disklabel from there.
+	 */
+	/* Check if table is valid. */
 	for (part = 0; part < NDOSPART; part++) {
-		if (letoh32(dp[part].dp_size)) {
-			warnx("warning, DOS partition table with no valid OpenBSD partition");
-			return (&dp[part]);
+		if ((dp[part].dp_flag & ~0x80) != 0)
+			return (NULL);
+	}
+	/* Find OpenBSD partition. */
+	for (part = 0; part < NDOSPART; part++) {
+		if (!letoh32(dp[part].dp_size))
+			continue;
+		if (first && *first == NULL) {
+			bcopy(&dp[part], &res, sizeof(struct dos_partition));
+			*first = &res;
+		}
+		switch (dp[part].dp_typ) {
+		case DOSPTYP_OPENBSD:
+			fprintf(stderr, "# Inside MBR partition %d: "
+			    "type %02X start %u size %u\n",
+			    part, dp[part].dp_typ,
+			    letoh32(dp[part].dp_start), letoh32(dp[part].dp_size));
+			bcopy(&dp[part], &res, sizeof(struct dos_partition));
+			res.dp_start =
+			    htole32((off_t)letoh32(res.dp_start) + mbroff);
+			return (&res);
+		case DOSPTYP_EXTEND:
+		case DOSPTYP_EXTENDL:
+			fprintf(stderr, "# Extended partition %d: "
+			    "type %02X start %u size %u\n",
+			    part, dp[part].dp_typ,
+			    letoh32(dp[part].dp_start), letoh32(dp[part].dp_size));
+			start = letoh32(dp[part].dp_start) + mbroff;
+			p = findopenbsd(f, start, NULL, n);
+			if (p != NULL)
+				return (p);
+			break;
 		}
 	}
+
+	return (NULL);
+}
+
+/*
+ * Fetch DOS partition table from disk.
+ */
+struct dos_partition *
+readmbr(int f)
+{
+	struct dos_partition *dp, *first = NULL;
+	int part, n = 8;
+
+	dp = findopenbsd(f, DOSBBSECTOR, &first, &n);
+	if (dp != NULL)
+		return (dp);
+
+	/* If no OpenBSD partition, find first used partition. */
+	if (first != NULL) {
+		warnx("warning, DOS partition table with no valid OpenBSD partition");
+		return (first);
+	}
+
 	/* Table appears to be empty. */
 	return (NULL);
 }
@@ -713,7 +755,7 @@ makebootarea(char *boot, struct disklabel *dp, int f)
 		/* XXX assume d_secsize is a power of two */
 		bootsize = (bootsize + dp->d_secsize-1) & ~(dp->d_secsize-1);
 		bootbuf = (char *)malloc((size_t)bootsize);
-		if (bootbuf == 0)
+		if (bootbuf == NULL)
 			err(4, "%s", xxboot);
 		if (read(b, bootbuf, bootsize) < 0) {
 			free(bootbuf);
@@ -901,17 +943,13 @@ display_partition(FILE *f, struct disklabel *lp, char **mp, int i,
 }
 
 void
-display(FILE *f, struct disklabel *lp, char **mp, char unit, int edit,
-    u_int64_t fr)
+display(FILE *f, struct disklabel *lp, char **mp, char unit, int all)
 {
 	int i, j;
 	double d;
 
 	unit = toupper(unit);
-	if (edit)
-		fprintf(f, "device: %s\n", specname);
-	else
-		fprintf(f, "# %s:\n", specname);
+	fprintf(f, "# %s:\n", specname);
 
 	if ((unsigned) lp->d_type < DKMAXTYPES)
 		fprintf(f, "type: %s\n", dktypenames[lp->d_type]);
@@ -919,14 +957,13 @@ display(FILE *f, struct disklabel *lp, char **mp, char unit, int edit,
 		fprintf(f, "type: %d\n", lp->d_type);
 	fprintf(f, "disk: %.*s\n", (int)sizeof(lp->d_typename), lp->d_typename);
 	fprintf(f, "label: %.*s\n", (int)sizeof(lp->d_packname), lp->d_packname);
-	if (!edit) {
-		fprintf(f, "flags:");
-		if (lp->d_flags & D_BADSECT)
-			fprintf(f, " badsect");
-		if (lp->d_flags & D_VENDOR)
-			fprintf(f, " vendor");
-		putc('\n', f);
-	}
+	fprintf(f, "flags:");
+	if (lp->d_flags & D_BADSECT)
+		fprintf(f, " badsect");
+	if (lp->d_flags & D_VENDOR)
+		fprintf(f, " vendor");
+	putc('\n', f);
+
 	fprintf(f, "bytes/sector: %u\n", lp->d_secsize);
 	fprintf(f, "sectors/track: %u\n", lp->d_nsectors);
 	fprintf(f, "tracks/cylinder: %u\n", lp->d_ntracks);
@@ -939,38 +976,30 @@ display(FILE *f, struct disklabel *lp, char **mp, char unit, int edit,
 		fprintf(f, "total bytes: %.*f%c\n", unit == 'B' ? 0 : 1,
 		    d, unit);
 
-	if (edit) {
-		d = scale(fr, unit, lp);
-		if (d < 0)
-			fprintf(f, "free sectors: %llu\n", fr);
-		else
-			fprintf(f, "free bytes: %.*f%c\n", unit == 'B' ? 0 : 1,
-			    d, unit);
-	}
 	fprintf(f, "rpm: %hu\n", lp->d_rpm);
-	if (!edit) {
-		fprintf(f, "interleave: %hu\n", lp->d_interleave);
-		fprintf(f, "trackskew: %hu\n", lp->d_trackskew);
-		fprintf(f, "cylinderskew: %hu\n", lp->d_cylskew);
-		fprintf(f, "headswitch: %u\t\t# microseconds\n",
-		    lp->d_headswitch);
-		fprintf(f, "track-to-track seek: %u\t# microseconds\n",
-		    lp->d_trkseek);
-		fprintf(f, "drivedata: ");
-		for (i = NDDATA - 1; i >= 0; i--)
-			if (lp->d_drivedata[i])
-				break;
-		if (i < 0)
-			i = 0;
-		for (j = 0; j <= i; j++)
-			fprintf(f, "%d ", lp->d_drivedata[j]);
-		fprintf(f, "\n");
+	fprintf(f, "interleave: %hu\n", lp->d_interleave);
+	fprintf(f, "trackskew: %hu\n", lp->d_trackskew);
+	fprintf(f, "cylinderskew: %hu\n", lp->d_cylskew);
+	fprintf(f, "headswitch: %u\t\t# microseconds\n",
+	    lp->d_headswitch);
+	fprintf(f, "track-to-track seek: %u\t# microseconds\n",
+	    lp->d_trkseek);
+	fprintf(f, "drivedata: ");
+	for (i = NDDATA - 1; i >= 0; i--)
+		if (lp->d_drivedata[i])
+			break;
+	if (i < 0)
+		i = 0;
+	for (j = 0; j <= i; j++)
+		fprintf(f, "%d ", lp->d_drivedata[j]);
+	fprintf(f, "\n");
+	if (all) {
+		fprintf(f, "\n%hu partitions:\n", lp->d_npartitions);
+		fprintf(f, "#    %16.16s %16.16s  fstype [fsize bsize  cpg]\n",
+		    "size", "offset");
+		for (i = 0; i < lp->d_npartitions; i++)
+			display_partition(f, lp, mp, i, unit);
 	}
-	fprintf(f, "\n%hu partitions:\n", lp->d_npartitions);
-	fprintf(f, "#    %16.16s %16.16s  fstype [fsize bsize  cpg]\n",
-	    "size", "offset");
-	for (i = 0; i < lp->d_npartitions; i++)
-		display_partition(f, lp, mp, i, unit);
 	fflush(f);
 }
 
@@ -987,7 +1016,7 @@ edit(struct disklabel *lp, int f)
 		warn("%s", tmpfil);
 		return (1);
 	}
-	display(fp, lp, NULL, 0, 0, 0);
+	display(fp, lp, NULL, 0, 1);
 	fprintf(fp, "\n# Notes:\n");
 	fprintf(fp,
 "# Up to 16 partitions are valid, named from 'a' to 'p'.  Partition 'a' is\n"
@@ -1187,6 +1216,8 @@ getasciilabel(FILE *f, struct disklabel *lp)
 				tp = word(cp);
 				if (!strcmp(cp, "badsect"))
 					v |= D_BADSECT;
+				else if (!strcmp(cp, "vendor"))
+					v |= D_VENDOR;
 				else {
 					warnx("line %d: bad flag: %s",
 					    lineno, cp);
@@ -1551,29 +1582,41 @@ setbootflag(struct disklabel *lp)
 {
 	struct partition *pp;
 	int i, errors = 0;
-	u_long boffset;
+	daddr64_t bend;
 	char part;
 
-	if (bootbuf == 0)
+	if (bootbuf == NULL)
 		return;
-	boffset = bootsize / lp->d_secsize;
+
+	bend = bootsize / lp->d_secsize;
 	for (i = 0; i < lp->d_npartitions; i++) {
-		part = 'a' + i;
+		if (i == RAW_PART)
+			/* It will *ALWAYS* overlap 'c'. */
+			continue;
 		pp = &lp->d_partitions[i];
 		if (DL_GETPSIZE(pp) == 0)
+			/* Partition is unused. */
 			continue;
-		if (boffset <= DL_GETPOFFSET(pp)) {
+		if (bend <= DL_GETPOFFSET(pp)) {
+			/* Boot blocks end before this partition starts. */
 			if (pp->p_fstype == FS_BOOT)
 				pp->p_fstype = FS_UNUSED;
-		} else if (pp->p_fstype != FS_BOOT) {
-			if (pp->p_fstype != FS_UNUSED) {
-				warnx("boot overlaps used partition %c", part);
-				errors++;
-			} else {
-				pp->p_fstype = FS_BOOT;
-				warnx("warning, boot overlaps partition %c, %s",
-				    part, "marked as FS_BOOT");
-			}
+			continue;
+		}
+		
+		part = 'a' + i;
+		switch (pp->p_fstype) {
+		case FS_BOOT:	/* Already marked. */
+			break;
+		case FS_UNUSED:	/* Mark. */
+			pp->p_fstype = FS_BOOT;
+			warnx("warning, boot overlaps partition %c, %s",
+			    part, "marked as FS_BOOT");
+			break;
+		default:
+			warnx("boot overlaps used partition %c", part);
+			errors++;
+			break;
 		}
 	}
 	if (errors)
@@ -1611,15 +1654,15 @@ usage(void)
 #endif
 
 	fprintf(stderr,
-	    "usage: disklabel [-c | -d | -t] [-v] [-p unit] disk\t(read)\n");
+	    "usage: disklabel [-c | -d | -t] [-v] [-p unit] disk\t\t(read)\n");
 	fprintf(stderr,
 	    "       disklabel -w [-c | -d] [-nv] disk disktype [packid]\t(write)\n");
 	fprintf(stderr,
 	    "       disklabel -e [-c | -d] [-nv] disk\t\t\t(edit)\n");
 	fprintf(stderr,
-	    "       disklabel -E [-c | -d] [-nv] [-f tempfile] disk\t(simple editor)\n");
+	    "       disklabel -E [-c | -d] [-nv] [-f tempfile] disk\t\t(simple editor)\n");
 	fprintf(stderr,
-	    "       disklabel -R [-nrv] disk protofile\t\t\t(restore)\n");
+	    "       disklabel -R [-nv] disk protofile\t\t\t(restore)\n");
 	fprintf(stderr,
 	    "       disklabel -N | -W [-nv] disk\t\t\t\t(protect)\n\n");
 	fprintf(stderr,

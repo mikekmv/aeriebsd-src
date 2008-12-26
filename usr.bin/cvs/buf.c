@@ -176,6 +176,17 @@ cvs_buf_putc(BUF *b, int c)
 }
 
 /*
+ * cvs_buf_puts()
+ *
+ * Wrapper function for constant strings to cvs_buf_append.
+ */
+void
+cvs_buf_puts(BUF *b, const char *str)
+{
+	cvs_buf_append(b, str, strlen(str));
+}
+
+/*
  * cvs_buf_getc()
  *
  * Return u_char at buffer position <pos>.

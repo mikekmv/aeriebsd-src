@@ -93,7 +93,6 @@
 	.import	esym, data
 	.import	curproc, data
 	.import cpu_info_primary, data
-	.import	want_resched, data
 	.import virtual_avail, data
 	.import	proc0, data
 	.import	proc0paddr, data
@@ -1480,7 +1479,7 @@ EXIT($dtlb_l)
 		/* fix prom mappings */		! \
 	extrd,s	r17, 46, 8, r1			! \
 	addi,<>	0x10, r1, r0			! \
-	depdi	0, 42, 8, r17			! \
+	depdi	0, 38, 4, r17			! \
 		/* weak ordering, dyn bp */	! \
 	depwi	1, 31, 2, r16			! \
 	depdi	0, 44, 30, r25			! \
@@ -2710,7 +2709,7 @@ LEAF_ENTRY(longjmp)
 	ldwm	4(arg0),sp	/* stack pointer, */
 
 	bv	0(rp)
-	copy	arg1,ret0	/* Move return value to where it belongs. */
+	ldi	1, ret0
 EXIT(longjmp)
 
 
@@ -2820,8 +2819,6 @@ kstack_check
 	nop
 kstack_ok
 #endif
-	ldil	L%want_resched, t4
-	stw	r0, R%want_resched(t4)
 
 	/* Record new proc. */
 	ldi	SONPROC, t1

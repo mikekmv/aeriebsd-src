@@ -1,5 +1,3 @@
-/* $OpenPackages$ */
-
 /* List of all keywords recognized by the make parser */
 #define COND_IF		"if"
 #define COND_IFDEF	"ifdef"

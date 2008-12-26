@@ -66,6 +66,13 @@
 #include "pcibios.h"
 #include "pci.h"
 
+#include "com.h"
+#if NCOM > 0
+#include <sys/tty.h>
+#include <dev/ic/comvar.h>
+#include <dev/ic/comreg.h>
+#endif
+
 struct bios_softc {
 	struct	device sc_dev;
 };
@@ -473,14 +480,22 @@ bios_getopt()
 			break;
 #endif
 		case BOOTARG_CONSDEV:
-			if (q->ba_size >= sizeof(bios_consdev_t))
-			{
-				bios_consdev_t *cdp = (bios_consdev_t*)q->ba_arg;
-#include "com.h"
-#include "pccom.h"
-#if NCOM + NPCCOM > 0
-				extern int comconsrate; /* isa/pccom.c */
-				comconsrate = cdp->conspeed;
+			if (q->ba_size >= sizeof(bios_consdev_t)) {
+				bios_consdev_t *cdp =
+				    (bios_consdev_t*)q->ba_arg;
+#if NCOM > 0
+				static const int ports[] =
+				    { 0x3f8, 0x2f8, 0x3e8, 0x2e8 };
+				int unit = minor(cdp->consdev);
+				if (major(cdp->consdev) == 8 && unit >= 0 &&
+				    unit < (sizeof(ports)/sizeof(ports[0]))) {
+					comconsunit = unit;
+					comconsaddr = ports[unit];
+					comconsrate = cdp->conspeed;
+
+					/* Probe the serial port this time. */
+					cninit();
+				}
 #endif
 #ifdef BIOS_DEBUG
 				printf(" console 0x%x:%d",

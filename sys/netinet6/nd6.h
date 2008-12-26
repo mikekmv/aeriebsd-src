@@ -54,6 +54,7 @@ struct	llinfo_nd6 {
 	struct timeout ln_timer_ch;
 };
 
+#define ND6_LLINFO_PURGE	-3
 #define ND6_LLINFO_NOSTATE	-2
 /*
  * We don't need the WAITDELETE state any more, but we keep the definition

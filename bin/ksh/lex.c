@@ -8,7 +8,7 @@
 #include <ctype.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: lex.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 /* Structure to keep track of the lexing state and the various pieces of info
@@ -166,10 +166,8 @@ yylex(int cf)
 				char **replace = NULL;
 
 				c2 = getsc();
-				if (c2 == '\0')
+				if (c2 == '\0' || c2 == ' ' || c2 == '\t')
 					;
-				else if (c2 == ' ' || c2 == '\t')
-					ungetsc(c2);
 				else if (c2 == '!')
 					replace = hist_get_newest(0);
 				else if (isdigit(c2) || c2 == '-' ||

@@ -29,6 +29,8 @@
  * SUCH DAMAGE.
  */
 
+#define RTADVD_USER     "_rtadvd"
+
 #define ALLNODES "ff02::1"
 #define ALLROUTERS_LINK "ff02::2"
 #define ALLROUTERS_SITE "ff05::2"

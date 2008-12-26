@@ -1,8 +1,3 @@
-#ifndef _MAKE_H_
-#define _MAKE_H_
-
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 1988, 1989, 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -38,6 +33,9 @@
  *
  *	from: @(#)make.h	8.3 (Berkeley) 6/13/95
  */
+
+#ifndef _MAKE_H_
+#define _MAKE_H_
 
 extern void Make_Update(GNode *);
 extern bool Make_Run(Lst);

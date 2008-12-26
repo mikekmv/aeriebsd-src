@@ -35,7 +35,7 @@
 #include "radeon_drv.h"
 #include "drm_pciids.h"
 
-void	radeon_configure(drm_device_t *);
+void	radeon_configure(struct drm_device *);
 
 int radeon_no_wb;
 
@@ -45,7 +45,7 @@ static drm_pci_id_list_t radeon_pciidlist[] = {
 };
 
 void
-radeon_configure(drm_device_t *dev)
+radeon_configure(struct drm_device *dev)
 {
 	dev->driver.buf_priv_size	= sizeof(drm_radeon_buf_priv_t);
 	dev->driver.load		= radeon_driver_load;
@@ -55,7 +55,9 @@ radeon_configure(drm_device_t *dev)
 	dev->driver.preclose		= radeon_driver_preclose;
 	dev->driver.postclose		= radeon_driver_postclose;
 	dev->driver.lastclose		= radeon_driver_lastclose;
-	dev->driver.vblank_wait		= radeon_driver_vblank_wait;
+	dev->driver.get_vblank_counter	= radeon_get_vblank_counter;
+	dev->driver.enable_vblank	= radeon_enable_vblank;
+	dev->driver.disable_vblank	= radeon_disable_vblank;
 	dev->driver.irq_preinstall	= radeon_driver_irq_preinstall;
 	dev->driver.irq_postinstall	= radeon_driver_irq_postinstall;
 	dev->driver.irq_uninstall	= radeon_driver_irq_uninstall;
@@ -91,9 +93,9 @@ radeon_probe(device_t dev)
 static int
 radeon_attach(device_t nbdev)
 {
-	drm_device_t *dev = device_get_softc(nbdev);
+	struct drm_device *dev = device_get_softc(nbdev);
 
-	bzero(dev, sizeof(drm_device_t));
+	bzero(dev, sizeof(struct drm_device));
 	radeon_configure(dev);
 	return drm_attach(nbdev, radeon_pciidlist);
 }
@@ -110,7 +112,7 @@ static device_method_t radeon_methods[] = {
 static driver_t radeon_driver = {
 	"drm",
 	radeon_methods,
-	sizeof(drm_device_t)
+	sizeof(struct drm_device)
 };
 
 extern devclass_t drm_devclass;
@@ -140,7 +142,7 @@ void
 radeondrm_attach(struct device *parent, struct device *self, void *aux)
 {
 	struct pci_attach_args *pa = aux;
-	drm_device_t *dev = (drm_device_t *)self;
+	struct drm_device *dev = (struct drm_device *)self;
 
 	radeon_configure(dev);
 	return drm_attach(parent, self, pa, radeon_pciidlist);
@@ -148,7 +150,7 @@ radeondrm_attach(struct device *parent, struct device *self, void *aux)
 
 #if defined(__OpenBSD__)
 struct cfattach radeondrm_ca = {
-        sizeof (drm_device_t), radeondrm_probe, radeondrm_attach, 
+        sizeof (struct drm_device), radeondrm_probe, radeondrm_attach, 
 	drm_detach, drm_activate
 }; 
 
@@ -159,8 +161,8 @@ struct cfdriver radeondrm_cd = {
 #ifdef _LKM
 CFDRIVER_DECL(radeondrm, DV_TTY, NULL);
 #else
-CFATTACH_DECL(radeondrm, sizeof(drm_device_t), radeondrm_probe, radeondrm_attach,
-	drm_detach, drm_activate);
+CFATTACH_DECL(radeondrm, sizeof(struct drm_device), radeondrm_probe,
+    radeondrm_attach, drm_detach, drm_activate);
 #endif
 #endif
 

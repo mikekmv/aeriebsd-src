@@ -32,7 +32,7 @@
 #if 0
 static const char sccsid[] = "@(#)cmd1.c	8.2 (Berkeley) 4/20/95";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: cmd1.c,v 1.1.1.1 2008/08/26 14:43:01 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -368,7 +368,8 @@ type1(int *msgvec, char *cmd, int doign, int page)
 		}
 		if (page || nlines > (*cp ? atoi(cp) : realscreenheight)) {
 			restoreterm = (tcgetattr(fileno(stdin), &tbuf) == 0);
-			obuf = Popen(value("PAGER"), "w");
+			cp = value("PAGER");
+			obuf = Popen(cp, "w");
 			if (obuf == NULL) {
 				warn("%s", cp);
 				obuf = stdout;

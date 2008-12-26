@@ -319,6 +319,8 @@
 /* Begin: PHY register values for the 5708S SerDes PHY */
 /*******************************************************/
 
+#define BRGPHY_5708S_BMCR_2500			0x20
+
 /* Autoneg Next Page Transmit 1 Regiser */
 #define BRGPHY_5708S_ANEG_NXT_PG_XMIT1		0x0B
 #define BRGPHY_5708S_ANEG_NXT_PG_XMIT1_25G	0x0001
@@ -331,10 +333,11 @@
 
 /* 5708S SerDes "Digital" Registers (page 0) */
 #define BRGPHY_5708S_PG0_1000X_CTL1		0x10
-#define BRGPHY_5708S_PG0_1000X_CTL1_AUTODET_EN	0x0010
 #define BRGPHY_5708S_PG0_1000X_CTL1_FIBER_MODE	0x0001
+#define BRGPHY_5708S_PG0_1000X_CTL1_AUTODET_EN	0x0010
 
 #define BRGPHY_5708S_PG0_1000X_STAT1		0x14
+#define BRGPHY_5708S_PG0_1000X_STAT1_SGMII	0x0001
 #define BRGPHY_5708S_PG0_1000X_STAT1_LINK	0x0002
 #define BRGPHY_5708S_PG0_1000X_STAT1_FDX	0x0004
 #define BRGPHY_5708S_PG0_1000X_STAT1_SPEED_MASK	0x0018
@@ -352,7 +355,10 @@
 
 /* 5708S SerDes "TX Misc" Registers (page 5) */
 #define BRGPHY_5708S_PG5_2500STATUS1		0x10
+
 #define BRGPHY_5708S_PG5_TXACTL1		0x15
+#define BRGPHY_5708S_PG5_TXACTL1_VCM		0x30
+
 #define BRGPHY_5708S_PG5_TXACTL3		0x17
 
 /*******************************************************/

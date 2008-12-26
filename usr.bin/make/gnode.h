@@ -1,7 +1,3 @@
-#ifndef GNODE_H
-#define GNODE_H
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -26,6 +22,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef GNODE_H
+#define GNODE_H
 
 #ifndef TIMESTAMP_TYPE
 #include "timestamp_t.h"

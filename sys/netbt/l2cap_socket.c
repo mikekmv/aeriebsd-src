@@ -100,7 +100,7 @@ int l2cap_recvspace = 4096;
  */
 int
 l2cap_usrreq(struct socket *up, int req, struct mbuf *m,
-    struct mbuf *nam, struct mbuf *ctl)
+    struct mbuf *nam, struct mbuf *ctl, struct proc *p)
 {
 	struct l2cap_channel *pcb = up->so_pcb;
 	struct sockaddr_bt *sa;

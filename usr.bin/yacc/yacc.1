@@ -31,7 +31,7 @@
 .\"
 .\"	from: @(#)yacc.1	5.7 (Berkeley) 7/30/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt YACC 1
 .Os
 .Sh NAME
@@ -42,14 +42,14 @@ parser generator
 .Sh SYNOPSIS
 .Nm yacc
 .Op Fl dlrtv
-.Op Fl b Ar prefix
+.Op Fl b Ar file_prefix
 .Op Fl o Ar output_file
 .Op Fl p Ar symbol_prefix
-.Ar filename
+.Ar file
 .Sh DESCRIPTION
 .Nm
-reads the grammar specification in the file
-.Ar filename
+reads the grammar specification in
+.Ar file
 and generates an
 .Tn LR(1)
 parser for it.
@@ -63,12 +63,12 @@ normally writes the parse tables and the driver routine to the file
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
-.It Fl b Ar prefix
+.It Fl b Ar file_prefix
 The
 .Fl b
 option changes the prefix prepended to the output file names to
 the string denoted by
-.Ar prefix .
+.Ar file_prefix .
 The default prefix is the character
 .Ar y .
 .It Fl d

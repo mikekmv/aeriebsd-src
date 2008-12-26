@@ -319,3 +319,9 @@ ENTRY(hv_pci_config_put)
 	ta	FAST_TRAP
 	retl
 	 stx	%o1, [%g5]
+
+ENTRY(hv_cpu_yield)
+	mov	CPU_YIELD, %o5
+	ta	FAST_TRAP
+	retl
+	 nop

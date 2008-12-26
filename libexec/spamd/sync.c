@@ -310,7 +310,7 @@ sync_recv(void)
 			    ntohs(tlv->st_length))
 				goto trunc;
 
-			ip.s_addr = (u_int32_t)ntohl(sg->sg_ip);
+			ip.s_addr = sg->sg_ip;
 			from = (char *)(sg + 1);
 			to = from + ntohs(sg->sg_from_length);
 			helo = to + ntohs(sg->sg_to_length);
@@ -335,7 +335,7 @@ sync_recv(void)
 			if (sizeof(*sd) != ntohs(tlv->st_length))
 				goto trunc;
 
-			ip.s_addr = (u_int32_t)ntohl(sd->sd_ip);
+			ip.s_addr = sd->sd_ip;
 			expire = ntohl(sd->sd_expire);
 			if (debug) {
 				fprintf(stderr, "%s(sync): "
@@ -356,7 +356,7 @@ sync_recv(void)
 			if (sizeof(*sd) != ntohs(tlv->st_length))
 				goto trunc;
 
-			ip.s_addr = (u_int32_t)ntohl(sd->sd_ip);
+			ip.s_addr = sd->sd_ip;
 			expire = ntohl(sd->sd_expire);
 			if (debug) {
 				fprintf(stderr, "%s(sync): "
@@ -423,11 +423,12 @@ sync_send(struct iovec *iov, int iovlen)
 void
 sync_update(time_t now, char *helo, char *ip, char *from, char *to)
 {
-	struct iovec iov[6];
+	struct iovec iov[7];
 	struct spam_synchdr hdr;
 	struct spam_synctlv_grey sg;
 	struct spam_synctlv_hdr end;
-	u_int16_t fromlen, tolen, helolen;
+	u_int16_t sglen, fromlen, tolen, helolen, padlen;
+	char pad[SPAM_ALIGNBYTES];
 	int i = 0;
 	HMAC_CTX ctx;
 	u_int hmac_len;
@@ -439,6 +440,7 @@ sync_update(time_t now, char *helo, char *ip, char *from, char *to)
 
 	bzero(&hdr, sizeof(hdr));
 	bzero(&sg, sizeof(sg));
+	bzero(&pad, sizeof(pad));
 
 	fromlen = strlen(from) + 1;
 	tolen = strlen(to) + 1;
@@ -447,12 +449,14 @@ sync_update(time_t now, char *helo, char *ip, char *from, char *to)
 	HMAC_CTX_init(&ctx);
 	HMAC_Init(&ctx, sync_key, strlen(sync_key), EVP_sha1());
 
+	sglen = sizeof(sg) + fromlen + tolen + helolen;
+	padlen = SPAM_ALIGN(sglen) - sglen;
+
 	/* Add SPAM sync packet header */
 	hdr.sh_version = SPAM_SYNC_VERSION;
 	hdr.sh_af = AF_INET;
-	hdr.sh_counter = sync_counter++;
-	hdr.sh_length = htons(sizeof(hdr) +
-	    sizeof(sg) + fromlen + tolen + helolen + sizeof(end));
+	hdr.sh_counter = htonl(sync_counter++);
+	hdr.sh_length = htons(sizeof(hdr) + sglen + padlen + sizeof(end));
 	iov[i].iov_base = &hdr;
 	iov[i].iov_len = sizeof(hdr);
 	HMAC_Update(&ctx, iov[i].iov_base, iov[i].iov_len);
@@ -460,9 +464,9 @@ sync_update(time_t now, char *helo, char *ip, char *from, char *to)
 
 	/* Add single SPAM sync greylisting entry */
 	sg.sg_type = htons(SPAM_SYNC_GREY);
-	sg.sg_length = htons(sizeof(sg) + fromlen + helolen + tolen);
+	sg.sg_length = htons(sglen + padlen);
 	sg.sg_timestamp = htonl(now);
-	sg.sg_ip = htonl((u_int32_t)inet_addr(ip));
+	sg.sg_ip = inet_addr(ip);
 	sg.sg_from_length = htons(fromlen);
 	sg.sg_to_length = htons(tolen);
 	sg.sg_helo_length = htons(helolen);
@@ -483,6 +487,11 @@ sync_update(time_t now, char *helo, char *ip, char *from, char *to)
 
 	iov[i].iov_base = helo;
 	iov[i].iov_len = helolen;
+	HMAC_Update(&ctx, iov[i].iov_base, iov[i].iov_len);
+	i++;
+
+	iov[i].iov_base = pad;
+	iov[i].iov_len = padlen;
 	HMAC_Update(&ctx, iov[i].iov_base, iov[i].iov_len);
 	i++;
 
@@ -524,7 +533,7 @@ sync_addr(time_t now, time_t expire, char *ip, u_int16_t type)
 	/* Add SPAM sync packet header */
 	hdr.sh_version = SPAM_SYNC_VERSION;
 	hdr.sh_af = AF_INET;
-	hdr.sh_counter = sync_counter++;
+	hdr.sh_counter = htonl(sync_counter++);
 	hdr.sh_length = htons(sizeof(hdr) + sizeof(sd) + sizeof(end));
 	iov[i].iov_base = &hdr;
 	iov[i].iov_len = sizeof(hdr);
@@ -536,7 +545,7 @@ sync_addr(time_t now, time_t expire, char *ip, u_int16_t type)
 	sd.sd_length = htons(sizeof(sd));
 	sd.sd_timestamp = htonl(now);
 	sd.sd_expire = htonl(expire);
-	sd.sd_ip = htonl((u_int32_t)inet_addr(ip));
+	sd.sd_ip = inet_addr(ip);
 	iov[i].iov_base = &sd;
 	iov[i].iov_len = sizeof(sd);
 	HMAC_Update(&ctx, iov[i].iov_base, iov[i].iov_len);

@@ -37,7 +37,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: newfs.c,v 1.1.1.1 2008/08/26 14:40:27 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -113,7 +113,6 @@ int	Nflag;			/* run without writing file system */
 int	Oflag = 1;		/* 0 = 4.3BSD ffs, 1 = 4.4BSD ffs, 2 = ffs2 */
 daddr64_t	fssize;			/* file system size */
 int	sectorsize;		/* bytes/sector */
-int	realsectorsize;		/* bytes/sector in hardware */
 int	fsize = 0;		/* fragment size */
 int	bsize = 0;		/* block size */
 int	maxfrgspercg = INT_MAX;	/* maximum fragments per cylinder group */
@@ -399,9 +398,13 @@ main(int argc, char *argv[])
 			fatal("%s: %s", special, strerror(errno));
 		if (fstat(fsi, &st) < 0)
 			fatal("%s: %s", special, strerror(errno));
-		if (!S_ISCHR(st.st_mode) && !mfs)
-			warnx(": %s: not a character-special device\n",
-			    special);
+		if (!mfs) {
+			if (S_ISBLK(st.st_mode))
+				fatal("%s: block device", special);
+			if (!S_ISCHR(st.st_mode))
+				warnx("%s: not a character-special device",
+				    special);
+		}
 		cp = strchr(argv[0], '\0') - 1;
 		if (cp == NULL || ((*cp < 'a' || *cp > ('a' + maxpartitions - 1))
 		    && !isdigit(*cp)))
@@ -454,20 +457,6 @@ havelabel:
 			maxbpg = MAXBLKPG_FFS2(bsize);
 	}
 	oldpartition = *pp;
-	realsectorsize = sectorsize;
-	if (sectorsize < DEV_BSIZE) {
-		int secperblk = DEV_BSIZE / sectorsize;
-
-		sectorsize = DEV_BSIZE;
-		fssize /= secperblk;
-		DL_SETPSIZE(pp, DL_GETPSIZE(pp) / secperblk);
-	} else if (sectorsize > DEV_BSIZE) {
-		int blkpersec = sectorsize / DEV_BSIZE;
-
-		sectorsize = DEV_BSIZE;
-		fssize *= blkpersec;
-		DL_SETPSIZE(pp, DL_GETPSIZE(pp) * blkpersec);
-	}
 #ifdef MFS
 	if (mfs) {
 		if (realpath(argv[1], node) == NULL)
@@ -481,10 +470,6 @@ havelabel:
 #endif
 
 	mkfs(pp, special, fsi, fso, mfsmode, mfsuid, mfsgid);
-	if (realsectorsize < DEV_BSIZE)
-		DL_SETPSIZE(pp, DL_GETPSIZE(pp) * DEV_BSIZE / realsectorsize);
-	else if (realsectorsize > DEV_BSIZE)
-		DL_SETPSIZE(pp, DL_GETPSIZE(pp) / realsectorsize / DEV_BSIZE);
 	if (!Nflag && memcmp(pp, &oldpartition, sizeof(oldpartition)))
 		rewritelabel(special, fso, lp);
 	if (!Nflag)
@@ -666,7 +651,7 @@ usage(void)
 	    fprintf(stderr,
 	        "usage: %s [-b block-size] [-c fragments-per-cylinder-group] "
 		"[-e maxbpg]\n"
-		"\t[-f frag-size] [-i bytes] [-m free space] [-o options] "
+		"\t[-f frag-size] [-i bytes] [-m free-space] [-o options] "
 		"[-P file]\n"
 		"\t[-s size] special node\n",
 		__progname);
@@ -676,7 +661,8 @@ usage(void)
 		"[-c fragments-per-cylinder-group] [-e maxbpg]\n"
 		"\t[-f frag-size] [-g avgfilesize] [-h avgfpdir] [-i bytes]\n"
 		"\t[-m free-space] [-O filesystem-format] [-o optimization]\n"
-		"\t[-S sector-size] [-s size] [-t fstype] special\n",
+		"\t[-S sector-size] [-s size] [-T disktype] [-t fstype] "
+		"special\n",
 		__progname);
 	}
 

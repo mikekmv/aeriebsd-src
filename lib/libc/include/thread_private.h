@@ -120,7 +120,6 @@ extern void *__THREAD_NAME(serv_mutex);
 /*
  * malloc lock/unlock prototypes and definitions
  */
-void	_thread_malloc_init(void);
 void	_thread_malloc_lock(void);
 void	_thread_malloc_unlock(void);
 
@@ -131,10 +130,6 @@ void	_thread_malloc_unlock(void);
 #define _MALLOC_UNLOCK()	do {					\
 					if (__isthreaded)		\
 						_thread_malloc_unlock();\
-				} while (0)
-#define _MALLOC_LOCK_INIT()	do {					\
-					if (__isthreaded)		\
-						_thread_malloc_init();\
 				} while (0)
 
 void	_thread_atexit_lock(void);

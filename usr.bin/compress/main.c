@@ -35,7 +35,7 @@ static const char license[] =
 #endif /* SMALL */
 
 #ifndef SMALL
-static const char main_rcsid[] = "$ABSD$";
+static const char main_rcsid[] = "$ABSD: main.c,v 1.1.1.1 2008/08/26 14:42:41 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -103,7 +103,6 @@ char *set_outfile(const char *, char *, size_t);
 void list_stats(const char *, const struct compressor *, struct z_info *);
 void verbose_info(const char *, off_t, off_t, u_int32_t);
 
-#define	OPTSTRING	"123456789ab:cdfghlLnNOo:qrS:tvV"
 const struct option longopts[] = {
 #ifndef SMALL
 	{ "ascii",	no_argument,		0, 'a' },
@@ -140,6 +139,11 @@ main(int argc, char *argv[])
 	char outfile[MAXPATHLEN], _infile[MAXPATHLEN], suffix[16];
 	char *nargv[512];	/* some estimate based on ARG_MAX */
 	int bits, ch, error, i, rc, cflag, oflag;
+	static const char *optstr[3] = {
+		"123456789ab:cdfghlLnNOo:qrS:tvV",
+		"cfhlNno:qrtv",
+		"fghqr"
+	};
 
 	bits = cflag = oflag = 0;
 	storename = -1;
@@ -156,13 +160,16 @@ main(int argc, char *argv[])
 #endif /* SMALL */
 
 	decomp = 0;
+	pmode = MODE_COMP;
 	if (!strcmp(p, "zcat")) {
 		decomp++;
 		cflag = 1;
+		pmode = MODE_CAT;
 	} else {
 		if (p[0] == 'u' && p[1] == 'n') {
 			p += 2;
 			decomp++;
+			pmode = MODE_DECOMP;
 		}
 
 		if (strcmp(p, "zip") &&
@@ -189,7 +196,7 @@ main(int argc, char *argv[])
 		argv = nargv;
 	}
 
-	while ((ch = getopt_long(argc, argv, OPTSTRING, longopts, NULL)) != -1)
+	while ((ch = getopt_long(argc, argv, optstr[pmode], longopts, NULL)) != -1)
 		switch(ch) {
 		case '1':
 		case '2':
@@ -888,9 +895,20 @@ verbose_info(const char *file, off_t compressed, off_t uncompressed,
 __dead void
 usage(int status)
 {
-	fprintf(stderr,
-	    "usage: %s [-123456789cdfghLlNnOqrtVv] [-b bits] [-o filename]\n"
-	    "\t[-S suffix] [file ...]\n",
-	    __progname);
+	switch (pmode) {
+	case MODE_COMP:
+		fprintf(stderr, "usage: %s [-123456789cdfghLlNnOqrtVv] "
+		    "[-b bits] [-o filename] [-S suffix]\n"
+		    "       %*s [file ...]\n",
+		    __progname, (int)strlen(__progname), "");
+		break;
+	case MODE_DECOMP:
+		fprintf(stderr, "usage: %s [-cfhlNnqrtv] [-o filename] "
+		    "[file ...]\n", __progname);
+		break;
+	case MODE_CAT:
+		fprintf(stderr, "usage: %s [-fghqr] [file ...]\n", __progname);
+		break;
+	}
 	exit(status);
 }

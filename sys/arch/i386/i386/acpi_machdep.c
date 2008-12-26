@@ -168,6 +168,7 @@ havebase:
 	return (1);
 }
 
+#ifndef SMALL_KERNEL
 void
 acpi_attach_machdep(struct acpi_softc *sc)
 {
@@ -181,3 +182,4 @@ acpi_attach_machdep(struct acpi_softc *sc)
 	acpiapm_kqfilter = acpikqfilter;
 	cpuresetfn = acpi_reset;
 }
+#endif /* SMALL_KERNEL */

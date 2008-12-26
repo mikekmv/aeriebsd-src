@@ -1,6 +1,8 @@
 
 SUBDIR=enc
 SUBDIR+=aesctr
+SUBDIR+=aesxts
+SUBDIR+=aes
 
 install:
 

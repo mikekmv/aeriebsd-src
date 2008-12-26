@@ -41,7 +41,8 @@ enum fp_type {
 };
 enum fp_rep {
 	SSH_FP_HEX,
-	SSH_FP_BUBBLEBABBLE
+	SSH_FP_BUBBLEBABBLE,
+	SSH_FP_RANDOMART
 };
 
 /* key is stored in external hardware */

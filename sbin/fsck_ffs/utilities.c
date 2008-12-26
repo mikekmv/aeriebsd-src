@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)utilities.c	8.1 (Berkeley) 6/5/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: utilities.c,v 1.1.1.1 2008/08/26 14:40:22 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -452,7 +452,7 @@ getpathname(char *namebuf, size_t namebuflen, ino_t curdir, ino_t ino)
 		return;
 	}
 	if (busy ||
-	    (statemap[curdir] != DSTATE && statemap[curdir] != DFOUND)) {
+	    (GET_ISTATE(curdir) != DSTATE && GET_ISTATE(curdir) != DFOUND)) {
 		(void)strlcpy(namebuf, "?", namebuflen);
 		return;
 	}

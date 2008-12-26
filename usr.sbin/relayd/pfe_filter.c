@@ -223,7 +223,11 @@ sync_table(struct relayd *env, struct rdr *rdr, struct table *table)
 
 	if (ioctl(env->sc_pf->dev, DIOCRSETADDRS, &io) == -1)
 		fatal("sync_table: cannot set address list");
-
+	if (rdr->conf.flags & F_STICKY) {
+		if (ioctl(env->sc_pf->dev, DIOCCLRSRCNODES, 0) == -1)
+			fatal("sync_table: cannot clear the tree of "
+			    "source tracking nodes");
+	}
 	free(addlist);
 
 	log_debug("sync_table: table %s: %d added, %d deleted, %d changed",
@@ -346,11 +350,13 @@ sync_ruleset(struct relayd *env, struct rdr *rdr, int enable)
 		memset(&pio, 0, sizeof(pio));
 		(void)strlcpy(rio.anchor, anchor, sizeof(rio.anchor));
 
-		if ((t->conf.flags & F_ROUTE) == 0) {
+		switch (t->conf.fwdmode) {
+		case FWD_NORMAL:
 			/* traditional redirection in the rdr-anchor */
 			rs = PF_RULESET_RDR;
 			rio.rule.action = PF_RDR;
-		} else {
+			break;
+		case FWD_ROUTE:
 			/* re-route with pf for DSR (direct server return) */
 			rs = PF_RULESET_FILTER;
 			rio.rule.action = PF_PASS;
@@ -358,12 +364,17 @@ sync_ruleset(struct relayd *env, struct rdr *rdr, int enable)
 			rio.rule.direction = PF_IN;
 			rio.rule.quick = 1; /* force first match */
 
-			/* XXX This should use a loose pf state handling */
+			/* Use sloppy state handling for half connections */
 			rio.rule.keep_state = PF_STATE_NORMAL;
-			rio.rule.timeout[PFTM_TCP_OPENING] =
-			    rdr->conf.timeout.tv_sec;
+			rio.rule.rule_flag = PFRULE_STATESLOPPY;
+			break;
+		default:
+			fatalx("sync_ruleset: invalid forward mode");
+			/* NOTREACHED */
 		}
 
+		rio.rule.timeout[PFTM_TCP_ESTABLISHED] =
+		    rdr->conf.timeout.tv_sec;
 		rio.ticket = env->sc_pf->pfte[rs].ticket;
 		if (ioctl(env->sc_pf->dev, DIOCBEGINADDRS, &pio) == -1)
 			fatal("sync_ruleset: cannot initialise address pool");
@@ -419,7 +430,8 @@ sync_ruleset(struct relayd *env, struct rdr *rdr, int enable)
 		if (ioctl(env->sc_pf->dev, DIOCADDRULE, &rio) == -1)
 			fatal("cannot add rule");
 		log_debug("sync_ruleset: rule added to %sanchor \"%s\"",
-		    rdr->table->conf.flags & F_ROUTE ? "" : "rdr-", anchor);
+		    rdr->table->conf.fwdmode == FWD_ROUTE ?
+		    "" : "rdr-", anchor);
 	}
 	if (transaction_commit(env) == -1)
 		log_warn("sync_ruleset: add rules transaction failed");
@@ -484,20 +496,20 @@ natlook(struct relayd *env, struct ctl_natlook *cnl)
 	case AF_INET:
 		in = (struct sockaddr_in *)&cnl->src;
 		out = (struct sockaddr_in *)&cnl->dst;
-		bcopy(&in->sin_addr, &pnl.saddr.addr8, in->sin_len);
+		bcopy(&in->sin_addr, &pnl.saddr.v4, sizeof(pnl.saddr.v4));
 		pnl.sport = in->sin_port;
-		bcopy(&out->sin_addr, &pnl.daddr.addr8, out->sin_len);
+		bcopy(&out->sin_addr, &pnl.daddr.v4, sizeof(pnl.daddr.v4));
 		pnl.dport = out->sin_port;
 		break;
 	case AF_INET6:
 		in6 = (struct sockaddr_in6 *)&cnl->src;
 		out6 = (struct sockaddr_in6 *)&cnl->dst;
-		bcopy(&in6->sin6_addr, &pnl.saddr.addr8, in6->sin6_len);
+		bcopy(&in6->sin6_addr, &pnl.saddr.v6, sizeof(pnl.saddr.v6));
 		pnl.sport = in6->sin6_port;
-		bcopy(&out6->sin6_addr, &pnl.daddr.addr8, out6->sin6_len);
+		bcopy(&out6->sin6_addr, &pnl.daddr.v6, sizeof(pnl.daddr.v6));
 		pnl.dport = out6->sin6_port;
 	}
-	pnl.proto = IPPROTO_TCP;
+	pnl.proto = cnl->proto;
 	pnl.direction = PF_IN;
 	cnl->in = 1;
 
@@ -505,7 +517,7 @@ natlook(struct relayd *env, struct ctl_natlook *cnl)
 		pnl.direction = PF_OUT;
 		cnl->in = 0;
 		if (ioctl(env->sc_pf->dev, DIOCNATLOOK, &pnl) == -1) {
-			log_debug("natlook: error");
+			log_debug("natlook: error: %s", strerror(errno));
 			return (-1);
 		}
 	}
@@ -520,17 +532,16 @@ natlook(struct relayd *env, struct ctl_natlook *cnl)
 	case AF_INET:
 		in = (struct sockaddr_in *)&cnl->rsrc;
 		out = (struct sockaddr_in *)&cnl->rdst;
-		bcopy(&pnl.rsaddr.addr8, &in->sin_addr, sizeof(in->sin_addr));
+		bcopy(&pnl.rsaddr.v4, &in->sin_addr, sizeof(in->sin_addr));
 		in->sin_port = pnl.rsport;
-		bcopy(&pnl.rdaddr.addr8, &out->sin_addr, sizeof(out->sin_addr));
+		bcopy(&pnl.rdaddr.v4, &out->sin_addr, sizeof(out->sin_addr));
 		out->sin_port = pnl.rdport;
 		break;
 	case AF_INET6:
 		in6 = (struct sockaddr_in6 *)&cnl->rsrc;
 		out6 = (struct sockaddr_in6 *)&cnl->rdst;
-		bcopy(&pnl.rsaddr.addr8, &in6->sin6_addr,
-		    sizeof(in6->sin6_addr));
-		bcopy(&pnl.rdaddr.addr8, &out6->sin6_addr,
+		bcopy(&pnl.rsaddr.v6, &in6->sin6_addr, sizeof(in6->sin6_addr));
+		bcopy(&pnl.rdaddr.v6, &out6->sin6_addr,
 		    sizeof(out6->sin6_addr));
 		break;
 	}

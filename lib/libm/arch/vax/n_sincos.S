@@ -31,8 +31,10 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: n_sincos.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
 #endif /* LIBM_SCCS */
+
+#include <machine/asm.h>
 
 /*
  *  This is the implementation of Peter Tang's double precision  
@@ -43,17 +45,13 @@
  *       sin() observed maximum error = 0.814 ulps
  *       cos() observed maximum error = 0.792 ulps
  *
- * double sin(arg)
- * double arg;
+ * double
+ * sin(double arg)
  * method: true range reduction to [-pi/4,pi/4], P. Tang  &  B. Corbett
  * S. McDonald, April 4,  1985
  */
 
-	.globl	_sin
-	.text
-	.align	1
-
-_sin:	.word	0xffc		# save r2-r11
+ENTRY(sin, R2|R3|R4|R5|R6|R7|R8|R9|R10|R11)
 	movq	4(ap),r0
 	bicw3	$0x807f,r0,r2
 	beql	1f		# if x is zero or reserved operand then return x
@@ -69,23 +67,20 @@ _sin:	.word	0xffc		# save r2-r11
 /*
  *  Entered by  sine    ; save  0  in  r4 .
  */
-	jsb	libm$argred
+	jsb	__libm_argred
 	movl	$0,r4
-	jsb	libm$sincos
+	jsb	__libm_sincos
 	bispsw	(sp)+
 1:	ret
 
 /*
- * double cos(arg)
- * double arg;
+ * double
+ * cos(double arg)
  * method: true range reduction to [-pi/4,pi/4], P. Tang  &  B. Corbett
  * S. McDonald, April 4,  1985
  */
-	.globl	_cos
-	.text
-	.align	1
 
-_cos:	.word	0xffc		# save r2-r11
+ENTRY(cos, R2|R3|R4|R5|R6|R7|R8|R9|R10|R11)
 	movq	4(ap),r0
 	bicw3	$0x7f,r0,r2
 	cmpw	$0x8000,r2
@@ -102,8 +97,8 @@ _cos:	.word	0xffc		# save r2-r11
 /*
  *  Entered by  cosine  ; save  1  in  r4 .
  */
-	jsb	libm$argred
+	jsb	__libm_argred
 	movl	$1,r4
-	jsb	libm$sincos
+	jsb	__libm_sincos
 	bispsw	(sp)+
 1:	ret

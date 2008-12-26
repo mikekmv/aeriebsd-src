@@ -35,7 +35,6 @@
 	.import boothowto, data
 	.import bootdev, data
 	.import esym, data
-	.import want_resched, data
 	.import proc0, data
 	.import proc0paddr, data
 
@@ -1456,7 +1455,7 @@ LEAF_ENTRY(longjmp)
 	ldd,ma	8(%arg0), %r27
 
 	bv	%r0(%rp)
-	copy	%arg1, %ret0
+	ldi	1, %ret0
 EXIT(longjmp)
 
 /*
@@ -1507,8 +1506,6 @@ kstack_check
 	nop
 kstack_ok
 #endif
-	ldil	L%want_resched, %r1
-	stw	%r0, R%want_resched(%r1)
 
 	/* Record new proc. */
 	ldi	SONPROC, %r1

@@ -843,6 +843,11 @@ conf_get_if(struct kif *kif)
 {
 	struct iface	*i;
 
+	if (kif->ifindex >= MAXVIFS) {
+		yyerror("interface %s index too large", kif->ifname);
+		return (NULL);
+	}
+
 	LIST_FOREACH(i, &conf->iface_list, entry)
 		if (i->ifindex == kif->ifindex) {
 			yyerror("interface %s already configured",

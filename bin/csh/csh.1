@@ -28,7 +28,7 @@
 .\"
 .\"	@(#)csh.1	8.2 (Berkeley) 1/21/94
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt CSH 1
 .Os
 .Sh NAME
@@ -1695,17 +1695,13 @@ that does not begin with a
 .Pp
 .It Ic history
 .It Ic history Ar n
-.It Ic history Fl r Ar n
 .It Ic history Fl h Ar n
+.It Ic history Fl r Ar n
 Displays the history event list; if
 .Ar n
 is given, only the
 .Ar n
 most recent events are printed.
-The
-.Fl r
-option reverses the order of printout to be most recent first
-instead of oldest first.
 The
 .Fl h
 option causes the history list to be printed without leading numbers.
@@ -1713,6 +1709,10 @@ This format produces files suitable for sourcing using the
 .Fl h
 option to
 .Ic source .
+The
+.Fl r
+option reverses the order of printout to be most recent first
+instead of oldest first.
 .Pp
 .It Ic if ( Ar expr ) No command
 If the specified expression evaluates to true, then the single

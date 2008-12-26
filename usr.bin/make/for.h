@@ -1,6 +1,3 @@
-#ifndef FOR_H
-#define FOR_H
-/*	$OpenPackages$ */
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -26,6 +23,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef FOR_H
+#define FOR_H
 
 /*
  * for

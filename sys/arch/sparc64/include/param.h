@@ -188,12 +188,14 @@ extern void	delay(unsigned int);
 
 extern int cputyp;
 
-#ifdef SUN4V
-#define CPU_ISSUN4V	(cputyp == CPU_SUN4V)
+#if defined (SUN4US) || defined (SUN4V)
 #define CPU_ISSUN4U	(cputyp == CPU_SUN4U)
+#define CPU_ISSUN4US	(cputyp == CPU_SUN4US)
+#define CPU_ISSUN4V	(cputyp == CPU_SUN4V)
 #else
-#define CPU_ISSUN4V	(0)
 #define CPU_ISSUN4U	(1)
+#define CPU_ISSUN4US	(0)
+#define CPU_ISSUN4V	(0)
 #endif
 
 #endif /* _LOCORE */
@@ -206,7 +208,8 @@ extern int cputyp;
 #define CPU_SUN4C	1
 #define CPU_SUN4M	2
 #define CPU_SUN4U	3
-#define CPU_SUN4V	4 
+#define CPU_SUN4US	4
+#define CPU_SUN4V	5 
 
 /*
  * On a sun4u machine, the page size is 8192.

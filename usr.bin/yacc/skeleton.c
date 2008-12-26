@@ -35,7 +35,7 @@
 #if 0
 static char sccsid[] = "@(#)skeleton.c	5.8 (Berkeley) 4/29/95";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: skeleton.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -61,9 +61,10 @@ char *banner[] =
     "#if __GNUC__ >= 2",
     "  __attribute__ ((unused))",
     "#endif /* __GNUC__ >= 2 */",
-    "  = \"$ABSD$\";",
+    "  = \"$ABSD: skeleton.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $\";",
     "#endif",
     "#include <stdlib.h>",
+    "#include <string.h>",
     "#define YYBYACC 1",
     "#define YYMAJOR 1",
     "#define YYMINOR 9",
@@ -344,7 +345,10 @@ char *body[] =
     "                YYPREFIX, yystate, yyn, yyrule[yyn]);",
     "#endif",
     "    yym = yylen[yyn];",
-    "    yyval = yyvsp[1-yym];",
+    "    if (yym)",
+    "        yyval = yyvsp[1-yym];",
+    "    else",
+    "        memset(&yyval, 0, sizeof yyval);",
     "    switch (yyn)",
     "    {",
     0

@@ -71,11 +71,13 @@ cvs_remove(int argc, char **argv)
 	cr.leavedir = NULL;
 	cr.flags = flags;
 
-	cr.fileproc = cvs_remove_force;
-	if (argc > 0)
-		cvs_file_run(argc, argv, &cr);
-	else
-		cvs_file_run(1, &arg, &cr);
+	if (force_remove == 1 && cvs_noexec == 0) {
+		cr.fileproc = cvs_remove_force;
+		if (argc > 0)
+			cvs_file_run(argc, argv, &cr);
+		else
+			cvs_file_run(1, &arg, &cr);
+	}
 
 	if (current_cvsroot->cr_method != CVS_METHOD_LOCAL) {
 		cvs_client_connect_to_server();
@@ -121,7 +123,7 @@ void
 cvs_remove_force(struct cvs_file *cf)
 {
 	if (cf->file_type != CVS_DIR) {
-		if (cf->fd != -1 && force_remove == 1 && cvs_noexec == 0) {
+		if (cf->fd != -1) {
 			if (unlink(cf->file_path) == -1)
 				fatal("cvs_remove_force: %s", strerror(errno));
 			(void)close(cf->fd);
@@ -165,10 +167,9 @@ cvs_remove_local(struct cvs_file *cf)
 		case FILE_REMOVE_ENTRY:
 			entlist = cvs_ent_open(cf->file_wd);
 			cvs_ent_remove(entlist, cf->file_name);
-			cvs_ent_close(entlist, ENT_SYNC);
 
 			(void)xsnprintf(buf, sizeof(buf), "%s/%s/%s%s",
-			    cf->file_path, CVS_PATH_CVSDIR, cf->file_name,
+			    cf->file_wd, CVS_PATH_CVSDIR, cf->file_name,
 			    CVS_DESCR_FILE_EXT);
 
 			(void)unlink(buf);
@@ -185,7 +186,7 @@ cvs_remove_local(struct cvs_file *cf)
 				    cf->file_name);
 			}
 			return;
-		default:
+		case FILE_LOST:
 			rcsnum_tostr(cf->file_ent->ce_rev, rbuf, sizeof(rbuf));
 
 			ctime_r(&cf->file_ent->ce_mtime, tbuf);
@@ -198,7 +199,8 @@ cvs_remove_local(struct cvs_file *cf)
 
 			entry = xmalloc(CVS_ENT_MAXLINELEN);
 			cvs_ent_line_str(cf->file_name, rbuf, tbuf,
-			    cf->file_ent->ce_opts ? : "", sticky, 0, 1,
+			    cf->file_ent->ce_opts ? 
+			    cf->file_ent->ce_opts : "", sticky, 0, 1,
 			    entry, CVS_ENT_MAXLINELEN);
 
 			if (cvs_server_active == 1) {
@@ -207,7 +209,6 @@ cvs_remove_local(struct cvs_file *cf)
 			} else {
 				entlist = cvs_ent_open(cf->file_wd);
 				cvs_ent_add(entlist, entry);
-				cvs_ent_close(entlist, ENT_SYNC);
 			}
 
 			xfree(entry);

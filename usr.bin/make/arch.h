@@ -1,7 +1,3 @@
-#ifndef ARCH_H
-#define ARCH_H
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -31,6 +27,9 @@
  * arch --
  *	Functions to manipulate libraries, archives and their members.
  */
+
+#ifndef ARCH_H
+#define ARCH_H
 
 #ifndef TIMESTAMP_TYPE
 #include "timestamp_t.h"

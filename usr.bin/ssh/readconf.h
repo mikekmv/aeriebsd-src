@@ -119,6 +119,7 @@ typedef struct {
 
 	char	*local_command;
 	int	permit_local_command;
+	int	visual_host_key;
 
 }       Options;
 

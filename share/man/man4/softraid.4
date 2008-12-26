@@ -14,7 +14,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: January 29 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt SOFTRAID 4
 .Os
 .Sh NAME
@@ -67,6 +67,12 @@ though at the cost of write speed.
 Unlike traditional RAID 1,
 .Nm
 supports the use of more than two disks in a RAID 1 setup.
+.It CRYPTO
+An
+.Em encrypting
+discipline.
+It encrypts data on a single disk to provide for data confidentiality.
+CRYPTO does not provide redundancy.
 .El
 .Pp
 A

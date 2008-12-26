@@ -29,7 +29,7 @@
 
 #if defined(LIBC_SCCS)
 	.rodata
-	.asciz "$ABSD$"
+	.asciz "$ABSD: Ovfork.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 /*
@@ -63,6 +63,6 @@ here:
 	jmp	(r2)
 
 err:
-	movl	r0,_errno
+	movl	r0,_C_LABEL(errno)
 	mnegl	$1,r0
 	jmp	(r2)

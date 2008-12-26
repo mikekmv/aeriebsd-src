@@ -8,6 +8,7 @@ maxusers	2
 option		RAMDISK_HOOKS
 option		MINIROOTSIZE=6144
 
+option		SUN4US
 option		SUN4V
 
 option		PCIVERBOSE
@@ -21,6 +22,7 @@ option		DST=0		# daylight saving time used by RTC
 option		SMALL_KERNEL
 option		NO_PROPOLICE
 option		FFS		# UFS
+option		FFS2		# UFS2
 option		NFSCLIENT	# Network File System client
 option		CD9660		# ISO 9660 + Rock Ridge file system
 option		UDF		# UDF (DVD) file system
@@ -38,6 +40,12 @@ config		bsd	root on rd0a
 # Main bus and CPU .. all systems.
 mainbus0 at root
 cpu0	at mainbus0
+ssm*	at mainbus0
+cpu0	at ssm?
+cmp*	at mainbus0
+cpu0	at cmp?
+core*	at cmp?
+cpu0	at core?
 
 # Bus types found on SPARC systems.
 sbus*	at mainbus0
@@ -48,6 +56,7 @@ fhc*	at mainbus0
 psycho*	at mainbus0
 pci*	at psycho?
 schizo*	at mainbus0
+schizo*	at ssm?
 pci*	at schizo?
 pyro*	at mainbus0
 pci*	at pyro?
@@ -58,6 +67,7 @@ ppb*	at pci?
 ebus*	at mainbus0
 ebus*	at pci?
 vbus0	at mainbus0
+sbbc*	at pci?
 
 # PCI Ethernet
 hme*	at pci?			# Sun Happy Meal 10/100

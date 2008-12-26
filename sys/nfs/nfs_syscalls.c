@@ -54,6 +54,7 @@
 #include <sys/filedesc.h>
 #include <sys/signalvar.h>
 #include <sys/kthread.h>
+#include <sys/queue.h>
 
 #include <sys/syscallargs.h>
 
@@ -70,8 +71,6 @@
 #include <nfs/nfsrtt.h>
 #include <nfs/nfs_var.h>
 
-void	nfsrv_zapsock(struct nfssvc_sock *);
-
 /* Global defs. */
 extern int32_t (*nfsrv3_procs[NFS_NPROCS])(struct nfsrv_descript *,
 						struct nfssvc_sock *,
@@ -82,7 +81,6 @@ extern int nfsrtton;
 extern struct nfsstats nfsstats;
 extern int nfsrvw_procrastinate;
 struct nfssvc_sock *nfs_udpsock;
-int nuidhash_max = NFS_MAXUIDHASH;
 int nfsd_waiting = 0;
 #ifdef NFSSERVER
 static int nfs_numnfsd = 0;
@@ -253,7 +251,6 @@ nfssvc_addsock(fp, mynam)
 	else {
 		slp = malloc(sizeof(struct nfssvc_sock), M_NFSSVC,
 		    M_WAITOK|M_ZERO);
-		TAILQ_INIT(&slp->ns_uidlruhead);
 		TAILQ_INSERT_TAIL(&nfssvc_sockhead, slp, ns_chain);
 	}
 	slp->ns_so = so;
@@ -291,10 +288,9 @@ nfssvc_nfsd(nsd, argp, p)
 	u_quad_t cur_usec;
 	struct timeval tv;
 
-#ifndef nolint
 	cacherep = RC_DOIT;
 	writes_todo = 0;
-#endif
+
 	s = splsoftnet();
 	if (nfsd == NULL) {
 		nsd->nsd_nfsd = nfsd = malloc(sizeof(struct nfsd), M_NFSD,
@@ -320,8 +316,7 @@ nfssvc_nfsd(nsd, argp, p)
 			}
 			if (nfsd->nfsd_slp == NULL &&
 			    (nfsd_head_flag & NFSD_CHECKSLP) != 0) {
-				for (slp = TAILQ_FIRST(&nfssvc_sockhead);
-				    slp != 0; slp = TAILQ_NEXT(slp, ns_chain)) {
+				TAILQ_FOREACH(slp, &nfssvc_sockhead, ns_chain) {
 				    if ((slp->ns_flag & (SLP_VALID | SLP_DOREC))
 					== (SLP_VALID | SLP_DOREC)) {
 					    slp->ns_flag &= ~SLP_DOREC;
@@ -390,32 +385,7 @@ nfssvc_nfsd(nsd, argp, p)
 		    else
 			nd->nd_nam = slp->ns_nam;
 
-		    /*
-		     * Check to see if authorization is needed.
-		     */
-		    if (nfsd->nfsd_flag & NFSD_NEEDAUTH) {
-			nfsd->nfsd_flag &= ~NFSD_NEEDAUTH;
-			nsd->nsd_haddr = mtod(nd->nd_nam,
-			    struct sockaddr_in *)->sin_addr.s_addr;
-			nsd->nsd_authlen = nfsd->nfsd_authlen;
-			nsd->nsd_verflen = nfsd->nfsd_verflen;
-			if (!copyout(nfsd->nfsd_authstr,nsd->nsd_authstr,
-				nfsd->nfsd_authlen) &&
-			    !copyout(nfsd->nfsd_verfstr, nsd->nsd_verfstr,
-				nfsd->nfsd_verflen) &&
-			    !copyout((caddr_t)nsd, argp, sizeof (*nsd))) {
-			    return (ENEEDAUTH);
-			}
-			cacherep = RC_DROPIT;
-		    } else
-			cacherep = nfsrv_getcache(nd, slp, &mreq);
-
-		    if (nfsd->nfsd_flag & NFSD_AUTHFAIL) {
-			    nfsd->nfsd_flag &= ~NFSD_AUTHFAIL;
-			    nd->nd_procnum = NFSPROC_NOOP;
-			    nd->nd_repstat = (NFSERR_AUTHERR | AUTH_TOOWEAK);
-			    cacherep = RC_DOIT;
-		    }
+		    cacherep = nfsrv_getcache(nd, slp, &mreq);
 		}
 
 		/*
@@ -450,6 +420,8 @@ nfssvc_nfsd(nsd, argp, p)
 			nfsstats.srvrpccnt[nd->nd_procnum]++;
 			nfsrv_updatecache(nd, TRUE, mreq);
 			nd->nd_mrep = (struct mbuf *)0;
+
+			/* FALLTHROUGH */
 		    case RC_REPLY:
 			m = mreq;
 			siz = 0;
@@ -553,7 +525,6 @@ void
 nfsrv_zapsock(slp)
 	struct nfssvc_sock *slp;
 {
-	struct nfsuid *nuidp, *nnuidp;
 	struct nfsrv_descript *nwp, *nnwp;
 	struct socket *so;
 	struct file *fp;
@@ -577,15 +548,6 @@ nfsrv_zapsock(slp)
 			n = m->m_nextpkt;
 			m_freem(m);
 			m = n;
-		}
-		for (nuidp = TAILQ_FIRST(&slp->ns_uidlruhead); nuidp != NULL;
-		    nuidp = nnuidp) {
-			nnuidp = TAILQ_NEXT(nuidp, nu_lru);
-			LIST_REMOVE(nuidp, nu_hash);
-			TAILQ_REMOVE(&slp->ns_uidlruhead, nuidp, nu_lru);
-			if (nuidp->nu_flag & NU_NAM)
-				m_freem(nuidp->nu_nam);
-			free((caddr_t)nuidp, M_NFSUID);
 		}
 		s = splsoftclock();
 		for (nwp = LIST_FIRST(&slp->ns_tq); nwp != NULL; nwp = nnwp) {
@@ -650,7 +612,6 @@ nfsrv_init(terminating)
 
 	nfs_udpsock =  malloc(sizeof(struct nfssvc_sock), M_NFSSVC,
 	    M_WAITOK|M_ZERO);
-	TAILQ_INIT(&nfs_udpsock->ns_uidlruhead);
 	TAILQ_INSERT_HEAD(&nfssvc_sockhead, nfs_udpsock, ns_chain);
 }
 
@@ -702,33 +663,42 @@ nfssvc_iod(p)
 	struct buf *bp, *nbp;
 	int i, myiod;
 	struct vnode *vp;
-	int error = 0, s;
+	int error = 0, s, bufcount;
 
-	/*
-	 * Assign my position or return error if too many already running
-	 */
+	bufcount = 256;	/* XXX: Big enough? sysctl, constant ? */
+
+	/* Assign my position or return error if too many already running. */
 	myiod = -1;
-	for (i = 0; i < NFS_MAXASYNCDAEMON; i++)
+	for (i = 0; i < NFS_MAXASYNCDAEMON; i++) {
 		if (nfs_asyncdaemon[i] == NULL) {
 			myiod = i;
 			break;
 		}
+	}
 	if (myiod == -1)
 		return (EBUSY);
+
 	nfs_asyncdaemon[myiod] = p;
 	nfs_numasync++;
-	/*
-	 * Just loop around doin our stuff until SIGKILL
-	 */
+
+	/* Upper limit on how many bufs we'll queue up for this iod. */
+	if (nfs_bufqmax > bcstats.numbufs / 4) {
+		nfs_bufqmax = bcstats.numbufs / 4; /* limit to 1/4 of bufs */
+		bufcount = 0;
+	}
+
+	nfs_bufqmax += bufcount;
+
+	/* Just loop around doin our stuff until SIGKILL. */
 	for (;;) {
 	    while (TAILQ_FIRST(&nfs_bufq) == NULL && error == 0) {
-		nfs_iodwant[myiod] = p;
-		error = tsleep((caddr_t)&nfs_iodwant[myiod],
+		    error = tsleep(&nfs_bufq,
 			PWAIT | PCATCH, "nfsidl", 0);
 	    }
 	    while ((bp = TAILQ_FIRST(&nfs_bufq)) != NULL) {
 		/* Take one off the front of the list */
 		TAILQ_REMOVE(&nfs_bufq, bp, b_freelist);
+		nfs_bufqlen--;
 		if (bp->b_flags & B_READ)
 		    (void) nfs_doio(bp, NULL);
 		else do {
@@ -740,13 +710,13 @@ nfssvc_iod(p)
 		     */
 		    vp = bp->b_vp;
 		    s = splbio();
-		    for (nbp = LIST_FIRST(&vp->v_dirtyblkhd); nbp != NULL;
-			nbp = LIST_NEXT(nbp, b_vnbufs)) {
+		    LIST_FOREACH(nbp, &vp->v_dirtyblkhd, b_vnbufs) {
 			if ((nbp->b_flags &
 			    (B_BUSY|B_DELWRI|B_NEEDCOMMIT|B_NOCACHE))!=B_DELWRI)
 			    continue;
 			bremfree(nbp);
-			nbp->b_flags |= (B_BUSY|B_ASYNC);
+			nbp->b_flags |= B_ASYNC;
+			buf_acquire(nbp);
 			break;
 		    }
 		    /*
@@ -766,6 +736,7 @@ nfssvc_iod(p)
 	    if (error) {
 		nfs_asyncdaemon[myiod] = NULL;
 		nfs_numasync--;
+		nfs_bufqmax -= bufcount;
 		return (error);
 	    }
 	}

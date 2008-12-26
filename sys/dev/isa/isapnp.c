@@ -573,7 +573,7 @@ isapnp_print(aux, str)
 
 /* isapnp_submatch():
  * Special case.
- * A lot of com/pccom devices do not have the PNPxxx identifiers
+ * A lot of com devices do not have the PNPxxx identifiers
  * they should have.  If it looks like a modem..... let's try it.
  */
 int
@@ -584,8 +584,7 @@ isapnp_com_submatch(parent, match, aux)
 	struct cfdata *cf = match;
 	struct isa_attach_args *ipa = aux;
 
-	if ((strcmp("com", cf->cf_driver->cd_name) == 0 ||
-	    strcmp("pccom", cf->cf_driver->cd_name) == 0) &&
+	if (strcmp("com", cf->cf_driver->cd_name) == 0 &&
 	    ipa->ipa_nio == 1 && ipa->ipa_nirq == 1 &&
 	    ipa->ipa_ndrq == 0 && ipa->ipa_nmem == 0 &&
 	    ipa->ipa_io[0].length == 8) {

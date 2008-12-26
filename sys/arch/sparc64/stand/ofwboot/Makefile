@@ -31,10 +31,7 @@ NEWVERSWHAT=	"OpenFirmware Boot"
 #
 # ELF64 defaults to 1MB
 #
-# We may get address conflicts with other bootloaders, say
-# Sun's ufsboot, so we'll pick a reasonably empty address.
-#
-RELOC=		800000
+RELOC=		100000
 
 ENTRY=		_start
 

@@ -53,36 +53,44 @@ extern struct imsgbuf *ibuf_pfe;
 extern int debug;
 
 struct relayd *env = NULL;
+struct shuffle relay_shuffle;
 
 int		 relay_udp_socket(struct sockaddr_storage *, in_port_t,
 		    struct protocol *);
 void		 relay_udp_request(struct session *);
 void		 relay_udp_timeout(int, short, void *);
 
-void		 relay_dns_log(struct session *, u_int8_t *);
-void		*relay_dns_validate(struct relay *, struct sockaddr_storage *,
+void		 relay_dns_log(struct session *, u_int8_t *, size_t);
+void		*relay_dns_validate(struct session *,
+		    struct relay *, struct sockaddr_storage *,
 		    u_int8_t *, size_t);
 int		 relay_dns_request(struct session *);
-void		 relay_dns_response(struct session *, u_int8_t *, size_t);
+void		 relay_udp_response(int, short, void *);
+void		 relay_dns_result(struct session *, u_int8_t *, size_t);
 int		 relay_dns_cmp(struct session *, struct session *);
 
 void
 relay_udp_privinit(struct relayd *x_env, struct relay *rlay)
 {
-	struct protocol		*proto = rlay->rl_proto;
-
 	if (env == NULL)
 		env = x_env;
 
 	if (rlay->rl_conf.flags & F_SSL)
 		fatalx("ssl over udp is not supported");
 	rlay->rl_conf.flags |= F_UDP;
+}
+
+void
+relay_udp_init(struct relay *rlay)
+{
+	struct protocol		*proto = rlay->rl_proto;
 
 	switch (proto->type) {
 	case RELAY_PROTO_DNS:
 		proto->validate = relay_dns_validate;
 		proto->request = relay_dns_request;
 		proto->cmp = relay_dns_cmp;
+		shuffle_init(&relay_shuffle);
 		break;
 	default:
 		fatalx("unsupported udp protocol");
@@ -162,6 +170,42 @@ relay_udp_socket(struct sockaddr_storage *ss, in_port_t port,
 }
 
 void
+relay_udp_response(int fd, short sig, void *arg)
+{
+	struct session		*con = (struct session *)arg;
+	struct relay		*rlay = con->se_relay;
+	struct protocol		*proto = rlay->rl_proto;
+	void			*priv = NULL;
+	struct sockaddr_storage	 ss;
+	u_int8_t		 buf[READ_BUF_SIZE];
+	ssize_t			 len;
+	socklen_t		 slen;
+
+	if (sig == EV_TIMEOUT) {
+		relay_udp_timeout(fd, sig, arg);
+		return;
+	}
+
+	if (relay_sessions >= RELAY_MAX_SESSIONS ||
+	    rlay->rl_conf.flags & F_DISABLE)
+		return;
+
+	slen = sizeof(ss);
+	if ((len = recvfrom(fd, buf, sizeof(buf), 0,
+	    (struct sockaddr*)&ss, &slen)) < 1)
+		return;
+
+	/* Parse and validate the packet header */
+	if (proto->validate != NULL &&
+	    (priv = (*proto->validate)(con, rlay, &ss, buf, len)) == NULL)
+		return;
+
+	relay_close(con, "unknown response");
+	if (priv != NULL)
+		free(priv);
+}
+
+void
 relay_udp_server(int fd, short sig, void *arg)
 {
 	struct relay *rlay = (struct relay *)arg;
@@ -184,9 +228,8 @@ relay_udp_server(int fd, short sig, void *arg)
 	    (struct sockaddr*)&ss, &slen)) < 1)
 		return;
 
-	/* Parse and validate the packet header */
 	if (proto->validate != NULL &&
-	    (priv = (*proto->validate)(rlay, &ss, buf, len)) == NULL)
+	    (priv = (*proto->validate)(NULL, rlay, &ss, buf, len)) == NULL)
 		return;
 
 	if ((con = (struct session *)
@@ -268,6 +311,7 @@ relay_udp_server(int fd, short sig, void *arg)
 		cnl->in = -1;
 		cnl->id = con->se_id;
 		cnl->proc = proc_id;
+		cnl->proto = IPPROTO_UDP;
 		bcopy(&con->se_in.ss, &cnl->src, sizeof(cnl->src));
 		bcopy(&rlay->rl_conf.ss, &cnl->dst, sizeof(cnl->dst));
 		imsg_compose(ibuf_pfe, IMSG_NATLOOK, 0, 0, -1, cnl,
@@ -327,9 +371,16 @@ struct relay_dnshdr {
 } __packed;
 
 void
-relay_dns_log(struct session *con, u_int8_t *buf)
+relay_dns_log(struct session *con, u_int8_t *buf, size_t len)
 {
 	struct relay_dnshdr	*hdr = (struct relay_dnshdr *)buf;
+
+	/* Validate the header length */
+	if (len < sizeof(*hdr)) {
+		log_debug("relay_dns_log: session %d: short dns packet",
+		    con->se_id);
+		return;
+	}
 
 	log_debug("relay_dns_log: session %d: %s id 0x%x "
 	    "flags 0x%x:0x%x qd %u an %u ns %u ar %u",
@@ -345,11 +396,11 @@ relay_dns_log(struct session *con, u_int8_t *buf)
 }
 
 void *
-relay_dns_validate(struct relay *rlay, struct sockaddr_storage *ss,
-    u_int8_t *buf, size_t len)
+relay_dns_validate(struct session *con, struct relay *rlay,
+    struct sockaddr_storage *ss, u_int8_t *buf, size_t len)
 {
 	struct relay_dnshdr	*hdr = (struct relay_dnshdr *)buf;
-	struct session		*con, lookup;
+	struct session		 lookup;
 	u_int16_t		 key;
 	struct relay_dns_priv	*priv, lpriv;
 
@@ -367,7 +418,7 @@ relay_dns_validate(struct relay *rlay, struct sockaddr_storage *ss,
 		priv = malloc(sizeof(struct relay_dns_priv));
 		if (priv == NULL)
 			return (NULL);
-		priv->dp_inkey = arc4random() & 0xffff;
+		priv->dp_inkey = shuffle_generate16(&relay_shuffle);
 		priv->dp_outkey = key;
 		return ((void *)priv);
 	}
@@ -376,12 +427,22 @@ relay_dns_validate(struct relay *rlay, struct sockaddr_storage *ss,
 	 * Lookup if this response is for a known session and if the
 	 * remote host matches the original destination of the request.
 	 */
-	lpriv.dp_inkey = key;
-	lookup.se_priv = &lpriv;
-	if ((con = SPLAY_FIND(session_tree,
-	    &rlay->rl_sessions, &lookup)) != NULL && con->se_priv != NULL &&
-	    relay_cmp_af(ss, &con->se_out.ss) == 0)
-		relay_dns_response(con, buf, len);
+	if (con == NULL) {
+		lpriv.dp_inkey = key;
+		lookup.se_priv = &lpriv;
+		if ((con = SPLAY_FIND(session_tree,
+		    &rlay->rl_sessions, &lookup)) != NULL &&
+		    con->se_priv != NULL &&
+		    relay_cmp_af(ss, &con->se_out.ss) == 0)
+			relay_dns_result(con, buf, len);
+	} else {
+		priv = (struct relay_dns_priv *)con->se_priv;
+		if (priv == NULL || key != priv->dp_inkey) {
+			relay_close(con, "invalid response");
+			return (NULL);
+		}
+		relay_dns_result(con, buf, len);
+	}
 
 	/*
 	 * This is not a new session, ignore it in the UDP server.
@@ -402,7 +463,7 @@ relay_dns_request(struct session *con)
 	if (buf == NULL || priv == NULL || len < 1)
 		return (-1);
 	if (debug)
-		relay_dns_log(con, buf);
+		relay_dns_log(con, buf, len);
 
 	if (gettimeofday(&con->se_tv_start, NULL))
 		return (-1);
@@ -415,7 +476,8 @@ relay_dns_request(struct session *con)
 		con->se_out.port = rlay->rl_conf.dstport;
 	}
 
-	if (relay_socket_af(&con->se_out.ss, con->se_out.port) == -1)
+	if ((con->se_out.s = relay_udp_socket(&con->se_out.ss,
+	    con->se_out.port, rlay->rl_proto)) == -1)
 		return (-1);
 	slen = con->se_out.ss.ss_len;
 
@@ -423,7 +485,7 @@ relay_dns_request(struct session *con)
 	hdr->dns_id = htons(priv->dp_inkey);
 
  retry:
-	if (sendto(rlay->rl_s, buf, len, 0,
+	if (sendto(con->se_out.s, buf, len, 0,
 	    (struct sockaddr *)&con->se_out.ss, slen) == -1) {
 		if (con->se_retry) {
 			con->se_retry--;
@@ -438,14 +500,14 @@ relay_dns_request(struct session *con)
 		return (-1);
 	}
 
-	event_again(&con->se_ev, con->se_out.s, EV_TIMEOUT,
-	    relay_udp_timeout, &con->se_tv_start, &env->sc_timeout, con);
+	event_again(&con->se_ev, con->se_out.s, EV_TIMEOUT|EV_READ,
+	    relay_udp_response, &con->se_tv_start, &env->sc_timeout, con);
 
 	return (0);
 }
 
 void
-relay_dns_response(struct session *con, u_int8_t *buf, size_t len)
+relay_dns_result(struct session *con, u_int8_t *buf, size_t len)
 {
 	struct relay		*rlay = (struct relay *)con->se_relay;
 	struct relay_dns_priv	*priv = (struct relay_dns_priv *)con->se_priv;
@@ -453,10 +515,10 @@ relay_dns_response(struct session *con, u_int8_t *buf, size_t len)
 	socklen_t		 slen;
 
 	if (priv == NULL)
-		fatalx("relay_dns_response: response to invalid session");
+		fatalx("relay_dns_result: response to invalid session");
 
 	if (debug)
-		relay_dns_log(con, buf);
+		relay_dns_log(con, buf, len);
 
 	/*
 	 * Replace the random DNS request Id with the original Id

@@ -18,7 +18,7 @@
 u_short	dkcksum(struct disklabel *);
 int	checklabel(struct disklabel *);
 double	scale(u_int64_t, char, struct disklabel *);
-void	display(FILE *, struct disklabel *, char **, char, int, u_int64_t);
+void	display(FILE *, struct disklabel *, char **, char, int);
 void	display_partition(FILE *, struct disklabel *, char **, int, char);
 
 struct disklabel *readlabel(int);

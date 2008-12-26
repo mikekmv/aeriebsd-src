@@ -1,5 +1,3 @@
-#ifndef STR_H
-#define STR_H
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -24,6 +22,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef STR_H
+#define STR_H
 
 /* pos = Str_rchri(str, end, c);
  *	strrchr on intervals.  */

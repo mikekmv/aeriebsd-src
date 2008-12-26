@@ -37,7 +37,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)ps.c	8.4 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: ps.c,v 1.1.1.1 2008/08/26 14:36:31 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -131,7 +131,7 @@ main(int argc, char *argv[])
 	memf = nlistf = swapf = NULL;
 	while ((ch = getopt(argc, argv,
 	    "acCeghjkLlM:mN:O:o:p:rSTt:U:uvW:wx")) != -1)
-		switch((char)ch) {
+		switch (ch) {
 		case 'a':
 			all = 1;
 			break;

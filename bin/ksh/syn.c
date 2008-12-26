@@ -7,7 +7,7 @@
 #include "c_test.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: syn.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 
 struct nesting_state {
@@ -367,6 +367,11 @@ get_command(int cf)
 	case TIME:
 		syniocf &= ~(KEYWORD|ALIAS);
 		t = pipeline(0);
+		if (t) {
+			t->str = alloc(2, ATEMP);
+			t->str[0] = '\0'; /* TF_* flags */
+			t->str[1] = '\0';
+		}
 		t = block(TTIME, t, NOBLOCK, NOWORDS);
 		break;
 

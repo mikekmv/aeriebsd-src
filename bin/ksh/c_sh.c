@@ -9,7 +9,7 @@
 #include <sys/resource.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: c_sh.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 static void p_time(struct shf *, int, struct timeval *, int, char *, char *);
@@ -722,7 +722,6 @@ timex(struct op *t, int f)
 	struct timeval usrtime, systime, tv0, tv1;
 	int tf = 0;
 	extern struct timeval j_usrtime, j_systime; /* computed by j_wait */
-	char opts[1];
 
 	gettimeofday(&tv0, NULL);
 	getrusage(RUSAGE_SELF, &ru0);
@@ -738,11 +737,9 @@ timex(struct op *t, int f)
 		 */
 		timerclear(&j_usrtime);
 		timerclear(&j_systime);
-		if (t->left->type == TCOM)
-			t->left->str = opts;
-		opts[0] = 0;
 		rv = execute(t->left, f | XTIME);
-		tf |= opts[0];
+		if (t->left->type == TCOM)
+			tf |= t->left->str[0];
 		gettimeofday(&tv1, NULL);
 		getrusage(RUSAGE_SELF, &ru1);
 		getrusage(RUSAGE_CHILDREN, &cru1);

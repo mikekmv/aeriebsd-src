@@ -108,7 +108,7 @@ struct pf_altq	*pfaltq_lookup(const char *);
 char		*rate2str(double);
 
 void	 print_addr(struct pf_addr_wrap *, sa_family_t, int);
-void	 print_host(struct pfsync_state_host *, sa_family_t, int);
+void	 print_host(struct pf_addr *, u_int16_t p, sa_family_t, int);
 void	 print_seq(struct pfsync_state_peer *);
 void	 print_state(struct pfsync_state *, int);
 int	 unmask(struct pf_addr *, sa_family_t);

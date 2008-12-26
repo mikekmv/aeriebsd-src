@@ -44,13 +44,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -66,7 +59,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ifconfig.c,v 1.1.1.1 2008/08/26 14:40:23 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -204,6 +197,8 @@ void	getifgroups(void);
 void	carp_status(void);
 void	setcarp_advbase(const char *,int);
 void	setcarp_advskew(const char *, int);
+void	setcarppeer(const char *, int);
+void	unsetcarppeer(const char *, int);
 void	setcarp_passwd(const char *, int);
 void	setcarp_vhid(const char *, int);
 void	setcarp_state(const char *, int);
@@ -335,6 +330,8 @@ const struct	cmd {
 	{ "-vlandev",	1,		0,		unsetvlandev },
 	{ "advbase",	NEXTARG,	0,		setcarp_advbase },
 	{ "advskew",	NEXTARG,	0,		setcarp_advskew },
+	{ "carppeer",	NEXTARG,	0,		setcarppeer },
+	{ "-carppeer",	1,		0,		unsetcarppeer },
 	{ "pass",	NEXTARG,	0,		setcarp_passwd },
 	{ "vhid",	NEXTARG,	0,		setcarp_vhid },
 	{ "state",	NEXTARG,	0,		setcarp_state },
@@ -3198,6 +3195,7 @@ carp_status(void)
 {
 	const char *state, *balmode;
 	struct carpreq carpr;
+	char peer[32];
 	int i;
 
 	memset((char *)&carpr, 0, sizeof(struct carpreq));
@@ -3214,6 +3212,12 @@ carp_status(void)
 	else
 		balmode = carp_bal_modes[carpr.carpr_balancing];
 
+	if (carpr.carpr_peer.s_addr != htonl(INADDR_CARP_GROUP))
+		snprintf(peer, sizeof(peer),
+		    " carppeer %s", inet_ntoa(carpr.carpr_peer));
+	else
+		peer[0] = '\0';
+
 	for (i = 0; carpr.carpr_vhids[i]; i++) {
 		if (carpr.carpr_states[i] > CARP_MAXSTATE)
 			state = "<UNKNOWN>";
@@ -3221,17 +3225,18 @@ carp_status(void)
 			state = carp_states[carpr.carpr_states[i]];
 		if (carpr.carpr_vhids[1] == 0) {
 			printf("\tcarp: %s carpdev %s vhid %u advbase %d "
-			    "advskew %u\n", state,
+			    "advskew %u%s\n", state,
 			    carpr.carpr_carpdev[0] != '\0' ?
 		    	    carpr.carpr_carpdev : "none", carpr.carpr_vhids[0],
-		    	    carpr.carpr_advbase, carpr.carpr_advskews[0]);
+		    	    carpr.carpr_advbase, carpr.carpr_advskews[0],
+			    peer);
 		} else {
 			if (i == 0) {
 				printf("\tcarp: carpdev %s advbase %d"
-				    " balancing %s\n",
+				    " balancing %s%s\n",
 				    carpr.carpr_carpdev[0] != '\0' ?
 				    carpr.carpr_carpdev : "none",
-				    carpr.carpr_advbase, balmode);
+				    carpr.carpr_advbase, balmode, peer);
 			}
 			printf("\t\tstate %s vhid %u advskew %u\n", state,
 			    carpr.carpr_vhids[i], carpr.carpr_advskews[i]);
@@ -3326,6 +3331,57 @@ setcarp_advbase(const char *val, int d)
 		err(1, "SIOCGVH");
 
 	carpr.carpr_advbase = advbase;
+
+	if (ioctl(s, SIOCSVH, (caddr_t)&ifr) == -1)
+		err(1, "SIOCSVH");
+}
+
+/* ARGSUSED */
+void
+setcarppeer(const char *val, int d)
+{
+	struct carpreq carpr;
+	struct addrinfo hints, *peerres;
+	int ecode;
+
+	memset((char *)&carpr, 0, sizeof(struct carpreq));
+	ifr.ifr_data = (caddr_t)&carpr;
+
+	if (ioctl(s, SIOCGVH, (caddr_t)&ifr) == -1)
+		err(1, "SIOCGVH");
+
+	bzero(&hints, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_DGRAM;
+
+	if ((ecode = getaddrinfo(val, NULL, &hints, &peerres)) != 0)
+		errx(1, "error in parsing address string: %s",
+		    gai_strerror(ecode));
+
+	if (peerres->ai_addr->sa_family != AF_INET)
+		errx(1, "only IPv4 addresses supported for the carppeer");
+
+	carpr.carpr_peer.s_addr = ((struct sockaddr_in *)
+	    peerres->ai_addr)->sin_addr.s_addr;
+
+	if (ioctl(s, SIOCSVH, (caddr_t)&ifr) == -1)
+		err(1, "SIOCSVH");
+
+	freeaddrinfo(peerres);
+}
+
+void
+unsetcarppeer(const char *val, int d)
+{
+	struct carpreq carpr;
+
+	bzero((char *)&carpr, sizeof(struct carpreq));
+	ifr.ifr_data = (caddr_t)&carpr;
+
+	if (ioctl(s, SIOCGVH, (caddr_t)&ifr) == -1)
+		err(1, "SIOCGVH");
+
+	bzero((char *)&carpr.carpr_peer, sizeof(carpr.carpr_peer));
 
 	if (ioctl(s, SIOCSVH, (caddr_t)&ifr) == -1)
 		err(1, "SIOCSVH");
@@ -3582,7 +3638,7 @@ pfsync_status(void)
 
 	if (preq.pfsyncr_syncdev[0] != '\0') {
 		printf("\tpfsync: syncdev: %s ", preq.pfsyncr_syncdev);
-		if (preq.pfsyncr_syncpeer.s_addr != INADDR_PFSYNC_GROUP)
+		if (preq.pfsyncr_syncpeer.s_addr != htonl(INADDR_PFSYNC_GROUP))
 			printf("syncpeer: %s ",
 			    inet_ntoa(preq.pfsyncr_syncpeer));
 		printf("maxupd: %d\n", preq.pfsyncr_maxupdates);
@@ -3787,7 +3843,7 @@ setspppkey(const char *val, int d)
 	if (auth->proto == 0)
 		errx(1, "unspecified protocol");
 	if (strlcpy((char *)auth->secret, val, AUTHKEYLEN) >= AUTHKEYLEN)
-		errx(1, "setspppname");
+		errx(1, "setspppkey");
 
 	spr.cmd = (int)SPPPIOSDEFS;
 	if (ioctl(s, SIOCSIFGENERIC, &ifr) == -1)
@@ -3952,6 +4008,7 @@ trunk_status(void)
 	struct trunk_protos tpr[] = TRUNK_PROTOS;
 	struct trunk_reqport rp, rpbuf[TRUNK_MAX_PORTS];
 	struct trunk_reqall ra;
+	struct lacp_opreq *lp;
 	const char *proto = "<unknown>";
 	int i, isport = 0;
 
@@ -3969,6 +4026,8 @@ trunk_status(void)
 	ra.ra_port = rpbuf;
 
 	if (ioctl(s, SIOCGTRUNK, &ra) == 0) {
+		lp = (struct lacp_opreq *)&ra.ra_lacpreq;
+
 		for (i = 0; i < (sizeof(tpr) / sizeof(tpr[0])); i++) {
 			if (ra.ra_proto == tpr[i].tpr_proto) {
 				proto = tpr[i].tpr_name;
@@ -3980,6 +4039,17 @@ trunk_status(void)
 		if (isport)
 			printf(" trunkdev %s", rp.rp_ifname);
 		putchar('\n');
+		if (ra.ra_proto == TRUNK_PROTO_LACP) {
+			printf("\ttrunk id: [(%04X,%s,%04X,%04X,%04X),\n"
+			    "\t\t (%04X,%s,%04X,%04X,%04X)]\n",
+			    lp->actor_prio,
+			    ether_ntoa((struct ether_addr*)lp->actor_mac),
+			    lp->actor_key, lp->actor_portprio, lp->actor_portno,
+			    lp->partner_prio,
+			    ether_ntoa((struct ether_addr*)lp->partner_mac),
+			    lp->partner_key, lp->partner_portprio,
+			    lp->partner_portno);
+		}
 
 		for (i = 0; i < ra.ra_ports; i++) {
 			printf("\t\ttrunkport %s ", rpbuf[i].rp_portname);

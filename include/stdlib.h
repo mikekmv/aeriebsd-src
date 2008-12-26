@@ -125,9 +125,9 @@ void	*malloc(size_t);
 void	 qsort(void *, size_t, size_t, int (*)(const void *, const void *));
 int	 rand(void);
 void	*realloc(void *, size_t);
-void	*recalloc(void *, size_t, size_t);
 void	 srand(unsigned);
 double	 strtod(const char *, char **);
+float	 strtof(const char *, char **);
 long	 strtol(const char *, char **, int);
 unsigned long
 	 strtoul(const char *, char **, int);
@@ -209,11 +209,7 @@ void	 unsetenv(const char *);
 #endif
 
 #if __BSD_VISIBLE
-#if defined(alloca) && (alloca == __builtin_alloca) && (__GNUC__ < 2)
-void  *alloca(int);     /* built-in for gcc */ 
-#else 
-void  *alloca(size_t); 
-#endif /* __GNUC__ */ 
+void	*alloca(size_t); 
 
 char	*getbsize(int *, long *);
 char	*cgetcap(char *, const char *, int);

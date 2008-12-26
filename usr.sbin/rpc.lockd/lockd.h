@@ -33,3 +33,5 @@
  */
 
 extern int debug_level;
+extern int grace_expired;
+void sigchild_handler(int);

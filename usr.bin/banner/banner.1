@@ -14,7 +14,7 @@
 .\"	Please send copies of changes and bug-fixes to:
 .\"	sjg@zen.void.oz.au
 .\"
-.Dd $Mdocdate: August 6 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt BANNER 1
 .Os
 .Sh NAME
@@ -30,15 +30,17 @@ prints up to 10 characters of each
 in large letters on the standard output.
 .Sh EXAMPLES
 The command
-.Ic banner openbsd
+.Ic banner humppa
 displays:
 .Bd -literal -offset indent
-  ####   #####   ######  #    #  #####    ####   #####
- #    #  #    #  #       ##   #  #    #  #       #    #
- #    #  #    #  #####   # #  #  #####    ####   #    #
- #    #  #####   #       #  # #  #    #       #  #    #
- #    #  #       #       #   ##  #    #  #    #  #    #
-  ####   #       ######  #    #  #####    ####   #####
+
+      #  ######  #    #  #    #  #    #    ##
+      #  #       ##   #  ##   #  #   #    #  #
+      #  #####   # #  #  # #  #  ####    #    #
+      #  #       #  # #  #  # #  #  #    ######
+ #    #  #       #   ##  #   ##  #   #   #    #
+  ####   ######  #    #  #    #  #    #  #    #
+
 .Ed
 .Sh SEE ALSO
 .Xr echo 1

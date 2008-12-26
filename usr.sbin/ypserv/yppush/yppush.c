@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: yppush.c,v 1.1.1.1 2008/08/26 14:44:40 root Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -65,7 +65,8 @@ extern bool_t xdr_ypreq_xfr(XDR *, struct ypreq_xfr *);
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: yppush [-d domainname] [-h host] [-v] mapname\n");
+	fprintf(stderr,
+	    "usage: yppush [-v] [-d domainname] [-h hostname] mapname\n");
 	exit(1);
 }
 

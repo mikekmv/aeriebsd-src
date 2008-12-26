@@ -44,10 +44,10 @@
 static struct termios _saved_tio;
 static int _in_raw_mode = 0;
 
-struct termios
+struct termios *
 get_saved_tio(void)
 {
-	return _saved_tio;
+	return _in_raw_mode ? &_saved_tio : NULL;
 }
 
 void

@@ -250,7 +250,7 @@ int	soo_kqfilter(struct file *fp, struct knote *kn);
 int 	soo_close(struct file *fp, struct proc *p);
 int	soo_stat(struct file *, struct stat *, struct proc *);
 int	uipc_usrreq(struct socket *, int , struct mbuf *,
-			 struct mbuf *, struct mbuf *);
+			 struct mbuf *, struct mbuf *, struct proc *);
 void	sbappend(struct sockbuf *sb, struct mbuf *m);
 void	sbappendstream(struct sockbuf *sb, struct mbuf *m);
 int	sbappendaddr(struct sockbuf *sb, struct sockaddr *asa,
@@ -274,7 +274,7 @@ int	sb_lock(struct sockbuf *sb);
 void	soinit(void);
 int	soabort(struct socket *so);
 int	soaccept(struct socket *so, struct mbuf *nam);
-int	sobind(struct socket *so, struct mbuf *nam);
+int	sobind(struct socket *so, struct mbuf *nam, struct proc *p);
 void	socantrcvmore(struct socket *so);
 void	socantsendmore(struct socket *so);
 int	soclose(struct socket *so);

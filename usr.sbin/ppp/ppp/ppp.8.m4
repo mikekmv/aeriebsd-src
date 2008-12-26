@@ -26,7 +26,7 @@ changecom(,)dnl
 .\" SUCH DAMAGE.
 .\"
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt PPP 8
 .Os
 .Sh NAME
@@ -2173,12 +2173,11 @@ set speed 115200
 .Pp
 The first serial port is cua00.
 The modem will attach at either
-.Xr com 4 ,
-.Xr pccom 4 ,
+.Xr com 4
 or
 .Xr ucom 4 .
 So, for example, if the modem attaches at
-.Dq pccom3 ,
+.Dq com3 ,
 device should be set to
 .Pa /dev/cua03 .
 .Pp
@@ -5481,8 +5480,8 @@ for
 .Ar gw .
 .Pp
 For example, a returned value of
-.Dq 3ffe:505:abcd::/48 ::
-would result in a routing table entry to the 3ffe:505:abcd::/48 network via
+.Dq 2001:db8:abcd::/48 ::
+would result in a routing table entry to the 2001:db8:abcd::/48 network via
 .Dv HISADDR6
 and a returned value of
 .Dq :: ::
@@ -6034,7 +6033,6 @@ This socket is used to pass links between different instances of
 .Xr syslog 3 ,
 .Xr uucplock 3 ,
 .Xr com 4 ,
-.Xr pccom 4 ,
 .Xr tun 4 ,
 .Xr ucom 4 ,
 .Xr crontab 5 ,

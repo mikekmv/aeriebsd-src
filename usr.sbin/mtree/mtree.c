@@ -38,7 +38,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)mtree.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: mtree.c,v 1.1.1.1 2008/08/26 14:44:24 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -168,6 +168,8 @@ static void
 usage(void)
 {
 	(void)fprintf(stderr,
-"usage: mtree [-cdeilnqrtUux] [-f spec] [-K key] [-k key] [-p path] [-s seed]\n");
+	    "usage: mtree [-cdeilnqrtUux] [-f spec] [-K keywords] "
+	    "[-k keywords] [-p path]\n"
+	    "             [-s seed]\n");
 	exit(1);
 }

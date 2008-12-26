@@ -195,7 +195,6 @@ int	 putline(FILE *, char *, int);
 int	 pversion(void *);
 int	 quit(void);
 int	 quitcmd(void *);
-int	 chraise(int);
 int	 readline(FILE *, char *, int, int *);
 void	 register_file(FILE *, int, pid_t);
 void	 regret(int);

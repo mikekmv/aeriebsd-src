@@ -37,7 +37,7 @@
 static const char sccsid[] = "@(#)popen.c	8.3 (Berkeley) 4/6/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: popen.c,v 1.1.1.1 2008/08/26 14:39:36 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -54,6 +54,8 @@ static const char rcsid[] =
 #include <unistd.h>
 
 #include <netinet/in.h>
+
+#include "monitor.h"
 #include "extern.h"
 
 /*

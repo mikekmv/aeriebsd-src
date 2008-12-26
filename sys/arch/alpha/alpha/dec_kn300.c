@@ -178,7 +178,7 @@ dec_kn300_cons_init()
 		/* display console ... */
 		/* XXX */
 		(void) pckbc_cnattach(&ccp->cc_iot, IO_KBD, KBCMDP,
-		    PCKBC_KBD_SLOT);
+		    PCKBC_KBD_SLOT, 0);
 
 		if (CTB_TURBOSLOT_TYPE(ctb->ctb_turboslot) ==
 		    CTB_TURBOSLOT_TYPE_ISA)

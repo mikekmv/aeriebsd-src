@@ -32,7 +32,7 @@
 #if 0
 static const char sccsid[] = "@(#)fio.c	8.2 (Berkeley) 4/20/95";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fio.c,v 1.1.1.1 2008/08/26 14:43:01 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -129,7 +129,7 @@ setptr(FILE *ibuf, off_t offset)
 
 		(void)fwrite(linebuf, sizeof(*linebuf), count, otf);
 		if (ferror(otf))
-			err(1, "/tmp");
+			err(1, "%s", pathbuf);
 		if (count && linebuf[count - 1] == '\n')
 			linebuf[count - 1] = '\0';
 		if (maybe && linebuf[0] == 'F' && ishead(linebuf)) {

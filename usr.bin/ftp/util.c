@@ -18,13 +18,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -69,7 +62,7 @@
  */
 
 #if !defined(lint) && !defined(SMALL)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: util.c,v 1.1.1.1 2008/08/26 14:42:48 root Exp $";
 #endif /* not lint and not SMALL */
 
 /*
@@ -126,26 +119,8 @@ setpeer(int argc, char *argv[])
 		port = gateport;
 	else
 		port = ftpport;
-#if 0
-	if (argc > 2) {
-		char *ep;
-		long nport;
-
-		nport = strtol(argv[2], &ep, 10);
-		if (nport < 1 || nport > USHRT_MAX || *ep != '\0') {
-			fprintf(ttyout, "%s: bad port number '%s'.\n",
-			    argv[1], argv[2]);
-			fprintf(ttyout, "usage: %s host-name [port]\n",
-			    argv[0]);
-			code = -1;
-			return;
-		}
-		port = htons((in_port_t)nport);
-	}
-#else
 	if (argc > 2)
 		port = argv[2];
-#endif
 
 	if (gatemode) {
 		if (gateserver == NULL || *gateserver == '\0')
@@ -197,7 +172,9 @@ setpeer(int argc, char *argv[])
  * system and not checking this out. This way they have to think about it.
  */
 		overbose = verbose;
-		if (debug == 0)
+#ifndef SMALL
+		if (!debug)
+#endif /* !SMALL */
 			verbose = -1;
 		if (command("SYST") == COMPLETE && overbose) {
 			char *cp, c;
@@ -258,7 +235,7 @@ ftp_login(const char *host, char *user, char *pass)
 			return (0);
 		}
 	}
-#endif
+#endif /* !SMALL */
 
 	/*
 	 * Set up arguments for an anonymous FTP session, if necessary.
@@ -314,6 +291,8 @@ tryagain:
 			if (tmp[0] != '\0')
 				user = tmp;
 		}
+		else
+			exit(0);
 	}
 	n = command("USER %s", user);
 	if (n == CONTINUE) {
@@ -367,8 +346,10 @@ another(int *pargc, char ***pargv, const char *prompt)
 	}
 	fprintf(ttyout, "(%s) ", prompt);
 	line[len++] = ' ';
-	if (fgets(&line[len], (int)(sizeof(line) - len), stdin) == NULL)
+	if (fgets(&line[len], (int)(sizeof(line) - len), stdin) == NULL) {
+		clearerr(stdin);
 		intr();
+	}
 	len += strlen(&line[len]);
 	if (len > 0 && line[len - 1] == '\n')
 		line[len - 1] = '\0';
@@ -383,22 +364,24 @@ another(int *pargc, char ***pargv, const char *prompt)
  * glob files given in argv[] from the remote server.
  * if errbuf isn't NULL, store error messages there instead
  * of writing to the screen.
+ * if type isn't NULL, use LIST instead of NLST, and store filetype.
+ * 'd' means directory, 's' means symbolic link, '-' means plain
+ * file.
  */
 char *
-remglob(char *argv[], int doswitch, char **errbuf)
+remglob2(char *argv[], int doswitch, char **errbuf, FILE **ftemp, char *type)
 {
-	char temp[MAXPATHLEN], *cp, *lmode;
+	char temp[MAXPATHLEN], *bufp, *cp, *lmode;
 	static char buf[MAXPATHLEN], **args;
-	static FILE *ftemp = NULL;
 	int oldverbose, oldhash, fd;
 
 	if (!mflag) {
 		if (!doglob)
 			args = NULL;
 		else {
-			if (ftemp) {
-				(void)fclose(ftemp);
-				ftemp = NULL;
+			if (*ftemp) {
+				(void)fclose(*ftemp);
+				*ftemp = NULL;
 			}
 		}
 		return (NULL);
@@ -410,7 +393,7 @@ remglob(char *argv[], int doswitch, char **errbuf)
 			args = NULL;
 		return (cp);
 	}
-	if (ftemp == NULL) {
+	if (*ftemp == NULL) {
 		int len;
 
 		if ((cp = getenv("TMPDIR")) == NULL || *cp == '\0')
@@ -438,7 +421,8 @@ remglob(char *argv[], int doswitch, char **errbuf)
 		if (doswitch)
 			pswitch(!proxy);
 		for (lmode = "w"; *++argv != NULL; lmode = "a")
-			recvrequest("NLST", temp, *argv, lmode, 0, 0);
+			recvrequest(type ? "LIST" : "NLST", temp, *argv, lmode,
+			    0, 0);
 		if ((code / 100) != COMPLETE) {
 			if (errbuf != NULL)
 				*errbuf = reply_string;
@@ -447,9 +431,9 @@ remglob(char *argv[], int doswitch, char **errbuf)
 			pswitch(!proxy);
 		verbose = oldverbose;
 		hash = oldhash;
-		ftemp = fopen(temp, "r");
+		*ftemp = fopen(temp, "r");
 		(void)unlink(temp);
-		if (ftemp == NULL) {
+		if (*ftemp == NULL) {
 			if (errbuf == NULL)
 				fputs("can't find list of remote files, oops.\n",
 				    ttyout);
@@ -459,15 +443,36 @@ remglob(char *argv[], int doswitch, char **errbuf)
 			return (NULL);
 		}
 	}
-	if (fgets(buf, sizeof(buf), ftemp) == NULL) {
-		(void)fclose(ftemp);
-		ftemp = NULL;
+again:
+	if (fgets(buf, sizeof(buf), *ftemp) == NULL) {
+		(void)fclose(*ftemp);
+		*ftemp = NULL;
 		return (NULL);
 	}
 
 	buf[strcspn(buf, "\n")] = '\0';
+	bufp = buf;
 
-	return (buf);
+#ifndef SMALL
+	if (type) {
+		parse_list(&bufp, type);
+		if (!bufp)
+			goto again;
+	}
+#endif /* !SMALL */
+
+	return (bufp);
+}
+
+/*
+ * wrapper for remglob2
+ */
+char *
+remglob(char *argv[], int doswitch, char **errbuf)
+{
+	static FILE *ftemp = NULL;
+
+	return remglob2(argv, doswitch, errbuf, &ftemp, NULL);
 }
 
 int
@@ -475,29 +480,48 @@ confirm(const char *cmd, const char *file)
 {
 	char str[BUFSIZ];
 
-	if (!interactive || confirmrest)
+	if (file && (confirmrest || !interactive))
 		return (1);
 top:
-	fprintf(ttyout, "%s %s? ", cmd, file);
+	if (file)
+		fprintf(ttyout, "%s %s? ", cmd, file);
+	else
+		fprintf(ttyout, "Continue with %s? ", cmd);
 	(void)fflush(ttyout);
 	if (fgets(str, sizeof(str), stdin) == NULL)
-		return (0);
+		goto quit;
 	switch (tolower(*str)) {
+		case '?':
+			fprintf(ttyout,
+			    "?	help\n"
+			    "a	answer yes to all\n"
+			    "n	answer no\n"
+			    "p	turn off prompt mode\n"
+			    "q	answer no to all\n"
+			    "y	answer yes\n");
+			goto top;
+		case 'a':
+			confirmrest = 1;
+			fprintf(ttyout, "Prompting off for duration of %s.\n",
+			    cmd);
+			break;
 		case 'n':
 			return (0);
 		case 'p':
 			interactive = 0;
 			fputs("Interactive mode: off.\n", ttyout);
 			break;
-		case 'a':
-			confirmrest = 1;
-			fprintf(ttyout, "Prompting off for duration of %s.\n", cmd);
-			break;
+		case 'q':
+quit:
+			mflag = 0;
+			clearerr(stdin);
+			return (0);
 		case 'y':
 			return(1);
 			break;
 		default:
-			fprintf(ttyout, "n, y, p, a, are the only acceptable commands!\n");
+			fprintf(ttyout, "?, a, n, p, q, y "
+			    "are the only acceptable commands!\n");
 			goto top;
 			break;
 	}
@@ -548,7 +572,9 @@ remotesize(const char *file, int noisy)
 
 	overbose = verbose;
 	size = -1;
-	if (debug == 0)
+#ifndef SMALL
+	if (!debug)
+#endif /* !SMALL */
 		verbose = -1;
 	if (command("SIZE %s", file) == COMPLETE) {
 		char *cp, *ep;
@@ -560,7 +586,11 @@ remotesize(const char *file, int noisy)
 			if (*ep != '\0' && !isspace(*ep))
 				size = -1;
 		}
-	} else if (noisy && debug == 0) {
+	} else if (noisy
+#ifndef SMALL
+	    && !debug
+#endif /* !SMALL */
+	    ) {
 		fputs(reply_string, ttyout);
 		fputc('\n', ttyout);
 	}
@@ -581,7 +611,9 @@ remotemodtime(const char *file, int noisy)
 	overbose = verbose;
 	ocode = code;
 	rtime = -1;
-	if (debug == 0)
+#ifndef SMALL
+	if (!debug)
+#endif /* !SMALL */
 		verbose = -1;
 	if (command("MDTM %s", file) == COMPLETE) {
 		struct tm timebuf;
@@ -617,11 +649,19 @@ remotemodtime(const char *file, int noisy)
 		timebuf.tm_year = yy - TM_YEAR_BASE;
 		timebuf.tm_isdst = -1;
 		rtime = mktime(&timebuf);
-		if (rtime == -1 && (noisy || debug != 0))
+		if (rtime == -1 && (noisy
+#ifndef SMALL
+		    || debug
+#endif /* !SMALL */
+		    ))
 			fprintf(ttyout, "Can't convert %s to a time.\n", reply_string);
 		else
 			rtime += timebuf.tm_gmtoff;	/* conv. local -> GMT */
-	} else if (noisy && debug == 0) {
+	} else if (noisy
+#ifndef SMALL
+	    && !debug
+#endif /* !SMALL */
+	    ) {
 		fputs(reply_string, ttyout);
 		fputc('\n', ttyout);
 	}

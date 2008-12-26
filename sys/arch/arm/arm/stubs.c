@@ -49,6 +49,7 @@
 #include <sys/core.h>
 #include <sys/kcore.h>
 #include <uvm/uvm_extern.h>
+#include <uvm/uvm_swap.h>
 #include <machine/bootconfig.h>
 #include <machine/cpu.h>
 #include <machine/intr.h>
@@ -152,6 +153,10 @@ dumpsys()
 	}
 	printf("\ndumping to dev %u,%u offset %ld\n", major(dumpdev),
 	    minor(dumpdev), dumplo);
+
+#ifdef UVM_SWAP_ENCRYPT
+	uvm_swap_finicrypt_all();
+#endif
 
 	blkno = dumplo;
 	dumpspace = (vaddr_t) memhook;

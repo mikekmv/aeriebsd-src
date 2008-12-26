@@ -1,5 +1,3 @@
-#ifndef VARNAME_H
-#define VARNAME_H
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -29,6 +27,9 @@
  * 	Handles variable names in recursive situations, e.g.,
  *	to expand ${A${BC}}.
  */
+
+#ifndef VARNAME_H
+#define VARNAME_H
 
 /* Used to store temporary names, e.g., after $ expansion. */
 struct Name {

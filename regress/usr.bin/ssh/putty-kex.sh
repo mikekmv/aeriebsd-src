@@ -5,8 +5,6 @@ tid="putty KEX"
 DATA=/bin/ls
 COPY=${OBJ}/copy
 
-set -e
-
 if test "x$REGRESS_INTEROP_PUTTY" != "xyes" ; then
 	fatal "putty interop tests not enabled"
 fi

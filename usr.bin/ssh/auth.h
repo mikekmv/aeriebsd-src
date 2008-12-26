@@ -142,8 +142,7 @@ int	verify_response(Authctxt *, const char *);
 char	*authorized_keys_file(struct passwd *);
 char	*authorized_keys_file2(struct passwd *);
 
-int
-secure_filename(FILE *, const char *, struct passwd *, char *, size_t);
+FILE	*auth_openkeyfile(const char *, struct passwd *, int);
 
 HostStatus
 check_key_in_hostfiles(struct passwd *, Key *, const char *,

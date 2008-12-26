@@ -89,6 +89,8 @@ struct in6_ifextra {
 	struct in6_ifstat *in6_ifstat;
 	struct icmp6_ifstat *icmp6_ifstat;
 	struct nd_ifinfo *nd_ifinfo;
+	int nprefixes;
+	int ndefrouters;
 };
 
 struct	in6_ifaddr {
@@ -584,6 +586,8 @@ void	in6_createmkludge(struct ifnet *);
 void	in6_purgemkludge(struct ifnet *);
 struct in6_ifaddr *in6ifa_ifpforlinklocal(struct ifnet *, int);
 struct in6_ifaddr *in6ifa_ifpwithaddr(struct ifnet *, struct in6_addr *);
+struct in6_ifaddr *in6ifa_ifplocaladdr(const struct ifnet *,
+	     const struct in6_addr *);
 char	*ip6_sprintf(struct in6_addr *);
 int	in6_addr2scopeid(struct ifnet *, struct in6_addr *);
 int	in6_matchlen(struct in6_addr *, struct in6_addr *);

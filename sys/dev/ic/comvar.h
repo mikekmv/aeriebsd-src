@@ -179,4 +179,5 @@ extern int comconsinit;
 extern int comconsattached;
 extern bus_space_tag_t comconsiot;
 extern bus_space_handle_t comconsioh;
+extern int comconsunit;
 extern tcflag_t comconscflag;

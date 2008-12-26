@@ -173,6 +173,9 @@ cvsroot_get(const char *dir)
 	if (cvs_server_active == 1)
 		return cvsroot_parse(dir);
 
+	if (cvs_cmdop == CVS_OP_IMPORT)
+		return NULL;
+
 	(void)xsnprintf(rootpath, MAXPATHLEN, "%s/%s", dir, CVS_PATH_ROOTSPEC);
 
 	if ((fp = fopen(rootpath, "r")) == NULL) {

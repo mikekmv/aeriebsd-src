@@ -1,5 +1,8 @@
 
-NOMAN=
+.include "${.CURDIR}/../Makefile.inc"
+
+MAN=	boot.8
+MLINKS=	boot.8 boot.conf.5
 
 .if ${MACHINE} == "armish"
 PROG=		boot

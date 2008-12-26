@@ -44,7 +44,9 @@ int	acpiprt_match(struct device *, void *, void *);
 void	acpiprt_attach(struct device *, struct device *, void *);
 int	acpiprt_getirq(union acpi_resource *crs, void *arg);
 int	acpiprt_getminbus(union acpi_resource *, void *);
-
+#if 0
+int	acpiprt_showprs(union acpi_resource *, void *);
+#endif
 
 struct acpiprt_softc {
 	struct device		sc_dev;
@@ -65,6 +67,7 @@ struct cfdriver acpiprt_cd = {
 
 void	acpiprt_prt_add(struct acpiprt_softc *, struct aml_value *);
 int	acpiprt_getpcibus(struct acpiprt_softc *, struct aml_node *);
+void	acpiprt_route_interrupt(struct acpiprt_softc *, struct aml_node *);
 
 int
 acpiprt_match(struct device *parent, void *match, void *aux)
@@ -117,6 +120,37 @@ acpiprt_attach(struct device *parent, struct device *self, void *aux)
 	aml_freevalue(&res);
 }
 
+#if 0
+int
+acpiprt_showprs(union acpi_resource *crs, void *arg)
+{
+	int *irq = (int *)arg;
+	int typ;
+
+	typ = AML_CRSTYPE(crs);
+	switch (typ) {
+	case SR_IRQ:
+		printf("possible irq:[ ");
+		for (typ = 0; typ < sizeof(crs->sr_irq.irq_mask) * 8; typ++) {
+			if (crs->sr_irq.irq_mask & (1L << typ))
+				printf("%d%s ", typ, (typ == *irq) ? "*" : "");
+		}
+		printf("]\n");
+		break;
+	case LR_EXTIRQ:
+		printf("possible irq: [ ");
+		for (typ = 0; typ < crs->lr_extirq.irq_count; typ++)
+			printf("%d%s ", crs->lr_extirq.irq[typ],
+			       crs->lr_extirq.irq[typ] == *irq ? "*" : "");
+		printf("]\n");
+		break;
+	default:
+		printf("Unknown interrupt : %x\n", typ);
+	}
+	return (0);
+}
+#endif
+
 int
 acpiprt_getirq(union acpi_resource *crs, void *arg)
 {
@@ -132,7 +166,7 @@ acpiprt_getirq(union acpi_resource *crs, void *arg)
 		*irq = aml_letohost32(crs->lr_extirq.irq[0]);
 		break;
 	default:
-		printf("Unknown interrupt : %x\n", typ);
+		printf("Unknown interrupt: %x\n", typ);
 	}
 	return (0);
 }
@@ -165,8 +199,16 @@ acpiprt_prt_add(struct acpiprt_softc *sc, struct aml_value *v)
 	}
 
 	pp = v->v_package[2];
+	if (pp->type == AML_OBJTYPE_STRING) {
+		node = aml_searchrel(sc->sc_devnode, pp->v_string);
+		if (node == NULL) {
+			printf("Invalid device\n");
+			return;
+		}
+		pp = node->value;
+	}
 	if (pp->type == AML_OBJTYPE_NAMEREF) {
-		node = aml_searchname(sc->sc_devnode, pp->v_nameref);
+		node = aml_searchrel(sc->sc_devnode, pp->v_nameref);
 		if (node == NULL) {
 			printf("Invalid device\n");
 			return;
@@ -178,16 +220,30 @@ acpiprt_prt_add(struct acpiprt_softc *sc, struct aml_value *v)
 	}
 	if (pp->type == AML_OBJTYPE_DEVICE) {
 		node = pp->node;
-		if (aml_evalname(sc->sc_acpi, node, "_STA", 0, NULL, &res))
+		if (aml_evalname(sc->sc_acpi, node, "_STA", 0, NULL, &res)) {
 			printf("no _STA method\n");
-
-		sta = aml_val2int(&res) & STA_ENABLED;
-		aml_freevalue(&res);
-		if (sta == 0)
 			return;
+		}
 
-		if (aml_evalname(sc->sc_acpi, node, "_CRS", 0, NULL, &res))
+		sta = aml_val2int(&res);
+		aml_freevalue(&res);
+		if ((sta & STA_ENABLED) == 0) {
+			if ((sta & STA_PRESENT) == 0)
+				return;
+
+			acpiprt_route_interrupt(sc, node);
+
+			aml_evalname(sc->sc_acpi, node, "_STA", 0, NULL, &res);
+			sta = aml_val2int(&res);
+			aml_freevalue(&res);
+			if ((sta & STA_ENABLED) == 0)
+				return;
+		}
+
+		if (aml_evalname(sc->sc_acpi, node, "_CRS", 0, NULL, &res)) {
 			printf("no _CRS method\n");
+			return;
+		}
 
 		if (res.type != AML_OBJTYPE_BUFFER || res.length < 6) {
 			printf("invalid _CRS object\n");
@@ -197,6 +253,19 @@ acpiprt_prt_add(struct acpiprt_softc *sc, struct aml_value *v)
 		aml_parse_resource(res.length, res.v_buffer,
 		    acpiprt_getirq, &irq);
 		aml_freevalue(&res);
+
+#if 0
+		/* Get Possible IRQs */
+		if (!aml_evalname(sc->sc_acpi, node, "_PRS.", 0, NULL, &res)){
+			if (res.type == AML_OBJTYPE_BUFFER &&
+			    res.length >= 6)
+			{
+				aml_parse_resource(res.length, res.v_buffer,
+				    acpiprt_showprs, &irq);
+			}
+			aml_freevalue(&res);
+		}
+#endif
 	} else {
 		irq = aml_val2int(v->v_package[3]);
 	}
@@ -339,6 +408,55 @@ acpiprt_getpcibus(struct acpiprt_softc *sc, struct aml_node *node)
 			return (PPB_BUSINFO_SECONDARY(reg));
 		}
 	}
-
 	return (0);
+}
+
+void
+acpiprt_route_interrupt(struct acpiprt_softc *sc, struct aml_node *node)
+{
+	struct aml_value res, res2;
+	union acpi_resource *crs;
+	int irq;
+
+	if (aml_evalname(sc->sc_acpi, node, "_PRS", 0, NULL, &res)) {
+		printf("no _PRS method\n");
+		return;
+	}
+
+	if (res.type != AML_OBJTYPE_BUFFER || res.length < 6) {
+		printf("invalid _PRS object\n");
+		aml_freevalue(&res);
+		return;
+	}
+	aml_parse_resource(res.length, res.v_buffer, acpiprt_getirq, &irq);
+	aml_freevalue(&res);
+
+	if (aml_evalname(sc->sc_acpi, node, "_CRS", 0, NULL, &res)) {
+		printf("no _PRS method\n");
+		return;
+	}
+
+	if (res.type != AML_OBJTYPE_BUFFER || res.length < 6) {
+		printf("invalid _CRS object\n");
+		aml_freevalue(&res);
+		return;
+	}
+
+	crs = (union acpi_resource *)res.v_buffer;
+	switch (AML_CRSTYPE(crs)) {
+	case SR_IRQ:
+		crs->sr_irq.irq_mask = htole16(1 << irq);
+		break;
+	case LR_EXTIRQ:
+		crs->lr_extirq.irq[0] = htole32(irq);
+		break;
+	}
+
+	if (aml_evalname(sc->sc_acpi, node, "_SRS", 1, &res, &res2)) {
+		printf("no _SRS method\n");
+		aml_freevalue(&res);
+		return;
+	}
+	aml_freevalue(&res);
+	aml_freevalue(&res2);
 }

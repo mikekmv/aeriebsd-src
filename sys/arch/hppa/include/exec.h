@@ -36,6 +36,7 @@
 #define ELF_TARG_DATA           ELFDATA2MSB
 #define ELF_TARG_MACH           EM_PARISC   
 
+#define	NATIVE_EXEC_ELF
 #define _NLIST_DO_ELF
 #define	_KERN_DO_ELF
 

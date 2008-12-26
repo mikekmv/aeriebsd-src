@@ -914,6 +914,7 @@ pgt_input_frames(struct pgt_softc *sc, struct mbuf *m)
 	struct ether_header eh;
 	struct ifnet *ifp;
 	struct ieee80211_channel *chan;
+	struct ieee80211_rxinfo rxi;
 	struct ieee80211_node *ni;
 	struct ieee80211com *ic;
 	struct pgt_rx_annex *pra;
@@ -1032,9 +1033,10 @@ input:
 				bpf_mtap(sc->sc_drvbpf, &mb, BPF_DIRECTION_IN);
 			}
 #endif
-			ni->ni_rssi = rssi;
-			ni->ni_rstamp = rstamp;
-			ieee80211_input(ifp, m, ni, rssi, rstamp);
+			rxi.rxi_flags = 0;
+			ni->ni_rssi = rxi.rxi_rssi = rssi;
+			ni->ni_rstamp = rxi.rxi_tstamp = rstamp;
+			ieee80211_input(ifp, m, ni, &rxi);
 			/*
 			 * The frame may have caused the node to be marked for
 			 * reclamation (e.g. in response to a DEAUTH message)
@@ -1327,7 +1329,7 @@ pgt_trap_received(struct pgt_softc *sc, uint32_t oid, void *trapdata,
 		return;
 
 	total = sizeof(oid) + size + sizeof(struct pgt_async_trap);
-	if (total >= MINCLSIZE) {
+	if (total > MLEN) {
 		MGETHDR(m, M_DONTWAIT, MT_DATA);
 		if (m == NULL)
 			return;
@@ -1516,7 +1518,7 @@ pgt_datarx_completion(struct pgt_softc *sc, enum pgt_queue pq)
 
 		if (m == NULL)
 			goto fail;
-		if (datalen >= MINCLSIZE) {
+		if (datalen > MHLEN) {
 			MCLGET(m, M_DONTWAIT);
 			if (!(m->m_flags & M_EXT)) {
 				m_free(m);

@@ -225,6 +225,6 @@ void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: spray [-c count] [-d delay] [-l length] host ...\n");
+	    "usage: spray [-c count] [-d delay] [-l length] host\n");
 	exit(1);
 }

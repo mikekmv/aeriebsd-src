@@ -160,9 +160,6 @@ red_alloc(int weight, int inv_pmax, int th_min, int th_max, int flags,
 	int	 npkts_per_sec;
 
 	rp = malloc(sizeof(red_t), M_DEVBUF, M_WAITOK|M_ZERO);
-	if (rp == NULL)
-		return (NULL);
-
 	rp->red_avg = 0;
 	rp->red_idle = 1;
 
@@ -531,8 +528,6 @@ wtab_alloc(int weight)
 		}
 
 	w = malloc(sizeof(struct wtab), M_DEVBUF, M_WAITOK|M_ZERO);
-	if (w == NULL)
-		panic("wtab_alloc: malloc failed!");
 	w->w_weight = weight;
 	w->w_refcount = 1;
 	w->w_next = wtab_list;

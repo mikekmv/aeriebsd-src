@@ -462,7 +462,8 @@ usage(void)
 {
 	extern char *__progname;
 
-	fprintf(stderr,"%s [-sv] [-i interface] [-n service] [-p system]\n",
+	fprintf(stderr,
+	    "usage: %s [-sv] [-i interface] [-n service] [-p system]\n",
 	    __progname);
 }
 

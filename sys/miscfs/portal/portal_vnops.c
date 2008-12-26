@@ -82,7 +82,7 @@ int	portal_poll(void *);
 
 int (**portal_vnodeop_p)(void *);
 struct vnodeopv_entry_desc portal_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
+	{ &vop_default_desc, eopnotsupp },
 	{ &vop_lookup_desc, portal_lookup },		/* lookup */
 	{ &vop_create_desc, eopnotsupp },		/* create */
 	{ &vop_mknod_desc, eopnotsupp },		/* mknod */

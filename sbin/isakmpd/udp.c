@@ -29,7 +29,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: udp.c,v 1.1.1.1 2008/08/26 14:40:25 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -268,7 +268,7 @@ udp_create(char *name)
 {
 	struct virtual_transport *v;
 	struct udp_transport *u;
-	struct transport *rv;
+	struct transport *rv = 0;
 	struct sockaddr	*dst, *addr;
 	char	*addr_str, *port_str;
 	struct conf_list *addr_list = 0;
@@ -296,18 +296,21 @@ udp_create(char *name)
 		addr_list = conf_get_list("General", "Listen-on");
 	if (!addr_str && !addr_list) {
 		v = virtual_get_default(dst->sa_family);
-		u = (struct udp_transport *)v->main;
-
-		if (!u) {
-			log_print("udp_create: no default transport");
-			rv = 0;
-			goto ret;
-		} else {
-			rv = udp_clone((struct transport *)u, dst);
-			if (rv)
-				rv->vtbl = &udp_transport_vtbl;
+		if (!v) {
+			log_print("udp_create: no virtual default transport "
+			    "for address family %d", dst->sa_family);
 			goto ret;
 		}
+		u = (struct udp_transport *)v->main;
+		if (!u) {
+			log_print("udp_create: no udp default transport "
+			    "for address family %d", dst->sa_family);
+			goto ret;
+		}
+		rv = udp_clone((struct transport *)u, dst);
+		if (rv)
+			rv->vtbl = &udp_transport_vtbl;
+		goto ret;
 	}
 
 	if (addr_list) {
@@ -324,14 +327,12 @@ udp_create(char *name)
 			}
 		if (!addr_str) {
 			log_print("udp_create: no matching listener found");
-			rv = 0;
 			goto ret;
 		}
 	}
 	if (text2sockaddr(addr_str, port_str, &addr, 0, 0)) {
 		log_print("udp_create: address \"%s\" not understood",
 		    addr_str);
-		rv = 0;
 		goto ret;
 	}
 
@@ -340,7 +341,6 @@ udp_create(char *name)
 	if (!v) {
 		log_print("udp_create: %s:%s must exist as a listener too",
 		    addr_str, port_str);
-		rv = 0;
 		goto ret;
 	}
 	rv = udp_clone(v->main, dst);

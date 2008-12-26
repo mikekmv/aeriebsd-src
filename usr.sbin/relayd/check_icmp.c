@@ -196,7 +196,8 @@ send_icmp(int s, short event, void *arg)
 		    table->conf.flags & F_DISABLE)
 			continue;
 		TAILQ_FOREACH(host, &table->hosts, entry) {
-			if (host->flags & (F_DISABLE | F_CHECK_SENT))
+			if (host->flags & (F_DISABLE | F_CHECK_SENT) ||
+			    host->conf.parentid)
 				continue;
 			if (((struct sockaddr *)&host->conf.ss)->sa_family !=
 			    cie->af)

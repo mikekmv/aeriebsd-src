@@ -609,6 +609,7 @@ gethelo(char *p, size_t len, char *f)
 void
 initcon(struct con *cp, int fd, struct sockaddr *sa)
 {
+	socklen_t len = sa->sa_len;
 	time_t tt;
 	char *tmp;
 	int error;
@@ -625,7 +626,7 @@ initcon(struct con *cp, int fd, struct sockaddr *sa)
 	if (grow_obuf(cp, 0) == NULL)
 		err(1, "malloc");
 	cp->fd = fd;
-	if (sa->sa_len > sizeof(cp->ss))
+	if (len > sizeof(cp->ss))
 		errx(1, "sockaddr size");
 	if (sa->sa_family != AF_INET)
 		errx(1, "not supported yet");

@@ -298,6 +298,7 @@ typedef enum {
 #define E1000_ERR_HOST_INTERFACE_COMMAND 11
 #define E1000_BLK_PHY_RESET   12
 #define E1000_ERR_SWFW_SYNC 13
+#define E1000_NOT_IMPLEMENTED 14
 
 #define E1000_BYTE_SWAP_WORD(_value) ((((_value) & 0x00ff) << 8) | \
                                      (((_value) & 0xff00) >> 8))

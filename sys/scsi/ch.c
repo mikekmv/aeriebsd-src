@@ -652,7 +652,8 @@ ch_getelemstatus(sc, first, count, data, datalen, voltag)
 	 * Send command to changer.
 	 */
 	return (scsi_scsi_cmd(sc->sc_link, (struct scsi_generic *)&cmd,
-	    sizeof(cmd), (u_char *)data, datalen, CHRETRIES, 100000, NULL, SCSI_DATA_IN));
+	    sizeof(cmd), (u_char *)data, datalen, CHRETRIES, 100000, NULL,
+	    SCSI_DATA_IN));
 }
 
 

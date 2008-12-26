@@ -59,6 +59,7 @@ struct ntpd_conf		*conf;
 struct opts {
 	int		weight;
 	int		correction;
+	char		*refstr;
 } opts;
 void		opts_default(void);
 
@@ -75,7 +76,7 @@ typedef struct {
 %}
 
 %token	LISTEN ON
-%token	SERVER SERVERS SENSOR CORRECTION WEIGHT
+%token	SERVER SERVERS SENSOR CORRECTION REFID WEIGHT
 %token	ERROR
 %token	<v.string>		STRING
 %token	<v.number>		NUMBER
@@ -83,6 +84,7 @@ typedef struct {
 %type	<v.opts>		server_opts server_opts_l server_opt
 %type	<v.opts>		sensor_opts sensor_opts_l sensor_opt
 %type	<v.opts>		correction
+%type	<v.opts>		refid
 %type	<v.opts>		weight
 %%
 
@@ -202,6 +204,7 @@ main		: LISTEN ON address	{
 			s = new_sensor($2);
 			s->weight = $3.weight;
 			s->correction = $3.correction;
+			s->refstr = $3.refstr;
 			free($2);
 			TAILQ_INSERT_TAIL(&conf->ntp_conf_sensors, s, entry);
 		}
@@ -242,6 +245,7 @@ sensor_opts_l	: sensor_opts_l sensor_opt
 		| sensor_opt
 		;
 sensor_opt	: correction
+		| refid
 		| weight
 		;
 
@@ -252,6 +256,18 @@ correction	: CORRECTION NUMBER {
 				YYERROR;
 			}
 			opts.correction = $2;
+		}
+		;
+
+refid		: REFID STRING {
+			size_t l = strlen($2);
+
+			if (l < 1 || l > 4) {
+				yyerror("refid must be 1 to 4 characters");
+				free($2);
+				YYERROR;
+			}
+			opts.refstr = $2;
 		}
 		;
 
@@ -308,6 +324,7 @@ lookup(char *s)
 		{ "correction",		CORRECTION},
 		{ "listen",		LISTEN},
 		{ "on",			ON},
+		{ "refid",		REFID},
 		{ "sensor",		SENSOR},
 		{ "server",		SERVER},
 		{ "servers",		SERVERS},

@@ -423,6 +423,9 @@ struct flash_spec {
 #define BNX_DRV_PULSE_MB			0x00000010
 #define BNX_DRV_PULSE_SEQ_MASK			 0x00007fff
 
+#define BNX_MB_ARGS_0				0x00000014
+#define BNX_MB_ARGS_1				0x00000018
+
 /* Indicate to the firmware not to go into the
  * OS absent when it is not getting driver pulse.
  * This is used for debugging. */
@@ -4428,7 +4431,6 @@ struct l2_fhdr {
 #define TOTAL_TX_BD (TOTAL_TX_BD_PER_PAGE * TX_PAGES)
 #define USABLE_TX_BD (USABLE_TX_BD_PER_PAGE * TX_PAGES)
 #define MAX_TX_BD (TOTAL_TX_BD - 1)
-#define BNX_TX_SLACK_SPACE 16
 
 #define RX_PAGES	2
 #define TOTAL_RX_BD_PER_PAGE  (BCM_PAGE_SIZE / sizeof(struct rx_bd))
@@ -4436,7 +4438,6 @@ struct l2_fhdr {
 #define TOTAL_RX_BD (TOTAL_RX_BD_PER_PAGE * RX_PAGES)
 #define USABLE_RX_BD (USABLE_RX_BD_PER_PAGE * RX_PAGES)
 #define MAX_RX_BD (TOTAL_RX_BD - 1)
-#define BNX_RX_SLACK_SPACE (MAX_RX_BD - 8)
 
 #define NEXT_TX_BD(x) (((x) & USABLE_TX_BD_PER_PAGE) ==	\
 		(USABLE_TX_BD_PER_PAGE - 1)) ?					  	\
@@ -4625,6 +4626,10 @@ struct bnx_softc
 #define BNX_PHY_INT_MODE_AUTO_POLLING_FLAG	0x100
 #define BNX_PHY_INT_MODE_LINK_READY_FLAG	0x200
 
+	/* Values that need to be shared with the PHY driver. */
+	u_int32_t					bnx_shared_hw_cfg;
+	u_int32_t					bnx_port_hw_cfg;
+
 	int					bnx_if_flags;
 
 	u_int16_t					bus_speed_mhz;		/* PCI bus speed */
@@ -4747,7 +4752,9 @@ struct bnx_softc
 
 	/* Track the number of rx_bd and tx_bd's in use. */
 	u_int16_t free_rx_bd;
+	u_int16_t max_rx_bd;
 	u_int16_t used_tx_bd;
+	u_int16_t max_tx_bd;
 
 	/* Provides access to hardware statistics through sysctl. */
 	u_int64_t stat_IfHCInOctets;
@@ -4806,10 +4813,19 @@ struct bnx_softc
 	u_int32_t stat_CatchupInMBUFDiscards;
 	u_int32_t stat_CatchupInRuleCheckerP4Hit;
 
+	/* Mbuf allocation failure counter. */
+	u_int32_t mbuf_alloc_failed;
+
+	/* TX DMA mapping failure counter. */
+	u_int32_t tx_dma_map_failures;
+
 #ifdef BNX_DEBUG
 	/* Track the number of enqueued mbufs. */
 	int	tx_mbuf_alloc;
 	int rx_mbuf_alloc;
+
+	/* Track the distribution buffer segments. */
+	u_int32_t rx_mbuf_segs[BNX_MAX_SEGMENTS+1];
 
 	/* Track how many and what type of interrupts are generated. */
 	u_int32_t interrupts_generated;
@@ -4818,8 +4834,10 @@ struct bnx_softc
 	u_int32_t tx_interrupts;
 
 	u_int32_t	rx_low_watermark;			/* Lowest number of rx_bd's free. */
+	u_int32_t rx_empty_count;			/* Number of times the RX chain was empty. */
 	u_int32_t tx_hi_watermark;			/* Greatest number of tx_bd's used. */
-	u_int32_t	mbuf_alloc_failed;			/* Mbuf allocation failure counter. */
+	u_int32_t tx_full_count;			/* Number of times the TX chain was full. */
+	u_int32_t	mbuf_sim_alloc_failed;			/* Mbuf simulated allocation failure counter. */
 	u_int32_t l2fhdr_status_errors;
 	u_int32_t unexpected_attentions;
 	u_int32_t	lost_status_block_updates;

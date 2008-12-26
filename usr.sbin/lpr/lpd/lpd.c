@@ -39,7 +39,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)lpd.c	8.7 (Berkeley) 5/10/95";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: lpd.c,v 1.1.1.1 2008/08/26 14:44:10 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -649,11 +649,12 @@ ckqueue(char *cap)
 	DIR *dirp;
 	char *spooldir;
 
-	if (cgetstr(cap, "sd", &spooldir) == -1)
-		spooldir = _PATH_DEFSPOOL;
-	dirp = opendir(spooldir);
-	if (spooldir != _PATH_DEFSPOOL)
+	if (cgetstr(cap, "sd", &spooldir) >= 0) {
+		dirp = opendir(spooldir);
 		free(spooldir);
+	} else
+		dirp = opendir(_PATH_DEFSPOOL);
+
 	if (dirp == NULL)
 		return (-1);
 	while ((d = readdir(dirp)) != NULL) {

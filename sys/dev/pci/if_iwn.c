@@ -1195,6 +1195,7 @@ iwn_rx_intr(struct iwn_softc *sc, struct iwn_rx_desc *desc,
 	struct iwn_rx_ring *ring = &sc->rxq;
 	struct iwn_rbuf *rbuf;
 	struct ieee80211_frame *wh;
+	struct ieee80211_rxinfo rxi;
 	struct ieee80211_node *ni;
 	struct mbuf *m, *mnew;
 	struct iwn_rx_stat *stat;
@@ -1329,7 +1330,10 @@ iwn_rx_intr(struct iwn_softc *sc, struct iwn_rx_desc *desc,
 	ni = ieee80211_find_rxnode(ic, wh);
 
 	/* send the frame to the 802.11 layer */
-	ieee80211_input(ifp, m, ni, rssi, 0);
+	rxi.rxi_flags = 0;
+	rxi.rxi_rssi = rssi;
+	rxi.rxi_tstamp = 0;	/* unused */
+	ieee80211_input(ifp, m, ni, &rxi);
 
 	/* node is no longer needed */
 	ieee80211_release_node(ic, ni);
@@ -2576,11 +2580,11 @@ iwn_get_rssi(const struct iwn_rx_stat *stat)
 
 	rssi = 0;
 	if (mask & (1 << 0))	/* Ant A */
-		rssi = max(rssi, stat->rssi[0]);
+		rssi = MAX(rssi, stat->rssi[0]);
 	if (mask & (1 << 1))	/* Ant B */
-		rssi = max(rssi, stat->rssi[2]);
+		rssi = MAX(rssi, stat->rssi[2]);
 	if (mask & (1 << 2))	/* Ant C */
-		rssi = max(rssi, stat->rssi[4]);
+		rssi = MAX(rssi, stat->rssi[4]);
 
 	return rssi - agc - IWN_RSSI_TO_DBM;
 }
@@ -2689,8 +2693,8 @@ iwn_compute_differential_gain(struct iwn_softc *sc,
 		return;
 
 	/* determine antenna with highest average RSSI */
-	val = max(calib->rssi[0], calib->rssi[1]);
-	val = max(calib->rssi[2], val);
+	val = MAX(calib->rssi[0], calib->rssi[1]);
+	val = MAX(calib->rssi[2], val);
 
 	/* determine which antennas are connected */
 	sc->antmsk = 0;
@@ -2705,7 +2709,7 @@ iwn_compute_differential_gain(struct iwn_softc *sc,
 	val = INT_MAX;	/* ok, there's at least one */
 	for (i = 0; i < 3; i++)
 		if (sc->antmsk & (1 << i))
-			val = min(calib->noise[i], val);
+			val = MIN(calib->noise[i], val);
 
 	memset(&cmd, 0, sizeof cmd);
 	cmd.code = IWN_SET_DIFF_GAIN;
@@ -2714,7 +2718,7 @@ iwn_compute_differential_gain(struct iwn_softc *sc,
 		if (sc->antmsk & (1 << i)) {
 			cmd.gain[i] = (calib->noise[i] - val) / 30;
 			/* limit differential gain to 3 */
-			cmd.gain[i] = min(cmd.gain[i], 3);
+			cmd.gain[i] = MIN(cmd.gain[i], 3);
 			cmd.gain[i] |= IWN_GAIN_SET;
 		}
 	}
@@ -2787,8 +2791,8 @@ iwn_tune_sensitivity(struct iwn_softc *sc, const struct iwn_rx_stats *stats)
 	/* compute maximum noise among 3 antennas */
 	for (i = 0; i < 3; i++)
 		noise[i] = (letoh32(stats->general.noise[i]) >> 8) & 0xff;
-	val = max(noise[0], noise[1]);
-	val = max(noise[2], val);
+	val = MAX(noise[0], noise[1]);
+	val = MAX(noise[2], val);
 	/* insert it into our samples table */
 	calib->noise_samples[calib->cur_noise_sample] = val;
 	calib->cur_noise_sample = (calib->cur_noise_sample + 1) % 20;
@@ -2796,13 +2800,13 @@ iwn_tune_sensitivity(struct iwn_softc *sc, const struct iwn_rx_stats *stats)
 	/* compute maximum noise among last 20 samples */
 	noise_ref = calib->noise_samples[0];
 	for (i = 1; i < 20; i++)
-		noise_ref = max(noise_ref, calib->noise_samples[i]);
+		noise_ref = MAX(noise_ref, calib->noise_samples[i]);
 
 	/* compute maximum energy among 3 antennas */
 	for (i = 0; i < 3; i++)
 		energy[i] = letoh32(stats->general.energy[i]);
-	val = min(energy[0], energy[1]);
-	val = min(energy[2], val);
+	val = MIN(energy[0], energy[1]);
+	val = MIN(energy[2], val);
 	/* insert it into our samples table */
 	calib->energy_samples[calib->cur_energy_sample] = val;
 	calib->cur_energy_sample = (calib->cur_energy_sample + 1) % 10;
@@ -2810,7 +2814,7 @@ iwn_tune_sensitivity(struct iwn_softc *sc, const struct iwn_rx_stats *stats)
 	/* compute minimum energy among last 10 samples */
 	energy_min = calib->energy_samples[0];
 	for (i = 1; i < 10; i++)
-		energy_min = max(energy_min, calib->energy_samples[i]);
+		energy_min = MAX(energy_min, calib->energy_samples[i]);
 	energy_min += 6;
 
 	/* compute number of false alarms since last call for CCK */
@@ -3442,12 +3446,12 @@ iwn_reset(struct iwn_softc *sc)
 	IWN_WRITE(sc, IWN_GPIO_CTL, tmp | IWN_GPIO_INIT);
 
 	/* wait for clock stabilization */
-	for (ntries = 0; ntries < 1000; ntries++) {
+	for (ntries = 0; ntries < 25000; ntries++) {
 		if (IWN_READ(sc, IWN_GPIO_CTL) & IWN_GPIO_CLOCK)
 			break;
-		DELAY(10);
+		DELAY(100);
 	}
-	if (ntries == 1000) {
+	if (ntries == 25000) {
 		printf("%s: timeout waiting for clock stabilization\n",
 		    sc->sc_dev.dv_xname);
 		return ETIMEDOUT;

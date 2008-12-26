@@ -32,7 +32,7 @@
 #if 0
 static const char sccsid[] = "@(#)aux.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: aux.c,v 1.1.1.1 2008/08/26 14:43:01 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -239,9 +239,7 @@ istrlcpy(char *dst, const char *src, size_t dsize)
 	/* Copy as many bytes as will fit */
 	if (n != 0 && --n != 0) {
 		do {
-			if (isupper(*s))
-				*d++ = tolower(*s++);
-			else if ((*d++ = *s++) == 0)
+			if ((*d++ = tolower(*s++)) == 0)
 				break;
 		} while (--n != 0);
 	}
@@ -462,10 +460,10 @@ skin(char *name)
 			break;
 
 		case ' ':
-			if (cp[0] == 'a' && cp[1] == 't' && cp[2] == ' ')
+			if (strncmp(cp, "at ", 3) == 0)
 				cp += 3, *cp2++ = '@';
 			else
-			if (cp[0] == '@' && cp[1] == ' ')
+			if (strncmp(cp, "@ ", 2) == 0)
 				cp += 2, *cp2++ = '@';
 			else
 				lastsp = 1;
@@ -595,18 +593,6 @@ charcount(char *str, int c)
 		if (*cp == c)
 			i++;
 	return(i);
-}
-
-/*
- * Convert c to upper case
- */
-int
-chraise(int c)
-{
-
-	if (islower(c))
-		return(toupper(c));
-	return(c);
 }
 
 /*

@@ -37,7 +37,7 @@ static const char copyright[] =
 #if 0
 static char sccsid[] = "@(#)tunefs.c	8.3 (Berkeley) 5/3/95";
 #else
-static const char rcsid[] = "$ABSD";
+static const char rcsid[] = "$ABSD$";
 #endif
 #endif /* not lint */
 

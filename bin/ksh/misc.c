@@ -8,7 +8,7 @@
 #include <sys/param.h>	/* for MAXPATHLEN */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: misc.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 
 short ctypes [UCHAR_MAX+1];	/* type bits for unsigned char */
@@ -80,7 +80,7 @@ str_save(const char *s, Area *ap)
 		return NULL;
 	len = strlen(s)+1;
 	p = alloc(len, ap);
-	strlcpy(p, s, len+1);
+	strlcpy(p, s, len);
 	return (p);
 }
 

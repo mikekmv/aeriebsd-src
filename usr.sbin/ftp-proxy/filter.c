@@ -172,7 +172,7 @@ init_filter(char *opt_qname, char *opt_tagname, int opt_verbose)
 
 	dev = open("/dev/pf", O_RDWR);	
 	if (dev == -1)
-		err(1, "/dev/pf");
+		err(1, "open /dev/pf");
 	if (ioctl(dev, DIOCGETSTATUS, &status) == -1)
 		err(1, "DIOCGETSTATUS");
 	if (!status.running)

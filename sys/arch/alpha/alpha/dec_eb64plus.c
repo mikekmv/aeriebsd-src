@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995, 1996, 1997 Carnegie-Mellon University.
  * All rights reserved.
@@ -129,7 +128,7 @@ dec_eb64plus_cons_init()
 		/* display console ... */
 		/* XXX */
 		(void) pckbc_cnattach(&acp->ac_iot, IO_KBD, KBCMDP,
-		    PCKBC_KBD_SLOT);
+		    PCKBC_KBD_SLOT, 0);
 
 		if (CTB_TURBOSLOT_TYPE(ctb->ctb_turboslot) ==
 		    CTB_TURBOSLOT_TYPE_ISA)

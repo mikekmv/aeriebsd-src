@@ -45,13 +45,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -160,9 +153,10 @@ const struct cardbus_matchid rtw_cardbus_devices[] = {
 	{ PCI_VENDOR_REALTEK,	PCI_PRODUCT_REALTEK_RT8180 },
 #ifdef RTW_DEBUG
 	{ PCI_VENDOR_REALTEK,	PCI_PRODUCT_REALTEK_RT8185 },
+	{ PCI_VENDOR_BELKIN2,	PCI_PRODUCT_BELKIN2_F5D7010 },
 #endif
 	{ PCI_VENDOR_BELKIN2,	PCI_PRODUCT_BELKIN2_F5D6020V3 },
-	{ PCI_VENDOR_DLINK,	PCI_PRODUCT_DLINK_DWL610 },
+	{ PCI_VENDOR_DLINK,	PCI_PRODUCT_DLINK_DWL610 }
 };
 
 int

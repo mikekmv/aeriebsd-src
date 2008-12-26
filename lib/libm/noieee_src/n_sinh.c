@@ -31,14 +31,14 @@
 #if 0
 static char sccsid[] = "@(#)sinh.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_sinh.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
 /* SINH(X)
  * RETURN THE HYPERBOLIC SINE OF X
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
- * CODED IN C BY K.C. NG, 1/8/85; 
+ * CODED IN C BY K.C. NG, 1/8/85;
  * REVISED BY K.C. NG on 2/8/85, 3/7/85, 3/24/85, 4/16/85.
  *
  * Required system supported functions :
@@ -50,14 +50,14 @@ static const char rcsid[] = "$ABSD$";
  *
  * Method :
  *	1. reduce x to non-negative by sinh(-x) = - sinh(x).
- *	2. 
+ *	2.
  *
  *	                                      expm1(x) + expm1(x)/(expm1(x)+1)
  *	    0 <= x <= lnovfl     : sinh(x) := --------------------------------
  *			       		                      2
  *     lnovfl <= x <= lnovfl+ln2 : sinh(x) := expm1(x)/2 (avoid overflow)
  * lnovfl+ln2 <  x <  INF        :  overflow to INF
- *	
+ *
  *
  * Special cases:
  *	sinh(x) is x if x is +INF, -INF, or NaN.
@@ -75,6 +75,7 @@ static const char rcsid[] = "$ABSD$";
  * shown.
  */
 
+#include "math.h"
 #include "mathimpl.h"
 
 vc(mln2hi, 8.8029691931113054792E1   ,0f33,43b0,2bdb,c7e2,   7, .B00F33C7E22BDB)
@@ -91,28 +92,29 @@ ic(lnovfl, 7.0978271289338397310E2,     9, 1.62E42FEFA39EF)
 #define	lnovfl	vccast(lnovfl)
 #endif
 
-#if defined(__vax__)||defined(tahoe)
+#if defined(__vax__)
 static max = 126                      ;
-#else	/* defined(__vax__)||defined(tahoe) */
+#else	/* defined(__vax__) */
 static max = 1023                     ;
-#endif	/* defined(__vax__)||defined(tahoe) */
+#endif	/* defined(__vax__) */
 
 
-double sinh(x)
-double x;
+double
+sinh(double x)
 {
 	static const double  one=1.0, half=1.0/2.0 ;
 	double t, sign;
-#if !defined(__vax__)&&!defined(tahoe)
-	if(x!=x) return(x);	/* x is NaN */
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
+
+	if (isnan(x))
+		return (x);
+
 	sign=copysign(one,x);
 	x=copysign(x,one);
 	if(x<lnovfl)
 	    {t=expm1(x); return(copysign((t+t/(one+t))*half,sign));}
 
 	else if(x <= lnovfl+0.7)
-		/* subtract x by ln(2^(max+1)) and return 2^max*exp(x) 
+		/* subtract x by ln(2^(max+1)) and return 2^max*exp(x)
 	    		to avoid unnecessary overflow */
 	    return(copysign(scalbn(one+expm1((x-mln2hi)-mln2lo),max),sign));
 

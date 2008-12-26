@@ -1,4 +1,7 @@
-/* infinity.c */
+
+#if defined(LIBC_SCCS) && !defined(lint)
+static const char rcsid[] = "$ABSD$";
+#endif
 
 #include <math.h>
 

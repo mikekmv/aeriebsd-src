@@ -14,13 +14,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -37,7 +30,7 @@
 
 #ifndef SMALL
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: complete.c,v 1.1.1.1 2008/08/26 14:42:47 root Exp $";
 #endif /* not lint */
 
 /*
@@ -239,8 +232,10 @@ complete_remote(char *word, int list)
 
 		mflag = 1;
 		emesg = NULL;
+#ifndef SMALL
 		if (debug)
 			(void)putc('\n', ttyout);
+#endif /* !SMALL */
 		while ((cp = remglob(dummyargv, 0, &emesg)) != NULL) {
 			char *tcp;
 

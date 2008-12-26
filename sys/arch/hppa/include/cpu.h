@@ -90,6 +90,7 @@ enum hppa_cpu_type {
 extern enum hppa_cpu_type cpu_type;
 extern const char *cpu_typename;
 extern int cpu_hvers;
+extern register_t kpsw;
 #endif
 #endif
 
@@ -122,9 +123,9 @@ extern int cpu_hvers;
  * Exported definitions unique to hp700/PA-RISC cpu support.
  */
 
-#define	HPPA_PGALIAS	0x00100000
-#define	HPPA_PGAMASK	0xfff00000
-#define	HPPA_PGAOFF	0x000fffff
+#define	HPPA_PGALIAS	0x00400000
+#define	HPPA_PGAMASK	0xffc00000
+#define	HPPA_PGAOFF	0x003fffff
 
 #define	HPPA_IOBEGIN    0xf0000000
 #define	HPPA_IOLEN      0x10000000
@@ -149,6 +150,7 @@ extern int cpu_hvers;
 
 #define	signotify(p)		(setsoftast())
 #define	need_resched(ci)	(want_resched = 1, setsoftast())
+#define clear_resched(ci) 	want_resched = 0
 #define	need_proftick(p)	setsoftast()
 #define	PROC_PC(p)		((p)->p_md.md_regs->tf_iioq_head)
 

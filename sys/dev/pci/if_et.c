@@ -89,14 +89,14 @@
 
 int	et_match(struct device *, void *, void *);
 void	et_attach(struct device *, struct device *, void *);
-int	et_detach(struct device *, int flags);
+int	et_detach(struct device *, int);
 int	et_shutdown(struct device *);
 
 int	et_miibus_readreg(struct device *, int, int);
 void	et_miibus_writereg(struct device *, int, int, int);
 void	et_miibus_statchg(struct device *);
 
-int	et_init(struct ifnet *ifp);
+int	et_init(struct ifnet *);
 int	et_ioctl(struct ifnet *, u_long, caddr_t);
 void	et_start(struct ifnet *);
 void	et_watchdog(struct ifnet *);
@@ -117,7 +117,6 @@ int	et_dma_mem_create(struct et_softc *, bus_size_t,
 void	et_dma_mem_destroy(struct et_softc *, void *, bus_dmamap_t);
 int	et_dma_mbuf_create(struct et_softc *);
 void	et_dma_mbuf_destroy(struct et_softc *, int, const int[]);
-void	et_dma_ring_addr(void *, bus_dma_segment_t *, int, int);
 
 int	et_init_tx_ring(struct et_softc *);
 int	et_init_rx_ring(struct et_softc *);
@@ -168,7 +167,7 @@ const struct pci_matchid et_devices[] = {
 };
 
 struct cfattach et_ca = {
-	sizeof (struct et_softc), et_match, et_attach
+	sizeof (struct et_softc), et_match, et_attach, et_detach
 };
 
 struct cfdriver et_cd = {
@@ -191,7 +190,6 @@ et_attach(struct device *parent, struct device *self, void *aux)
 	pci_intr_handle_t ih;
 	const char *intrstr;
 	struct ifnet *ifp = &sc->sc_arpcom.ac_if;
-	bus_size_t memsize;
 	pcireg_t memtype;
 	int error;
 
@@ -204,14 +202,8 @@ et_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_timer = et_timer;
 
 	memtype = pci_mapreg_type(pa->pa_pc, pa->pa_tag, ET_PCIR_BAR);
-	switch (memtype) {
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT:
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT:
-		if (pci_mapreg_map(pa, ET_PCIR_BAR, memtype, 0, &sc->sc_mem_bt,
-		    &sc->sc_mem_bh, NULL, &memsize, 0) == 0)
-			break;
-		/* FALLTHROUGH */
-	default:
+	if (pci_mapreg_map(pa, ET_PCIR_BAR, memtype, 0, &sc->sc_mem_bt,
+	    &sc->sc_mem_bh, NULL, &sc->sc_mem_size, 0)) {
 		printf(": could not map mem space\n");
 		return;
 	}
@@ -305,8 +297,21 @@ et_detach(struct device *self, int flags)
 	et_stop(sc);
 	splx(s);
 
+	mii_detach(&sc->sc_miibus, MII_PHY_ANY, MII_OFFSET_ANY);
+
+	/* Delete all remaining media. */
+	ifmedia_delete_instance(&sc->sc_miibus.mii_media, IFM_INST_ANY);
+
 	ether_ifdetach(ifp);
+	if_detach(ifp);
 	et_dma_free(sc);
+
+	if (sc->sc_irq_handle != NULL) {
+		pci_intr_disestablish(sc->sc_pct, sc->sc_irq_handle);
+		sc->sc_irq_handle = NULL;
+	}
+
+	bus_space_unmap(sc->sc_mem_bt, sc->sc_mem_bh, sc->sc_mem_size);
 
 	return 0;
 }
@@ -893,13 +898,6 @@ et_dma_mem_destroy(struct et_softc *sc, void *addr, bus_dmamap_t dmap)
 }
 
 void
-et_dma_ring_addr(void *arg, bus_dma_segment_t *seg, int nseg, int error)
-{
-	KASSERT(nseg == 1, ("too many segments\n"));
-	*((bus_addr_t *)arg) = seg->ds_addr;
-}
-
-void
 et_chip_attach(struct et_softc *sc)
 {
 	uint32_t val;
@@ -949,9 +947,11 @@ et_intr(void *xsc)
 	if ((ifp->if_flags & IFF_RUNNING) == 0)
 		return (0);
 
-	et_disable_intrs(sc);
-
 	intrs = CSR_READ_4(sc, ET_INTR_STATUS);
+	if (intrs == 0 || intrs == 0xffffffff)
+		return (0);
+
+	et_disable_intrs(sc);
 	intrs &= ET_INTRS;
 	if (intrs == 0)	/* Not interested */
 		goto back;
@@ -1992,6 +1992,7 @@ et_txeof(struct et_softc *sc)
 			bus_dmamap_unload(sc->sc_dmat, tb->tb_dmap);
 			m_freem(tb->tb_mbuf);
 			tb->tb_mbuf = NULL;
+			ifp->if_opackets++;
 		}
 
 		if (++tbd->tbd_start_index == ET_TX_NDESC) {

@@ -157,6 +157,11 @@ main(int argc, char *argv[])
 		}
 	}
 
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+		usage();
+
 	mib[0] = CTL_NET;
 	mib[1] = PF_INET;
 	mib[2] = IPPROTO_IP;
@@ -525,6 +530,7 @@ ripd_redistribute_default(int type)
 		return;
 
 	bzero(&kr, sizeof(kr));
+	kr.metric = 1;	/* default metric */
 	main_imsg_compose_rde(type, 0, &kr, sizeof(struct kroute));
 }
 

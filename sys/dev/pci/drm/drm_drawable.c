@@ -44,10 +44,8 @@ void	drm_drawable_free(struct drm_device *dev,
 struct bsd_drm_drawable_info *
 	drm_get_drawable(struct drm_device *, unsigned int);
 
-#ifdef __OpenBSD__
 RB_PROTOTYPE(drawable_tree, bsd_drm_drawable_info, tree,
     drm_drawable_compare);
-#endif /* __OpenBSD__ */
 
 struct bsd_drm_drawable_info {
 	struct drm_drawable_info info;
@@ -66,13 +64,8 @@ drm_drawable_compare(struct bsd_drm_drawable_info *a,
 	return 0;
 };
 
-#ifdef __FreeBSD__
-RB_GENERATE_STATIC(drawable_tree, bsd_drm_drawable_info, tree,
-    drm_drawable_compare);
-#else
 RB_GENERATE(drawable_tree, bsd_drm_drawable_info, tree,
     drm_drawable_compare);
-#endif
 
 struct bsd_drm_drawable_info *
 drm_get_drawable(struct drm_device *dev, unsigned int handle)
@@ -84,7 +77,7 @@ drm_get_drawable(struct drm_device *dev, unsigned int handle)
 }
 
 struct drm_drawable_info *
-drm_get_drawable_info(drm_device_t *dev, unsigned int handle)
+drm_get_drawable_info(struct drm_device *dev, unsigned int handle)
 {
 	struct bsd_drm_drawable_info *result = NULL;
 
@@ -95,7 +88,7 @@ drm_get_drawable_info(drm_device_t *dev, unsigned int handle)
 }
 
 int
-drm_adddraw(drm_device_t *dev, void *data, struct drm_file *file_priv)
+drm_adddraw(struct drm_device *dev, void *data, struct drm_file *file_priv)
 {
 	drm_draw_t *draw = data;
 	struct bsd_drm_drawable_info *info;
@@ -105,11 +98,7 @@ drm_adddraw(drm_device_t *dev, void *data, struct drm_file *file_priv)
 	if (info == NULL)
 		return ENOMEM;
 
-#ifdef __FreeBSD__
-	info->handle = alloc_unr(dev->drw_unrhdr);
-#else
 	info->handle = ++dev->drw_no;
-#endif
 	DRM_SPINLOCK(&dev->drw_lock);
 	RB_INSERT(drawable_tree, &dev->drw_head, info);
 	draw->handle = info->handle;
@@ -121,7 +110,7 @@ drm_adddraw(drm_device_t *dev, void *data, struct drm_file *file_priv)
 }
 
 int
-drm_rmdraw(drm_device_t *dev, void *data, struct drm_file *file_priv)
+drm_rmdraw(struct drm_device *dev, void *data, struct drm_file *file_priv)
 {
 	drm_draw_t *draw = (drm_draw_t *)data;
 	struct bsd_drm_drawable_info *info;
@@ -139,7 +128,7 @@ drm_rmdraw(drm_device_t *dev, void *data, struct drm_file *file_priv)
 }
 
 int
-drm_update_draw(drm_device_t *dev, void *data, struct drm_file *file_priv)
+drm_update_draw(struct drm_device *dev, void *data, struct drm_file *file_priv)
 {
 	struct drm_drawable_info *info;
 	struct drm_update_draw *update = (struct drm_update_draw *)data;
@@ -165,7 +154,7 @@ drm_update_draw(drm_device_t *dev, void *data, struct drm_file *file_priv)
 			return 0;
 		}
 		if (info->rects == NULL) {
-			info->rects = drm_alloc(sizeof(*info->rects) *
+			info->rects = drm_calloc(sizeof(*info->rects),
 			    update->num, DRM_MEM_DRAWABLE);
 			if (info->rects == NULL) {
 				DRM_SPINUNLOCK(&dev->drw_lock);
@@ -186,18 +175,12 @@ drm_update_draw(drm_device_t *dev, void *data, struct drm_file *file_priv)
 void
 drm_drawable_free(struct drm_device *dev, struct bsd_drm_drawable_info *draw)
 {
-	if (draw) {
-		RB_REMOVE(drawable_tree, &dev->drw_head, draw);
-		if (draw->info.rects)
-			drm_free(draw->info.rects,
-			    sizeof(*draw->info.rects) * draw->info.num_rects,
-			    DRM_MEM_DRAWABLE);
-#ifdef __FreeBSD__
-		free_unr(dev->drw_unrhdr, draw->info->handle);
-#endif
-		drm_free(draw, sizeof(*draw),
-		    DRM_MEM_DRAWABLE);
-	}
+	if (draw == NULL)
+		return;
+	RB_REMOVE(drawable_tree, &dev->drw_head, draw);
+	drm_free(draw->info.rects,
+	    sizeof(*draw->info.rects) * draw->info.num_rects, DRM_MEM_DRAWABLE);
+	drm_free(draw, sizeof(*draw), DRM_MEM_DRAWABLE);
 }
 
 void

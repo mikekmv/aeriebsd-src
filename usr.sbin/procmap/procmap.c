@@ -14,13 +14,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *      This product includes software developed by the NetBSD
- *      Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -550,11 +543,12 @@ dump_vm_map_entry(kvm_t *kd, struct kbit *vmspace,
 		printf(" end = %lx,", vme->end);
 		printf(" object.uvm_obj/sub_map = %p,\n", vme->object.uvm_obj);
 		printf("    offset = %lx,", (unsigned long)vme->offset);
-		printf(" etype = %x <%s%s%s%s >,", vme->etype,
+		printf(" etype = %x <%s%s%s%s%s >,", vme->etype,
 		    vme->etype & UVM_ET_OBJ ? " OBJ" : "",
 		    vme->etype & UVM_ET_SUBMAP ? " SUBMAP" : "",
 		    vme->etype & UVM_ET_COPYONWRITE ? " COW" : "",
-		    vme->etype & UVM_ET_NEEDSCOPY ? " NEEDSCOPY" : "");
+		    vme->etype & UVM_ET_NEEDSCOPY ? " NEEDSCOPY" : "",
+		    vme->etype & UVM_ET_HOLE ? " HOLE" : "");
 		printf(" protection = %x,\n", vme->protection);
 		printf("    max_protection = %x,", vme->max_protection);
 		printf(" inheritance = %d,", vme->inheritance);
@@ -809,7 +803,9 @@ findname(kvm_t *kd, struct kbit *vmspace,
 	    D(vmspace, vmspace)->vm_dsize * getpagesize() / 2 <
 	    (vme->end - vme->start)) {
 		name = "  [ heap ]";
-	} else
+	} else if (UVM_ET_ISHOLE(vme))
+		name = "  [ hole ]";
+	else
 		name = "  [ anon ]";
 
 	return (name);

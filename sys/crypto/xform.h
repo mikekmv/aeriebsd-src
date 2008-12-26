@@ -77,6 +77,7 @@ extern struct enc_xform enc_xform_cast5;
 extern struct enc_xform enc_xform_skipjack;
 extern struct enc_xform enc_xform_rijndael128;
 extern struct enc_xform enc_xform_aes_ctr;
+extern struct enc_xform enc_xform_aes_xts;
 extern struct enc_xform enc_xform_arc4;
 extern struct enc_xform enc_xform_null;
 

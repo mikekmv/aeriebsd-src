@@ -182,10 +182,8 @@ enable_vec(struct proc *p)
 	/* If this is the very first altivec instruction executed
 	 * by this process, create a context.
 	 */
-	if (pcb->pcb_vr == NULL) {
-		pcb->pcb_vr = pool_get(&ppc_vecpl, PR_WAITOK);
-		bzero(pcb->pcb_vr, sizeof *(pcb->pcb_vr));
-	}
+	if (pcb->pcb_vr == NULL)
+		pcb->pcb_vr = pool_get(&ppc_vecpl, PR_WAITOK | PR_ZERO);
 
 	if (curcpu()->ci_vecproc != NULL || pcb->pcb_veccpu != NULL)
 		printf("attempting to restore vector in use vecproc %x"

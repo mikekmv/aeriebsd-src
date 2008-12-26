@@ -84,9 +84,6 @@ struct ml {
 	LIST_ENTRY(ml)	list;
 };
 
-/* XXX - this is from NetBSD  */
-#define LIST_HEAD_INITIALIZER(head) { NULL }
-
 LIST_HEAD(, ml) freelist = LIST_HEAD_INITIALIZER(freelist);
 LIST_HEAD(, ml) allocatedlist = LIST_HEAD_INITIALIZER(allocatedlist);
 
@@ -95,7 +92,7 @@ LIST_HEAD(, ml) allocatedlist = LIST_HEAD_INITIALIZER(allocatedlist);
 void *
 alloc(unsigned size)
 {
-	struct ml *f, *bestf;
+	struct ml *f, *bestf = NULL;
 	unsigned bestsize = 0xffffffff;	/* greater than any real size */
 	char *help;
 	int failed;

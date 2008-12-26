@@ -54,6 +54,7 @@
 #include "bpfilter.h"
 #include "tun.h"
 #include "audio.h"
+#include "video.h"
 #include "vnd.h"
 #include "ccd.h"
 #include "ch.h"
@@ -72,6 +73,7 @@
 #include "sab.h"
 #include "pcons.h"
 #include "vcons.h"
+#include "sbbc.h"
 #include "com.h"
 #include "lpt.h"
 #include "bpp.h"
@@ -191,7 +193,7 @@ struct cdevsw	cdevsw[] =
 	cdev_notdef(),			/* 41 */
 	cdev_notdef(),			/* 42: SMD disk */
 	cdev_svr4_net_init(NSVR4_NET,svr4_net),	/* 43: svr4 net pseudo-device */
-	cdev_notdef(),			/* 44 */
+	cdev_video_init(NVIDEO,video),	/* 44: generic video I/O */
 	cdev_notdef(),			/* 45 */
 	cdev_notdef(),			/* 46 */
 	cdev_notdef(),			/* 47 */
@@ -281,7 +283,8 @@ struct cdevsw	cdevsw[] =
 	cdev_tty_init(NPCONS,pcons),	/* 122: PROM console */
 	cdev_ptm_init(NPTY,ptm),	/* 123: pseudo-tty ptm device */
 	cdev_hotplug_init(NHOTPLUG,hotplug), /* 124: devices hot plugging */
-	cdev_tty_init(NVCONS,vcons)	/* 125: virtual console */
+	cdev_tty_init(NVCONS,vcons),	/* 125: virtual console */
+	cdev_tty_init(NSBBC,sbbc)	/* 126: SBBC console */
 };
 int	nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 

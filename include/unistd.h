@@ -47,6 +47,11 @@
 #define F_TEST          3	/* test a section for locks by other procs */
 #endif
 
+#if __POSIX_VISIBLE
+#define _POSIX_REENTRANT_FUNCTIONS	1
+#define _POSIX_THREAD_SAFE_FUNCTIONS	200112L
+#endif
+
 #ifndef NULL
 #ifdef 	__GNUG__
 #define	NULL	__null

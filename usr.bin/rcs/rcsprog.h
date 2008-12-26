@@ -115,7 +115,7 @@ int	rcsmerge_main(int, char **);
 void	rcsmerge_usage(void);
 
 /* rcsprog.c */
-int	rcs_init(char *, char **, int);
+int	build_cmd(char ***, char **, int);
 int	rcs_getopt(int, char **, const char *);
 int	rcs_main(int, char **);
 void	rcs_usage(void);

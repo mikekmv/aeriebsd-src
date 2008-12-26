@@ -70,7 +70,7 @@ OpenBSDInstallPart3
 
 OpenBSDInstallPart4({:- If you have DOS or Linux partitions
 	defined on the disk, these will usually show up as partition
-	'h', 'i' and so on.-:})
+	'i', 'j' and so on.-:})
 
 	Note that all OpenBSD partitions in the disk label must have an
 	offset that makes it start within the OpenBSD part of the disk,
@@ -96,5 +96,13 @@ OpenBSDDISKInstall({:-"wdN" or -:},,{:- or MS-DOS-:})
 OpenBSDCommonFS
 
 OpenBSDCommonURL
+
+OpenBSDInstallWrapup
+
+OpenBSDInstallAperture
+
+OpenBSDInstallConsole
+
+OpenBSDInstallWrapupPart2
 
 OpenBSDCongratulations

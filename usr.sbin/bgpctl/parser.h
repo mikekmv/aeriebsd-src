@@ -49,16 +49,18 @@ enum actions {
 };
 
 struct parse_result {
-	struct bgpd_addr	addr;
-	struct bgpd_addr	peeraddr;
-	struct filter_as	as;
-	struct filter_set_head	set;
-	struct filter_community community;
-	char			peerdesc[PEER_DESCR_LEN];
-	int			flags;
+	struct bgpd_addr	 addr;
+	struct bgpd_addr	 peeraddr;
+	struct filter_as	 as;
+	struct filter_set_head	 set;
+	struct filter_community  community;
+	char			 peerdesc[PEER_DESCR_LEN];
+	char			*irr_outdir;
+	int			 flags;
 	enum actions		action;
-	u_int8_t		prefixlen;
-	sa_family_t		af;
+	u_int8_t		 prefixlen;
+	sa_family_t		 af;
 };
 
+__dead void		 usage(void);
 struct parse_result	*parse(int, char *[]);

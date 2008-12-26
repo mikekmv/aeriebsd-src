@@ -345,6 +345,13 @@ _C_LABEL(data_start):					! Start of data segment
 _C_LABEL(u0):	.xword	0
 estack0:	.xword	0
 
+/*
+ * This stack is used for bootstrapping and spinning up CPUs.
+ */
+	.space	4096
+	.align	16
+tmpstack:
+
 #ifdef DEBUG
 /*
  * This stack is used when we detect kernel stack corruption.
@@ -812,10 +819,10 @@ TABLE/**/uspill:
 #endif	/* DEBUG */
 	UTRAP 0x08c; TA32	! 0x08c spill_3_normal
 TABLE/**/kspill:
-	SPILL64 kspill8,ASI_N	! 0x090 spill_4_normal -- used to save supervisor windows
-	SPILL32 kspill4,ASI_N	! 0x094 spill_5_normal
-	SPILLBOTH kspill8,kspill4,ASI_N	! 0x098 spill_6_normal
-	UTRAP 0x09c; TA32	! 0x09c spill_7_normal
+	UTRAP 0x090; TA32	! 0x090 spill_4_normal -- used to save supervisor windows
+	SPILL64 kspill8,ASI_N	! 0x094 spill_5_normal
+	SPILL32 kspill4,ASI_N	! 0x098 spill_6_normal
+	SPILLBOTH kspill8,kspill4,ASI_N	! 0x09c spill_7_normal
 TABLE/**/uspillk:
 	USPILL64 uspillk8,ASI_AIUS	! 0x0a0 spill_0_other -- used to save user windows in supervisor mode
 	SPILL32 uspillk4,ASI_AIUS	! 0x0a4 spill_1_other
@@ -831,10 +838,10 @@ TABLE/**/ufill:
 	FILLBOTH ufill8,ufill4,ASI_AIUS	! 0x0c8 fill_2_normal
 	UTRAP 0x0cc; TA32	! 0x0cc fill_3_normal
 TABLE/**/kfill:
-	FILL64 kfill8,ASI_N	! 0x0d0 fill_4_normal -- used to fill windows when running supervisor mode
-	FILL32 kfill4,ASI_N	! 0x0d4 fill_5_normal
-	FILLBOTH kfill8,kfill4,ASI_N	! 0x0d8 fill_6_normal
-	UTRAP 0x0dc; TA32	! 0x0dc fill_7_normal
+	UTRAP 0x0d0; TA32	! 0x0d0 fill_4_normal -- used to fill windows when running supervisor mode
+	FILL64 kfill8,ASI_N	! 0x0d4 fill_5_normal
+	FILL32 kfill4,ASI_N	! 0x0d8 fill_6_normal
+	FILLBOTH kfill8,kfill4,ASI_N	! 0x0dc fill_7_normal
 TABLE/**/ufillk:
 	UFILL64 ufillk8,ASI_AIUS	! 0x0e0 fill_0_other
 	FILL32 ufillk4,ASI_AIUS	! 0x0e4 fill_1_other
@@ -971,10 +978,10 @@ TABLE/**/uspill:
 	SPILLBOTH 1b,2b,ASI_AIUS	! 0x088 spill_2_normal
 	UTRAP 0x08c; TA32	! 0x08c spill_3_normal
 TABLE/**/kspill:
-	SPILL64 1,ASI_N	! 0x090 spill_4_normal -- used to save supervisor windows
-	SPILL32 2,ASI_N	! 0x094 spill_5_normal
-	SPILLBOTH 1b,2b,ASI_N	! 0x098 spill_6_normal
-	UTRAP 0x09c; TA32	! 0x09c spill_7_normal
+	UTRAP 0x090; TA32	! 0x090 spill_4_normal -- used to save supervisor windows
+	SPILL64 1,ASI_N		! 0x094 spill_5_normal
+	SPILL32 2,ASI_N		! 0x098 spill_6_normal
+	SPILLBOTH 1b,2b,ASI_N	! 0x09c spill_7_normal
 TABLE/**/uspillk:
 	USPILL64 1,ASI_AIUS	! 0x0a0 spill_0_other -- used to save user windows in nucleus mode
 	SPILL32 2,ASI_AIUS	! 0x0a4 spill_1_other
@@ -990,10 +997,10 @@ TABLE/**/ufill:
 	FILLBOTH 1b,2b,ASI_AIUS	! 0x0c8 fill_2_normal
 	UTRAP 0x0cc; TA32	! 0x0cc fill_3_normal
 TABLE/**/sfill:
-	FILL64 1,ASI_N		! 0x0d0 fill_4_normal -- used to fill windows when running nucleus mode from supervisor
-	FILL32 2,ASI_N		! 0x0d4 fill_5_normal
-	FILLBOTH 1b,2b,ASI_N	! 0x0d8 fill_6_normal
-	UTRAP 0x0dc; TA32	! 0x0dc fill_7_normal
+	UTRAP 0x0d0; TA32	! 0x0d0 fill_4_normal -- used to fill windows when running nucleus mode from supervisor
+	FILL64 1,ASI_N		! 0x0d4 fill_5_normal
+	FILL32 2,ASI_N		! 0x0d8 fill_6_normal
+	FILLBOTH 1b,2b,ASI_N	! 0x0dc fill_7_normal
 TABLE/**/kfill:
 	UFILL64 1,ASI_AIUS	! 0x0e0 fill_0_other -- used to fill user windows when running nucleus mode -- will we ever use this?
 	FILL32 2,ASI_AIUS	! 0x0e4 fill_1_other
@@ -1100,10 +1107,10 @@ _C_LABEL(trapbase_sun4v):
 	SPILL32 uspill4v, ASI_AIUS			! 0x84
 	SPILLBOTH uspill8v,uspill4v, ASI_AIUS		! 0x88
 	sun4v_tl0_unused 4				! 0x8c
-	SPILL64 kspill8v, ASI_N				! 0x90
-	SPILL32 kspill4v, ASI_N				! 0x94
-	SPILLBOTH kspill8v, kspill4v, ASI_N		! 0x98
-	sun4v_tl0_unused 4				! 0x9c
+	sun4v_tl0_unused 4				! 0x90
+	SPILL64 kspill8v, ASI_N				! 0x94
+	SPILL32 kspill4v, ASI_N				! 0x98
+	SPILLBOTH kspill8v, kspill4v, ASI_N		! 0x9c
 	USPILL64 uspillk8v, ASI_AIUS			! 0xa0
 	SPILL32 uspillk4v, ASI_AIUS			! 0xa4
 	SPILLBOTH uspillk8v, uspillk4v, ASI_AIUS	! 0xa8
@@ -1112,11 +1119,11 @@ _C_LABEL(trapbase_sun4v):
 	UFILL64 ufill8v, ASI_AIUS			! 0xc0
 	FILL32 ufill4v, ASI_AIUS			! 0xc4
 	FILLBOTH ufill8v, ufill4v, ASI_AIUS		! 0xc8
-	sun4v_tl0_unused 4				! 0xcf
-	FILL64 kfill8v, ASI_N				! 0xd0
-	FILL32 kfill4v, ASI_N				! 0xd4
-	FILLBOTH kfill8v, kfill4v, ASI_N		! 0xd8
-	sun4v_tl0_unused 4				! 0xdf
+	sun4v_tl0_unused 4				! 0xcc
+	sun4v_tl0_unused 4				! 0xd0
+	FILL64 kfill8v, ASI_N				! 0xd4
+	FILL32 kfill4v, ASI_N				! 0xd8
+	FILLBOTH kfill8v, kfill4v, ASI_N		! 0xdc
 	UFILL64 ufillk8v, ASI_AIUS			! 0xe0
 	FILL32 ufillk4v, ASI_AIUS			! 0xe4
 	FILLBOTH ufillk8v, ufillk4v, ASI_AIUS		! 0xe8
@@ -1169,10 +1176,10 @@ _C_LABEL(trapbase_sun4v):
 	sun4v_tl1_uspill_normal				! 0x84
 	sun4v_tl1_uspill_normal				! 0x88
 	sun4v_tl1_unused 4				! 0x8c
-	sun4v_tl1_kspill_normal				! 0x90
+	sun4v_tl1_unused 4				! 0x90
 	sun4v_tl1_kspill_normal				! 0x94
 	sun4v_tl1_kspill_normal				! 0x98
-	sun4v_tl1_unused 4				! 0x9c
+	sun4v_tl1_kspill_normal				! 0x9c
 	sun4v_tl1_uspill_other				! 0xa0
 	sun4v_tl1_uspill_other				! 0xa4
 	sun4v_tl1_uspill_other				! 0xa8
@@ -2084,9 +2091,9 @@ winfixspill:
 	brgez	%g7, 0f
 	 srlx	%g7, PGSHIFT, %g7			! Isolate PA part
 	sll	%g6, 32-PGSHIFT, %g6			! And offset
-	sllx	%g7, PGSHIFT+23, %g7			! There are 23 bits to the left of the PA in the TTE
+	sllx	%g7, PGSHIFT+17, %g7			! There are 17 bits to the left of the PA in the TTE
 	srl	%g6, 32-PGSHIFT, %g6
-	srax	%g7, 23, %g7
+	srax	%g7, 17, %g7
 	or	%g7, %g6, %g6				! Then combine them to form PA
 
 	wr	%g0, ASI_PHYS_CACHED, %asi		! Use ASI_PHYS_CACHED to prevent possible page faults
@@ -3285,9 +3292,9 @@ pcbspill:
 	brgez	%g7, pcbspill_fail
 	 srlx	%g7, PGSHIFT, %g7			! Isolate PA part
 	sll	%g6, 32-PGSHIFT, %g6			! And offset
-	sllx	%g7, PGSHIFT+23, %g7			! There are 23 bits to the left of the PA in the TTE
+	sllx	%g7, PGSHIFT+8, %g7			! There are 8 bits to the left of the PA in the TTE
 	srl	%g6, 32-PGSHIFT, %g6
-	srax	%g7, 23, %g7
+	srax	%g7, 8, %g7
 	or	%g7, %g6, %g6				! Then combine them to form PA
 
 !	wr	%g0, ASI_PHYS_CACHED, %asi		! Use ASI_PHYS_CACHED to prevent possible page faults
@@ -3877,12 +3884,13 @@ interrupt_vector:
 	ldxa	[%g2] ASI_IRDR, %g2	! Get interrupt number
 	membar	#Sync
 
+	sethi	%hi(KERNBASE), %g3
 	btst	IRSR_BUSY, %g1
 	bz,pn	%icc, 3f		! Spurious interrupt
-	 cmp	%g2, MAXINTNUM
+	 cmp	%g2, %g3
 #ifdef MULTIPROCESSOR
 	blu,pt	%xcc, Lsoftint_regular
-	 sllx	%g2, 3, %g5		! Calculate entry number
+	 and	%g2, MAXINTNUM-1, %g5	! XXX make sun4us work
 	mov	IRDR_1H, %g3
 	ldxa	[%g3] ASI_IRDR, %g3     ! Get IPI handler arg0
 	mov	IRDR_2H, %g5
@@ -3897,7 +3905,7 @@ interrupt_vector:
 	NOTREACHED
 #else
 	bgeu,pn	%xcc, 3f
-	 sllx	%g2, 3, %g5		! Calculate entry number
+	 and	%g2, MAXINTNUM-1, %g5	! XXX make sun4us work
 #endif
 
 Lsoftint_regular:
@@ -3906,6 +3914,7 @@ Lsoftint_regular:
 
 	sethi	%hi(_C_LABEL(intrlev)), %g3
 	or	%g3, %lo(_C_LABEL(intrlev)), %g3
+	sllx	%g5, 3, %g5		! Calculate entry number
 	ldx	[%g3 + %g5], %g5	! We have a pointer to the handler
 #ifdef DEBUG
 	brnz,pt %g5, 1f
@@ -4399,16 +4408,19 @@ sparc_intr_retry:
 	call	_C_LABEL(sparc64_intlock)
 	 add	%sp, CC64FSZ+BIAS, %o0	! tf = %sp + CC64FSZ + BIAS
 #endif
-	
+
 2:
-	add	%sp, CC64FSZ+BIAS, %o2	! tf = %sp + CC64FSZ + BIAS
-	
 	ldx	[%l2 + IH_PEND], %l7	! Load next pending
+	add	%l2, IH_PEND, %l3
+	clr	%l4
+	casxa	[%l3] ASI_N, %l7, %l4	! Unlink from list
+	cmp	%l7, %l4
+	bne,pn	%xcc, 2b		! Retry?
+	 add	%sp, CC64FSZ+BIAS, %o2	! tf = %sp + CC64FSZ + BIAS
+
 	ldx	[%l2 + IH_FUN], %o4	! ih->ih_fun
 	ldx	[%l2 + IH_ARG], %o0	! ih->ih_arg
 	ldx	[%l2 + IH_ACK], %l1	! ih->ih_ack
-
-	stx	%g0, [%l2 + IH_PEND]	! Unlink from list
 
 	! At this point, the current ih could already be added
 	! back to the pending table.
@@ -4850,6 +4862,11 @@ dostart:
 #endif	/* 0 */
 
 	/*
+	 * Switch to temporary stack.
+	 */
+	set	tmpstack-CC64FSZ-BIAS, %sp
+
+	/*
 	 * Ready to run C code; finish bootstrap.
 	 */
 1:
@@ -4957,16 +4974,9 @@ ENTRY(sun4u_set_tsbs)
 
 
 #ifdef MULTIPROCESSOR
-	.data
-	.space 2048
-	_ALIGN
-tmpstack:
-	.text
-
 ENTRY(cpu_mp_startup)
 	mov	%o0, %g2
 
-	wrpr	%g0, 0, %cleanwin
 	wrpr	%g0, 13, %pil
 	wrpr	%g0, PSTATE_INTR|PSTATE_PEF, %pstate
 	wr	%g0, FPRS_FEF, %fprs		! Turn on FPU
@@ -6030,18 +6040,15 @@ ENTRY(cpu_switchto)
 	rdpr	%pstate, %o1		! oldpstate = %pstate;
 	wrpr	%g0, PSTATE_INTR, %pstate ! make sure we're on normal globals
 
-	mov	%i0, %l4		! oldproc
-	mov	%i1, %l3		! newproc
-
 	ldx	[%g7 + CI_CPCB], %l5
 
 	/*
 	 * Register usage:
 	 *
+	 *	%i0 = oldproc
+	 *	%i1 = newproc
 	 *	%l1 = newpcb
 	 *	%l2 = newpstate
-	 *	%l3 = p
-	 *	%l4 = lastproc
 	 *	%l5 = cpcb
 	 *	%o0 = tmp 1
 	 *	%o1 = oldpstate
@@ -6052,10 +6059,10 @@ ENTRY(cpu_switchto)
 	 */
 
 	/* firewalls */
-	ldx	[%l3 + P_WCHAN], %o0	! if (p->p_wchan)
+	ldx	[%i1 + P_WCHAN], %o0	! if (newproc->p_wchan)
 	brnz,pn	%o0, Lsw_panic_wchan	!	panic("switch wchan");
 !	 XXX check no delay slot
-	ldsb	[%l3 + P_STAT], %o0	! if (p->p_stat != SRUN)
+	ldsb	[%i1 + P_STAT], %o0	! if (newproc->p_stat != SRUN)
 	cmp	%o0, SRUN
 	bne	Lsw_panic_srun		!	panic("switch SRUN");
 !	 XXX check no delay slot
@@ -6068,13 +6075,11 @@ ENTRY(cpu_switchto)
 	 * p->p_cpu = curcpu();
 	 */
 	ldx	[%g7 + CI_SELF], %o0
-	stx	%o0, [%l3 + P_CPU]
+	stx	%o0, [%i1 + P_CPU]
 #endif	/* defined(MULTIPROCESSOR) */
-	mov	SONPROC, %o0			! p->p_stat = SONPROC
-	stb	%o0, [%l3 + P_STAT]
-	st	%g0, [%g7 + CI_WANT_RESCHED]	! want_resched = 0;
-	ldx	[%l3 + P_ADDR], %l1		! newpcb = p->p_addr;
-	stx	%l4, [%g7 + CI_CURPROC]		! restore old proc so we can save it
+	mov	SONPROC, %o0			! newproc->p_stat = SONPROC
+	stb	%o0, [%i1 + P_STAT]
+	ldx	[%i1 + P_ADDR], %l1		! newpcb = newpeoc->p_addr;
 
 	flushw				! save all register windows except this one
 
@@ -6082,7 +6087,7 @@ ENTRY(cpu_switchto)
 	 * Not the old process.  Save the old process, if any;
 	 * then load p.
 	 */
-	brz,pn	%l4, Lsw_load		! if no old process, go load
+	brz,pn	%i0, Lsw_load		! if no old process, go load
 	 wrpr	%g0, PSTATE_KERN, %pstate
 
 	stx	%i6, [%l5 + PCB_SP]	! cpcb->pcb_sp = sp;
@@ -6100,7 +6105,7 @@ ENTRY(cpu_switchto)
 	 */
 Lsw_load:
 	/* set new cpcb */
-	stx	%l3, [%g7 + CI_CURPROC]	! curproc = p;
+	stx	%i1, [%g7 + CI_CURPROC]	! curproc = newproc;
 	stx	%l1, [%g7 + CI_CPCB]	! cpcb = newpcb;
 
 	ldx	[%l1 + PCB_SP], %i6
@@ -6114,7 +6119,7 @@ Lsw_load:
 	 * can talk about user space stuff.  (Its pcb_uw is currently
 	 * zero so it is safe to have interrupts going here.)
 	 */
-	ldx	[%l3 + P_VMSPACE], %o3	! vm = p->p_vmspace;
+	ldx	[%i1 + P_VMSPACE], %o3		! vm = newproc->p_vmspace;
 	sethi	%hi(_C_LABEL(kernel_pmap_)), %o1
 	mov	CTX_SECONDARY, %l5		! Recycle %l5
 	ldx	[%o3 + VM_PMAP], %o2		! if (vm->vm_pmap != kernel_pmap_)
@@ -6151,18 +6156,6 @@ Lsw_havectx:
 	wrpr	%g0, PSTATE_INTR, %pstate
 	ret
 	 restore
-
-ENTRY(cpu_idle_enter)
-	retl
-	 nop
-
-ENTRY(cpu_idle_cycle)
-	retl
-	 nop
-
-ENTRY(cpu_idle_leave)
-	retl
-	 nop
 
 /*
  * Snapshot the current process so that stack frames are up to date.
@@ -8870,10 +8863,6 @@ ENTRY(cecc_catch)
  * -2 send it to any CPU, otherwise send it to a particular CPU.
  *
  * XXXX Dispatching to different CPUs is not implemented yet.
- *
- * XXXX We do not block interrupts here so it's possible that another
- *	interrupt of the same level is dispatched before we get to
- *	enable the softint, causing a spurious interrupt.
  */
 ENTRY(send_softint)
 	rdpr	%pstate, %g1
@@ -9000,18 +8989,11 @@ ENTRY(setjmp)
 	ret
 	 restore	%g0, 0, %o0
 
-	.data
-Lpanic_ljmp:
-	.asciz	"longjmp botch"
-	_ALIGN
-	.text
-
 ENTRY(longjmp)
 	save	%sp, -CC64FSZ, %sp	! prepare to restore to (old) frame
 	flushw
 	mov	1, %i2
 	ldx	[%i0+0], %fp	! get return stack
-	movrz	%i1, %i1, %i2	! compute v ? v : 1
 	ldx	[%i0+8], %i7	! get rpc
 	ret
 	 restore	%i2, 0, %o0

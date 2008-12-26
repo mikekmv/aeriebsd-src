@@ -1,9 +1,3 @@
-#ifndef GARRAY_H
-#define GARRAY_H
-
-/* $OpenPackages$ */
-/* Growable array implementation */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -28,6 +22,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef GARRAY_H
+#define GARRAY_H
+
+/* Growable array implementation */
 
 struct growableArray {
 	GNode 	     **a;	/* Only used for gnodes right now */

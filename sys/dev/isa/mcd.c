@@ -505,8 +505,7 @@ mcdstrategy(bp)
 	 * Do bounds checking, adjust transfer. if error, process.
 	 * If end of partition, just return.
 	 */
-	if (DISKPART(bp->b_dev) != RAW_PART &&
-	    bounds_check_with_label(bp, sc->sc_dk.dk_label,
+	if (bounds_check_with_label(bp, sc->sc_dk.dk_label,
 	    (sc->flags & (MCDF_WLABEL|MCDF_LABELLING)) != 0) <= 0)
 		goto done;
 	

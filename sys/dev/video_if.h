@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008 Robert Nagy <robert@openbsd.org>
+ * Copyright (c) 2008 Marcus Glocker <mglocker@openbsd.org>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -25,17 +26,32 @@
 
 struct video_hw_if {
 	/* open hardware */
-	int	(*open)(void *, int);	
+	int	(*open)(void *, int, int *, uint8_t *, void (*)(void *),
+		    void *);
 
 	/* close hardware */
 	int	(*close)(void *);
 
+	/* ioctl's */
 	int	(*querycap)(void *, struct v4l2_capability *);
+	int	(*enum_fmt)(void *, struct v4l2_fmtdesc *);
 	int	(*s_fmt)(void *, struct v4l2_format *);
 	int	(*g_fmt)(void *, struct v4l2_format *);
+	int	(*enum_input)(void *, struct v4l2_input *);
+	int	(*s_input)(void *, int);
 	int	(*reqbufs)(void *, struct v4l2_requestbuffers *);
+	int	(*querybuf)(void *, struct v4l2_buffer *);
 	int	(*qbuf)(void *, struct v4l2_buffer *);
 	int	(*dqbuf)(void *, struct v4l2_buffer *);
+	int	(*streamon)(void *, int);
+	int	(*streamoff)(void *, int);
+	int	(*try_fmt)(void *, struct v4l2_format *);
+	int	(*queryctrl)(void *, struct v4l2_queryctrl *);
+	caddr_t	(*mappage)(void *, off_t, int);
+
+	/* other functions */
+	int	(*get_bufsize)(void *);
+	int	(*start_read)(void *);
 };
 
 struct video_attach_args {

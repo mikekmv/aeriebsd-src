@@ -190,6 +190,10 @@
 #define IMPL_SPARC64		0x01 /* SPARC64 */
 #define IMPL_SPARC64_II		0x02 /* SPARC64-II */
 #define IMPL_SPARC64_III	0x03 /* SPARC64-III */
+#define IMPL_SPARC64_IV		0x04 /* SPARC64-IV */
+#define IMPL_ZEUS		0x05 /* SPARC64-V */
+#define IMPL_OLYMPUS_C		0x06 /* SPARC64-VI */
+#define IMPL_JUPITER		0x07 /* SPARC64-VII */
 #define IMPL_SPITFIRE		0x10 /* UltraSPARC */
 #define IMPL_BLACKBIRD		0x11 /* UltraSPARC-II */
 #define IMPL_SABRE		0x12 /* UltraSPARC-IIi */
@@ -214,7 +218,7 @@
  * stack pointer and then vector to the real handler.  We could optimize this
  * if we could guarantee only 32-bit or 64-bit stacks.
  */
-#define WSTATE_KERN	026
+#define WSTATE_KERN	027
 #define WSTATE_USER	022
 
 #define CWP		0x01f

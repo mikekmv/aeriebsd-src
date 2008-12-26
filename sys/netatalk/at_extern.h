@@ -95,7 +95,7 @@ int		at_control(u_long, caddr_t, struct ifnet *,
 u_int16_t	at_cksum(struct mbuf *, int);
 int		ddp_usrreq(struct socket *, int,
 				struct mbuf *, struct mbuf *,
-				struct mbuf *);
+				struct mbuf *, struct proc *);
 void		ddp_init(void );
 struct ifaddr 	*at_ifawithnet(struct sockaddr_at *, struct ifaddr *);
 int		ddp_output(struct mbuf *, ...);

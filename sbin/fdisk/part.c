@@ -25,7 +25,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: part.c,v 1.1.1.1 2008/08/26 14:40:22 root Exp $";
 #endif
 
 #include <err.h>
@@ -121,6 +121,7 @@ static const struct part_type {
 	{ 0xA8, "MacOS X     "},   /* MacOS X main partition */
 	{ 0xA9, "NetBSD      "},   /* NetBSD */
 	{ 0xAB, "MacOS X boot"},   /* MacOS X boot partition */
+	{ 0xAF, "MacOS X HFS+"},   /* MacOS X HFS+ partition */
 	{ 0xB7, "BSDI filesy*"},   /* BSDI BSD/386 filesystem */
 	{ 0xB8, "BSDI swap   "},   /* BSDI BSD/386 swap */
 	{ 0xBF, "Solaris     "},   /* Solaris */

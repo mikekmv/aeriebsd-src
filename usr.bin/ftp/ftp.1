@@ -28,7 +28,7 @@
 .\"
 .\"	@(#)ftp.1	8.3 (Berkeley) 10/9/94
 .\"
-.Dd $Mdocdate: March 10 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt FTP 1
 .Os
 .Sh NAME
@@ -554,7 +554,10 @@ on the remote machine.
 .It Ic mdir Ar remote-files local-file
 A synonym for
 .Ic mls .
-.It Ic mget Ar remote-files
+.It Xo Ic mget
+.Op Fl cr
+.Ar remote-files
+.Xc
 Expand the
 .Ar remote-files
 on the remote machine
@@ -575,6 +578,19 @@ which can be changed with
 .Ql lcd directory ;
 new local directories can be created with
 .Ql "\&! mkdir directory" .
+.Pp
+If the
+.Fl c
+flag is specified then
+.Ic reget
+is used instead of
+.Ic get .
+If the
+.Fl r
+flag is specified,
+.Nm
+recursively descends the directory tree,
+transferring all files and directories.
 .It Ic mkdir Ar directory-name
 Make a directory on the remote machine.
 .It Ic mls Ar remote-files local-file
@@ -603,7 +619,10 @@ Show the last modification time of the file on the remote machine.
 .It Ic more Ar file
 A synonym for
 .Ic page .
-.It Ic mput Ar local-files
+.It Xo Ic mput
+.Op Fl c
+.Ar local-files
+.Xc
 Expand wild cards in the list of local files given as arguments
 and do a
 .Ic put
@@ -616,6 +635,13 @@ Resulting file names will then be processed according to
 and
 .Ic nmap
 settings.
+.Pp
+If the
+.Fl c
+flag is specified then
+.Ic reput
+is used instead of
+.Ic put .
 .It Ic msend Ar local-files
 A synonym for
 .Ic mput .
@@ -858,6 +884,8 @@ will delete all files.
 .Pp
 When prompting is on, the following commands are available at a prompt:
 .Bl -tag -width 2n -offset indent
+.It Ic ?\&
+Print help message.
 .It Ic a
 Answer
 .Dq yes
@@ -873,6 +901,12 @@ to the current file and turn off prompt mode
 (as if
 .Dq prompt off
 had been given).
+.It Ic q
+Answer
+.Dq no
+to the current file and automatically answer
+.Dq no
+to any remaining files for the current command.
 .It Ic y
 Transfer the file.
 .El
@@ -958,6 +992,21 @@ Rename the file
 .Ar from
 on the remote machine to the file
 .Ar to .
+.It Ic reput Ar local-file Op Ar remote-file
+Reput acts like put, except that if
+.Ar remote-file
+exists and is
+smaller than
+.Ar local-file ,
+.Ar remote-file
+is presumed to be
+a partially transferred copy of
+.Ar local-file
+and the transfer
+is continued from the apparent point of failure.
+This command
+is useful when transferring very large files over networks that
+are prone to dropping connections.
 .It Ic reset
 Clear reply queue.
 This command re-synchronizes command/reply sequencing with the remote
@@ -1544,7 +1593,7 @@ to display files.
 .It Ev SHELL
 For default shell.
 .It Ev TMPDIR
-Directory to put temporary files.
+Directory in which temporary files are stored.
 .It Ev ftp_proxy
 URL of FTP proxy to use when making FTP URL requests
 (if not defined, use the standard FTP protocol).
@@ -1597,3 +1646,8 @@ to and from
 .Bx 4.2
 servers using the ASCII type.
 Avoid this problem by using the binary image type.
+.Pp
+In the recursive mode of
+.Ic mget ,
+files and directories starting with whitespace are ignored
+because the list cannot be parsed any other way.

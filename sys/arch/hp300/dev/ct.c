@@ -429,7 +429,7 @@ ctcommand(dev, cmd, cnt)
 	}
 
 	while (cnt-- > 0) {
-		bp->b_flags = B_BUSY;
+		bp->b_flags = B_BUSY | B_RAW;
 		if (cmd == MTBSF) {
 			sc->sc_blkno = sc->sc_eofs[sc->sc_eofp];
 			sc->sc_eofp--;

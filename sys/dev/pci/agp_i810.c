@@ -135,14 +135,19 @@ agp_i810_vgamatch(struct pci_attach_args *pa)
 	case PCI_PRODUCT_INTEL_82945G_IGD_2:
 	case PCI_PRODUCT_INTEL_82945GM_IGD_1:
 	case PCI_PRODUCT_INTEL_82945GM_IGD_2:
+	case PCI_PRODUCT_INTEL_82945GME_IGD_1:
 	case PCI_PRODUCT_INTEL_82G965_IGD_1:
 	case PCI_PRODUCT_INTEL_82G965_IGD_2:
 	case PCI_PRODUCT_INTEL_82Q965_IGD_1:
 	case PCI_PRODUCT_INTEL_82Q965_IGD_2:
 	case PCI_PRODUCT_INTEL_82GM965_IGD_1:
 	case PCI_PRODUCT_INTEL_82GM965_IGD_2:
+	case PCI_PRODUCT_INTEL_82GME965_IGD_1:
+	case PCI_PRODUCT_INTEL_82GME965_IGD_2:
 	case PCI_PRODUCT_INTEL_82G33_IGD_1:
 	case PCI_PRODUCT_INTEL_82G33_IGD_2:
+	case PCI_PRODUCT_INTEL_82G35_IGD_1:
+	case PCI_PRODUCT_INTEL_82G35_IGD_2:
 		return (1);
 	}
 
@@ -184,6 +189,7 @@ agp_i810_attach(struct agp_softc *sc, struct pci_attach_args *pa)
 
 	/* XXXfvdl */
 	sc->sc_dmat = isc->vga_pa.pa_dmat;
+	sc->sc_memt = isc->vga_pa.pa_memt;
 
 	switch (PCI_PRODUCT(isc->vga_pa.pa_id)) {
 	case PCI_PRODUCT_INTEL_82810_IGD:
@@ -208,6 +214,7 @@ agp_i810_attach(struct agp_softc *sc, struct pci_attach_args *pa)
 	case PCI_PRODUCT_INTEL_82945G_IGD_2:
 	case PCI_PRODUCT_INTEL_82945GM_IGD_1:
 	case PCI_PRODUCT_INTEL_82945GM_IGD_2:
+	case PCI_PRODUCT_INTEL_82945GME_IGD_1:
 		isc->chiptype = CHIP_I915;
 		break;
 	case PCI_PRODUCT_INTEL_82Q965_IGD_1:
@@ -216,6 +223,10 @@ agp_i810_attach(struct agp_softc *sc, struct pci_attach_args *pa)
 	case PCI_PRODUCT_INTEL_82G965_IGD_2:
 	case PCI_PRODUCT_INTEL_82GM965_IGD_1:
 	case PCI_PRODUCT_INTEL_82GM965_IGD_2:
+	case PCI_PRODUCT_INTEL_82GME965_IGD_1:
+	case PCI_PRODUCT_INTEL_82GME965_IGD_2:
+	case PCI_PRODUCT_INTEL_82G35_IGD_1:
+	case PCI_PRODUCT_INTEL_82G35_IGD_2:
 		isc->chiptype = CHIP_I965;
 		break;
 	case PCI_PRODUCT_INTEL_82G33_IGD_1:
@@ -635,7 +646,9 @@ agp_i810_alloc_memory(struct agp_softc *sc, int type, vsize_t size)
 		 * Bogus mapping of 1 or 4 pages for the hardware cursor.
 		 */
 		if (size != AGP_PAGE_SIZE && size != 4 * AGP_PAGE_SIZE) {
+#ifdef DEBUG
 			printf("agp: trying to map %lu for hw cursor\n", size);
+#endif
 			return (NULL);
 		}
 	}

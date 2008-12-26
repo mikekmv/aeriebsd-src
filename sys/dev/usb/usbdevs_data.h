@@ -23,13 +23,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -536,6 +529,10 @@ const struct usb_known_product usb_known_products[] = {
 	    "EZLINK",
 	},
 	{
+	    USB_VENDOR_ANYDATA, USB_PRODUCT_ANYDATA_A2502,
+	    "NTT DoCoMo A2502",
+	},
+	{
 	    USB_VENDOR_ANYDATA, USB_PRODUCT_ANYDATA_ADU_E100H,
 	    "ADU-E100H",
 	},
@@ -920,6 +917,10 @@ const struct usb_known_product usb_known_products[] = {
 	    "RT2870",
 	},
 	{
+	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F5D9050C,
+	    "F5D9050C",
+	},
+	{
 	    USB_VENDOR_BELKIN, USB_PRODUCT_BELKIN_F5D9050V3,
 	    "F5D9050 ver 3",
 	},
@@ -1144,8 +1145,8 @@ const struct usb_known_product usb_known_products[] = {
 	    "iPAQ Linux",
 	},
 	{
-	    USB_VENDOR_BILLIONTON, USB_PRODUCT_BILLIONTON_SNAPPORT,
-	    "SnapPort Ethernet",
+	    USB_VENDOR_CTC, USB_PRODUCT_CTC_CW6622,
+	    "CW6622",
 	},
 	{
 	    USB_VENDOR_CMOTECH, USB_PRODUCT_CMOTECH_CM5100P,
@@ -1522,6 +1523,10 @@ const struct usb_known_product usb_known_products[] = {
 	{
 	    USB_VENDOR_DLINK, USB_PRODUCT_DLINK_DUBE100B1,
 	    "DUB-E100 rev B1",
+	},
+	{
+	    USB_VENDOR_DLINK2, USB_PRODUCT_DLINK2_DWA111,
+	    "DWA-111",
 	},
 	{
 	    USB_VENDOR_DLINK2, USB_PRODUCT_DLINK2_RT2870,
@@ -2004,6 +2009,42 @@ const struct usb_known_product usb_known_products[] = {
 	    "ServoCenter3.1",
 	},
 	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_FHZ1300PC,
+	    "FHZ 1300 PC",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_WS500,
+	    "WS 500",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_EM1010PC,
+	    "EM 1010 PC",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_CSI8,
+	    "CSI 8",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_EM1000DL,
+	    "EM 1000 DL",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_PCK100,
+	    "PCK 100",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_RFP500,
+	    "RFP 500",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_FS20SIG,
+	    "FS 20 SIG",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_WS300PC,
+	    "WS 300 PC",
+	},
+	{
 	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ECO_PRO,
 	    "EVER Eco Pro UPS",
 	},
@@ -2132,6 +2173,30 @@ const struct usb_known_product usb_known_products[] = {
 	    "Y9",
 	},
 	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_UAD8,
+	    "UAD 8",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_UAD7,
+	    "UAD 7",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_USI2,
+	    "USI 2",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_T1100,
+	    "T 1100",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_PCD200,
+	    "PCD 200",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_ULA200,
+	    "ULA 200",
+	},
+	{
 	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_ALC8500,
 	    "ALC 8500 Expert",
 	},
@@ -2244,12 +2309,32 @@ const struct usb_known_product usb_known_products[] = {
 	    "UR 100",
 	},
 	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_CLI7000,
+	    "CLI 7000",
+	},
+	{
 	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_UM100,
 	    "UM 100",
 	},
 	{
 	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_UO100,
 	    "UO 100",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_PPS7330,
+	    "PPS 7330",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_TFM100,
+	    "TFM 100",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_UDF77,
+	    "UDF 77",
+	},
+	{
+	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_ELV_UIO88,
+	    "UIO 88",
 	},
 	{
 	    USB_VENDOR_FTDI, USB_PRODUCT_FTDI_LCD_CFA_632,
@@ -2988,6 +3073,14 @@ const struct usb_known_product usb_known_products[] = {
 	    "USB Airport WN-B11",
 	},
 	{
+	    USB_VENDOR_IODATA, USB_PRODUCT_IODATA_USBWNG54US,
+	    "USB WN-G54/US",
+	},
+	{
+	    USB_VENDOR_IODATA, USB_PRODUCT_IODATA_USBWNG54US_NF,
+	    "USB WN-G54/US",
+	},
+	{
 	    USB_VENDOR_IODATA, USB_PRODUCT_IODATA_ETGUS2,
 	    "ETG-US2",
 	},
@@ -3038,6 +3131,10 @@ const struct usb_known_product usb_known_products[] = {
 	{
 	    USB_VENDOR_ITEGNO, USB_PRODUCT_ITEGNO_WM1080A,
 	    "WM1080A",
+	},
+	{
+	    USB_VENDOR_ITUNER, USB_PRODUCT_ITUNER_USBLCD20x2,
+	    "USB-LCD-20x2",
 	},
 	{
 	    USB_VENDOR_JABLOTRON, USB_PRODUCT_JABLOTRON_PC60B,
@@ -3408,15 +3505,15 @@ const struct usb_known_product usb_known_products[] = {
 	    "QuickCam",
 	},
 	{
-	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMDLXNB,
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMNBDLX,
 	    "QuickCam Notebook Deluxe",
 	},
 	{
-	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMPRO3k,
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMPRO3K,
 	    "QuickCam Pro 3000",
 	},
 	{
-	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMPRONB,
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMNBPRO_1,
 	    "QuickCam Notebook Pro",
 	},
 	{
@@ -3424,12 +3521,76 @@ const struct usb_known_product usb_known_products[] = {
 	    "QuickCam Pro 4000",
 	},
 	{
-	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMFUSION,
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMFUSION_1,
 	    "QuickCam Fusion",
 	},
 	{
-	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMPRO5K,
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMORBITMP_1,
+	    "QuickCam Orbit MP",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMNBPRO,
+	    "QuickCam Notebook Pro",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMPRO5K_1,
 	    "QuickCam Pro 5000",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMOEM_1,
+	    "QuickCam OEM",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMOEM_2,
+	    "QuickCam OEM",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMULTVIS,
+	    "QuickCam Ultra Vision",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMFUSION_2,
+	    "QuickCam Fusion",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMNBPRO_2,
+	    "QuickCam Notebook Pro",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMORBITMP_2,
+	    "QuickCam Orbit MP",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMPRO5K_2,
+	    "QuickCam Pro 5000",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMPRO9K,
+	    "QuickCam Pro 9000",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMPRONB,
+	    "QuickCam Pro Notebook",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMCOMMDLX,
+	    "QuickCam Communicate Deluxe",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMORBITAF,
+	    "QuickCam Orbit AF",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMCOMMMP,
+	    "QuickCam Communicate MP",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAME3500P,
+	    "QuickCam E 3500 Plus",
+	},
+	{
+	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_QUICKCAMDLXNB,
+	    "QuickCam Deluxe Notebook",
 	},
 	{
 	    USB_VENDOR_LOGITECH, USB_PRODUCT_LOGITECH_N43,
@@ -3596,6 +3757,18 @@ const struct usb_known_product usb_known_products[] = {
 	    "WLI-U2-KG54-AI WLAN",
 	},
 	{
+	    USB_VENDOR_MELCO, USB_PRODUCT_MELCO_LUAU2GT,
+	    "LUA-U2-GT Ethernet",
+	},
+	{
+	    USB_VENDOR_MELCO, USB_PRODUCT_MELCO_WLIU2KAMG54,
+	    "WLI-U2-KAMG54",
+	},
+	{
+	    USB_VENDOR_MELCO, USB_PRODUCT_MELCO_WLIU2KAMG54_NF,
+	    "WLI-U2-KAMG54",
+	},
+	{
 	    USB_VENDOR_MELCO, USB_PRODUCT_MELCO_PCOPRS1,
 	    "PC-OP-RS1 RemoteStation",
 	},
@@ -3665,6 +3838,10 @@ const struct usb_known_product usb_known_products[] = {
 	},
 	{
 	    USB_VENDOR_MSI, USB_PRODUCT_MSI_BLUETOOTH_2,
+	    "Bluetooth",
+	},
+	{
+	    USB_VENDOR_MSI, USB_PRODUCT_MSI_BLUETOOTH_3,
 	    "Bluetooth",
 	},
 	{
@@ -5292,6 +5469,10 @@ const struct usb_known_product usb_known_products[] = {
 	    "MC5725",
 	},
 	{
+	    USB_VENDOR_SIERRA, USB_PRODUCT_SIERRA_MC5725_2,
+	    "MC5725",
+	},
+	{
 	    USB_VENDOR_SIERRA, USB_PRODUCT_SIERRA_AIRCARD_580,
 	    "Aircard 580 EVDO",
 	},
@@ -5832,6 +6013,10 @@ const struct usb_known_product usb_known_products[] = {
 	    "Missile Launcher",
 	},
 	{
+	    USB_VENDOR_DREAMCHEEKY, USB_PRODUCT_DREAMCHEEKY_ROCKETBABY,
+	    "Missile Launcher",
+	},
+	{
 	    USB_VENDOR_ISSC, USB_PRODUCT_ISSC_KYBT100,
 	    "KY-BT100 Bluetooth",
 	},
@@ -6152,7 +6337,23 @@ const struct usb_known_product usb_known_products[] = {
 	    "GlobeTrotter 3G QUAD PLUS",
 	},
 	{
+	    USB_VENDOR_OPTION, USB_PRODUCT_OPTION_GT3GPLUS,
+	    "GlobeTrotter 3G PLUS",
+	},
+	{
+	    USB_VENDOR_OPTION, USB_PRODUCT_OPTION_GSICON72,
+	    "GlobeSurfer Icon 7.2",
+	},
+	{
+	    USB_VENDOR_OPTION, USB_PRODUCT_OPTION_GTHSDPA225,
+	    "GlobeTrotter HSDPA Icon 225",
+	},
+	{
 	    USB_VENDOR_WCH, USB_PRODUCT_WCH_CH341,
+	    "CH341 serial/parallel",
+	},
+	{
+	    USB_VENDOR_WCH2, USB_PRODUCT_WCH2_CH341,
 	    "CH341 serial/parallel",
 	},
 	{
@@ -6694,6 +6895,10 @@ const struct usb_known_vendor usb_known_vendors[] = {
 	{
 	    USB_VENDOR_ALTEC,
 	    "Altec Lansing",
+	},
+	{
+	    USB_VENDOR_ITUNER,
+	    "Ituner",
 	},
 	{
 	    USB_VENDOR_PANASONIC,
@@ -7664,6 +7869,10 @@ const struct usb_known_vendor usb_known_vendors[] = {
 	    "Geocast Network Systems",
 	},
 	{
+	    USB_VENDOR_DREAMCHEEKY,
+	    "Dream Cheeky",
+	},
+	{
 	    USB_VENDOR_IDQUANTIQUE,
 	    "id Quantique",
 	},
@@ -7830,6 +8039,10 @@ const struct usb_known_vendor usb_known_vendors[] = {
 	{
 	    USB_VENDOR_SPEEDDRAGON,
 	    "Speed Dragon Multimedia",
+	},
+	{
+	    USB_VENDOR_CTC,
+	    "CONWISE Technology",
 	},
 	{
 	    USB_VENDOR_HAWKING,
@@ -8212,6 +8425,10 @@ const struct usb_known_vendor usb_known_vendors[] = {
 	    "Qualcomm Inc.",
 	},
 	{
+	    USB_VENDOR_WCH2,
+	    "QinHeng Electronics",
+	},
+	{
 	    USB_VENDOR_DLINK,
 	    "D-Link",
 	},
@@ -8302,6 +8519,10 @@ const struct usb_known_vendor usb_known_vendors[] = {
 	{
 	    USB_VENDOR_ONSPEC2,
 	    "OnSpec",
+	},
+	{
+	    USB_VENDOR_ACERLABS2,
+	    "Acer",
 	},
 	{
 	    USB_VENDOR_ZINWELL,

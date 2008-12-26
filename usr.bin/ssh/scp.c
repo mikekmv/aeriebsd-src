@@ -606,7 +606,8 @@ source(int argc, char **argv)
 	struct stat stb;
 	static BUF buffer;
 	BUF *bp;
-	off_t i, amt, statbytes;
+	off_t i, statbytes;
+	size_t amt;
 	int fd = -1, haderr, indx;
 	char *last, *name, buf[2048], encname[MAXPATHLEN];
 	int len;
@@ -625,6 +626,10 @@ source(int argc, char **argv)
 		}
 		if (fstat(fd, &stb) < 0) {
 syserr:			run_err("%s: %s", name, strerror(errno));
+			goto next;
+		}
+		if (stb.st_size < 0) {
+			run_err("%s: %s", name, "Negative file size");
 			goto next;
 		}
 		unset_nonblock(fd);
@@ -686,7 +691,7 @@ next:			if (fd != -1) {
 		set_nonblock(remout);
 		for (haderr = i = 0; i < stb.st_size; i += bp->cnt) {
 			amt = bp->cnt;
-			if (i + amt > stb.st_size)
+			if (i + (off_t)amt > stb.st_size)
 				amt = stb.st_size - i;
 			if (!haderr) {
 				if (atomicio(read, fd, bp->buf, amt) != amt)

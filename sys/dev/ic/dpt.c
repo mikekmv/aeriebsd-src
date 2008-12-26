@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -369,12 +362,8 @@ dpt_init(sc, intrstr)
 	if (intrstr != NULL)
 		printf("%s: interrupting at %s\n", sc->sc_dv.dv_xname, intrstr);
 
-	printf("%s: %d queued commands, %d channel(s), adapter on ID(s)", 
+	printf("%s: %d queued commands, %d channel(s)\n", 
 	    sc->sc_dv.dv_xname, sc->sc_nccbs, ec->ec_maxchannel + 1);
-
-	for (i = 0; i <= ec->ec_maxchannel; i++)
-		printf(" %d", ec->ec_hba[3 - i]);
-	printf("\n");
 
 	/* Reset the SCSI bus */
 	if (dpt_cmd(sc, NULL, 0, CP_IMMEDIATE, CPI_BUS_RESET))

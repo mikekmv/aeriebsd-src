@@ -1,5 +1,3 @@
-#ifndef DIREXPAND_H
-#define DIREXPAND_H
 /*
  * Copyright (c) 1988, 1989, 1990 The Regents of the University of California.
  * Copyright (c) 1988, 1989 by Adam de Boor
@@ -39,6 +37,9 @@
 /* boolean = Dir_HasWildcardsi(name, end)
  *	Returns true if (name, end) needs to be wildcard-expanded.
  */
+#ifndef DIREXPAND_H
+#define DIREXPAND_H
+
 extern bool Dir_HasWildcardsi(const char *, const char *);
 #define Dir_HasWildcards(n) Dir_HasWildcardsi(n, strchr(n, '\0'))
 

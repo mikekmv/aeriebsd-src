@@ -37,7 +37,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: mount_vnd.c,v 1.1.1.1 2008/08/26 14:40:26 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -282,14 +282,13 @@ config(char *dev, char *file, int action, char *key, size_t keylen)
 	struct vnd_ioctl vndio;
 	FILE *f;
 	char *rdev;
-	int rv;
+	int rv = -1;
 
 	if (opendev(dev, O_RDONLY, OPENDEV_PART, &rdev) < 0)
 		err(4, "%s", rdev);
 	f = fopen(rdev, "r");
 	if (f == NULL) {
 		warn("%s", rdev);
-		rv = -1;
 		goto out;
 	}
 	vndio.vnd_file = file;

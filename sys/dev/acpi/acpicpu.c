@@ -114,14 +114,16 @@ struct acpicpu_softc {
 	void			(*sc_notify)(struct acpicpu_pss *, int);
 };
 
-void    acpicpu_set_throttle(struct acpicpu_softc *, int);
 void    acpicpu_add_cstatepkg(struct aml_value *, void *);
 int	acpicpu_getppc(struct acpicpu_softc *);
 int	acpicpu_getpct(struct acpicpu_softc *);
 int	acpicpu_getpss(struct acpicpu_softc *);
 struct acpi_cstate *acpicpu_add_cstate(struct acpicpu_softc *, int, int, int,
     int);
+#if 0
+void    acpicpu_set_throttle(struct acpicpu_softc *, int);
 struct acpi_cstate *acpicpu_find_cstate(struct acpicpu_softc *, int);
+#endif
 
 struct cfattach acpicpu_ca = {
 	sizeof(struct acpicpu_softc), acpicpu_match, acpicpu_attach
@@ -135,6 +137,7 @@ extern int setperf_prio;
 
 struct acpicpu_softc *acpicpu_sc[MAXCPUS];
 
+#if 0
 void
 acpicpu_set_throttle(struct acpicpu_softc *sc, int level)
 {
@@ -164,6 +167,7 @@ acpicpu_find_cstate(struct acpicpu_softc *sc, int type)
 			return cx;
 	return (NULL);
 }
+#endif
 
 struct acpi_cstate *
 acpicpu_add_cstate(struct acpicpu_softc *sc, int type, int latency, int power,

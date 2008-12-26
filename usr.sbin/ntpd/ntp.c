@@ -229,7 +229,7 @@ ntp_main(int pipe_prnt[2], struct ntpd_conf *nconf, struct passwd *pw)
 					sent_cnt++;
 			}
 			if (p->deadline > 0 && p->deadline <= getmonotime()) {
-				timeout = error_interval();
+				timeout = 300;
 				log_debug("no reply from %s received in time, "
 				    "next query %ds", log_sockaddr(
 				    (struct sockaddr *)&p->addr->ss), timeout);
@@ -575,7 +575,6 @@ priv_adjtime(void)
 	conf->status.stratum++;	/* one more than selected peer */
 	update_scale(offset_median);
 
-	conf->status.refid4 = offsets[i]->status.refid4;
 	conf->status.refid = offsets[i]->status.send_refid;
 
 	free(offsets);

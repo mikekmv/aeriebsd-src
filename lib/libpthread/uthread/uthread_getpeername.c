@@ -33,6 +33,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <errno.h>
 #ifdef _THREAD_SAFE
 #include <pthread.h>
 #include "pthread_private.h"
@@ -40,12 +41,23 @@
 int
 getpeername(int fd, struct sockaddr * peer, socklen_t *paddrlen)
 {
-	int             ret;
+	int ret;
+	struct fd_table_entry *entry;
 
-	if ((ret = _FD_LOCK(fd, FD_READ, NULL)) == 0) {
-		ret = _thread_sys_getpeername(fd, peer, paddrlen);
-		_FD_UNLOCK(fd, FD_READ);
+	ret = _thread_fd_table_init(fd, FD_INIT_UNKNOWN, NULL);
+	if (ret == 0) {
+		entry = _thread_fd_table[fd];
+		 
+		_SPINLOCK(&entry->lock);
+		if (entry->state == FD_ENTRY_OPEN) {
+			ret = _thread_sys_getpeername(fd, peer, paddrlen);
+		} else {
+			ret = -1;
+			errno = EBADF;
+		}
+		_SPINUNLOCK(&entry->lock);
 	}
+
 	return ret;
 }
 #endif

@@ -32,7 +32,7 @@
 #if 0
 static const char sccsid[] = "@(#)cmdtab.c	8.2 (Berkeley) 4/20/95";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: cmdtab.c,v 1.1.1.1 2008/08/26 14:43:01 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -73,6 +73,7 @@ const struct cmd cmdtab[] = {
 	{ "More",	{ More },	MSGLIST,	0,	MMNDEL },
 	{ "Page",	{ More },	MSGLIST,	0,	MMNDEL },
 	{ "unread",	{ unread },	MSGLIST,	0,	MMNDEL },
+	{ "Unread",	{ unread },	MSGLIST,	0,	MMNDEL },
 	{ "!",		{ shell },	I|STRLIST,	0,	0 },
 	{ "copy",	{ copycmd },	M|STRLIST,	0,	0 },
 	{ "chdir",	{ schdir },	M|RAWLIST,	0,	1 },

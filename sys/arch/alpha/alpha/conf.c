@@ -89,6 +89,7 @@ cdev_decl(mm);
 #include "scc.h"
 cdev_decl(scc);
 #include "audio.h"
+#include "video.h"
 #include "com.h"
 cdev_decl(com);
 #include "wsdisplay.h"
@@ -178,7 +179,7 @@ struct cdevsw	cdevsw[] =
 	cdev_midi_init(NMIDI,midi),     /* 41: MIDI I/O */
         cdev_midi_init(NSEQUENCER,sequencer),   /* 42: sequencer I/O */
 	cdev_disk_init(NRAID,raid),	/* 43: RAIDframe disk driver */
-	cdev_notdef(),			/* 44 */
+	cdev_video_init(NVIDEO,video),	/* 44: generic video I/O */
 	cdev_usb_init(NUSB,usb),	/* 45: USB controller */
 	cdev_usbdev_init(NUHID,uhid),	/* 46: USB generic HID */
 	cdev_ulpt_init(NULPT,ulpt),	/* 47: USB printer */

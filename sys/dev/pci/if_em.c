@@ -35,16 +35,18 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <dev/pci/if_em.h>
 
+#ifdef EM_DEBUG
 /*********************************************************************
  *  Set this to one to display debug statistics
  *********************************************************************/
 int             em_display_debug_stats = 0;
+#endif
 
 /*********************************************************************
  *  Driver version
  *********************************************************************/
 
-char em_driver_version[] = "6.2.9";
+#define EM_DRIVER_VERSION	"6.2.9"
 
 /*********************************************************************
  *  PCI Device ID Table
@@ -170,7 +172,9 @@ void em_transmit_checksum_setup(struct em_softc *, struct mbuf *,
 #endif
 void em_set_promisc(struct em_softc *);
 void em_set_multi(struct em_softc *);
+#ifdef EM_DEBUG
 void em_print_hw_stats(struct em_softc *);
+#endif
 void em_update_link_status(struct em_softc *);
 int  em_get_buf(struct em_softc *, int);
 int  em_encap(struct em_softc *, struct mbuf *);
@@ -1371,9 +1375,11 @@ em_local_timer(void *arg)
 
 	em_check_for_link(&sc->hw);
 	em_update_link_status(sc);
-	em_update_stats_counters(sc);	
+	em_update_stats_counters(sc);
+#ifdef EM_DEBUG
 	if (em_display_debug_stats && ifp->if_flags & IFF_RUNNING)
 		em_print_hw_stats(sc);
+#endif
 	em_smartspeed(sc);
 
 	timeout_add(&sc->timer_handle, hz);
@@ -1406,10 +1412,8 @@ em_update_link_status(struct em_softc *sc)
 			ifp->if_baudrate = sc->link_speed * 1000000;
 			if (sc->link_duplex == FULL_DUPLEX)
 				ifp->if_link_state = LINK_STATE_FULL_DUPLEX;
-			else if (sc->link_duplex == HALF_DUPLEX)
-				ifp->if_link_state = LINK_STATE_HALF_DUPLEX;
 			else
-				ifp->if_link_state = LINK_STATE_UP;
+				ifp->if_link_state = LINK_STATE_HALF_DUPLEX;
 			if_link_state_change(ifp);
 		}
 	} else {
@@ -2427,7 +2431,8 @@ em_initialize_receive_unit(struct em_softc *sc)
 			sc->rx_int_delay | E1000_RDT_FPDB);
 
 	if (sc->hw.mac_type >= em_82540) {
-		E1000_WRITE_REG(&sc->hw, RADV, sc->rx_abs_int_delay);
+		if (sc->rx_int_delay)
+			E1000_WRITE_REG(&sc->hw, RADV, sc->rx_abs_int_delay);
 
 		/* Set the interrupt throttling rate.  Value is calculated
 		 * as DEFAULT_ITR = 1/(MAX_INTS_PER_SEC * 256ns) */
@@ -2863,26 +2868,14 @@ em_pci_clear_mwi(struct em_hw *hw)
 		(hw->pci_cmd_word & ~CMD_MEM_WRT_INVALIDATE));
 }
 
+/*
+ * We may eventually really do this, but its unnecessary
+ * for now so we just return unsupported.
+ */
 int32_t
 em_read_pcie_cap_reg(struct em_hw *hw, uint32_t reg, uint16_t *value)
 {
-	struct pci_attach_args *pa = &((struct em_osdep *)hw->back)->em_pa;
-	int32_t	rc;
-	u_int16_t pectl;
-
-	/* find the PCIe link width and set max read request to 4KB */
-	if (pci_get_capability(pa->pa_pc, pa->pa_tag, PCI_CAP_PCIEXPRESS,
-	    NULL, NULL) != 0) {
-		em_read_pci_cfg(hw, reg + 0x12, value);
-
-		em_read_pci_cfg(hw, reg + 0x8, &pectl);
-		pectl = (pectl & ~0x7000) | (5 << 12);
-		em_write_pci_cfg(hw, reg + 0x8, &pectl);
-		rc = 0;
-	} else
-		rc = -1;
-
-	return (rc);
+	return -E1000_NOT_IMPLEMENTED;
 }
 
 /*********************************************************************
@@ -3042,6 +3035,7 @@ em_update_stats_counters(struct em_softc *sc)
 	    sc->watchdog_events;
 }
 
+#ifdef EM_DEBUG
 /**********************************************************************
  *
  *  This routine is called only when em_display_debug_stats is enabled.
@@ -3099,3 +3093,4 @@ em_print_hw_stats(struct em_softc *sc)
 	printf("%s: Good Packets Xmtd = %lld\n", unit,
 		(long long)sc->stats.gptc);
 }
+#endif

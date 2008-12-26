@@ -27,7 +27,7 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: April 22 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt RTADVD 8
 .Os
 .Sh NAME
@@ -133,7 +133,7 @@ Upon receipt of signal
 .Dv SIGUSR1 ,
 .Nm
 will dump the current internal state into
-.Pa /var/run/rtadvd.dump .
+.Xr syslog 3 .
 .Pp
 Use
 .Dv SIGTERM
@@ -148,20 +148,17 @@ to all the interfaces
 .Pp
 .Ex -std rtadvd
 .Sh FILES
-.Bl -tag -width "/var/run/rtadvd.dumpXX" -compact
+.Bl -tag -width "/var/run/rtadvd.pidXX" -compact
 .It Pa /etc/rtadvd.conf
 The default configuration file.
 .It Pa /var/run/rtadvd.pid
 Contains the PID of the currently running
 .Nm .
-.It Pa /var/run/rtadvd.dump
-The file in which
-.Nm
-dumps its internal state.
 .El
 .Sh SEE ALSO
 .Xr rtadvd.conf 5 ,
-.Xr rtsol 8
+.Xr rtsol 8 ,
+.Xr syslogd 8
 .Sh HISTORY
 The
 .Nm

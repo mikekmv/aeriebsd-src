@@ -8,7 +8,7 @@ MAN=	aac.4 ac97.4 acphy.4 \
 	ahd.4 aic.4 akbd.4 alipm.4 amdiic.4 amdpm.4 ami.4 amphy.4 ams.4 \
 	an.4 andl.4 aps.4 arc.4 aria.4 art.4 \
 	asbtm.4 ast.4 atalk.4 atapiscsi.4 ath.4 atu.4 atw.4 audio.4 aue.4 \
-	auich.4 autri.4 auixp.4 auvia.4 awi.4 axe.4 az.4 azalia.4 \
+	auich.4 autri.4 auixp.4 auvia.4 axe.4 az.4 azalia.4 \
 	bce.4 bge.4 bha.4 \
 	bio.4 bktr.4 bluetooth.4 bmtphy.4 bnx.4 boca.4 bpf.4 brgphy.4 bridge.4 \
 	bwi.4 \
@@ -25,13 +25,13 @@ MAN=	aac.4 ac97.4 acphy.4 \
 	ichiic.4 ichwdt.4 icmp.4 icmp6.4 icsphy.4 ifmedia.4 \
 	iha.4 iic.4 inet.4 inet6.4 inphy.4 iop.4 iophy.4 ioprbs.4 \
 	iopsp.4 ip.4 ip6.4 ipcomp.4 ipgphy.4 ipmi.4 ips.4 ipsec.4 ipw.4 \
-	isa.4 isagpio.4 isapnp.4 isp.4 it.4 iwi.4 iwn.4 ixgb.4 \
+	isa.4 isagpio.4 isapnp.4 isp.4 it.4 iwi.4 iwn.4 ix.4 ixgb.4 \
 	jmb.4 \
 	kate.4 km.4 ksyms.4 kue.4 lc.4 lge.4 lii.4 lkm.4 lm.4 \
 	lmc.4 lmenv.4 lmn.4 lmtemp.4 lo.4 lofn.4 lpt.4 lxtphy.4 luphy.4 \
 	maestro.4 mainbus.4 malo.4 maxds.4 maxtmp.4 mbg.4 midi.4 mii.4 mfi.4 \
-	moscom.4 mpi.4 mpu.4 msk.4 msts.4 mtd.4 mtdphy.4 multicast.4 mtio.4 \
-	myx.4 ne.4 neo.4 netintro.4 nfe.4 nge.4 nmea.4 noct.4 nofn.4 \
+	moscom.4 mpe.4 mpi.4 mpu.4 msk.4 msts.4 mtd.4 mtdphy.4 multicast.4 \
+	mtio.4 myx.4 ne.4 neo.4 netintro.4 nfe.4 nge.4 nmea.4 noct.4 nofn.4 \
 	nsclpcsio.4 nsgphy.4 nsphy.4 nsphyter.4 null.4 nviic.4 ohci.4 opl.4 \
 	options.4 onewire.4 oosiop.4 osiop.4 owid.4 owsbm.4 owtemp.4 \
 	pcagpio.4 pcaled.4 pcdisplay.4 pchb.4 pci.4 pcib.4 pcfadc.4 \
@@ -54,15 +54,15 @@ MAN=	aac.4 ac97.4 acphy.4 \
 	unix.4 uow.4 upgt.4 upl.4 uplcom.4 ural.4 urio.4 url.4 urlphy.4 usb.4 \
 	usbf.4 uscanner.4 uslcom.4 usscanner.4 uticom.4 uts.4 uvideo.4 uvisor.4 \
 	uvscom.4 uyap.4 vga.4 vgafb.4 vge.4 viaenv.4 viapm.4 viasio.4 vic.4 \
-	vlan.4 vnd.4 vr.4 watchdog.4 wb.4 wbenv.4 wbng.4 wbsio.4 wd.4 wdc.4 \
-	we.4 wi.4tbl wpi.4 wscons.4 wsdisplay.4 wskbd.4 wsmouse.4 wsmux.4 \
-	xe.4 xf86.4 xge.4 xl.4 xmphy.4 yds.4 ym.4 zero.4 zyd.4
+	video.4 vlan.4 vmt.4 vnd.4 vr.4 watchdog.4 wb.4 wbenv.4 wbng.4 \
+	wbsio.4 wd.4 wdc.4 we.4 wi.4tbl wpi.4 wscons.4 wsdisplay.4 wskbd.4 \
+	wsmouse.4 wsmux.4 xe.4 xf86.4 xge.4 xl.4 xmphy.4 yds.4 ym.4 zero.4 \
+	zyd.4
 
 MLINKS+=adv.4 advansys.4 adv.4 adw.4
 MLINKS+=art.4 musycc.4
 MLINKS+=audio.4 mixer.4
 MLINKS+=cardbus.4 cbb.4
-MLINKS+=com.4 pccom.4
 MLINKS+=fd.4 stderr.4 fd.4 stdin.4 fd.4 stdout.4
 MLINKS+=fpa.4 fea.4 fpa.4 fta.4
 MLINKS+=isapnp.4 pnp.4
@@ -81,7 +81,7 @@ MLINKS+=tty.4 cua.4
 MLINKS+=usb.4 uhub.4
 MLINKS+=vnd.4 svnd.4
 
-SUBDIR=	man4.alpha man4.amd64 man4.hp300 man4.hppa \
+SUBDIR=	man4.alpha man4.amd64 man4.armish man4.hp300 man4.hppa \
 	man4.i386 man4.landisk man4.mac68k man4.macppc \
 	man4.sgi man4.sparc man4.sparc64 man4.vax \
 	man4.zaurus

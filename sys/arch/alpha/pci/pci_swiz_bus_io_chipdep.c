@@ -306,6 +306,7 @@ __C(CHIP,_io_map)(v, ioaddr, iosize, cacheable, iohp)
 	int cacheable;
 	bus_space_handle_t *iohp;
 {
+	bus_addr_t ioend = ioaddr + (iosize - 1);
 	int error;
 
 #ifdef EXTENT_DEBUG
@@ -323,19 +324,20 @@ __C(CHIP,_io_map)(v, ioaddr, iosize, cacheable, iohp)
 
 #ifdef CHIP_IO_W1_BUS_START
 	if (ioaddr >= CHIP_IO_W1_BUS_START(v) &&
-	    ioaddr <= CHIP_IO_W1_BUS_END(v)) {
+	    ioend <= CHIP_IO_W1_BUS_END(v)) {
 		*iohp = (ALPHA_PHYS_TO_K0SEG(CHIP_IO_W1_SYS_START(v)) >> 5) +
 		    (ioaddr - CHIP_IO_W1_BUS_START(v));
 	} else
 #endif
 #ifdef CHIP_IO_W2_BUS_START
 	if (ioaddr >= CHIP_IO_W2_BUS_START(v) &&
-	    ioaddr <= CHIP_IO_W2_BUS_END(v)) {
+	    ioend <= CHIP_IO_W2_BUS_END(v)) {
 		*iohp = (ALPHA_PHYS_TO_K0SEG(CHIP_IO_W2_SYS_START(v)) >> 5) +
 		    (ioaddr - CHIP_IO_W2_BUS_START(v));
 	} else
 #endif
 	{
+#ifdef EXTENT_DEBUG
 		printf("\n");
 #ifdef CHIP_IO_W1_BUS_START
 		printf("%s: window[1]=0x%lx-0x%lx\n",
@@ -349,6 +351,8 @@ __C(CHIP,_io_map)(v, ioaddr, iosize, cacheable, iohp)
 #endif
 		panic("%s: don't know how to map %lx",
 		    __S(__C(CHIP,_io_map)), ioaddr);
+#endif
+		return (EINVAL);
 	}
 
 	return (0);

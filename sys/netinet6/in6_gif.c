@@ -66,14 +66,14 @@
 #define offsetof(s, e) ((int)&((s *)0)->e)
 #endif
 
+/*
+ * family - family of the packet to be encapsulate.
+ */
 int
-in6_gif_output(ifp, family, m)
-	struct ifnet *ifp;
-	int family; /* family of the packet to be encapsulate. */
-	struct mbuf *m;
+in6_gif_output(struct ifnet *ifp, int family, struct mbuf *m)
 {
 	struct gif_softc *sc = (struct gif_softc*)ifp;
-        struct sockaddr_in6 *dst = (struct sockaddr_in6 *)&sc->gif_ro6.ro_dst;
+     struct sockaddr_in6 *dst = (struct sockaddr_in6 *)&sc->gif_ro6.ro_dst;
 	struct sockaddr_in6 *sin6_src = (struct sockaddr_in6 *)sc->gif_psrc;
 	struct sockaddr_in6 *sin6_dst = (struct sockaddr_in6 *)sc->gif_pdst;
 	struct tdb tdb;
@@ -169,9 +169,7 @@ in6_gif_output(ifp, family, m)
 	return error;
 }
 
-int in6_gif_input(mp, offp, proto)
-	struct mbuf **mp;
-	int *offp, proto;
+int in6_gif_input(struct mbuf **mp, int *offp, int proto)
 {
 	struct mbuf *m = *mp;
 	struct gif_softc *sc;

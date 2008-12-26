@@ -29,13 +29,13 @@
 
 #if defined(LIBC_SCCS)
 	.rodata
-	.asciz "$ABSD$"
+	.asciz "$ABSD: sigsuspend.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 #include "SYS.h"
 
 err:
-	jmp	__cerror
+	jmp	_C_LABEL(_cerror)
 
 SYSENTRY(sigsuspend)
 	movl	*4(ap),4(ap)		# indirect to mask arg

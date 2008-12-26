@@ -105,7 +105,8 @@ acpi_handle_dsdt(struct ACPIsdt *dsdp)
 	dp = (u_int8_t *)dsdp->body;
 	end = (u_int8_t *)dsdp + dsdp->len;
 
-	acpi_dump_dsdt(dp, end);
+	if (aml_dumpfile == NULL)
+		acpi_dump_dsdt(dp, end);
 }
 
 static void
@@ -168,6 +169,7 @@ acpi_dump_dsdt(u_int8_t *dp, u_int8_t *end)
 	printf("\n}\n");
 	assert(dp == end);
 }
+
 void
 acpi_print_sdt(struct ACPIsdt *sdp)
 {

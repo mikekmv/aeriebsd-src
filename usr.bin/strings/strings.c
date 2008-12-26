@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)strings.c	8.2 (Berkeley) 1/28/94";
 #endif
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: strings.c,v 1.1.1.1 2008/08/26 14:43:15 root Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -260,6 +260,6 @@ static void
 usage(void)
 {
 	(void)fprintf(stderr,
-	    "usage: strings [-afo] [-n length] [-t {o,d,x}] [file ... ]\n");
+	    "usage: strings [-afo] [-m number] [-n number] [-t radix] [file ...]\n");
 	exit(1);
 }

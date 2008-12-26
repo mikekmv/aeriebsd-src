@@ -303,7 +303,7 @@ vndgetdisklabel(dev_t dev, struct vnd_softc *sc, struct disklabel *lp,
 
 	bzero(lp, sizeof(struct disklabel));
 
-	lp->d_secsize = 512;
+	lp->d_secsize = DEV_BSIZE;
 	lp->d_ntracks = 1;
 	lp->d_nsectors = 100;
 	lp->d_ncylinders = sc->sc_size / 100;
@@ -650,6 +650,8 @@ vndiodone(struct buf *bp)
 		    vbp->vb_buf.b_error);
 
 		pbp->b_flags |= B_ERROR;
+		/* XXX does this matter here? */
+		(&vbp->vb_buf)->b_flags |= B_RAW;
 		pbp->b_error = biowait(&vbp->vb_buf);
 	}
 	pbp->b_resid -= vbp->vb_buf.b_bcount;
@@ -920,6 +922,12 @@ vndioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
 		}
 
 		break;
+
+	case DIOCGPDINFO:
+		if ((vnd->sc_flags & VNF_HAVELABEL) == 0)
+			return (ENOTTY);
+		vndgetdisklabel(dev, vnd, (struct disklabel *)addr, 1);
+		return (0);
 
 	case DIOCGDINFO:
 		if ((vnd->sc_flags & VNF_HAVELABEL) == 0)

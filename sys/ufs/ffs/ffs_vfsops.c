@@ -1251,7 +1251,6 @@ retry:
 #ifdef VFSDEBUG
 	vp->v_flag |= VLOCKSWORK;
 #endif
-	/* XXX - we use the same pool for ffs and mfs */
 	ip = pool_get(&ffs_ino_pool, PR_WAITOK);
 	bzero((caddr_t)ip, sizeof(struct inode));
 	lockinit(&ip->i_lock, PINOD, "inode", 0, 0);

@@ -9,7 +9,7 @@ Installation is supported from several media types, including:
 
 OpenBSDXferShortPrelude
 
-OpenBSDXferBareTape(xbase xetc xfont xshare)
+OpenBSDXferBareTape(xbase xetc xfont xserv xshare)
 
 OpenBSDXferNFS
 

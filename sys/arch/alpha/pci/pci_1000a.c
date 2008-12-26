@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -16,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -36,23 +28,22 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Copyright (c) 1995, 1996 Carnegie-Mellon University.
  * All rights reserved.
  *
  * Author: Chris G. Demetriou
- * 
+ *
  * Permission to use, copy, modify and distribute this software and
  * its documentation is hereby granted, provided that both the copyright
  * notice and this permission notice appear in all copies of the
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
- * 
- * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS" 
- * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND 
+ *
+ * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
+ * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND
  * FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
- * 
+ *
  * Carnegie Mellon requests users of this software to return to
  *
  *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
@@ -77,6 +68,7 @@
 
 #include <dev/pci/pcireg.h>
 #include <dev/pci/pcivar.h>
+#include <dev/pci/ppbreg.h>
 
 #include <alpha/pci/pci_1000a.h>
 
@@ -94,8 +86,7 @@
 static bus_space_tag_t mystery_icu_iot;
 static bus_space_handle_t mystery_icu_ioh[2];
 
-int	dec_1000a_intr_map(void *, pcitag_t, int, int,
-	    pci_intr_handle_t *);
+int	dec_1000a_intr_map(struct pci_attach_args *, pci_intr_handle_t *);
 const char *dec_1000a_intr_string(void *, pci_intr_handle_t);
 int	dec_1000a_intr_line(void *, pci_intr_handle_t);
 void	*dec_1000a_intr_establish(void *, pci_intr_handle_t,
@@ -108,7 +99,6 @@ void dec_1000a_iointr(void *arg, unsigned long vec);
 void dec_1000a_enable_intr(int irq);
 void dec_1000a_disable_intr(int irq);
 void pci_1000a_imi(void);
-static pci_chipset_tag_t pc_tag;
 
 void
 pci_1000a_pickintr(core, iot, memt, pc)
@@ -116,14 +106,10 @@ pci_1000a_pickintr(core, iot, memt, pc)
 	bus_space_tag_t iot, memt;
 	pci_chipset_tag_t pc;
 {
-#if 0
-	char *cp;
-#endif
 	int i;
 
 	mystery_icu_iot = iot;
 
-	pc_tag = pc;
 	if (bus_space_map(iot, 0x54a, 2, 0, mystery_icu_ioh + 0)
 	||  bus_space_map(iot, 0x54c, 2, 0, mystery_icu_ioh + 1))
 		panic("pci_1000a_pickintr");
@@ -149,14 +135,14 @@ pci_1000a_pickintr(core, iot, memt, pc)
 #endif
 }
 
-int     
-dec_1000a_intr_map(ccv, bustag, buspin, line, ihp)
-	void *ccv;
-	pcitag_t bustag;
-	int buspin, line;
+int
+dec_1000a_intr_map(pa, ihp)
+	struct pci_attach_args *pa;
         pci_intr_handle_t *ihp;
 {
-	int imrbit, device;
+	pcitag_t bustag = pa->pa_intrtag;
+	int buspin = pa->pa_intrpin, line = pa->pa_intrline;
+	int imrbit = 0, bus, device;
 	/*
 	 * Get bit number in mystery ICU imr
 	 */
@@ -171,28 +157,70 @@ dec_1000a_intr_map(ccv, bustag, buspin, line, ihp)
 		/*  5  */ { 1, 0, 0, 0 },	/* Corelle */
 		/*  6  */ { 10, 0, 0, 0 },	/* Corelle */
 		/*  7  */ IRQNONE,
-		/*  8  */ { 1, 0, 0, 0 },	/* isp behind ppb */
+		/*  8  */ IRQNONE,		/* see imrmap2[] below */
 		/*  9  */ IRQNONE,
 		/* 10  */ IRQNONE,
 		/* 11  */ IRQSPLIT(2),
 		/* 12  */ IRQSPLIT(4),
 		/* 13  */ IRQSPLIT(6),
 		/* 14  */ IRQSPLIT(8)		/* Corelle */
+	}, imrmap2[][4] = {
+		/*  0 */ { 1, 0, 0, 0 },	/* isp */
+		/*  1 */  IRQSPLIT(8),
+		/*  2 */  IRQSPLIT(10),
+		/*  3 */  IRQSPLIT(12),
+		/*  4 */  IRQSPLIT(14)
 	};
 
 	if (buspin == 0)	/* No IRQ used. */
 		return 1;
 	if (!(1 <= buspin && buspin <= 4))
 		goto bad;
-	pci_decompose_tag(pc_tag, bustag, NULL, &device, NULL);
-	if (0 <= device && device < sizeof imrmap / sizeof imrmap[0]) {
-		if (device == 0)
-			printf("dec_1000a_intr_map: ?! UNEXPECTED DEV 0\n");
-		imrbit = imrmap[device][buspin - 1];
-		if (imrbit) {
-			*ihp = IMR2IRQ(imrbit);
-			return 0;
+
+	pci_decompose_tag(pa->pa_pc, bustag, &bus, &device, NULL);
+
+	/*
+	 * The console places the interrupt mapping in the "line" value.
+	 * We trust it whenever possible.
+	 */
+	if (line >= 0 && line < PCI_NIRQ) {
+		imrbit = line + 1;
+	} else {
+		if (pa->pa_bridgetag) {
+			buspin = pa->pa_rawintrpin;
+			bus = pa->pa_bus;
+			device = pa->pa_device;
+
+			if (bus == 2) {
+				/*
+				 * Devices behind ppb1 (pci bus #2).
+				 * Those use fixed per-slot assignments.
+				 */
+				if (0 <= device && device <
+				    sizeof imrmap2 / sizeof imrmap2[0]) {
+					imrbit = imrmap2[device][buspin - 1];
+				}
+			} else {
+				/*
+				 * Devices behind further ppb.
+				 * Those reuse ppb configured interrupts.
+				 */
+				buspin = PPB_INTERRUPT_SWIZZLE(buspin, device);
+				if (pa->pa_bridgeih[buspin - 1] != 0) {
+					imrbit =
+					   IRQ2IMR(pa->pa_bridgeih[buspin - 1]);
+				}
+			}
+		} else {
+			if (0 <= device &&
+			    device < sizeof imrmap / sizeof imrmap[0])
+				imrbit = imrmap[device][buspin - 1];
 		}
+	}
+
+	if (imrbit) {
+		*ihp = IMR2IRQ(imrbit);
+		return 0;
 	}
 bad:
 	return 1;
@@ -234,7 +262,7 @@ dec_1000a_intr_establish(ccv, ih, level, func, arg, name)
         int (*func)(void *);
 	void *arg;
 	char *name;
-{           
+{
 	void *cookie;
 
         if (ih >= PCI_NIRQ)
@@ -252,14 +280,14 @@ dec_1000a_intr_establish(ccv, ih, level, func, arg, name)
 	return (cookie);
 }
 
-void    
+void
 dec_1000a_intr_disestablish(ccv, cookie)
         void *ccv, *cookie;
 {
 	struct alpha_shared_intrhand *ih = cookie;
 	unsigned int irq = ih->ih_num;
 	int s;
- 
+
 	s = splhigh();
 
 	alpha_shared_intr_disestablish(dec_1000a_pci_intr, cookie,
@@ -270,7 +298,7 @@ dec_1000a_intr_disestablish(ccv, cookie)
 		    IST_NONE);
 		scb_free(0x900 + SCB_IDXTOVEC(irq));
 	}
- 
+
 	splx(s);
 }
 

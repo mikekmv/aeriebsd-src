@@ -152,7 +152,7 @@ enum	{ PF_STATE_OPT_MAX, PF_STATE_OPT_NOSYNC, PF_STATE_OPT_SRCTRACK,
 	    PF_STATE_OPT_MAX_SRC_STATES, PF_STATE_OPT_MAX_SRC_CONN,
 	    PF_STATE_OPT_MAX_SRC_CONN_RATE, PF_STATE_OPT_MAX_SRC_NODES,
 	    PF_STATE_OPT_OVERLOAD, PF_STATE_OPT_STATELOCK,
-	    PF_STATE_OPT_TIMEOUT };
+	    PF_STATE_OPT_TIMEOUT, PF_STATE_OPT_SLOPPY };
 
 enum	{ PF_SRCTRACK_NONE, PF_SRCTRACK, PF_SRCTRACK_GLOBAL, PF_SRCTRACK_RULE };
 
@@ -231,6 +231,10 @@ struct filter_opts {
 	char			*match_tag;
 	u_int8_t		 match_tag_not;
 	u_int			 rtableid;
+	struct {
+		struct node_host	*addr;
+		u_int16_t		port;
+	}			 divert;
 } filter_opts;
 
 struct antispoof_opts {
@@ -413,6 +417,10 @@ typedef struct {
 	int lineno;
 } YYSTYPE;
 
+#define PPORT_RANGE	1
+#define PPORT_STAR	2
+int	parseport(char *, struct range *r, int);
+
 #define DYNIF_MULTIADDR(addr) ((addr).type == PF_ADDR_DYNIFTL && \
 	(!((addr).iflags & PFI_AFLAG_NOALIAS) ||		 \
 	!isdigit((addr).v.ifname[strlen((addr).v.ifname)-1])))
@@ -433,8 +441,9 @@ typedef struct {
 %token	QUEUE PRIORITY QLIMIT RTABLE
 %token	LOAD RULESET_OPTIMIZATION
 %token	STICKYADDRESS MAXSRCSTATES MAXSRCNODES SOURCETRACK GLOBAL RULE
-%token	MAXSRCCONN MAXSRCCONNRATE OVERLOAD FLUSH
+%token	MAXSRCCONN MAXSRCCONNRATE OVERLOAD FLUSH SLOPPY
 %token	TAGGED TAG IFBOUND FLOATING STATEPOLICY ROUTE SETTOS
+%token	DIVERTTO DIVERTREPLY
 %token	<v.string>		STRING
 %token	<v.number>		NUMBER
 %token	<v.i>			PORTBINARY
@@ -446,7 +455,7 @@ typedef struct {
 %type	<v.i>			sourcetrack flush unaryop statelock
 %type	<v.b>			action nataction natpasslog scrubaction
 %type	<v.b>			flags flag blockspec
-%type	<v.range>		port rport
+%type	<v.range>		portplain portstar portrange
 %type	<v.hashkey>		hashkey
 %type	<v.proto>		proto proto_list proto_item
 %type	<v.number>		protoval
@@ -1364,6 +1373,8 @@ table_opt	: STRING		{
 				table_opts.flags |= PFR_TFLAG_CONST;
 			else if (!strcmp($1, "persist"))
 				table_opts.flags |= PFR_TFLAG_PERSIST;
+			else if (!strcmp($1, "counters"))
+				table_opts.flags |= PFR_TFLAG_COUNTERS;
 			else {
 				yyerror("invalid table option '%s'", $1);
 				free($1);
@@ -2040,6 +2051,14 @@ pfrule		: action dir logquick interface route af proto fromto
 					statelock = 1;
 					r.rule_flag |= o->data.statelock;
 					break;
+				case PF_STATE_OPT_SLOPPY:
+					if (r.rule_flag & PFRULE_STATESLOPPY) {
+						yyerror("state sloppy option: "
+						    "multiple definitions");
+						YYERROR;
+					}
+					r.rule_flag |= PFRULE_STATESLOPPY;
+					break;
 				case PF_STATE_OPT_TIMEOUT:
 					if (o->data.timeout.number ==
 					    PFTM_ADAPTIVE_START ||
@@ -2176,6 +2195,30 @@ pfrule		: action dir logquick interface route af proto fromto
 				}
 				free($9.queues.pqname);
 			}
+			if ((r.divert.port = $9.divert.port)) {
+				if (r.direction == PF_OUT) {
+					if ($9.divert.addr) {
+						yyerror("address specified "
+						    "for outgoing divert");
+						YYERROR;
+					}
+					bzero(&r.divert.addr,
+					    sizeof(r.divert.addr));
+				} else {
+					if (!$9.divert.addr) {
+						yyerror("no address specified "
+						    "for incoming divert");
+						YYERROR;
+					}
+					if ($9.divert.addr->af != r.af) {
+						yyerror("address family "
+						    "mismatch for divert");
+						YYERROR;
+					}
+					r.divert.addr =
+					    $9.divert.addr->addr.v.a.addr;
+				}
+			}	
 
 			expand_rule(&r, $4, $5.host, $7, $8.src_os,
 			    $8.src.host, $8.src.port, $8.dst.host, $8.dst.port,
@@ -2291,6 +2334,23 @@ filter_opt	: USER uids {
 				YYERROR;
 			}
 			filter_opts.rtableid = $2;
+		}
+		| DIVERTTO STRING PORT portplain {
+			if ((filter_opts.divert.addr = host($2)) == NULL) {
+				yyerror("could not parse divert address: %s",
+				    $2);
+				free($2);
+				YYERROR;
+			}
+			free($2);
+			filter_opts.divert.port = $4.a;
+			if (!filter_opts.divert.port) {
+				yyerror("invalid divert port: %u", ntohs($4.a));
+				YYERROR;
+			}
+		}
+		| DIVERTREPLY {
+			filter_opts.divert.port = 1;	/* some random value */
 		}
 		;
 
@@ -2893,7 +2953,7 @@ port_list	: port_item optnl		{ $$ = $1; }
 		}
 		;
 
-port_item	: port				{
+port_item	: portrange			{
 			$$ = calloc(1, sizeof(struct node_port));
 			if ($$ == NULL)
 				err(1, "port_item: calloc");
@@ -2906,7 +2966,7 @@ port_item	: port				{
 			$$->next = NULL;
 			$$->tail = $$;
 		}
-		| unaryop port		{
+		| unaryop portrange	{
 			if ($2.t) {
 				yyerror("':' cannot be used with an other "
 				    "port operator");
@@ -2921,7 +2981,7 @@ port_item	: port				{
 			$$->next = NULL;
 			$$->tail = $$;
 		}
-		| port PORTBINARY port		{
+		| portrange PORTBINARY portrange	{
 			if ($1.t || $3.t) {
 				yyerror("':' cannot be used with an other "
 				    "port operator");
@@ -2938,37 +2998,21 @@ port_item	: port				{
 		}
 		;
 
-port		: STRING			{
-			char	*p = strchr($1, ':');
-
-			if (p == NULL) {
-				if (($$.a = getservice($1)) == -1) {
-					free($1);
-					YYERROR;
-				}
-				$$.b = $$.t = 0;
-			} else {
-				int port[2];
-
-				*p++ = 0;
-				if ((port[0] = getservice($1)) == -1 ||
-				    (port[1] = getservice(p)) == -1) {
-					free($1);
-					YYERROR;
-				}
-				$$.a = port[0];
-				$$.b = port[1];
-				$$.t = PF_OP_RRG;
+portplain	: numberstring			{
+			if (parseport($1, &$$, 0) == -1) {
+				free($1);
+				YYERROR;
 			}
 			free($1);
 		}
-		| NUMBER			{
-			if ($1 < 0 || $1 > 65535) {
-				yyerror("illegal port value %lu", $1);
+		;
+
+portrange	: numberstring			{
+			if (parseport($1, &$$, PPORT_RANGE) == -1) {
+				free($1);
 				YYERROR;
 			}
-			$$.a = ntohs($1);
-			$$.b = $$.t = 0;
+			free($1);
 		}
 		;
 
@@ -3487,6 +3531,14 @@ state_opt_item	: MAXIMUM NUMBER		{
 			$$->next = NULL;
 			$$->tail = $$;
 		}
+		| SLOPPY {
+			$$ = calloc(1, sizeof(struct node_state_opt));
+			if ($$ == NULL)
+				err(1, "state_opt_item: calloc");
+			$$->type = PF_STATE_OPT_SLOPPY;
+			$$->next = NULL;
+			$$->tail = $$;
+		}
 		| STRING NUMBER			{
 			int	i;
 
@@ -3526,9 +3578,11 @@ label		: LABEL STRING			{
 
 qname		: QUEUE STRING				{
 			$$.qname = $2;
+			$$.pqname = NULL;
 		}
 		| QUEUE '(' STRING ')'			{
 			$$.qname = $3;
+			$$.pqname = NULL;
 		}
 		| QUEUE '(' STRING comma STRING ')'	{
 			$$.qname = $3;
@@ -3540,43 +3594,12 @@ no		: /* empty */			{ $$ = 0; }
 		| NO				{ $$ = 1; }
 		;
 
-rport		: STRING			{
-			char	*p = strchr($1, ':');
-
-			if (p == NULL) {
-				if (($$.a = getservice($1)) == -1) {
-					free($1);
-					YYERROR;
-				}
-				$$.b = $$.t = 0;
-			} else if (!strcmp(p+1, "*")) {
-				*p = 0;
-				if (($$.a = getservice($1)) == -1) {
-					free($1);
-					YYERROR;
-				}
-				$$.b = 0;
-				$$.t = 1;
-			} else {
-				*p++ = 0;
-				if (($$.a = getservice($1)) == -1 ||
-				    ($$.b = getservice(p)) == -1) {
-					free($1);
-					YYERROR;
-				}
-				if ($$.a == $$.b)
-					$$.b = 0;
-				$$.t = 0;
-			}
-			free($1);
-		}
-		| NUMBER			{
-			if ($1 < 0 || $1 > 65535) {
-				yyerror("illegal port value %ld", $1);
+portstar	: numberstring			{
+			if (parseport($1, &$$, PPORT_RANGE|PPORT_STAR) == -1) {
+				free($1);
 				YYERROR;
 			}
-			$$.a = ntohs($1);
-			$$.b = $$.t = 0;
+			free($1);
 		}
 		;
 
@@ -3600,7 +3623,7 @@ redirpool	: /* empty */			{ $$ = NULL; }
 			$$->host = $2;
 			$$->rport.a = $$->rport.b = $$->rport.t = 0;
 		}
-		| ARROW redirspec PORT rport	{
+		| ARROW redirspec PORT portstar	{
 			$$ = calloc(1, sizeof(struct redirection));
 			if ($$ == NULL)
 				err(1, "redirection: calloc");
@@ -3726,7 +3749,7 @@ redirection	: /* empty */			{ $$ = NULL; }
 			$$->host = $2;
 			$$->rport.a = $$->rport.b = $$->rport.t = 0;
 		}
-		| ARROW host PORT rport	{
+		| ARROW host PORT portstar	{
 			$$ = calloc(1, sizeof(struct redirection));
 			if ($$ == NULL)
 				err(1, "redirection: calloc");
@@ -4380,6 +4403,13 @@ filter_consistent(struct pf_rule *r, int anchor_call)
 	}
 	if (r->action == PF_DROP && r->keep_state) {
 		yyerror("keep state on block rules doesn't make sense");
+		problems++;
+	}
+	if (r->rule_flag & PFRULE_STATESLOPPY &&
+	    (r->keep_state == PF_STATE_MODULATE ||
+	    r->keep_state == PF_STATE_SYNPROXY)) {
+		yyerror("sloppy state matching cannot be used with "
+		    "synproxy state or modulate state");
 		problems++;
 	}
 	return (-problems);
@@ -5172,6 +5202,8 @@ lookup(char *s)
 		{ "code",		CODE},
 		{ "crop",		FRAGCROP},
 		{ "debug",		DEBUG},
+		{ "divert-reply",	DIVERTREPLY},
+		{ "divert-to",		DIVERTTO},
 		{ "drop",		DROP},
 		{ "drop-ovl",		FRAGDROP},
 		{ "dup-to",		DUPTO},
@@ -5252,6 +5284,7 @@ lookup(char *s)
 		{ "set",		SET},
 		{ "set-tos",		SETTOS},
 		{ "skip",		SKIP},
+		{ "sloppy",		SLOPPY},
 		{ "source-hash",	SOURCEHASH},
 		{ "source-track",	SOURCETRACK},
 		{ "state",		STATE},
@@ -5899,6 +5932,41 @@ parseicmpspec(char *w, sa_family_t af)
 		return (0);
 	}
 	return (icmptype << 8 | ulval);
+}
+
+int
+parseport(char *port, struct range *r, int extensions)
+{
+	char	*p = strchr(port, ':');
+
+	if (p == NULL) {
+		if ((r->a = getservice(port)) == -1)
+			return (-1);
+		r->b = 0;
+		r->t = PF_OP_NONE;
+		return (0);
+	}
+	if ((extensions & PPORT_STAR) && !strcmp(p+1, "*")) {
+		*p = 0;
+		if ((r->a = getservice(port)) == -1)
+			return (-1);
+		r->b = 0;
+		r->t = PF_OP_IRG;
+		return (0);
+	}
+	if ((extensions & PPORT_RANGE)) {
+		*p++ = 0;
+		if ((r->a = getservice(port)) == -1 ||
+		    (r->b = getservice(p)) == -1)
+			return (-1);
+		if (r->a == r->b) {
+			r->b = 0;
+			r->t = PF_OP_NONE;
+		} else
+			r->t = PF_OP_RRG;
+		return (0);
+	}
+	return (-1);
 }
 
 int

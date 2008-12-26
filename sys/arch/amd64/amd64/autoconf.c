@@ -87,8 +87,6 @@
 #endif
 
 int	cold = 1;	/* if 1, still working on cold-start */
-struct device *booted_device;
-int booted_partition;
 extern dev_t bootdev;
 
 /*
@@ -170,7 +168,6 @@ diskconf(void)
 #if defined(NFSCLIENT)
 			printf("PXE boot MAC address %s, interface %s\n",
 			    ether_sprintf(bios_bootmac->mac), ifp->if_xname);
-			mountroot = nfs_mountroot;	/* potentially */
 			bootdv = parsedisk(ifp->if_xname, strlen(ifp->if_xname),
 			    0, &tmpdev);
 			part = 0;
@@ -189,5 +186,6 @@ struct nam2blk nam2blk[] = {
 	{ "sd",		4 },
 	{ "rd",		17 },
 	{ "raid",	19 },
+	{ "vnd",	14 },
 	{ NULL,		-1 }
 };

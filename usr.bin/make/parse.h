@@ -1,6 +1,3 @@
-#ifndef PARSE_H
-#define PARSE_H
-/*	$OpenPackages$ */
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -29,6 +26,9 @@
 /* parse
  *	Functions to parse Makefiles and fragments.
  */
+
+#ifndef PARSE_H
+#define PARSE_H
 
 extern void Parse_Init(void);
 #ifdef CLEANUP

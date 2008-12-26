@@ -984,7 +984,7 @@ tcp_set_iss_tsm(struct tcpcb *tp)
 	u_int32_t digest[4];
 
 	if (tcp_secret_init == 0) {
-		arc4random_bytes(tcp_secret, sizeof(tcp_secret));
+		arc4random_buf(tcp_secret, sizeof(tcp_secret));
 		MD5Init(&tcp_secret_ctx);
 		MD5Update(&tcp_secret_ctx, tcp_secret, sizeof(tcp_secret));
 		tcp_secret_init = 1;

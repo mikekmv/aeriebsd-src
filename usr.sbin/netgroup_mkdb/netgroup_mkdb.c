@@ -30,7 +30,7 @@
  * SUCH DAMAGE.
  */
 #ifndef lint
-static char *rcsid = "$ABSD$";
+static char *rcsid = "$ABSD: netgroup_mkdb.c,v 1.1.1.1 2008/08/26 14:44:25 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -705,6 +705,6 @@ usage(void)
 {
 	extern const char *__progname;
 
-	fprintf(stderr, "usage: %s [-o db] file\n", __progname);
+	fprintf(stderr, "usage: %s [-o database] file\n", __progname);
 	exit(1);
 }

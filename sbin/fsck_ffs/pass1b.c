@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)pass1b.c	8.1 (Berkeley) 6/5/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: pass1b.c,v 1.1.1.1 2008/08/26 14:40:22 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -81,7 +81,7 @@ pass1b(void)
 			if (dp == NULL)
 				continue;
 			idesc.id_number = inumber;
-			if (statemap[inumber] != USTATE &&
+			if (GET_ISTATE(inumber) != USTATE &&
 			    (ckinode(dp, &idesc) & STOP))
 				return;
 		}

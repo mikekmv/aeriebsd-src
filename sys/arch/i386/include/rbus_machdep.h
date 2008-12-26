@@ -29,9 +29,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#if !defined _ARCH_I386_I386_RBUS_MACHDEP_H_
-#define _ARCH_I386_I386_RBUS_MACHDEP_H_
+#ifndef _I386_RBUS_MACHDEP_H_
+#define _I386_RBUS_MACHDEP_H_
 
 struct pci_attach_args;		/* XXX */
 
@@ -41,13 +40,14 @@ struct pci_attach_args;		/* XXX */
 #define md_space_unmap(bt, bsh, size, adrp) \
 	_bus_space_unmap((bt), (bsh), (size), (adrp))
 
+rbus_tag_t	rbus_pccbb_parent_io(struct device *,
+		    struct pci_attach_args *);
+rbus_tag_t	rbus_pccbb_parent_mem(struct device *,
+		    struct pci_attach_args *);
 
-rbus_tag_t rbus_pccbb_parent_io(struct device *self,
-    struct pci_attach_args *pa);
-rbus_tag_t rbus_pccbb_parent_mem(struct device *self,
-    struct pci_attach_args *pa);
+bus_addr_t	rbus_min_start_hint(void);
 
-void	pccbb_attach_hook(struct device *, struct device *,
-	    struct pci_attach_args *);
+void		pccbb_attach_hook(struct device *, struct device *,
+		    struct pci_attach_args *);
 
-#endif /* _ARCH_I386_I386_RBUS_MACHDEP_H_ */
+#endif /* _I386_RBUS_MACHDEP_H_ */

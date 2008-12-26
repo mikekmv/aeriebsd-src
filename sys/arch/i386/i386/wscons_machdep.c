@@ -122,7 +122,8 @@ wscninit(struct consdev *cp)
 	if (0) goto dokbd;	/* XXX stupid gcc */
 dokbd:
 #if (NPCKBC > 0)
-	if (!pckbc_cnattach(I386_BUS_SPACE_IO, IO_KBD, KBCMDP, PCKBC_KBD_SLOT))
+	if (!pckbc_cnattach(I386_BUS_SPACE_IO, IO_KBD, KBCMDP, PCKBC_KBD_SLOT,
+	    0))
 		return;
 #endif
 #if (NUKBD > 0)

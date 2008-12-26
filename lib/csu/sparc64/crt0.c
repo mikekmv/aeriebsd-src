@@ -57,10 +57,9 @@ __asm__(".text\n"
 "	ba,pt	%icc, ___start\n"
 "	nop");
 
+static void ___start(char **, void (*)(void), const void *);
 
-void ___start(char **, void (*)(void), const void *);
-
-void
+static void
 ___start(char **sp, void (*cleanup)(void), const void *obj)
 {
 	long argc;

@@ -31,10 +31,11 @@
 #if 0
 static char sccsid[] = "@(#)floor.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_floor.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
+#include "math.h"
 #include "mathimpl.h"
 
 vc(L, 4503599627370496.0E0 ,0000,5c00,0000,0000, 55, 1.0) /* 2**55 */
@@ -53,16 +54,11 @@ ic(L, 4503599627370496.0E0, 52, 1.0)			  /* 2**52 */
  *	customary for IEEE 754.  No other signal can be emitted.
  */
 double
-floor(x)
-double x;
+floor(double x)
 {
 	volatile double y;
 
-	if (
-#if !defined(__vax__)&&!defined(tahoe)
-		x != x ||	/* NaN */
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
-		x >= L)		/* already an even integer */
+	if (isnan(x) ||	x >= L)		/* already an even integer */
 		return x;
 	else if (x < (double)0)
 		return -ceil(-x);
@@ -74,16 +70,11 @@ double x;
 }
 
 double
-ceil(x)
-double x;
+ceil(double x)
 {
 	volatile double y;
 
-	if (
-#if !defined(__vax__)&&!defined(tahoe)
-		x != x ||	/* NaN */
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
-		x >= L)		/* already an even integer */
+	if (isnan(x) ||	x >= L)		/* already an even integer */
 		return x;
 	else if (x < (double)0)
 		return -floor(-x);
@@ -94,7 +85,6 @@ double x;
 	}
 }
 
-#ifndef ns32000			/* rint() is in ./NATIONAL/support.s */
 /*
  * algorithm for rint(x) in pseudo-pascal form ...
  *
@@ -106,7 +96,7 @@ double x;
  * 	  = 2**52; for IEEE 754 Double
  * real	s,t;
  * begin
- * 	if x != x then return x;		... NaN
+ * 	if isnan(x) then return x;		... NaN
  * 	if |x| >= L then return x;		... already an integer
  * 	s := copysign(L,x);
  * 	t := x + s;				... = (x+s) rounded to integer
@@ -117,21 +107,19 @@ double x;
  *	customary for IEEE 754.  No other signal can be emitted.
  */
 double
-rint(x)
-double x;
+rint(double x)
 {
 	double s;
 	volatile double t;
 	const double one = 1.0;
 
-#if !defined(__vax__)&&!defined(tahoe)
-	if (x != x)				/* NaN */
+	if (isnan(x))
 		return (x);
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
-	if (copysign(x,one) >= L)		/* already an integer */
-	    return (x);
+
+	if (copysign(x, one) >= L)	/* already an integer */
+		return (x);
+
 	s = copysign(L,x);
 	t = x + s;				/* x+s rounded to integer */
 	return (t - s);
 }
-#endif	/* not national */

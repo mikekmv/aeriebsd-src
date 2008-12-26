@@ -43,6 +43,7 @@
 #include <sys/mount.h>
 #include <sys/kernel.h>
 #include <sys/namei.h>
+#include <sys/queue.h>
 
 #include <uvm/uvm_extern.h>
 
@@ -57,6 +58,7 @@ extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_numasync;
 extern struct nfsstats nfsstats;
 struct nfs_bufqhead nfs_bufq;
+uint32_t nfs_bufqmax, nfs_bufqlen;
 
 /*
  * Vnode op for read using bio
@@ -542,41 +544,25 @@ int
 nfs_asyncio(bp)
 	struct buf *bp;
 {
-	int i,s;
-
 	if (nfs_numasync == 0)
-		return (EIO);
-	for (i = 0; i < NFS_MAXASYNCDAEMON; i++)
-	    if (nfs_iodwant[i]) {
-		if ((bp->b_flags & B_READ) == 0) {
-			bp->b_flags |= B_WRITEINPROG;
-		}
-	
-		TAILQ_INSERT_TAIL(&nfs_bufq, bp, b_freelist);
-		nfs_iodwant[i] = (struct proc *)0;
-		wakeup((caddr_t)&nfs_iodwant[i]);
-		return (0);
-	    }
+		goto out;
 
-	/*
-	 * If it is a read or a write already marked B_WRITEINPROG or B_NOCACHE
-	 * return EIO so the process will call nfs_doio() and do it
-	 * synchronously.
-	 */
-	if (bp->b_flags & (B_READ | B_WRITEINPROG | B_NOCACHE))
-		return (EIO);
+	if (nfs_bufqlen > nfs_bufqmax)
+		goto out; /* too many bufs in use, force sync */
 
-	/*
-	 * Just turn the async write into a delayed write, instead of
-	 * doing in synchronously. Hopefully, at least one of the nfsiods
-	 * is currently doing a write for this file and will pick up the
-	 * delayed writes before going back to sleep.
-	 */
-	s = splbio();
-	buf_dirty(bp);
-	biodone(bp);
-	splx(s);
+	if ((bp->b_flags & B_READ) == 0) {
+		bp->b_flags |= B_WRITEINPROG;
+	}
+
+	TAILQ_INSERT_TAIL(&nfs_bufq, bp, b_freelist);
+	nfs_bufqlen++;
+
+	wakeup_one(&nfs_bufq);
 	return (0);
+
+out:
+	nfsstats.forcedsync++;
+	return (EIO);
 }
 
 /*
@@ -619,11 +605,15 @@ nfs_doio(bp, p)
 	    if (bp->b_flags & B_READ) {
 		uiop->uio_rw = UIO_READ;
 		nfsstats.read_physios++;
+		bcstats.pendingreads++;
+		bcstats.numreads++;
 		error = nfs_readrpc(vp, uiop);
 	    } else {
 		iomode = NFSV3WRITE_DATASYNC;
 		uiop->uio_rw = UIO_WRITE;
 		nfsstats.write_physios++;
+		bcstats.pendingwrites++;
+		bcstats.numwrites++; 
 		error = nfs_writerpc(vp, uiop, &iomode, &must_commit);
 	    }
 	    if (error) {
@@ -638,6 +628,8 @@ nfs_doio(bp, p)
 	    case VREG:
 		uiop->uio_offset = ((off_t)bp->b_blkno) << DEV_BSHIFT;
 		nfsstats.read_bios++;
+		bcstats.pendingreads++;
+		bcstats.numreads++;
 		error = nfs_readrpc(vp, uiop);
 		if (!error) {
 		    bp->b_validoff = 0;
@@ -669,6 +661,8 @@ nfs_doio(bp, p)
 	    case VLNK:
 		uiop->uio_offset = (off_t)0;
 		nfsstats.readlink_bios++;
+		bcstats.pendingreads++;
+		bcstats.numreads++;
 		error = nfs_readlinkrpc(vp, uiop, curproc->p_ucred);
 		break;
 	    default:
@@ -687,6 +681,8 @@ nfs_doio(bp, p)
 	    io.iov_base = (char *)bp->b_data + bp->b_dirtyoff;
 	    uiop->uio_rw = UIO_WRITE;
 	    nfsstats.write_bios++;
+	    bcstats.pendingwrites++;
+	    bcstats.numwrites++;
 	    if ((bp->b_flags & (B_ASYNC | B_NEEDCOMMIT | B_NOCACHE)) == B_ASYNC)
 		iomode = NFSV3WRITE_UNSTABLE;
 	    else

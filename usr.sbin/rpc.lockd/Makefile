@@ -1,6 +1,6 @@
 
 PROG =	rpc.lockd
-SRCS =	nlm_prot_svc.c lockd.c procs.c
+SRCS =	nlm_prot_svc.c lockd.c lockd_lock.c procs.c
 MAN =	rpc.lockd.8
 
 DPADD=	${LIBRPCSVC}

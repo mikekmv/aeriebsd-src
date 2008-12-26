@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: ypset.c,v 1.1.1.1 2008/08/26 14:44:40 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -86,7 +86,7 @@ bind_tohost(struct sockaddr_in *sin, char *dom, char *server)
 	tv.tv_usec = 0;
 	sock = RPC_ANYSOCK;
 	client = clntudp_create(sin, YPBINDPROG, YPBINDVERS, tv, &sock);
-	if (client==NULL) {
+	if (client == NULL) {
 		warnx("can't yp_bind: reason: %s", yperr_string(YPERR_YPBIND));
 		return YPERR_YPBIND;
 	}
@@ -128,11 +128,8 @@ main(int argc, char *argv[])
 		case 'h':
 			if (inet_aton(optarg, &sin.sin_addr) == 0) {
 				hent = gethostbyname(optarg);
-				if (hent == NULL) {
-					fprintf(stderr, "ypset: host %s unknown\n",
-					    optarg);
-					exit(1);
-				}
+				if (hent == NULL)
+					errx(1, "host %s unknown\n", optarg);
 				bcopy(hent->h_addr, &sin.sin_addr,
 				    sizeof(sin.sin_addr));
 			}
@@ -141,7 +138,7 @@ main(int argc, char *argv[])
 			usage();
 		}
 
-	if (optind + 1 != argc )
+	if (optind + 1 != argc)
 		usage();
 
 	if (bind_tohost(&sin, domainname, argv[optind]))

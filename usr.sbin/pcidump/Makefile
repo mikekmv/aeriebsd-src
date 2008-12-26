@@ -1,14 +1,9 @@
 
-.if (${MACHINE} == "amd64") || (${MACHINE} == "i386") || \
-    (${MACHINE} == "macppc") || (${MACHINE} == "sparc64") || \
-    (${MACHINE} == "alpha") || (${MACHINE} == "sgi") || \
-    (${MACHINE} == "hppa") || (${MACHINE} == "hppa64") || \
-    (${MACHINE} == "armish") || (${MACHINE} == "landisk")
-
-PROG=	pcidump
-
-.else
+.if (${MACHINE} == "hp300") || (${MACHINE} == "mac68k") || \
+    (${MACHINE} == "sparc") || (${MACHINE} == "vax")
 NOPROG=yes
+.else
+PROG=	pcidump
 .endif
 
 MAN=	pcidump.8

@@ -49,13 +49,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -195,22 +188,9 @@ IDTVEC(exceptions)
  * change %eip to point to one of these labels.  We clean up the stack, if
  * necessary, and resume as if we were handling a general protection fault.
  * This will cause the process to get a SIGBUS.
- *
- * XXXfvdl currently unused, as pop %ds and pop %es are illegal in long
- * mode. However, if the x86-64 port is going to support USER_LDT, we
- * may need something like this after all.
  */
 NENTRY(resume_iret)
 	ZTRAP(T_PROTFLT)
-#if 0
-NENTRY(resume_pop_ds)
-	movl	$GSEL(GDATA_SEL, SEL_KPL),%eax
-	movl	%eax,%es
-NENTRY(resume_pop_es)
-	movl	$T_PROTFLT,TF_TRAPNO(%rsp)
-	jmp	calltrap
-#endif
-
 /*
  * All traps go through here. Call the generic trap handler, and
  * check for ASTs afterwards.
@@ -772,7 +752,6 @@ _C_LABEL(ioapic_level_stubs):
 #endif
 
 	.data
-
 /*
  * Soft interrupt handlers
  */
@@ -780,6 +759,7 @@ _C_LABEL(ioapic_level_stubs):
 _C_LABEL(netisr):
 	.word	0
 
+	.text
 IDTVEC(softtty)
 	movl	$IPL_SOFTTTY, CPUVAR(ILEVEL)
 	sti

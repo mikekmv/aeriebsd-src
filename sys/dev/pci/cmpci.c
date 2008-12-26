@@ -131,6 +131,7 @@ int cmpci_query_encoding(void *, struct audio_encoding *);
 int cmpci_set_params(void *, int, int,
 				 struct audio_params *,
 				 struct audio_params *);
+void cmpci_get_default_params(void *, int, struct audio_params*);
 int cmpci_round_blocksize(void *, int);
 int cmpci_halt_output(void *);
 int cmpci_halt_input(void *);
@@ -177,7 +178,7 @@ struct audio_hw_if cmpci_hw_if = {
 	cmpci_get_props,	/* get_props */
 	cmpci_trigger_output,	/* trigger_output */
 	cmpci_trigger_input,	/* trigger_input */
-	NULL
+	cmpci_get_default_params
 };
 
 /*
@@ -628,6 +629,17 @@ cmpci_query_encoding(void *handle, struct audio_encoding *fp)
 		return EINVAL;
 	}
 	return 0;
+}
+
+void
+cmpci_get_default_params(void *addr, int mode, struct audio_params *params)
+{
+	params->sample_rate = 48000;
+	params->encoding = AUDIO_ENCODING_SLINEAR_LE;
+	params->precision = 16;
+	params->channels = 2;
+	params->sw_code = NULL;
+	params->factor = 1;
 }
 
 int

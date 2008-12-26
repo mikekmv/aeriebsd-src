@@ -51,19 +51,29 @@
 #define HAVE_SYS_PARAM_H 1
 #endif
 
-/* determine: isinf() found in libc */ 
-#ifndef HAVE_ISINF
-#define HAVE_ISINF 1
-#endif
-
-/* determine: isnan() found in libc */ 
-#ifndef HAVE_ISNAN
-#define HAVE_ISNAN 1
-#endif
-
 /* sizeof(off_t) == sizeof(quad_t) on OpenBSD */
 #ifndef AP_OFF_T_IS_QUAD
 #define AP_OFF_T_IS_QUAD 1
+#endif
+
+/* build flag: -DINET6 */
+#ifndef INET6
+#define INET6 1
+#endif
+
+/* build flag: -Dss_family=__ss_family */
+#ifndef ss_family
+#define ss_family __ss_family
+#endif
+
+/* build flag: -Dss_len=__ss_len */
+#ifndef ss_len
+#define ss_len __ss_len
+#endif
+
+/* build flag: -DHAVE_SOCKADDR_LEN */
+#ifndef HAVE_SOCKADDR_LEN
+#define HAVE_SOCKADDR_LEN 1
 #endif
 
 /* build flag: -DMOD_SSL=208116 */

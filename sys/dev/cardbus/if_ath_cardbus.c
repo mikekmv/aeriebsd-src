@@ -35,8 +35,6 @@
  * CardBus bus front-end for the AR5001 Wireless LAN 802.11a/b/g CardBus.
  */
 
-#include "bpfilter.h"
-
 #include <sys/param.h>
 #include <sys/systm.h> 
 #include <sys/mbuf.h>   
@@ -61,10 +59,6 @@
 
 #include <net80211/ieee80211_var.h>
 #include <net80211/ieee80211_rssadapt.h>
-
-#if NBPFILTER > 0 
-#include <net/bpf.h>
-#endif 
 
 #include <machine/bus.h>
 #include <machine/intr.h>
@@ -91,7 +85,6 @@ struct ath_cardbus_softc {
 	void	*sc_ih;			/* interrupt handle */
 	cardbus_devfunc_t sc_ct;	/* our CardBus devfuncs */
 	cardbustag_t sc_tag;		/* our CardBus tag */
-	bus_size_t sc_mapsize;		/* the size of mapped bus space region */
 
 	pcireg_t sc_bar_val;		/* value of the BAR */
 
@@ -155,7 +148,7 @@ ath_cardbus_attach(struct device *parent, struct device *self, void *aux)
 	 * Map the device.
 	 */
 	if (Cardbus_mapreg_map(ct, ATH_PCI_MMBA, CARDBUS_MAPREG_TYPE_MEM, 0,
-	    &sc->sc_st, &sc->sc_sh, &adr, &csc->sc_mapsize) == 0) {
+	    &sc->sc_st, &sc->sc_sh, &adr, &sc->sc_ss) == 0) {
 		csc->sc_bar_val = adr | CARDBUS_MAPREG_TYPE_MEM;
 	}
 
@@ -214,7 +207,7 @@ ath_cardbus_detach(struct device *self, int flags)
 	 * Release bus space and close window.
 	 */
 	Cardbus_mapreg_unmap(ct, ATH_PCI_MMBA,
-		    sc->sc_st, sc->sc_sh, csc->sc_mapsize);
+		    sc->sc_st, sc->sc_sh, sc->sc_ss);
 
 	return (0);
 }

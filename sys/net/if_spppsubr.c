@@ -899,6 +899,7 @@ void
 sppp_attach(struct ifnet *ifp)
 {
 	struct sppp *sp = (struct sppp*) ifp;
+	int i;
 
 	/* Initialize keepalive handler. */
 	if (! spppq) {
@@ -928,6 +929,11 @@ sppp_attach(struct ifnet *ifp)
 	sp->pp_phase = PHASE_DEAD;
 	sp->pp_up = lcp.Up;
 	sp->pp_down = lcp.Down;
+
+
+	for (i = 0; i < IDX_COUNT; i++)
+		timeout_set(&sp->ch[i], (cps[i])->TO, (void *)sp);
+	timeout_set(&sp->pap_my_to_ch, sppp_pap_my_TO, (void *)sp);
 
 	sppp_lcp_init(sp);
 	sppp_ipcp_init(sp);
@@ -1174,7 +1180,7 @@ sppp_cisco_input(struct sppp *sp, struct mbuf *m)
 			/* Local and remote sequence numbers are equal.
 			 * Probably, the line is in loopback mode. */
 			if (sp->pp_loopcnt >= LOOPALIVECNT) {
-				printf (SPP_FMT "loopback\n",
+				log(LOG_INFO, SPP_FMT "loopback\n",
 					SPP_ARGS(ifp));
 				sp->pp_loopcnt = 0;
 				if (ifp->if_flags & IFF_UP) {
@@ -1673,7 +1679,7 @@ sppp_cp_input(const struct cp *cp, struct sppp *sp, struct mbuf *m)
 
 		if (nmagic == sp->lcp.magic) {
 			/* Line loopback mode detected. */
-			printf(SPP_FMT "loopback\n", SPP_ARGS(ifp));
+			log(LOG_INFO, SPP_FMT "loopback\n", SPP_ARGS(ifp));
 			/* Shut down the PPP link. */
  			lcp.Close(sp);
 			break;
@@ -1884,7 +1890,6 @@ sppp_increasing_timeout (const struct cp *cp, struct sppp *sp)
 	sp->ch[cp->protoidx] = 
 	    timeout(cp->TO, (void *)sp, timo * sp->lcp.timeout);
 #elif defined(__OpenBSD__)
-	timeout_set(&sp->ch[cp->protoidx], cp->TO, (void *)sp);
 	timeout_add(&sp->ch[cp->protoidx], timo * sp->lcp.timeout);
 #endif
 }
@@ -2621,7 +2626,7 @@ sppp_lcp_scr(struct sppp *sp)
 	}
 
 	sp->confid[IDX_LCP] = ++sp->pp_seq;
-	sppp_cp_send (sp, PPP_LCP, CONF_REQ, sp->confid[IDX_LCP], i, &opt);
+	sppp_cp_send (sp, PPP_LCP, CONF_REQ, sp->confid[IDX_LCP], i, opt);
 }
 
 /*
@@ -3102,7 +3107,7 @@ sppp_ipcp_scr(struct sppp *sp)
 	}
 
 	sp->confid[IDX_IPCP] = ++sp->pp_seq;
-	sppp_cp_send(sp, PPP_IPCP, CONF_REQ, sp->confid[IDX_IPCP], i, &opt);
+	sppp_cp_send(sp, PPP_IPCP, CONF_REQ, sp->confid[IDX_IPCP], i, opt);
 }
 
 /*
@@ -3519,7 +3524,7 @@ p		opt[i++] = 0;   /* TBD */
 #endif
 
 	sp->confid[IDX_IPV6CP] = ++sp->pp_seq;
-	sppp_cp_send(sp, PPP_IPV6CP, CONF_REQ, sp->confid[IDX_IPV6CP], i, &opt);
+	sppp_cp_send(sp, PPP_IPV6CP, CONF_REQ, sp->confid[IDX_IPV6CP], i, opt);
 }
 #else /*INET6*/
 HIDE void
@@ -4004,7 +4009,6 @@ sppp_chap_tlu(struct sppp *sp)
 #if defined (__FreeBSD__)
 		sp->ch[IDX_CHAP] = timeout(chap.TO, (void *)sp, i * hz);
 #elif defined(__OpenBSD__)
-		timeout_set(&sp->ch[IDX_CHAP], chap.TO, (void *)sp);
 		timeout_add(&sp->ch[IDX_CHAP], i * hz);
 #endif
 	}
@@ -4062,7 +4066,7 @@ sppp_chap_scr(struct sppp *sp)
 	u_char clen;
 
 	/* Compute random challenge. */
-	arc4random_bytes(sp->myauth.challenge, sizeof(sp->myauth.challenge));
+	arc4random_buf(sp->myauth.challenge, sizeof(sp->myauth.challenge));
 	clen = AUTHKEYLEN;
 
 	sp->confid[IDX_CHAP] = ++sp->pp_seq;
@@ -4261,7 +4265,6 @@ sppp_pap_open(struct sppp *sp)
 		sp->pap_my_to_ch =
 		    timeout(sppp_pap_my_TO, (void *)sp, sp->lcp.timeout);
 #elif defined (__OpenBSD__)
-		timeout_set(&sp->pap_my_to_ch, sppp_pap_my_TO, (void *)sp);
 		timeout_add(&sp->pap_my_to_ch, sp->lcp.timeout);
 #endif
 	}
@@ -4536,7 +4539,7 @@ sppp_keepalive(void *dummy)
 			if_down (ifp);
 			sppp_qflush (&sp->pp_cpq);
 			if (! (sp->pp_flags & PP_CISCO)) {
-				printf (SPP_FMT "LCP keepalive timeout\n",
+				log(LOG_INFO, SPP_FMT "LCP keepalive timeout\n",
 				    SPP_ARGS(ifp));
 				sp->pp_alivecnt = 0;
 
@@ -4548,7 +4551,8 @@ sppp_keepalive(void *dummy)
 
 				/* Close connection immediately, completition of this
 				 * will summon the magic needed to reestablish it. */
-				sp->pp_tlf(sp);
+				if (sp->pp_tlf)
+					sp->pp_tlf(sp);
 				continue;
 			}
 		}

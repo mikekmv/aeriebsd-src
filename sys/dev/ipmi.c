@@ -1154,7 +1154,8 @@ get_sdr(struct ipmi_softc *sc, u_int16_t recid, u_int16_t *nxtrec)
 
 		if (get_sdr_partial(sc, recid, resid, offset, len,
 		    psdr + offset, NULL)) {
-			printf(": get chunk: %d,%d fails\n", offset, len);
+			printf("%s: get chunk: %d,%d fails\n", DEVNAME(sc),
+			    offset, len);
 			free(psdr, M_DEVBUF);
 			return (1);
 		}

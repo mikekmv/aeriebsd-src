@@ -60,7 +60,6 @@ int gotpipe = 0;
 int syncrecv;
 int syncsend;
 pid_t pfproc_pid = -1;
-u_short sync_port;
 char *path_dhcpd_conf = _PATH_DHCPD_CONF;
 char *path_dhcpd_db = _PATH_DHCPD_DB;
 char *abandoned_tab = NULL;
@@ -75,15 +74,30 @@ main(int argc, char *argv[])
 	extern char *__progname;
 	char *sync_iface = NULL;
 	char *sync_baddr = NULL;
+	u_short sync_port = 0;
 	struct servent *ent;
 
 	/* Initially, log errors to stderr as well as to syslogd. */
 	openlog_r(__progname, LOG_PID | LOG_NDELAY, DHCPD_LOG_FACILITY, &sdata);
 
-	if ((ent = getservbyname("dhcpd-sync", "udp")) == NULL)
-		errx(1, "Can't find service \"dhcpd-sync\" in /etc/services");
-	sync_port = ntohs(ent->s_port);
+	opterr = 0;
+	while ((ch = getopt(argc, argv, "Y:y:")) != -1)
+		switch (ch) {
+		case 'Y':
+			syncsend = 1;
+			break;
+		case 'y':
+			syncrecv = 1;
+			break;
+		}
+	if (syncsend || syncrecv) {
+		if ((ent = getservbyname("dhcpd-sync", "udp")) == NULL)
+			errx(1, "Can't find service \"dhcpd-sync\" in "
+			    "/etc/services");
+		sync_port = ntohs(ent->s_port);
+	}
 
+	optreset = optind = opterr = 1;
 	while ((ch = getopt(argc, argv, "A:C:L:c:dfl:nY:y:")) != -1)
 		switch (ch) {
 		case 'A':
@@ -116,11 +130,11 @@ main(int argc, char *argv[])
 		case 'Y':
 			if (sync_addhost(optarg, sync_port) != 0)
 				sync_iface = optarg;
-			syncsend++;
+			syncsend = 1;
 			break;
 		case 'y':
 			sync_baddr = optarg;
-			syncrecv++;
+			syncrecv = 1;
 			break;
 		default:
 			usage();

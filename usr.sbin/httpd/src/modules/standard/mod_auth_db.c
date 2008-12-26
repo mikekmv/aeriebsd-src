@@ -288,7 +288,7 @@ static int db_check_auth(request_rec *r)
     const array_header *reqs_arr = ap_requires(r);
     require_line *reqs = reqs_arr ? (require_line *) reqs_arr->elts : NULL;
 
-    register int x;
+    int x;
     const char *t;
     char *w;
 

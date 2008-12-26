@@ -29,19 +29,21 @@
 
 #if defined(LIBC_SCCS)
 	.rodata
-	.asciz "$ABSD$"
+	.asciz "$ABSD: sbrk.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 #include "SYS.h"
 
 
 	.globl	_end
-	.globl	minbrk
+	.globl	_C_LABEL(minbrk)
 	.globl	__curbrk
 
 	.data
-minbrk: .long	_end
-__curbrk:.long	_end
+_C_LABEL(minbrk):
+	.long	_end
+__curbrk:
+	.long	_end
 	.text
 
 ENTRY(sbrk, R3)
@@ -55,4 +57,4 @@ ENTRY(sbrk, R3)
 	addl2	4(r3),__curbrk
 	ret
 err:
-	jmp	__cerror
+	jmp	_C_LABEL(_cerror)

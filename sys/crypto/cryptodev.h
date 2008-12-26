@@ -96,7 +96,8 @@
 #define CRYPTO_SHA2_384_HMAC	19
 #define CRYPTO_SHA2_512_HMAC	20
 #define CRYPTO_AES_CTR		21
-#define CRYPTO_ALGORITHM_MAX	21 /* Keep updated - see below */
+#define CRYPTO_AES_XTS		22
+#define CRYPTO_ALGORITHM_MAX	22 /* Keep updated - see below */
 
 #define	CRYPTO_ALGORITHM_ALL	(CRYPTO_ALGORITHM_MAX + 1)
 

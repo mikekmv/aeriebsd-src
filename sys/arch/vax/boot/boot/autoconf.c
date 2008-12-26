@@ -49,7 +49,7 @@ void consinit(void);
 void scbinit(void);
 int getsecs(void);
 void scb_stray(void *);
-void longjmp(int *, int);
+void longjmp(int *);
 void rtimer(void *);
 
 long *bootregs;
@@ -142,7 +142,7 @@ mcheck(void *arg)
 
 	off = (mfp[7]/4 + 8);
 	printf("Machine check, pc=%x, psl=%x\n", mfp[off], mfp[off+1]);
-	longjmp(jbuf, 1);
+	longjmp(jbuf);
 }
 
 /*
@@ -199,7 +199,7 @@ rtimer(void *arg)
 		int nu = sluttid - getsecs();
 		if (senast != nu) {
 			mtpr(20, PR_IPL);
-			longjmp(jbuf, 1);
+			longjmp(jbuf);
 		}
 	}
 }

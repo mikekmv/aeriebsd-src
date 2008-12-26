@@ -53,7 +53,7 @@ extern int	mycall();
  * have 0 arguments to our system call.
  */
 static struct sysent newent = {
-	0, 0,	mycall			/* # of args, args size, fn. pointer */
+	0, 0, 0, mycall		/* # of args, args size, flags, fn. pointer */
 };
 
 MOD_SYSCALL( "newsyscall", -1, &newent)

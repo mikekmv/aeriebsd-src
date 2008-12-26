@@ -211,6 +211,11 @@ scsi_make_xs(struct scsi_link *sc_link, struct scsi_generic *scsi_cmd,
 		xs->cmd->bytes[0] |= ((sc_link->lun << SCSI_CMD_LUN_SHIFT) &
 		    SCSI_CMD_LUN_MASK);
 
+#ifdef	SCSIDEBUG
+	if ((sc_link->flags & SDEV_DB1) != 0)
+		show_scsi_xs(xs);
+#endif /* SCSIDEBUG */
+
 	return (xs);
 }
 
@@ -242,7 +247,7 @@ scsi_size(struct scsi_link *sc_link, int flags, u_int32_t *blksize)
 	 * number of blocks
 	 */
 	error = scsi_scsi_cmd(sc_link, (struct scsi_generic *)&rc, sizeof(rc),
-	    (u_char *)&rdcap, sizeof(rdcap), 2, 20000, NULL,
+	    (u_char *)&rdcap, sizeof(rdcap), SCSI_RETRIES, 20000, NULL,
 	    flags | SCSI_DATA_IN);
 	if (error) {
 		SC_DEBUG(sc_link, SDEV_DB1, ("READ CAPACITY error (%#x)\n",
@@ -267,8 +272,8 @@ scsi_size(struct scsi_link *sc_link, int flags, u_int32_t *blksize)
 	 _lto4b(sizeof(rdcap16), rc16.length);
 
 	error = scsi_scsi_cmd(sc_link, (struct scsi_generic *)&rc16,
-	    sizeof(rc16), (u_char *)&rdcap16, sizeof(rdcap16), 2, 20000, NULL,
-	    flags | SCSI_DATA_IN);
+	    sizeof(rc16), (u_char *)&rdcap16, sizeof(rdcap16), SCSI_RETRIES,
+	    20000, NULL, flags | SCSI_DATA_IN);
 	if (error) {
 		SC_DEBUG(sc_link, SDEV_DB1, ("READ CAPACITY 16 error (%#x)\n",
 		    error));
@@ -289,9 +294,6 @@ int
 scsi_test_unit_ready(struct scsi_link *sc_link, int retries, int flags)
 {
 	struct scsi_test_unit_ready		scsi_cmd;
-
-	if (sc_link->quirks & ADEV_NOTUR)
-		return (0);
 
 	bzero(&scsi_cmd, sizeof(scsi_cmd));
 	scsi_cmd.opcode = TEST_UNIT_READY;
@@ -355,7 +357,7 @@ scsi_inquire_vpd(struct scsi_link *sc_link, void *buf, u_int buflen,
 
 	error = scsi_scsi_cmd(sc_link, (struct scsi_generic *)&scsi_cmd,
 	    sizeof(scsi_cmd), buf, buflen, 2, 10000, NULL,
- 	    SCSI_DATA_IN | flags);
+ 	    SCSI_DATA_IN | SCSI_SILENT | flags);
  
  	return (error);
 }
@@ -421,7 +423,7 @@ scsi_mode_sense(struct scsi_link *sc_link, int byte2, int page,
 	scsi_cmd.length = len;
 
 	error = scsi_scsi_cmd(sc_link, (struct scsi_generic *)&scsi_cmd,
-	    sizeof(scsi_cmd), (u_char *)data, len, 4, timeout, NULL,
+	    sizeof(scsi_cmd), (u_char *)data, len, SCSI_RETRIES, timeout, NULL,
 	    flags | SCSI_DATA_IN);
 
 	SC_DEBUG(sc_link, SDEV_DB2, ("scsi_mode_sense: page %#x, error = %d\n",
@@ -454,7 +456,7 @@ scsi_mode_sense_big(struct scsi_link *sc_link, int byte2, int page,
 	_lto2b(len, scsi_cmd.length);
 
 	error = scsi_scsi_cmd(sc_link, (struct scsi_generic *)&scsi_cmd,
-	    sizeof(scsi_cmd), (u_char *)data, len, 4, timeout, NULL,
+	    sizeof(scsi_cmd), (u_char *)data, len, SCSI_RETRIES, timeout, NULL,
 	    flags | SCSI_DATA_IN);
 
 	SC_DEBUG(sc_link, SDEV_DB2,
@@ -611,8 +613,8 @@ scsi_mode_select(struct scsi_link *sc_link, int byte2,
 	data->data_length = 0;
 
 	error = scsi_scsi_cmd(sc_link, (struct scsi_generic *)&scsi_cmd,
-	    sizeof(scsi_cmd), (u_char *)data, scsi_cmd.length, 4, timeout, NULL,
-	    flags | SCSI_DATA_OUT);
+	    sizeof(scsi_cmd), (u_char *)data, scsi_cmd.length, SCSI_RETRIES,
+	    timeout, NULL, flags | SCSI_DATA_OUT);
 
 	SC_DEBUG(sc_link, SDEV_DB2, ("scsi_mode_select: error = %d\n", error));
 
@@ -638,7 +640,7 @@ scsi_mode_select_big(struct scsi_link *sc_link, int byte2,
 	_lto2b(0, data->data_length);
 
 	error = scsi_scsi_cmd(sc_link, (struct scsi_generic *)&scsi_cmd,
-	    sizeof(scsi_cmd), (u_char *)data, len, 4, timeout, NULL,
+	    sizeof(scsi_cmd), (u_char *)data, len, SCSI_RETRIES, timeout, NULL,
 	    flags | SCSI_DATA_OUT);
 
 	SC_DEBUG(sc_link, SDEV_DB2, ("scsi_mode_select_big: error = %d\n",
@@ -663,8 +665,8 @@ scsi_report_luns(struct scsi_link *sc_link, int selectreport,
 	_lto4b(datalen, scsi_cmd.length);
 
 	error = scsi_scsi_cmd(sc_link, (struct scsi_generic *)&scsi_cmd,
-	    sizeof(scsi_cmd), (u_char *)data, datalen, 4, timeout, NULL,
-	    flags | SCSI_DATA_IN);
+	    sizeof(scsi_cmd), (u_char *)data, datalen, SCSI_RETRIES, timeout,
+	    NULL, flags | SCSI_DATA_IN);
 
 	SC_DEBUG(sc_link, SDEV_DB2, ("scsi_report_luns: error = %d\n", error));
 
@@ -684,10 +686,6 @@ scsi_done(struct scsi_xfer *xs)
 	splassert(IPL_BIO);
 
 	SC_DEBUG(sc_link, SDEV_DB2, ("scsi_done\n"));
-#ifdef	SCSIDEBUG
-	if ((sc_link->flags & SDEV_DB1) != 0)
-		show_scsi_cmd(xs);
-#endif /* SCSIDEBUG */
 
 	/*
  	 * If it's a user level request, bypass all usual completion processing,
@@ -876,7 +874,21 @@ scsi_scsi_cmd(struct scsi_link *sc_link, struct scsi_generic *scsi_cmd,
 	    retries, timeout, bp, flags)) == NULL)
 		return (ENOMEM);
 
-	if ((error = scsi_execute_xs(xs)) == EJUSTRETURN)
+#ifdef	SCSIDEBUG
+	if ((sc_link->flags & SDEV_DB1) != 0)
+		if (xs->datalen && (xs->flags & SCSI_DATA_OUT))
+			show_mem(xs->data, min(64, xs->datalen));
+#endif	/* SCSIDEBUG */
+
+	error = scsi_execute_xs(xs);
+
+#ifdef	SCSIDEBUG
+	if ((sc_link->flags & SDEV_DB1) != 0)
+		if (xs->datalen && (xs->flags & SCSI_DATA_IN))
+			show_mem(xs->data, min(64, xs->datalen));
+#endif	/* SCSIDEBUG */
+
+	if (error == EJUSTRETURN)
 		return (0);
 
 	s = splbio();
@@ -1061,9 +1073,10 @@ scsi_interpret_sense(struct scsi_xfer *xs)
 			case SENSE_NOT_READY_INPROGRESS:
 			case SENSE_NOT_READY_LONGWRITE:
 			case SENSE_NOT_READY_SELFTEST:
+			case SENSE_NOT_READY_INIT_REQUIRED:
 				SC_DEBUG(sc_link, SDEV_DB1,
-		    		    ("not ready: busy (%#x)\n",
-				    sense->add_sense_code_qual));
+		    		    ("not ready (ASC_ASCQ == %#x)\n",
+				    ASC_ASCQ(sense)));
 				return (scsi_delay(xs, 1));
 			case SENSE_NOMEDIUM:
 			case SENSE_NOMEDIUM_TCLOSED:
@@ -1913,7 +1926,13 @@ scsi_decode_sense(struct scsi_sense_data *sense, int flag)
 void
 show_scsi_xs(struct scsi_xfer *xs)
 {
+	u_char *b = (u_char *) xs->cmd;
+	int i = 0;
+
+	sc_print_addr(xs->sc_link);
+
 	printf("xs(%p): ", xs);
+
 	printf("flg(0x%x)", xs->flags);
 	printf("sc_link(%p)", xs->sc_link);
 	printf("retr(0x%x)", xs->retries);
@@ -1924,17 +1943,8 @@ show_scsi_xs(struct scsi_xfer *xs)
 	printf("len(0x%x)", xs->datalen);
 	printf("res(0x%x)", xs->resid);
 	printf("err(0x%x)", xs->error);
-	printf("bp(%p)", xs->bp);
-	show_scsi_cmd(xs);
-}
+	printf("bp(%p)\n", xs->bp);
 
-void
-show_scsi_cmd(struct scsi_xfer *xs)
-{
-	u_char					*b = (u_char *) xs->cmd;
-	int					i = 0;
-
-	sc_print_addr(xs->sc_link);
 	printf("command: ");
 
 	if ((xs->flags & SCSI_RESET) == 0) {
@@ -1944,8 +1954,6 @@ show_scsi_cmd(struct scsi_xfer *xs)
 			printf("%x", b[i++]);
 		}
 		printf("-[%d bytes]\n", xs->datalen);
-		if (xs->datalen)
-			show_mem(xs->data, min(64, xs->datalen));
 	} else
 		printf("-RESET-\n");
 }

@@ -42,23 +42,16 @@
 #include <sys/socket.h>
 #include <sys/errno.h>
 
+#include <machine/bus.h>
+
 #include <net/if.h>
 #include <net/if_media.h>
-
-#ifdef INET
-#include <netinet/in.h>
-#include <netinet/if_ether.h>
-#endif
-
-#include <dev/pci/pcivar.h>
 
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
 #include <dev/mii/miidevs.h>
 
 #include <dev/mii/ciphyreg.h>
-
-#include <machine/bus.h>
 
 int	ciphymatch(struct device *, void *, void *);
 void	ciphyattach(struct device *, struct device *, void *);
@@ -91,6 +84,8 @@ static const struct mii_phydesc ciphys[] = {
 	  MII_STR_CICADA_CS8201A },
 	{ MII_OUI_CICADA,		MII_MODEL_CICADA_CS8201B,
 	  MII_STR_CICADA_CS8201B },
+	{ MII_OUI_CICADA,		MII_MODEL_CICADA_CS8204,
+	  MII_STR_CICADA_CS8204 },
 	{ MII_OUI_xxCICADA,		MII_MODEL_xxCICADA_CS8201B,
 	  MII_STR_xxCICADA_CS8201B },
 
@@ -332,6 +327,7 @@ ciphy_fixup(struct mii_softc *sc)
 
 	switch (model) {
 	case MII_MODEL_CICADA_CS8201:
+	case MII_MODEL_CICADA_CS8204:
 
 		/* Turn off "aux mode" (whatever that means) */
 		PHY_SETBIT(sc, CIPHY_MII_AUXCSR, CIPHY_AUXCSR_MDPPS);

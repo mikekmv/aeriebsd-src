@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ypxfr.c,v 1.1.1.1 2008/08/26 14:44:40 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -335,8 +335,10 @@ send_reply(CLIENT *client, u_long status, u_long tid)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: ypxfr [-cf] [-d domain] [-h host] [-s domain] "
-	    "[-C tid prog ipadd port] mapname\n");
+	fprintf(stderr,
+	    "usage: ypxfr [-cf] [-C tid prog ipadd port] [-d domain] "
+	    "[-h host] [-s domain]\n"
+	    "             mapname\n");
 	exit(1);
 }
 

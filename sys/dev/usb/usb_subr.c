@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -131,13 +124,13 @@ usbd_get_string_desc(usbd_device_handle dev, int sindex, int langid,
 	req.bRequest = UR_GET_DESCRIPTOR;
 	USETW2(req.wValue, UDESC_STRING, sindex);
 	USETW(req.wIndex, langid);
-	USETW(req.wLength, 1);	/* only size byte first */
+	USETW(req.wLength, 2);	/* size and descriptor type first */
 	err = usbd_do_request_flags(dev, &req, sdesc, USBD_SHORT_XFER_OK,
 	    &actlen, USBD_DEFAULT_TIMEOUT);
 	if (err)
 		return (err);
 
-	if (actlen < 1)
+	if (actlen < 2)
 		return (USBD_SHORT_XFER);
 
 	USETW(req.wLength, sdesc->bLength);	/* the whole string */
@@ -353,6 +346,42 @@ void
 usbd_delay_ms(usbd_device_handle dev, u_int ms)
 {
 	usb_delay_ms(dev->bus, ms);
+}
+
+usbd_status
+usbd_port_disown_to_1_1(usbd_device_handle dev, int port, usb_port_status_t *ps)
+{
+	usb_device_request_t req;
+	usbd_status err;
+	int n;
+
+	req.bmRequestType = UT_WRITE_CLASS_OTHER;
+	req.bRequest = UR_SET_FEATURE;
+	USETW(req.wValue, UHF_PORT_DISOWN_TO_1_1);
+	USETW(req.wIndex, port);
+	USETW(req.wLength, 0);
+	err = usbd_do_request(dev, &req, 0);
+	DPRINTF(("usbd_disown_to_1_1: port %d disown request done, error=%s\n",
+	    port, usbd_errstr(err)));
+	if (err)
+		return (err);
+	n = 10;
+	do {
+		/* Wait for device to recover from reset. */
+		usbd_delay_ms(dev, USB_PORT_RESET_DELAY);
+		err = usbd_get_port_status(dev, port, ps);
+		if (err) {
+			DPRINTF(("%s: get status failed %d\n", __func__, err));
+			return (err);
+		}
+		/* If the device disappeared, just give up. */
+		if (!(UGETW(ps->wPortStatus) & UPS_CURRENT_CONNECT_STATUS))
+			return (USBD_NORMAL_COMPLETION);
+	} while ((UGETW(ps->wPortChange) & UPS_C_PORT_RESET) == 0 && --n > 0);
+	if (n == 0)
+		return (USBD_TIMEOUT);
+
+	return (err);
 }
 
 usbd_status
@@ -706,7 +735,8 @@ usbd_set_config_index(usbd_device_handle dev, int index, int msg)
 #ifdef USB_DEBUG
 	if (dev->powersrc == NULL) {
 		DPRINTF(("usbd_set_config_index: No power source?\n"));
-		return (USBD_IOERROR);
+		err = USBD_IOERROR;
+		goto bad;
 	}
 #endif
 	power = cdp->bMaxPower * 2;
@@ -976,6 +1006,7 @@ usbd_new_device(struct device *parent, usbd_bus_handle bus, int depth,
 	usbd_device_handle dev, adev;
 	struct usbd_device *hub;
 	usb_device_descriptor_t *dd;
+	usb_port_status_t ps;
 	usbd_status err;
 	int addr;
 	int i;
@@ -1048,13 +1079,15 @@ usbd_new_device(struct device *parent, usbd_bus_handle bus, int depth,
 
 	dd = &dev->ddesc;
 	/* Try a few times in case the device is slow (i.e. outside specs.) */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 15; i++) {
 		/* Get the first 8 bytes of the device descriptor. */
 		err = usbd_get_desc(dev, UDESC_DEVICE, 0, USB_MAX_IPACKET, dd);
 		if (!err)
 			break;
-		/* progressively increase the delay */
-		usbd_delay_ms(dev, 200 * (i + 1));
+		if ((i % 4) == 0)
+			usbd_reset_port(up->parent, port, &ps);
+		else
+			usbd_delay_ms(dev, 200);
 	}
 	if (err) {
 		DPRINTFN(-1, ("usbd_new_device: addr=%d, getting first desc "
@@ -1104,7 +1137,7 @@ usbd_new_device(struct device *parent, usbd_bus_handle bus, int depth,
 		return (err);
 	}
 
-	/* Set the address */
+	/* Set the address. */
 	DPRINTFN(5,("usbd_new_device: setting device address=%d\n", addr));
 	err = usbd_set_address(dev, addr);
 	if (err) {
@@ -1113,11 +1146,25 @@ usbd_new_device(struct device *parent, usbd_bus_handle bus, int depth,
 		usbd_remove_device(dev, up);
 		return (err);
 	}
+
 	/* Allow device time to set new address */
 	usbd_delay_ms(dev, USB_SET_ADDRESS_SETTLE);
-
 	dev->address = addr;	/* New device address now */
 	bus->devices[addr] = dev;
+
+	/* send disown request to handover 2.0 to 1.1. */
+	if (dev->quirks->uq_flags & UQ_EHCI_NEEDTO_DISOWN) {
+		
+		/* only effective when the target device is on ehci */
+		if (dev->bus->usbrev == USBREV_2_0) {
+			DPRINTF(("%s: disown request issues to dev:%p on usb2.0 bus\n",
+				__func__, dev));
+			(void) usbd_port_disown_to_1_1(dev->myhub, port, &ps);
+			/* reset_port required to finish disown request */
+			(void) usbd_reset_port(dev->myhub, port, &ps);
+  			return (USBD_NORMAL_COMPLETION);
+		}
+	}
 
 	/* Assume 100mA bus powered for now. Changed when configured. */
 	dev->power = USB_MIN_POWER;
@@ -1202,7 +1249,7 @@ usbd_submatch(struct device *parent, void *match, void *aux)
 	struct usb_attach_arg *uaa = aux;
 
 	DPRINTFN(5,("usbd_submatch port=%d,%d configno=%d,%d "
-	    "ifaceno=%d,%d vendor=%d,%d product=%d,%d release=%d,%d\n",
+	    "ifaceno=%d,%d vendor=0x%x,0x%x product=0x%x,0x%x release=%d,%d\n",
 	    uaa->port, cf->uhubcf_port,
 	    uaa->configno, cf->uhubcf_configuration,
 	    uaa->ifaceno, cf->uhubcf_interface,

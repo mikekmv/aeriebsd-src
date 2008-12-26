@@ -90,7 +90,7 @@ int	client_parse_cmd(struct session *s);
 void	client_read(struct bufferevent *, void *);
 int	drop_privs(void);
 void	end_session(struct session *);
-int	exit_daemon(void);
+void	exit_daemon(void);
 int	getline(char *, size_t *);
 void	handle_connection(const int, short, void *);
 void	handle_signal(int, short, void *);
@@ -314,7 +314,7 @@ end_session(struct session *s)
 	session_count--;
 }
 
-int
+void
 exit_daemon(void)
 {
 	struct session *s, *next;
@@ -328,9 +328,6 @@ exit_daemon(void)
 		closelog();
 
 	exit(0);
-
-	/* NOTREACHED */
-	return (-1);
 }
 
 int
@@ -524,7 +521,7 @@ handle_signal(int sig, short event, void *arg)
 	 * Signal handler rules don't apply, libevent decouples for us.
 	 */
 
-	logmsg(LOG_ERR, "%s exiting on signal %d", __progname, sig);
+	logmsg(LOG_ERR, "exiting on signal %d", sig);
 
 	exit_daemon();
 }

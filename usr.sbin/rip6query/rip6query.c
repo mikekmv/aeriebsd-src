@@ -182,7 +182,8 @@ main(int argc, char *argv[])
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: rip6query [-I iface] [-w wait] address\n");
+	fprintf(stderr,
+	    "usage: rip6query [-I interface] [-w time] destination\n");
 }
 
 /* getnameinfo() is preferred as we may be able to show ifindex as ifname */

@@ -45,7 +45,7 @@ SECTIONS
 		etext = ABSOLUTE(.);
 	} = 0x08000240	/* nop filled */
 
-	. = 0x400000;
+	. = 0x480000;
 
 	.rodata :
 	{

@@ -279,13 +279,16 @@ rtalloc2(struct sockaddr *dst, int report, int howstrict)
 	struct rt_addrinfo	 info;
 	int			 s = splnet(), err = 0, msgtype = RTM_MISS;
 
+	bzero(&info, sizeof(info));
+	info.rti_info[RTAX_DST] = dst;
+
 	rnh = rt_gettable(dst->sa_family, 0);
 	if (rnh && (rn = rnh->rnh_matchaddr((caddr_t)dst, rnh)) &&
 	    ((rn->rn_flags & RNF_ROOT) == 0)) {
 		newrt = rt = (struct rtentry *)rn;
 		if (report && (rt->rt_flags & RTF_CLONING) &&
 		    okaytoclone(rt->rt_flags, howstrict)) {
-			err = rtrequest(RTM_RESOLVE, dst, SA(0), SA(0), 0,
+			err = rtrequest1(RTM_RESOLVE, &info, RTP_DEFAULT,
 			    &newrt, 0);
 			if (err) {
 				newrt = rt;
@@ -302,8 +305,6 @@ rtalloc2(struct sockaddr *dst, int report, int howstrict)
 		rtstat.rts_unreach++;
 miss:
 		if (report) {
-			bzero((caddr_t)&info, sizeof(info));
-			info.rti_info[RTAX_DST] = dst;
 			rt_missmsg(msgtype, &info, 0, NULL, err, 0);
 		}
 	}
@@ -333,13 +334,16 @@ rtalloc1(struct sockaddr *dst, int report, u_int tableid)
 	struct rt_addrinfo	 info;
 	int			 s = splsoftnet(), err = 0, msgtype = RTM_MISS;
 
+	bzero(&info, sizeof(info));
+	info.rti_info[RTAX_DST] = dst;
+
 	rnh = rt_gettable(dst->sa_family, tableid);
 	if (rnh && (rn = rnh->rnh_matchaddr((caddr_t)dst, rnh)) &&
 	    ((rn->rn_flags & RNF_ROOT) == 0)) {
 		newrt = rt = (struct rtentry *)rn;
 		if (report && (rt->rt_flags & RTF_CLONING)) {
-			err = rtrequest(RTM_RESOLVE, dst, SA(NULL),
-			    SA(NULL), 0, &newrt, tableid);
+			err = rtrequest1(RTM_RESOLVE, &info, RTP_DEFAULT,
+			    &newrt, tableid);
 			if (err) {
 				newrt = rt;
 				rt->rt_refcnt++;
@@ -658,21 +662,6 @@ ifa_ifwithroute(int flags, struct sockaddr *dst, struct sockaddr *gateway)
 #define ROUNDUP(a) (a>0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 
 int
-rtrequest(int req, struct sockaddr *dst, struct sockaddr *gateway,
-    struct sockaddr *netmask, int flags, struct rtentry **ret_nrt,
-    u_int tableid)
-{
-	struct rt_addrinfo	info;
-
-	bzero(&info, sizeof(info));
-	info.rti_flags = flags;
-	info.rti_info[RTAX_DST] = dst;
-	info.rti_info[RTAX_GATEWAY] = gateway;
-	info.rti_info[RTAX_NETMASK] = netmask;
-	return (rtrequest1(req, &info, RTP_DEFAULT/*XXX*/, ret_nrt, tableid));
-}
-
-int
 rt_getifa(struct rt_addrinfo *info)
 {
 	struct ifaddr	*ifa;
@@ -729,6 +718,9 @@ rtrequest1(int req, struct rt_addrinfo *info, u_int8_t prio,
 	struct sockaddr		*ndst;
 	struct sockaddr_rtlabel	*sa_rl;
 #define senderr(x) { error = x ; goto bad; }
+
+	/* XXX hack for 4.4-release */
+	prio = RTP_DEFAULT;
 
 	if ((rnh = rt_gettable(info->rti_info[RTAX_DST]->sa_family, tableid)) ==
 	    NULL)
@@ -863,6 +855,7 @@ makeroute:
 			 * route's parent.
 			 */
 			rt->rt_rmx = (*ret_nrt)->rt_rmx; /* copy metrics */
+			rt->rt_priority = (*ret_nrt)->rt_priority;
 			rt->rt_parent = *ret_nrt;	 /* Back ptr. to parent. */
 			rt->rt_parent->rt_refcnt++;
 		}
@@ -893,7 +886,8 @@ makeroute:
 #ifndef SMALL_KERNEL
 		if (rn_mpath_capable(rnh) &&
 		    (rn = rnh->rnh_lookup(info->rti_info[RTAX_DST],
-		    info->rti_info[RTAX_NETMASK], rnh)) != NULL) {
+		    info->rti_info[RTAX_NETMASK], rnh)) != NULL &&
+		    (rn = rn_mpath_prio(rn, prio)) != NULL) {
 			if (rn_mpath_next(rn) == NULL)
 				((struct rtentry *)rn)->rt_flags &= ~RTF_MPATH;
 			else
@@ -1089,9 +1083,11 @@ static int			rt_init_done = 0;
 	if (r->rtt_func != NULL) {				\
 		(*r->rtt_func)(r->rtt_rt, r);			\
 	} else {						\
-		rtrequest((int) RTM_DELETE,			\
-		    (struct sockaddr *)rt_key(r->rtt_rt),	\
-		    0, 0, 0, 0, 0);				\
+		struct rt_addrinfo info;			\
+		bzero(&info, sizeof(info));			\
+		info.rti_info[RTAX_DST] = rt_key(r->rtt_rt);	\
+		rtrequest1(RTM_DELETE, &info,			\
+		    r->rtt_rt->rt_priority, NULL, 0 /* XXX */);	\
 	}							\
 }
 

@@ -808,8 +808,7 @@ flashstrategy(struct buf *bp)
 		goto done;
 
 	/* Do bounds checking on partitions. */
-	if (flashpart(bp->b_dev) != RAW_PART &&
-	    bounds_check_with_label(bp, sc->sc_dk.dk_label, 0) <= 0)
+	if (bounds_check_with_label(bp, sc->sc_dk.dk_label, 0) <= 0)
 		goto done;
 
 	/* Queue the transfer. */

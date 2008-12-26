@@ -60,6 +60,7 @@ cvs_vlog(u_int level, const char *fmt, va_list vap)
 {
 	int ecp;
 	FILE *out;
+	char *cmdname;
 
 	if (cvs_trace != 1 && level == LP_TRACE)
 		return;
@@ -85,6 +86,8 @@ cvs_vlog(u_int level, const char *fmt, va_list vap)
 		putc(' ', out);
 	}
 
+	cmdname = (cmdp != NULL) ? cmdp->cmd_name : __progname;
+
 	/* The cvs program appends the command name to the program name */
 	if (level == LP_TRACE) {
 		if (cvs_server_active)
@@ -97,9 +100,9 @@ cvs_vlog(u_int level, const char *fmt, va_list vap)
 		putc(' ', out);
 		if (level == LP_ABORT)
 			(void)fprintf(out,
-			    "[%s aborted]", cmdp->cmd_name);
+			    "[%s aborted]", cmdname);
 		else
-			(void)fputs(cmdp->cmd_name, out);
+			(void)fputs(cmdname, out);
 		(void)fputs(": ", out);
 	}
 
@@ -128,36 +131,38 @@ cvs_printf(const char *fmt, ...)
 
 	va_start(vap, fmt);
 
-		ret = vasprintf(&nstr, fmt, vap);
-		if (ret == -1)
-			fatal("cvs_printf: could not allocate memory");
-		for (dp = nstr; *dp != '\0';) {
-			sp = strchr(dp, '\n');
-			if (sp == NULL)
-				for (sp = dp; *sp != '\0'; sp++)
-					;
+	ret = vasprintf(&nstr, fmt, vap);
+	if (ret == -1)
+		fatal("cvs_printf: could not allocate memory");
 
-			if (cvs_server_active && send_m) {
-				send_m = 0;
-				putc('M', stdout);
-				putc(' ', stdout);
-			}
+	for (dp = nstr; *dp != '\0';) {
+		sp = strchr(dp, '\n');
+		if (sp == NULL)
+			for (sp = dp; *sp != '\0'; sp++)
+				;
 
-			if (dp != nstr && dp != sp &&
-			    !strncmp(dp, LOG_REVSEP, sp - dp))
-				putc('>', stdout);
-
-			fwrite(dp, sizeof(char), (size_t)(sp - dp), stdout);
-
-			if (*sp != '\n')
-				break;
-
-			putc('\n', stdout);
-			send_m = 1;
-			dp = sp + 1;
+		if (cvs_server_active && send_m) {
+			send_m = 0;
+			putc('M', stdout);
+			putc(' ', stdout);
 		}
-		xfree(nstr);
 
+		if (dp != nstr && dp != sp &&
+		    !strncmp(dp, LOG_REVSEP, sp - dp))
+			putc('>', stdout);
+
+		fwrite(dp, sizeof(char), (size_t)(sp - dp), stdout);
+
+		if (*sp != '\n')
+			break;
+
+		putc('\n', stdout);
+		send_m = 1;
+		dp = sp + 1;
+	}
+
+	xfree(nstr);
 	va_end(vap);
+
 	return (ret);
 }

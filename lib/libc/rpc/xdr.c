@@ -37,7 +37,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: xdr.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -668,4 +668,58 @@ bool_t
 xdr_wrapstring(XDR *xdrs, char **cpp)
 {
 	return xdr_string(xdrs, cpp, LASTUNSIGNED);
+}
+
+bool_t
+xdr_int64_t(XDR *xdrs, int64_t *llp)
+{
+	u_long ul[2];
+
+	switch (xdrs->x_op) {
+	case XDR_ENCODE:
+		ul[0] = (u_long)((u_int64_t)*llp >> 32) & 0xffffffff;
+		ul[1] = (u_long)((u_int64_t)*llp) & 0xffffffff;
+		if (XDR_PUTLONG(xdrs, (long *)&ul[0]) == FALSE)
+			return (FALSE);
+		return (XDR_PUTLONG(xdrs, (long *)&ul[1]));
+	case XDR_DECODE:
+		if (XDR_GETLONG(xdrs, (long *)&ul[0]) == FALSE)
+			return (FALSE);
+		if (XDR_GETLONG(xdrs, (long *)&ul[1]) == FALSE)
+			return (FALSE);
+		*llp = (int64_t)
+		    (((u_int64_t)ul[0] << 32) | ((u_int64_t)ul[1]));
+		return (TRUE);
+	case XDR_FREE:
+		return (TRUE);
+	}
+	/* NOTREACHED */
+	return (FALSE);
+}
+
+bool_t
+xdr_u_int64_t(XDR *xdrs, u_int64_t *ullp)
+{
+	u_long ul[2];
+
+	switch (xdrs->x_op) {
+	case XDR_ENCODE:
+		ul[0] = (u_long)(*ullp >> 32) & 0xffffffff;
+		ul[1] = (u_long)(*ullp) & 0xffffffff;
+		if (XDR_PUTLONG(xdrs, (long *)&ul[0]) == FALSE)
+			return (FALSE);
+		return (XDR_PUTLONG(xdrs, (long *)&ul[1]));
+	case XDR_DECODE:
+		if (XDR_GETLONG(xdrs, (long *)&ul[0]) == FALSE)
+			return (FALSE);
+		if (XDR_GETLONG(xdrs, (long *)&ul[1]) == FALSE)
+			return (FALSE);
+		*ullp = (u_int64_t)
+		    (((u_int64_t)ul[0] << 32) | ((u_int64_t)ul[1]));
+		return (TRUE);
+	case XDR_FREE:
+		return (TRUE);
+	}
+	/* NOTREACHED */
+	return (FALSE);
 }

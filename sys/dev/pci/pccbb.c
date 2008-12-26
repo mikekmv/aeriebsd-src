@@ -282,6 +282,8 @@ struct yenta_chipinfo {
 	    PCCBB_PCMCIA_IO_RELOC | PCCBB_PCMCIA_MEM_32},
 	{ MAKEID(PCI_VENDOR_TI, PCI_PRODUCT_TI_PCI1451), CB_TI12XX,
 	    PCCBB_PCMCIA_IO_RELOC | PCCBB_PCMCIA_MEM_32},
+	{ MAKEID(PCI_VENDOR_TI, PCI_PRODUCT_TI_PCI1510), CB_TI12XX,
+	    PCCBB_PCMCIA_IO_RELOC | PCCBB_PCMCIA_MEM_32},
 	{ MAKEID(PCI_VENDOR_TI, PCI_PRODUCT_TI_PCI7XX1), CB_TI12XX,
 	    PCCBB_PCMCIA_IO_RELOC | PCCBB_PCMCIA_MEM_32},
 
@@ -742,7 +744,7 @@ pccbb_chipinit(sc)
 		 * The TI125X parts have a different register.
 		 */
 		reg = pci_conf_read(pc, tag, PCI12XX_MFUNC);
-		if (reg == 0) {
+		if (reg == PCI12XX_MFUNC_DEFAULT) {
 			reg &= ~PCI12XX_MFUNC_PIN0;
 			reg |= PCI12XX_MFUNC_PIN0_INTA;
 			if ((pci_conf_read(pc, tag, PCI_SYSCTRL) &
@@ -1008,9 +1010,6 @@ pccbbintr(arg)
 		     * insertion/removal during suspension.
 		     */
 		    (sc->sc_flags & CBB_CARDEXIST) == 0) {
-			if (sc->sc_flags & CBB_INSERTING) {
-				timeout_del(&sc->sc_ins_tmo);
-			}
 			timeout_add(&sc->sc_ins_tmo, hz / 10);
 			sc->sc_flags |= CBB_INSERTING;
 		}

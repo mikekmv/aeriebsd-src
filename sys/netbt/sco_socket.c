@@ -92,7 +92,7 @@ int sco_recvspace = 4096;
  */
 int
 sco_usrreq(struct socket *up, int req, struct mbuf *m,
-    struct mbuf *nam, struct mbuf *ctl)
+    struct mbuf *nam, struct mbuf *ctl, struct proc *p)
 {
 	struct sco_pcb *pcb = (struct sco_pcb *)up->so_pcb;
 	struct sockaddr_bt *sa;

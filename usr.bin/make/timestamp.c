@@ -1,5 +1,3 @@
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -24,6 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include "config.h"
 #include "defines.h"
 #include "timestamp.h"

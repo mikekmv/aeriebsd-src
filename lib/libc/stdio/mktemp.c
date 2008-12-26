@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: mktemp.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -112,7 +112,7 @@ _gettemp(char *path, int *doopen, int domkdir, int slen)
 	while (trv >= path && *trv == 'X') {
 		char c;
 
-		pid = (arc4random() & 0xffff) % (26+26);
+		pid = arc4random_uniform(26+26);
 		if (pid < 26)
 			c = pid + 'A';
 		else

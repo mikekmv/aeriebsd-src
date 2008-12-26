@@ -541,7 +541,7 @@ bad:
  */
 int
 hci_usrreq(struct socket *up, int req, struct mbuf *m,
-    struct mbuf *nam, struct mbuf *ctl)
+    struct mbuf *nam, struct mbuf *ctl, struct proc *p)
 {
 	struct hci_pcb *pcb = (struct hci_pcb *)up->so_pcb;
 	struct sockaddr_bt *sa;

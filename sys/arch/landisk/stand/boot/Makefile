@@ -1,4 +1,8 @@
 
+MAN=	boot.8
+MLINKS=	boot.8 boot.conf.5
+
+.if ${MACHINE} == "landisk"
 PROG=	boot
 SRCS=	srt0.S conf.c devs.c getsecs.c scifcons.c delay.c
 LDFLAGS=-nostdlib -Ttext 0x8ff00000 -N -x -Bstatic -e start
@@ -41,6 +45,8 @@ ${PROG}: ${OBJS} ${DPADD}
 		-Map ${PROG}.map -cref ${OBJS} ${LDADD}
 	${OBJCOPY} -O binary ${PROG}.sym ${PROG}
 
-NOMAN=
+.else
+NOPROG=
+.endif
 
 .include <bsd.prog.mk>

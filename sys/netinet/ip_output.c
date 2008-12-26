@@ -1061,6 +1061,7 @@ ip_ctloutput(op, so, level, optname, mp)
 		case IP_RECVDSTADDR:
 		case IP_RECVIF:
 		case IP_RECVTTL:
+		case IP_RECVDSTPORT:
 			if (m == NULL || m->m_len != sizeof(int))
 				error = EINVAL;
 			else {
@@ -1106,6 +1107,9 @@ ip_ctloutput(op, so, level, optname, mp)
 					break;
 				case IP_RECVTTL:
 					OPTSET(INP_RECVTTL);
+					break;
+				case IP_RECVDSTPORT:
+					OPTSET(INP_RECVDSTPORT);
 					break;
 				}
 			}
@@ -1410,6 +1414,7 @@ ip_ctloutput(op, so, level, optname, mp)
 		case IP_RECVDSTADDR:
 		case IP_RECVIF:
 		case IP_RECVTTL:
+		case IP_RECVDSTPORT:
 			*mp = m = m_get(M_WAIT, MT_SOOPTS);
 			m->m_len = sizeof(int);
 			switch (optname) {
@@ -1444,6 +1449,9 @@ ip_ctloutput(op, so, level, optname, mp)
 				break;
 			case IP_RECVTTL:
 				optval = OPTBIT(INP_RECVTTL);
+				break;
+			case IP_RECVDSTPORT:
+				optval = OPTBIT(INP_RECVDSTPORT);
 				break;
 			}
 			*mtod(m, int *) = optval;

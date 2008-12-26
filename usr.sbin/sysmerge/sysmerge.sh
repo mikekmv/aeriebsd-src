@@ -24,65 +24,73 @@
 #
 
 umask 0022
-PATH="/bin:/usr/bin:/sbin:/usr/sbin"
 
 PAGER="${PAGER:=/usr/bin/more}"
 SWIDTH=`stty size | awk '{w=$2} END {if (w==0) {w=80} print w}'`
+WRKDIR=`mktemp -d -p /var/tmp sysmerge.XXXXX` || exit 1
 
-yesno() {
-	echo -n "${*}? (y|[n]) "
-	read ANSWER
-	case "${ANSWER}" in
-	y|Y)
-		echo ""
-		return 0
-		;;
-	*)
-		return 1
-		;;
-	esac
-}
+trap "rm -rf ${WRKDIR}; exit 1" 1 2 3 13 15
+
+if [ -z "${FETCH_CMD}" ]; then
+	if [ -z "${FTP_KEEPALIVE}" ]; then
+		FTP_KEEPALIVE=0
+	fi
+	FETCH_CMD="/usr/bin/ftp -V -m -k ${FTP_KEEPALIVE}"
+fi
 
 
 do_pre() {
-	if [ `id -u` -ne 0 ]; then
-		echo " *** ERROR: Need root privilege to run this script"
-		exit 1
-	fi
-
-	if [ -z "${SRCDIR}" -a -z "${TGZ}" ]; then
+	if [ -z "${SRCDIR}" -a -z "${TGZ}" -a -z "${XTGZ}" ]; then
 		if [ -f "/usr/src/etc/Makefile" ]; then
 			SRCDIR=/usr/src
 		else
-			echo " *** ERROR: please specify a valid path to src or etcXX.tgz"
+			echo " *** ERROR: please specify a valid path to src or (x)etcXX.tgz"
 			exit 1
 		fi
 	fi
 
-	WRKDIR=`mktemp -d -p /var/tmp sysmerge.XXXXX` || exit 1
 	TEMPROOT="${WRKDIR}/temproot"
 	BKPDIR="${WRKDIR}/backups"
 
-	trap "rm -rf ${WRKDIR}; exit 1" 1 2 3 13 15
-
-	echo "\n===> Running ${0##*/} with the following settings:\n"
-	echo " auto-mode:            ${AUTOMODE:-no}"
-	echo " source(s):            ${SRCDIR}${TGZ} ${XTGZ}"
-	echo " base work directory:  ${WRKDIR}"
-	echo " temp root directory:  ${TEMPROOT}"
-	echo " backup directory:     ${BKPDIR}"
-	echo ""
-	if yesno "Continue"; then
-		echo -n ""
-	else
-		rmdir ${WRKDIR} 2> /dev/null
-		exit 1
+	if [ -z "${BATCHMODE}" -a -z "${AUTOMODE}" ]; then
+		echo "\n===> Running ${0##*/} with the following settings:\n"
+		if [ -n "${TGZURL}" ]; then
+			echo " etc source:   ${TGZURL}"
+			echo "               (fetched in ${TGZ})"
+		elif [ -n "${TGZ}" ]; then
+			echo " etc source:   ${TGZ}"
+		elif [ -n "${SRCDIR}" ]; then
+			echo " etc source:   ${SRCDIR}"
+		fi
+		if [ -n "${XTGZURL}" ]; then
+			echo " xetc source:  ${XTGZURL}"
+			echo "               (fetched in ${XTGZ})"
+		else
+			[ -n "${XTGZ}" ] && echo " xetc source:  ${XTGZ}"
+		fi
+		echo ""
+		echo " base work directory:  ${WRKDIR}"
+		echo " temp root directory:  ${TEMPROOT}"
+		echo " backup directory:     ${BKPDIR}"
+		echo ""
+		echo -n "Continue? (y|[n]) "
+		read ANSWER
+		case "${ANSWER}" in
+			y|Y)
+				echo ""
+				;;
+			*)
+				rm -rf ${WRKDIR} 2> /dev/null
+				exit 1
+				;;
+		esac
 	fi
 }
 
 
 do_populate() {
-	echo "===> Creating and populating temporary root under ${TEMPROOT}"
+	echo "===> Creating and populating temporary root under"
+	echo "     ${TEMPROOT}"
 	mkdir -p ${TEMPROOT}
 	if [ "${SRCDIR}" ]; then
 		cd ${SRCDIR}/etc
@@ -100,13 +108,18 @@ do_populate() {
 	IGNORE_FILES="/etc/*.db /etc/mail/*.db /etc/passwd /etc/motd /etc/myname /var/mail/root"
 	CF_FILES="/etc/mail/localhost.cf /etc/mail/sendmail.cf /etc/mail/submit.cf"
 	for cf in ${CF_FILES}; do
-		CF_DIFF=`diff -u -I "##### " ${TEMPROOT}/${cf} ${DESTDIR}/${cf}`
+		CF_DIFF=`diff -q -I "##### " ${TEMPROOT}/${cf} ${DESTDIR}/${cf} 2> /dev/null`
 		if [ -z "${CF_DIFF}" ]; then
 			IGNORE_FILES="${IGNORE_FILES} ${cf}"
 		fi
 	done
+	if [ -r /etc/sysmerge.ignore ]; then
+		while read i; do \
+			IGNORE_FILES="${IGNORE_FILES} $(echo ${i} | sed -e 's,\.\.,,g' -e 's,#.*,,g')"
+		done < /etc/sysmerge.ignore
+	fi
 	for i in ${IGNORE_FILES}; do
-		rm -f ${TEMPROOT}/${i};
+		rm -rf ${TEMPROOT}/${i};
 	done
 }
 
@@ -129,7 +142,7 @@ mm_install() {
 
 	if [ -z "${INSTDIR}" ]; then INSTDIR=/; fi
 
-	DIR_OWN=`stat -f "%OMp%OLp" "${TEMPROOT}/${INSTDIR}"`
+	DIR_MODE=`stat -f "%OMp%OLp" "${TEMPROOT}/${INSTDIR}"`
 	eval `stat -f "FILE_MODE=%OMp%OLp FILE_OWN=%Su FILE_GRP=%Sg" ${1}`
 
 	if [ -n "${DESTDIR}${INSTDIR}" -a ! -d "${DESTDIR}${INSTDIR}" ]; then
@@ -204,7 +217,11 @@ merge_loop() {
 
 
 diff_loop() {
-	HANDLE_COMPFILE=v
+	if [ "${BATCHMODE}" ]; then
+		HANDLE_COMPFILE=todo
+	else
+		HANDLE_COMPFILE=v
+	fi
 
 	while [ "${HANDLE_COMPFILE}" = "v" -o "${HANDLE_COMPFILE}" = "todo" ]; do
 		if [ "${HANDLE_COMPFILE}" = "v" ]; then
@@ -235,17 +252,21 @@ diff_loop() {
 			fi
 		fi
 
-		echo "  Use 'd' to delete the temporary ${COMPFILE}"
-		echo "  Use 'i' to install the temporary ${COMPFILE}"
-		if [ -z "${NO_INSTALLED}" -a -z "${IS_BINFILE}" ]; then
-			echo "  Use 'm' to merge the temporary and installed versions"
-			echo "  Use 'v' to view the diff results again"
+		if [ -z "${BATCHMODE}" ]; then
+			echo "  Use 'd' to delete the temporary ${COMPFILE}"
+			echo "  Use 'i' to install the temporary ${COMPFILE}"
+			if [ -z "${NO_INSTALLED}" -a -z "${IS_BINFILE}" ]; then
+				echo "  Use 'm' to merge the temporary and installed versions"
+				echo "  Use 'v' to view the diff results again"
+			fi
+			echo ""
+			echo "  Default is to leave the temporary file to deal with by hand"
+			echo ""
+			echo -n "How should I deal with this? [Leave it for later] "
+			read HANDLE_COMPFILE
+		else
+			unset HANDLE_COMPFILE
 		fi
-		echo ""
-		echo "  Default is to leave the temporary file to deal with by hand"
-		echo ""
-		echo -n "How should I deal with this? [Leave it for later] "
-		read HANDLE_COMPFILE
 
 		case "${HANDLE_COMPFILE}" in
 		[dD])
@@ -304,8 +325,13 @@ do_compare() {
 		fi
 
 		# compare CVS $Id's first so if the file hasn't been modified,
-		# it will be deleted from temproot and ignored from comparison
-		if [ "${AUTOMODE}" ]; then
+		# it will be deleted from temproot and ignored from comparison.
+		# several files are generated from scripts so CVS ID is not a
+		# reliable way of detecting changes; leave for a full diff.
+		if [ "${AUTOMODE}" -a "${COMPFILE}" != "./etc/fbtab" \
+		    -a "${COMPFILE}" != "./etc/login.conf" \
+		    -a "${COMPFILE}" != "./etc/sysctl.conf" \
+		    -a "${COMPFILE}" != "./etc/ttys" ]; then
 			CVSID1=`grep "[$]OpenBSD:" ${DESTDIR}${COMPFILE#.} 2>/dev/null`
 			CVSID2=`grep "[$]OpenBSD:" ${COMPFILE} 2>/dev/null` || CVSID2=none
 			if [ "${CVSID2}" = "${CVSID1}" ]; then rm "${COMPFILE}"; fi
@@ -383,6 +409,11 @@ do_post() {
 		fi
 	fi
 
+	# clean leftovers created by make in src
+	if [ "${SRCDIR}" ]; then
+		cd ${SRCDIR}/gnu/usr.sbin/sendmail/cf/cf && make cleandir 1> /dev/null
+	fi
+
 	echo "===> Making sure your directory hierarchy has correct perms, running mtree"
 	mtree -qdef ${DESTDIR}/etc/mtree/4.4BSD.dist -p ${DESTDIR:=/} -U 1> /dev/null
 
@@ -399,9 +430,10 @@ do_post() {
 			find "${TEMPROOT}" -type f -size +0 -exec echo "     {}" \;
 		fi
 		if [ "${FILES_IN_BKPDIR}" ]; then
-			echo "===> Backup of replaced file(s) can be found under ${BKPDIR}"
+			echo "===> Backup of replaced file(s) can be found under"
+			echo "     ${BKPDIR}"
 		fi
-		echo "===> When done, ${WRKDIR} and its sub-directories should be removed"
+		echo "===> When done, ${WRKDIR} and its subdirectories should be removed"
 	else
 		echo "===> Removing ${WRKDIR}"
 		rm -rf "${WRKDIR}"
@@ -409,25 +441,44 @@ do_post() {
 }
 
 
-ARGS=`getopt as:x: $*`
+ARGS=`getopt abs:x: $*`
 if [ $? -ne 0 ]; then
-	echo "usage: ${0##*/} [-a] [-s src | etcXX.tgz] [-x xetcXX.tgz]" >&2
+	echo "usage: ${0##*/} [-ab] [-s src | etcXX.tgz] [-x xetcXX.tgz]" >&2
 	exit 1
 fi
+
+if [ `id -u` -ne 0 ]; then
+	echo " *** ERROR: Need root privilege to run this script"
+	exit 1
+fi
+
 set -- ${ARGS}
 while [ $# -ne 0 ]
 do
 	case "$1" in
 	-a)
-		AUTOMODE=yes
+		AUTOMODE=1
+		shift;;
+	-b)
+		BATCHMODE=1
 		shift;;
 	-s)
 		WHERE="${2}"
 		shift 2
 		if [ -f "${WHERE}/etc/Makefile" ]; then
 			SRCDIR=${WHERE}
-		elif [ -f "${WHERE}" ]; then
+		elif [ -f "${WHERE}" ] && echo -n ${WHERE} |		\
+		    awk -F/ '{print $NF}' | 				\
+		    grep '^etc[0-9][0-9]\.tgz$' > /dev/null 2>&1 ; then
 			TGZ=${WHERE}
+		elif echo ${WHERE} | \
+		    grep -qE '^(http|ftp)://.*/etc[0-9][0-9]\.tgz$'; then
+			TGZ=${WRKDIR}/etc.tgz
+			TGZURL="${WHERE}"
+			if ! ${FETCH_CMD} -o ${TGZ} ${TGZURL}; then
+				echo " *** ERROR: Could not retrieve ${TGZURL}"
+				exit 1
+			fi
 		else
 			echo " *** ERROR: ${WHERE} is not a path to src nor etcXX.tgz"
 			exit 1
@@ -436,8 +487,18 @@ do
 	-x)
 		WHERE="${2}"
 		shift 2
-		if [ -f "${WHERE}" ]; then
+		if [ -f "${WHERE}" ] && echo -n ${WHERE} | 		\
+		    awk -F/ '{print $NF}' | 				\
+		    grep '^xetc[0-9][0-9]\.tgz$' > /dev/null 2>&1 ; then
 			XTGZ=${WHERE}
+		elif echo ${WHERE} | \
+		    grep -qE '^(http|ftp)://.*/xetc[0-9][0-9]\.tgz$'; then
+			XTGZ=${WRKDIR}/xetc.tgz
+			XTGZURL="${WHERE}"
+			if ! ${FETCH_CMD} -o ${XTGZ} ${XTGZURL}; then
+				echo " *** ERROR: Could not retrieve ${XTGZURL}"
+				exit 1
+			fi
 		else
 			echo " *** ERROR: ${WHERE} is not a path to xetcXX.tgz"
 			exit 1

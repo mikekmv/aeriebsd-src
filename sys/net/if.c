@@ -634,6 +634,7 @@ do { \
 	/* Announce that the interface is gone. */
 	rt_ifannouncemsg(ifp, IFAN_DEPARTURE);
 
+	ifindex2ifnet[ifp->if_index] = NULL;
 	splx(s);
 }
 
@@ -1419,7 +1420,7 @@ ifioctl(struct socket *so, u_long cmd, caddr_t data, struct proc *p)
 #if !defined(COMPAT_43) && !defined(COMPAT_LINUX) && !defined(COMPAT_SVR4)
 		error = ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
 			(struct mbuf *) cmd, (struct mbuf *) data,
-			(struct mbuf *) ifp));
+			(struct mbuf *) ifp, p));
 #else
 	    {
 		u_long ocmd = cmd;
@@ -1459,7 +1460,7 @@ ifioctl(struct socket *so, u_long cmd, caddr_t data, struct proc *p)
 		}
 		error = ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL,
 		    (struct mbuf *) cmd, (struct mbuf *) data,
-		    (struct mbuf *) ifp));
+		    (struct mbuf *) ifp, p));
 		switch (ocmd) {
 
 		case OSIOCGIFADDR:
@@ -1863,14 +1864,16 @@ if_group_routechange(struct sockaddr *dst, struct sockaddr *mask)
 {
 	switch (dst->sa_family) {
 	case AF_INET:
-		if (satosin(dst)->sin_addr.s_addr == INADDR_ANY)
+		if (satosin(dst)->sin_addr.s_addr == INADDR_ANY &&
+		    mask && (mask->sa_len == 0 ||
+		    satosin(mask)->sin_addr.s_addr == INADDR_ANY))
 			if_group_egress_build();
 		break;
 #ifdef INET6
 	case AF_INET6:
 		if (IN6_ARE_ADDR_EQUAL(&(satosin6(dst))->sin6_addr,
-		    &in6addr_any) &&
-		    mask && IN6_ARE_ADDR_EQUAL(&(satosin6(mask))->sin6_addr,
+		    &in6addr_any) && mask &&
+		    IN6_ARE_ADDR_EQUAL(&(satosin6(mask))->sin6_addr,
 		    &in6addr_any))
 			if_group_egress_build();
 		break;

@@ -31,16 +31,16 @@
 #if 0
 static char sccsid[] = "@(#)log10.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_log10.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
 /* LOG10(X)
  * RETURN THE BASE 10 LOGARITHM OF x
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
- * CODED IN C BY K.C. NG, 1/20/85; 
+ * CODED IN C BY K.C. NG, 1/20/85;
  * REVISED BY K.C. NG on 1/23/85, 3/7/85, 4/16/85.
- * 
+ *
  * Required kernel function:
  *	log(x)
  *
@@ -52,12 +52,12 @@ static const char rcsid[] = "$ABSD$";
  *    Note:
  *	  [log(10)]   rounded to 56 bits has error  .0895  ulps,
  *	  [1/log(10)] rounded to 53 bits has error  .198   ulps;
- *	  therefore, for better accuracy, in VAX D format, we divide 
- *	  log(x) by log(10), but in IEEE Double format, we multiply 
+ *	  therefore, for better accuracy, in VAX D format, we divide
+ *	  log(x) by log(10), but in IEEE Double format, we multiply
  *	  log(x) by [1/log(10)].
  *
  * Special cases:
- *	log10(x) is NaN with signal if x < 0; 
+ *	log10(x) is NaN with signal if x < 0;
  *	log10(+INF) is +INF with no signal; log10(0) is -INF with signal;
  *	log10(NaN) is that NaN with no signal.
  *
@@ -73,6 +73,7 @@ static const char rcsid[] = "$ABSD$";
  * shown.
  */
 
+#include "math.h"
 #include "mathimpl.h"
 
 vc(ln10hi, 2.3025850929940456790E0 ,5d8d,4113,a8ac,ddaa, 2, .935D8DDDAAA8AC)
@@ -83,13 +84,12 @@ ic(ivln10, 4.3429448190325181667E-1, -2, 1.BCB7B1526E50E)
 #define	ln10hi	vccast(ln10hi)
 #endif
 
-
-double log10(x)
-double x;
+double
+log10(double x)
 {
-#if defined(__vax__)||defined(tahoe)
+#if defined(__vax__)
 	return(log(x)/ln10hi);
-#else	/* defined(__vax__)||defined(tahoe) */
+#else	/* defined(__vax__) */
 	return(ivln10*log(x));
-#endif	/* defined(__vax__)||defined(tahoe) */
+#endif	/* defined(__vax__) */
 }

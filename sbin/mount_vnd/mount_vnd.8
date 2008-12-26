@@ -48,13 +48,13 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: September 29 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt MOUNT_VND 8
 .Os
 .Sh NAME
 .Nm mount_vnd ,
 .Nm vnconfig
-.Nd "configure vnode disks for file swapping or pseudo file systems"
+.Nd configure vnode disks
 .Sh SYNOPSIS
 .Nm mount_vnd
 .Bk -words
@@ -230,13 +230,15 @@ and mount the ISO 9660 file system contained in it:
 .Ed
 .Pp
 Configure an encrypted image file as vnode disk svnd0 and mount the FFS
-file system contained in it.
+file system contained in the
+.Sq a
+partition of the disklabel.
 The encryption key does not echo and must be entered every time
 the vnode disk is configured.
 .Bd -literal -offset indent
 # vnconfig -k svnd0 /tmp/cryptimg
 Encryption key:
-# mount /dev/svnd0c /mnt
+# mount /dev/svnd0a /mnt
 .Ed
 .Pp
 An equivalent
@@ -244,7 +246,7 @@ An equivalent
 entry is:
 .Bd -literal -offset indent
 /tmp/cryptimg /dev/svnd0c vnd rw,noauto,-k       0 0
-/dev/svnd0c   /mnt        ffs rw,noauto          0 0
+/dev/svnd0a   /mnt        ffs rw,noauto          0 0
 .Ed
 .Pp
 Same as above, but now configure the vnode using PKCS #5 PBKDF2 and
@@ -253,7 +255,7 @@ a salt file with 20000 rounds:
 # vnconfig -K 20000 svnd0 /tmp/cryptimg
 Encryption key:
 Salt file: /tmp/cryptsalt
-# mount /dev/svnd0c /mnt
+# mount /dev/svnd0a /mnt
 .Ed
 .Pp
 An equivalent
@@ -261,7 +263,7 @@ An equivalent
 entry is:
 .Bd -literal -offset indent
 /tmp/cryptimg /dev/svnd0c vnd rw,noauto,-K=20000 0 0
-/dev/svnd0c   /mnt        ffs rw,noauto          0 0
+/dev/svnd0a   /mnt        ffs rw,noauto          0 0
 .Ed
 .Pp
 Unmount the file system and unconfigure the vnode device:
@@ -278,7 +280,7 @@ in order to have vnd images configured at boot time is listed here:
 echo "configuring vnd devices:"
 mount /dev/svnd0c
 fsck -p /dev/svnd0a
-mount /mnt/svnd0a
+mount /mnt
 .Ed
 .Pp
 Mounting images during the first pass of
@@ -300,3 +302,15 @@ command first appeared in
 .Ox 4.2 .
 .Sh AUTHORS
 .An David Krause .
+.Sh CAVEATS
+The
+.Sq c
+partition of a vnd image should not be used.
+When a superblock becomes damaged,
+.Xr fsck_ffs 8
+needs information contained in the disklabel
+to determine the location of alternate superblocks.
+This information is not available when directly using the
+.Sq c
+partition,
+so checking the file system image will fail.

@@ -713,6 +713,8 @@ done:
 		semptr->sempid = p->p_pid;
 	}
 
+	semaptr->sem_otime = time_second;
+
 	/* Do a wakeup if any semaphore was up'd. */
 	if (do_wakeup) {
 		DPRINTF(("semop:  doing wakeup\n"));

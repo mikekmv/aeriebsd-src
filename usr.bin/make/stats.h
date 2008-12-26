@@ -1,7 +1,3 @@
-#ifndef STAT_H
-#define STAT_H
-/* $OpenPackages$ */
-
 /*
  * Copyright (c) 1999 Marc Espie.
  *
@@ -30,6 +26,9 @@
  */
 
 /* statistical information gathering */
+
+#ifndef STAT_H
+#define STAT_H
 
 #if defined(STATS_VAR_LOOKUP) || \
 	defined(STATS_GN_CREATION) || \

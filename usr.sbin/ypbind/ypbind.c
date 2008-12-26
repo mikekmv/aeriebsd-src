@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: ypbind.c,v 1.1.1.1 2008/08/26 14:44:39 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -333,7 +333,7 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: ypbind [-insecure] [-ypset] [-ypsetme]\n");
-	exit(0);
+	exit(1);
 }
 
 int

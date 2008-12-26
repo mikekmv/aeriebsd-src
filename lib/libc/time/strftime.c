@@ -30,6 +30,14 @@
 ** SUCH DAMAGE.
 */
 
+#if defined(LIBC_SCCS) && !defined(lint)
+#if 0
+static const char sccsid[] = "@(#)strftime.c      5.4 (Berkeley) 3/14/89";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
+#endif /* !defined LIBC_SCCS */
+
 #include "private.h"
 #include "tzfile.h"
 #include "fcntl.h"

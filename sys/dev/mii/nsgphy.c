@@ -128,7 +128,7 @@ nsgphyattach(struct device *parent, struct device *self, void *aux)
 
 	sc->mii_capabilities =
 		PHY_READ(sc, MII_BMSR) & ma->mii_capmask;
-        if (sc->mii_capabilities & BMSR_EXTSTAT)
+	if (sc->mii_capabilities & BMSR_EXTSTAT)
 		sc->mii_extcapabilities = PHY_READ(sc, MII_EXTSR);
 
 	/*
@@ -144,9 +144,9 @@ nsgphyattach(struct device *parent, struct device *self, void *aux)
 	if (anar & ANAR_10_FD)
 		sc->mii_capabilities |= (BMSR_10TFDX & ma->mii_capmask);
 
-        if ((sc->mii_capabilities & BMSR_MEDIAMASK) ||
-            (sc->mii_extcapabilities & EXTSR_MEDIAMASK))
-                mii_phy_add_media(sc);
+	if ((sc->mii_capabilities & BMSR_MEDIAMASK) ||
+	    (sc->mii_extcapabilities & EXTSR_MEDIAMASK))
+		mii_phy_add_media(sc);
 }
 
 int

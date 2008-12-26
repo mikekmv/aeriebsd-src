@@ -1,4 +1,5 @@
 /*
+ * Blowfish block cipher for OpenBSD
  * Copyright 1997 Niels Provos <provos@physnet.uni-hamburg.de>
  * All rights reserved.
  *
@@ -31,7 +32,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: blowfish.c,v 1.1.1.1 2008/08/26 14:38:26 root Exp $";
 #endif
 
 /*

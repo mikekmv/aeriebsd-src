@@ -208,6 +208,7 @@ const struct pci_matchid bge_devices[] = {
 
 	{ PCI_VENDOR_ALTIMA, PCI_PRODUCT_ALTIMA_AC1000 },
 	{ PCI_VENDOR_ALTIMA, PCI_PRODUCT_ALTIMA_AC1001 },
+	{ PCI_VENDOR_ALTIMA, PCI_PRODUCT_ALTIMA_AC1003 },
 	{ PCI_VENDOR_ALTIMA, PCI_PRODUCT_ALTIMA_AC9100 },
 
 	{ PCI_VENDOR_APPLE, PCI_PRODUCT_APPLE_BCM5701 },
@@ -266,9 +267,13 @@ const struct pci_matchid bge_devices[] = {
 	{ PCI_VENDOR_BROADCOM, PCI_PRODUCT_BROADCOM_BCM5906 },
 	{ PCI_VENDOR_BROADCOM, PCI_PRODUCT_BROADCOM_BCM5906M },
 
+	{ PCI_VENDOR_FUJITSU, PCI_PRODUCT_FUJITSU_PW008GE4 },
+	{ PCI_VENDOR_FUJITSU, PCI_PRODUCT_FUJITSU_PW008GE5 },
+	{ PCI_VENDOR_FUJITSU, PCI_PRODUCT_FUJITSU_PP250_450_LAN },
+
 	{ PCI_VENDOR_SCHNEIDERKOCH, PCI_PRODUCT_SCHNEIDERKOCH_SK9D21 },
 
-	{ PCI_VENDOR_3COM, PCI_PRODUCT_3COM_3C996 },
+	{ PCI_VENDOR_3COM, PCI_PRODUCT_3COM_3C996 }
 };
 
 #define BGE_IS_5705_OR_BEYOND(sc)  \
@@ -1663,8 +1668,8 @@ bge_blockinit(struct bge_softc *sc)
 		dma_read_modebits =
 		  BGE_RDMAMODE_ENABLE | BGE_RDMAMODE_ALL_ATTNS;
 
-		if (sc->bge_flags & BGE_PCIE && 0)
-			dma_read_modebits |= BGE_RDMA_MODE_FIFO_LONG_BURST;
+		if (sc->bge_flags & BGE_PCIE)
+			dma_read_modebits |= BGE_RDMAMODE_FIFO_LONG_BURST;
 
 		CSR_WRITE_4(sc, BGE_RDMA_MODE, dma_read_modebits);
 	}
@@ -1712,8 +1717,7 @@ bge_blockinit(struct bge_softc *sc)
  	} else {
 		BGE_STS_SETBIT(sc, BGE_STS_AUTOPOLL);
 		BGE_SETBIT(sc, BGE_MI_MODE, BGE_MIMODE_AUTOPOLL|10<<16);
-		if (BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5700 &&
-		    sc->bge_chipid != BGE_CHIPID_BCM5700_B2)
+		if (BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5700)
 			CSR_WRITE_4(sc, BGE_MAC_EVT_ENB,
 			    BGE_EVTENB_MI_INTERRUPT);
 	}
@@ -1801,14 +1805,8 @@ bge_attach(struct device *parent, struct device *self, void *aux)
 
 	DPRINTFN(5, ("pci_mapreg_map\n"));
 	memtype = pci_mapreg_type(pa->pa_pc, pa->pa_tag, BGE_PCI_BAR0);
- 	switch (memtype) {
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT:
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT:
-		if (pci_mapreg_map(pa, BGE_PCI_BAR0,
-		    memtype, 0, &sc->bge_btag, &sc->bge_bhandle,
-		    NULL, &size, 0) == 0)
-			break;
-	default:
+	if (pci_mapreg_map(pa, BGE_PCI_BAR0, memtype, 0, &sc->bge_btag,
+	    &sc->bge_bhandle, NULL, &size, 0)) {
 		printf(": can't find mem space\n");
 		return;
 	}
@@ -1897,6 +1895,11 @@ bge_attach(struct device *parent, struct device *self, void *aux)
 
 	misccfg = CSR_READ_4(sc, BGE_MISC_CFG);
 	misccfg &= BGE_MISCCFG_BOARD_ID_MASK;
+
+	if (BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5705 &&
+	    (misccfg == BGE_MISCCFG_BOARD_ID_5788 ||
+	     misccfg == BGE_MISCCFG_BOARD_ID_5788M))
+		sc->bge_flags |= BGE_IS_5788;
 
 	if ((BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5703 &&
 	     (misccfg == 0x4000 || misccfg == 0x8000)) ||
@@ -2065,7 +2068,6 @@ bge_attach(struct device *parent, struct device *self, void *aux)
 	ifp->if_ioctl = bge_ioctl;
 	ifp->if_start = bge_start;
 	ifp->if_watchdog = bge_watchdog;
-	ifp->if_baudrate = 1000000000;
 	IFQ_SET_MAXLEN(&ifp->if_snd, BGE_TX_RING_CNT - 1);
 	IFQ_SET_READY(&ifp->if_snd);
 	DPRINTFN(5, ("bcopy\n"));
@@ -2644,8 +2646,7 @@ bge_intr(void *xsc)
 		/* clear status word */
 		sc->bge_rdata->bge_status_block.bge_status = 0;
 
-		if ((BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5700 &&
-		    sc->bge_chipid != BGE_CHIPID_BCM5700_B2) ||
+		if (BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5700 ||
 		    statusword & BGE_STATFLAG_LINKSTATE_CHANGED ||
 		    BGE_STS_BIT(sc, BGE_STS_LINK_EVT))
 			bge_link_upd(sc);
@@ -3466,12 +3467,7 @@ bge_stop(struct bge_softc *sc)
 
 	sc->bge_tx_saved_considx = BGE_TXCONS_UNSET;
 
-	/*
-	 * We can't just call bge_link_upd() cause chip is almost stopped so
-	 * bge_link_upd -> bge_tick_locked -> bge_stats_update sequence may
-	 * lead to hardware deadlock. So we just clearing MAC's link state
-	 * (PHY may still have link UP).
-	 */
+	/* Clear MAC's link state (PHY may still have link UP). */
 	BGE_STS_CLRBIT(sc, BGE_STS_LINK);
 }
 
@@ -3510,26 +3506,20 @@ bge_link_upd(struct bge_softc *sc)
 	 * changes, thereby adding an additional register access to
 	 * the interrupt handler.
 	 *
-	 * XXX: perhaps link state detection procedure used for
-	 * BGE_CHIPID_BCM5700_B2 can be used for other BCM5700 revisions.
 	 */
-
-	if (BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5700 &&
-	    sc->bge_chipid != BGE_CHIPID_BCM5700_B2) {
+	if (BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5700) {
 		status = CSR_READ_4(sc, BGE_MAC_STS);
 		if (status & BGE_MACSTAT_MI_INTERRUPT) {
-			timeout_del(&sc->bge_timeout);
-			bge_tick(sc);
+			mii_pollstat(mii);
 
 			if (!BGE_STS_BIT(sc, BGE_STS_LINK) &&
 			    mii->mii_media_status & IFM_ACTIVE &&
-			    IFM_SUBTYPE(mii->mii_media_active) != IFM_NONE) {
+			    IFM_SUBTYPE(mii->mii_media_active) != IFM_NONE)
 				BGE_STS_SETBIT(sc, BGE_STS_LINK);
-			} else if (BGE_STS_BIT(sc, BGE_STS_LINK) &&
+			else if (BGE_STS_BIT(sc, BGE_STS_LINK) &&
 			    (!(mii->mii_media_status & IFM_ACTIVE) ||
-			    IFM_SUBTYPE(mii->mii_media_active) == IFM_NONE)) {
+			    IFM_SUBTYPE(mii->mii_media_active) == IFM_NONE))
 				BGE_STS_CLRBIT(sc, BGE_STS_LINK);
-			}
 
 			/* Clear the interrupt */
 			CSR_WRITE_4(sc, BGE_MAC_EVT_ENB,
@@ -3556,11 +3546,13 @@ bge_link_upd(struct bge_softc *sc)
 				    LINK_STATE_HALF_DUPLEX :
 				    LINK_STATE_FULL_DUPLEX;
 				if_link_state_change(ifp);
+				ifp->if_baudrate = IF_Gbps(1);
 			}
 		} else if (BGE_STS_BIT(sc, BGE_STS_LINK)) {
 			BGE_STS_CLRBIT(sc, BGE_STS_LINK);
 			ifp->if_link_state = LINK_STATE_DOWN;
 			if_link_state_change(ifp);
+			ifp->if_baudrate = 0;
 		}
         /*
 	 * Discard link events for MII/GMII cards if MI auto-polling disabled.
@@ -3576,10 +3568,8 @@ bge_link_upd(struct bge_softc *sc)
 		link = (CSR_READ_4(sc, BGE_MI_STS) & BGE_MISTS_LINK)?
 		    BGE_STS_LINK : 0;
 
-		if (BGE_STS_BIT(sc, BGE_STS_LINK) != link ||
-		    BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5700) {
-			timeout_del(&sc->bge_timeout);
-			bge_tick(sc);
+		if (BGE_STS_BIT(sc, BGE_STS_LINK) != link) {
+			mii_pollstat(mii);
 
 			if (!BGE_STS_BIT(sc, BGE_STS_LINK) &&
 			    mii->mii_media_status & IFM_ACTIVE &&

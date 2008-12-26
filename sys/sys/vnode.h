@@ -351,7 +351,7 @@ int	cdevvp(dev_t, struct vnode **);
 struct vnode *checkalias(struct vnode *, dev_t, struct mount *);
 int	getnewvnode(enum vtagtype, struct mount *, int (**vops)(void *),
 	    struct vnode **);
-int	vaccess(mode_t, uid_t, gid_t, mode_t, struct ucred *);
+int	vaccess(enum vtype, mode_t, uid_t, gid_t, mode_t, struct ucred *);
 void	vattr_null(struct vattr *);
 void	vdevgone(int, int, int, enum vtype);
 int	vcount(struct vnode *);

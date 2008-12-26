@@ -178,6 +178,8 @@ struct block *gen_broadcast(int);
 struct block *gen_multicast(int);
 struct block *gen_inbound(int);
 
+struct block *gen_vlan(int);
+
 struct block *gen_pf_ifname(char *);
 struct block *gen_pf_rnr(int);
 struct block *gen_pf_srnr(int);

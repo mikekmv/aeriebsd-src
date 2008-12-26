@@ -55,7 +55,7 @@ struct vnode *speclisth[SPECHSZ];
 
 int (**spec_vnodeop_p)(void *);
 struct vnodeopv_entry_desc spec_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
+	{ &vop_default_desc, eopnotsupp },
 	{ &vop_lookup_desc, vop_generic_lookup },	/* lookup */
 	{ &vop_create_desc, spec_badop },		/* create */
 	{ &vop_mknod_desc, spec_badop },		/* mknod */
@@ -107,7 +107,6 @@ spec_vnoperate(void *v)
 /*
  * Open a special file.
  */
-/* ARGSUSED */
 int
 spec_open(void *v)
 {
@@ -195,7 +194,6 @@ spec_open(void *v)
 /*
  * Vnode op for read
  */
-/* ARGSUSED */
 int
 spec_read(void *v)
 {
@@ -284,7 +282,6 @@ spec_inactive(void *v)
 /*
  * Vnode op for write
  */
-/* ARGSUSED */
 int
 spec_write(void *v)
 {
@@ -361,7 +358,6 @@ spec_write(void *v)
 /*
  * Device ioctl operation.
  */
-/* ARGSUSED */
 int
 spec_ioctl(void *v)
 {
@@ -385,7 +381,6 @@ spec_ioctl(void *v)
 	}
 }
 
-/* ARGSUSED */
 int
 spec_poll(void *v)
 {
@@ -403,7 +398,6 @@ spec_poll(void *v)
 		return (*cdevsw[major(dev)].d_poll)(dev, ap->a_events, ap->a_p);
 	}
 }
-/* ARGSUSED */
 int
 spec_kqfilter(void *v)
 {
@@ -420,7 +414,6 @@ spec_kqfilter(void *v)
 /*
  * Synch buffers associated with a block device
  */
-/* ARGSUSED */
 int
 spec_fsync(void *v)
 {
@@ -445,7 +438,7 @@ loop:
 		if ((bp->b_flags & B_DELWRI) == 0)
 			panic("spec_fsync: not dirty");
 		bremfree(bp);
-		bp->b_flags |= B_BUSY;
+		buf_acquire(bp);
 		splx(s);
 		bawrite(bp);
 		goto loop;
@@ -482,7 +475,6 @@ spec_strategy(void *v)
 /*
  * Device close routine
  */
-/* ARGSUSED */
 int
 spec_close(void *v)
 {
@@ -649,7 +641,6 @@ spec_pathconf(void *v)
 /*
  * Special device advisory byte-level locks.
  */
-/* ARGSUSED */
 int
 spec_advlock(void *v)
 {

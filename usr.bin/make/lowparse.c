@@ -1,7 +1,3 @@
-/*	$OpenPackages$ */
-
-/* low-level parsing functions. */
-
 /*
  * Copyright (c) 1999,2000 Marc Espie.
  *
@@ -28,6 +24,8 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+/* low-level parsing functions. */
 
 #include <assert.h>
 #include <stddef.h>

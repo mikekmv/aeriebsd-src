@@ -994,6 +994,7 @@ rt2661_rx_intr(struct rt2661_softc *sc)
 	struct ieee80211com *ic = &sc->sc_ic;
 	struct ifnet *ifp = &ic->ic_if;
 	struct ieee80211_frame *wh;
+	struct ieee80211_rxinfo rxi;
 	struct ieee80211_node *ni;
 	struct mbuf *mnew, *m;
 	int error, rssi;
@@ -1114,7 +1115,10 @@ rt2661_rx_intr(struct rt2661_softc *sc)
 		ni = ieee80211_find_rxnode(ic, wh);
 
 		/* send the frame to the 802.11 layer */
-		ieee80211_input(ifp, m, ni, desc->rssi, 0);
+		rxi.rxi_flags = 0;
+		rxi.rxi_rssi = desc->rssi;
+		rxi.rxi_tstamp = 0;	/* unused */
+		ieee80211_input(ifp, m, ni, &rxi);
 
 		/*-
 		 * Keep track of the average RSSI using an Exponential Moving

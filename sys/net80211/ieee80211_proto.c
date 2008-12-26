@@ -61,6 +61,7 @@
 #endif
 
 #include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_priv.h>
 
 #include <dev/rndvar.h>
 
@@ -389,7 +390,7 @@ ieee80211_setkeys(struct ieee80211com *ic)
 	/* Swap(GM, GN) */
 	kid = (ic->ic_def_txkey == 1) ? 2 : 1;
 
-	arc4random_bytes(gtk, sizeof(gtk));
+	arc4random_buf(gtk, sizeof(gtk));
 	ieee80211_map_gtk(gtk, ic->ic_bss->ni_rsngroupcipher, kid, 1, 0,
 	    &ic->ic_nw_keys[kid]);
 
@@ -430,7 +431,7 @@ ieee80211_gtk_rekey_timeout(void *arg)
 
 void
 ieee80211_auth_open(struct ieee80211com *ic, const struct ieee80211_frame *wh,
-    struct ieee80211_node *ni, int rssi, u_int32_t rstamp, u_int16_t seq,
+    struct ieee80211_node *ni, struct ieee80211_rxinfo *rxi, u_int16_t seq,
     u_int16_t status)
 {
 	struct ifnet *ifp = &ic->ic_if;
@@ -438,8 +439,7 @@ ieee80211_auth_open(struct ieee80211com *ic, const struct ieee80211_frame *wh,
 	case IEEE80211_M_IBSS:
 		if (ic->ic_state != IEEE80211_S_RUN ||
 		    seq != IEEE80211_AUTH_OPEN_REQUEST) {
-			IEEE80211_DPRINTF(("%s: discard auth from %s; "
-			    "state %u, seq %u\n", __func__,
+			DPRINTF(("discard auth from %s; state %u, seq %u\n",
 			    ether_sprintf((u_int8_t *)wh->i_addr2),
 			    ic->ic_state, seq));
 			ic->ic_stats.is_rx_bad_auth++;
@@ -456,8 +456,7 @@ ieee80211_auth_open(struct ieee80211com *ic, const struct ieee80211_frame *wh,
 	case IEEE80211_M_HOSTAP:
 		if (ic->ic_state != IEEE80211_S_RUN ||
 		    seq != IEEE80211_AUTH_OPEN_REQUEST) {
-			IEEE80211_DPRINTF(("%s: discard auth from %s; "
-			    "state %u, seq %u\n", __func__,
+			DPRINTF(("discard auth from %s; state %u, seq %u\n",
 			    ether_sprintf((u_int8_t *)wh->i_addr2),
 			    ic->ic_state, seq));
 			ic->ic_stats.is_rx_bad_auth++;
@@ -470,8 +469,8 @@ ieee80211_auth_open(struct ieee80211com *ic, const struct ieee80211_frame *wh,
 				return;
 			}
 			IEEE80211_ADDR_COPY(ni->ni_bssid, ic->ic_bss->ni_bssid);
-			ni->ni_rssi = rssi;
-			ni->ni_rstamp = rstamp;
+			ni->ni_rssi = rxi->rxi_rssi;
+			ni->ni_rstamp = rxi->rxi_tstamp;
 			ni->ni_chan = ic->ic_bss->ni_chan;
 		}
 		IEEE80211_SEND_MGMT(ic, ni,
@@ -489,8 +488,7 @@ ieee80211_auth_open(struct ieee80211com *ic, const struct ieee80211_frame *wh,
 		if (ic->ic_state != IEEE80211_S_AUTH ||
 		    seq != IEEE80211_AUTH_OPEN_RESPONSE) {
 			ic->ic_stats.is_rx_bad_auth++;
-			IEEE80211_DPRINTF(("%s: discard auth from %s; "
-			    "state %u, seq %u\n", __func__,
+			DPRINTF(("discard auth from %s; state %u, seq %u\n",
 			    ether_sprintf((u_int8_t *)wh->i_addr2),
 			    ic->ic_state, seq));
 			return;
@@ -532,8 +530,8 @@ ieee80211_newstate(struct ieee80211com *ic, enum ieee80211_state nstate,
 	int s;
 
 	ostate = ic->ic_state;
-	IEEE80211_DPRINTF(("%s: %s -> %s\n", __func__,
-	    ieee80211_state_name[ostate], ieee80211_state_name[nstate]));
+	DPRINTF(("%s -> %s\n", ieee80211_state_name[ostate],
+	    ieee80211_state_name[nstate]));
 	ic->ic_state = nstate;			/* state transition */
 	ni = ic->ic_bss;			/* NB: no reference held */
 	if (ostate == IEEE80211_S_RUN)
@@ -648,8 +646,7 @@ ieee80211_newstate(struct ieee80211com *ic, enum ieee80211_state nstate,
 	case IEEE80211_S_AUTH:
 		switch (ostate) {
 		case IEEE80211_S_INIT:
-			IEEE80211_DPRINTF(("%s: invalid transition\n",
-				__func__));
+			DPRINTF(("invalid transition\n"));
 			break;
 		case IEEE80211_S_SCAN:
 			IEEE80211_SEND_MGMT(ic, ni,
@@ -689,8 +686,7 @@ ieee80211_newstate(struct ieee80211com *ic, enum ieee80211_state nstate,
 		case IEEE80211_S_INIT:
 		case IEEE80211_S_SCAN:
 		case IEEE80211_S_ASSOC:
-			IEEE80211_DPRINTF(("%s: invalid transition\n",
-				__func__));
+			DPRINTF(("invalid transition\n"));
 			break;
 		case IEEE80211_S_AUTH:
 			IEEE80211_SEND_MGMT(ic, ni,
@@ -708,8 +704,7 @@ ieee80211_newstate(struct ieee80211com *ic, enum ieee80211_state nstate,
 		case IEEE80211_S_INIT:
 		case IEEE80211_S_AUTH:
 		case IEEE80211_S_RUN:
-			IEEE80211_DPRINTF(("%s: invalid transition\n",
-				__func__));
+			DPRINTF(("invalid transition\n"));
 			break;
 		case IEEE80211_S_SCAN:		/* adhoc/hostap mode */
 		case IEEE80211_S_ASSOC:		/* infra mode */
@@ -752,77 +747,18 @@ ieee80211_set_link_state(struct ieee80211com *ic, int nstate)
 	struct ifnet *ifp = &ic->ic_if;
 
 	switch (ic->ic_opmode) {
-	case IEEE80211_M_AHDEMO:
-		/* FALLTHROUGH */
-	case IEEE80211_M_STA:
-		if (ifp->if_link_state != nstate) {
-			if (nstate == LINK_STATE_UP) {
-				/* Change link state to UP. */
-				ifp->if_link_state = LINK_STATE_UP;
-				if_link_state_change(ifp);
-				if (ifp->if_flags & IFF_DEBUG) {
-					printf("%s: set STA link state UP\n",
-					    ifp->if_xname);
-				}
-			}
-
-			if (nstate == LINK_STATE_DOWN) {
-				/* Change link state to DOWN. */
-				ifp->if_link_state = LINK_STATE_DOWN;
-				if_link_state_change(ifp);
-				if (ifp->if_flags & IFF_DEBUG) {
-					printf("%s: set STA link state DOWN\n",
-					    ifp->if_xname);
-				}
-			}
-
-			if (nstate == LINK_STATE_UNKNOWN) {
-				/* Change link state to UNKNOWN. */
-				ifp->if_link_state = LINK_STATE_UNKNOWN;
-				if_link_state_change(ifp);
-				if (ifp->if_flags & IFF_DEBUG) {
-					printf("%s: set STA link state UNKNOWN\n",
-					    ifp->if_xname);
-				}
-			}
-		}
-		break;
 	case IEEE80211_M_IBSS:
-		/* Always change link state to UNKNOWN in IBSS mode. */
-		if (ifp->if_link_state != LINK_STATE_UNKNOWN) {
-			ifp->if_link_state = LINK_STATE_UNKNOWN;
-			if_link_state_change(ifp); 
-			if (ifp->if_flags & IFF_DEBUG) {
-				printf("%s: set IBSS link state UNKNOWN\n",
-				    ifp->if_xname);
-			}
-		}
-		break;
 	case IEEE80211_M_HOSTAP:
-		/* Always change link state to UNKNOWN in HOSTAP mode. */
-		if (ifp->if_link_state != LINK_STATE_UNKNOWN) {
-			ifp->if_link_state = LINK_STATE_UNKNOWN;
-			if_link_state_change(ifp);
-			if (ifp->if_flags & IFF_DEBUG) {
-				printf("%s: set HOSTAP link state UNKNOWN\n",
-				    ifp->if_xname);
-			}
-		}
+		nstate = LINK_STATE_UNKNOWN;
 		break;
 	case IEEE80211_M_MONITOR:
-		/* Always change link state to DOWN in MONITOR mode. */
-		if (ifp->if_link_state != LINK_STATE_DOWN) {
-			ifp->if_link_state = LINK_STATE_DOWN;
-			if_link_state_change(ifp);
-			if (ifp->if_flags & IFF_DEBUG) {
-				printf("%s: set MONITOR link state DOWN\n",
-				    ifp->if_xname);
-			}
-		}
+		nstate = LINK_STATE_DOWN;
 		break;
 	default:
-		printf("%s: can't set link state (unknown mediaopt)!\n",
-		    ifp->if_xname);
 		break;
+	}
+	if (nstate != ifp->if_link_state) {
+		ifp->if_link_state = nstate;
+		if_link_state_change(ifp);
 	}
 }

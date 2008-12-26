@@ -346,7 +346,7 @@ mkbcintr_internal(struct pckbc_internal *t, struct pckbc_softc *sc)
 			break; /* pckbc_poll_data() will get it */
 
 		KBD_DELAY;
-		data = bus_space_read_8(t->t_iot, q->ioh, MKBC_RX_PORT);
+		data = bus_space_read_8(t->t_iot, q->ioh, MKBC_RX_PORT) & 0xff;
 		if (CMD_IN_QUEUE(q) && mkbc_cmdresponse(t, slot, data))
 			continue;
 
@@ -378,7 +378,7 @@ mkbcintr_internal(struct pckbc_internal *t, struct pckbc_softc *sc)
 			break; /* pckbc_poll_data() will get it. */
 
 		KBD_DELAY;
-		data = bus_space_read_8(t->t_iot, q->ioh, MKBC_RX_PORT);
+		data = bus_space_read_8(t->t_iot, q->ioh, MKBC_RX_PORT) & 0xff;
 		if (CMD_IN_QUEUE(q) && mkbc_cmdresponse(t, slot, data))
 			continue;
 

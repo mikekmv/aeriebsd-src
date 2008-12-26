@@ -104,6 +104,7 @@ acpi_find_rsd_ptr()
 
 	acpi_user_init();
 	for (i = 0; i < 1024 * 1024; i += 16) {
+		lseek(acpi_mem_fd, i, SEEK_SET);
 		read(acpi_mem_fd, buf, 16);
 		if (!memcmp(buf, "RSD PTR ", 8)) {
 			/* Read the rest of the structure */
@@ -112,6 +113,7 @@ acpi_find_rsd_ptr()
 			/* Verify checksum before accepting it. */
 			if (acpi_checksum(buf, sizeof(struct ACPIrsdp)))
 				continue;
+
 			return (acpi_map_physical(i, sizeof(struct ACPIrsdp)));
 		}
 	}

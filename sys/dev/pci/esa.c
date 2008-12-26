@@ -106,6 +106,7 @@ void		esa_close(void *);
 int		esa_query_encoding(void *, struct audio_encoding *);
 int		esa_set_params(void *, int, int, struct audio_params *,
 			       struct audio_params *);
+void		esa_get_default_params(void *, int, struct audio_params *);
 int		esa_round_blocksize(void *, int);
 int		esa_commit_settings(void *);
 int		esa_halt_output(void *);
@@ -205,7 +206,7 @@ struct audio_hw_if esa_hw_if = {
 	esa_get_props,
 	esa_trigger_output,
 	esa_trigger_input,
-	NULL
+	esa_get_default_params
 };
 
 struct cfdriver esa_cd = {
@@ -244,6 +245,12 @@ esa_query_encoding(void *hdl, struct audio_encoding *ae)
 	*ae = esa_encoding[ae->index];
 
 	return (0);
+}
+
+void
+esa_get_default_params(void *addr, int mode, struct audio_params *params)
+{
+	ac97_get_default_params(params);
 }
 
 int

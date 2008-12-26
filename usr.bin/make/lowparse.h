@@ -1,8 +1,3 @@
-#ifndef LOWPARSE_H
-#define LOWPARSE_H
-
-/* $OpenPackages$ */
-
 /*
  * Copyright (c) 1999 Marc Espie.
  *
@@ -45,6 +40,9 @@
  * 	}
  * } while (Parse_NextFile());
  */
+
+#ifndef LOWPARSE_H
+#define LOWPARSE_H
 
 /* Initialization and cleanup */
 #ifdef CLEANUP

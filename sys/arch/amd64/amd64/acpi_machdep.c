@@ -148,6 +148,7 @@ havebase:
 	return (1);
 }
 
+#ifndef SMALL_KERNEL
 void
 acpi_attach_machdep(struct acpi_softc *sc)
 {
@@ -157,3 +158,4 @@ acpi_attach_machdep(struct acpi_softc *sc)
 	    IST_LEVEL, IPL_TTY, acpi_interrupt, sc, sc->sc_dev.dv_xname);
 	cpuresetfn = acpi_reset;
 }
+#endif /* SMALL_KERNEL */

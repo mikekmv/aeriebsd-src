@@ -87,8 +87,9 @@ API_EXPORT(long) ap_strtol(const char *nptr, char **endptr, int base);
 /* ap_vformatter() is a generic printf-style formatting routine
  * with some extensions.  The extensions are:
  *
- * %pA  takes a struct in_addr *, and prints it as a.b.c.d
- * %pI  takes a struct sockaddr_in * and prints it as a.b.c.d:port
+ * %pA	takes a struct in_addr *, and prints it as a.b.c.d
+ * %pI	takes a struct sockaddr * and prints it as a.b.c.d:port, or
+ *	ipv6-numeric-addr:port
  * %pp  takes a void * and outputs it in hex
  *
  * The %p hacks are to force gcc's printf warning code to skip

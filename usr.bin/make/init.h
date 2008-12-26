@@ -1,7 +1,3 @@
-#ifndef INIT_H
-#define INIT_H
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -31,6 +27,10 @@
  * one single place. This also simplifies main's dependencies on other
  * modules.
  */
+
+#ifndef INIT_H
+#define INIT_H
+
 extern void Init(void);
 extern void End(void);
 

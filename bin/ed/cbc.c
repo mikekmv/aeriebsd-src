@@ -38,7 +38,7 @@
 #if 0
 static char *rcsid = "@(#)cbc.c,v 1.2 1994/02/01 00:34:36 alm Exp";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: cbc.c,v 1.1.1.1 2008/08/26 14:36:27 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -168,7 +168,7 @@ get_keyword(void)
 	/*
 	 * get the key
 	 */
-	if (*(p = getpass("Enter key: "))) {
+	if ((p = getpass("Enter key: ")) != NULL && *p != '\0') {
 
 		/*
 		 * copy it, nul-padded, into the key area

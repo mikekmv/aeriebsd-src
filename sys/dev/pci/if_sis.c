@@ -1250,19 +1250,19 @@ sis_newbuf(struct sis_softc *sc, struct sis_desc *c, struct mbuf *m)
 			m_freem(m_new);
 			return (ENOBUFS);
 		}
-		m_new->m_len = m_new->m_pkthdr.len = MCLBYTES;
 	} else {
 		m_new = m;
-		m_new->m_len = m_new->m_pkthdr.len = MCLBYTES;
 		m_new->m_data = m_new->m_ext.ext_buf;
 	}
 
-	if (bus_dmamap_load(sc->sc_dmat, sc->sc_rx_sparemap,
-	    mtod(m_new, caddr_t), MCLBYTES, NULL, BUS_DMA_NOWAIT) != 0) {
-		printf("%s: rx load failed\n", sc->sc_dev.dv_xname);
+	m_new->m_len = m_new->m_pkthdr.len = MCLBYTES;
+
+	if (bus_dmamap_load_mbuf(sc->sc_dmat, sc->sc_rx_sparemap, m_new,
+	    BUS_DMA_NOWAIT)) {
 		m_freem(m_new);
 		return (ENOBUFS);
 	}
+
 	map = c->map;
 	c->map = sc->sc_rx_sparemap;
 	sc->sc_rx_sparemap = map;
@@ -1270,10 +1270,8 @@ sis_newbuf(struct sis_softc *sc, struct sis_desc *c, struct mbuf *m)
 	bus_dmamap_sync(sc->sc_dmat, c->map, 0, c->map->dm_mapsize,
 	    BUS_DMASYNC_PREREAD);
 
-	m_adj(m_new, sizeof(u_int64_t));
-
 	c->sis_mbuf = m_new;
-	c->sis_ptr = c->map->dm_segs[0].ds_addr + sizeof(u_int64_t);
+	c->sis_ptr = c->map->dm_segs[0].ds_addr;
 	c->sis_ctl = ETHER_MAX_DIX_LEN;
 
 	bus_dmamap_sync(sc->sc_dmat, sc->sc_listmap,

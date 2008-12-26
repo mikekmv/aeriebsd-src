@@ -82,11 +82,11 @@ static int in6_ifattach_loopback(struct ifnet *);
  * The goal here is to get an interface identifier that is
  * (1) random enough and (2) does not change across reboot.
  * We currently use MD5(hostname) for it.
+ *
+ * in6 - upper 64bits are preserved
  */
 static int
-get_rand_ifid(ifp, in6)
-	struct ifnet *ifp;
-	struct in6_addr *in6;	/* upper 64bits are preserved */
+get_rand_ifid(struct ifnet *ifp, struct in6_addr *in6)
 {
 	MD5_CTX ctxt;
 	u_int8_t digest[16];
@@ -119,11 +119,11 @@ get_rand_ifid(ifp, in6)
 /*
  * Get interface identifier for the specified interface.
  * XXX assumes single sockaddr_dl (AF_LINK address) per an interface
+ *
+ * in6 - upper 64bits are preserved
  */
 static int
-get_hw_ifid(ifp, in6)
-	struct ifnet *ifp;
-	struct in6_addr *in6;	/* upper 64bits are preserved */
+get_hw_ifid(struct ifnet *ifp, struct in6_addr *in6)
 {
 	struct ifaddr *ifa;
 	struct sockaddr_dl *sdl;
@@ -236,12 +236,11 @@ found:
  * Get interface identifier for the specified interface.  If it is not
  * available on ifp0, borrow interface identifier from other information
  * sources.
+ *
+ * altifp - secondary EUI64 source
  */
 static int
-get_ifid(ifp0, altifp, in6)
-	struct ifnet *ifp0;
-	struct ifnet *altifp;	/* secondary EUI64 source */
-	struct in6_addr *in6;
+get_ifid(struct ifnet *ifp0, struct ifnet *altifp, struct in6_addr *in6)
 {
 	struct ifnet *ifp;
 
@@ -297,10 +296,12 @@ success:
 	return 0;
 }
 
+/*
+ * altifp - secondary EUI64 source
+ */
+
 int
-in6_ifattach_linklocal(ifp, altifp)
-	struct ifnet *ifp;
-	struct ifnet *altifp;	/*secondary EUI64 source*/
+in6_ifattach_linklocal(struct ifnet *ifp, struct ifnet *altifp)
 {
 	struct in6_ifaddr *ia;
 	struct in6_aliasreq ifra;
@@ -429,9 +430,12 @@ in6_ifattach_linklocal(ifp, altifp)
 	return 0;
 }
 
+/*
+ * ifp - must be IFT_LOOP
+ */
+
 static int
-in6_ifattach_loopback(ifp)
-	struct ifnet *ifp;	/* must be IFT_LOOP */
+in6_ifattach_loopback(struct ifnet *ifp)
 {
 	struct in6_aliasreq ifra;
 	int error;
@@ -488,11 +492,8 @@ in6_ifattach_loopback(ifp)
  * when ifp == NULL, the caller is responsible for filling scopeid.
  */
 int
-in6_nigroup(ifp, name, namelen, sa6)
-	struct ifnet *ifp;
-	const char *name;
-	int namelen;
-	struct sockaddr_in6 *sa6;
+in6_nigroup(struct ifnet *ifp, const char *name, int namelen, 
+	struct sockaddr_in6 *sa6)
 {
 	const char *p;
 	u_int8_t *q;
@@ -540,11 +541,11 @@ in6_nigroup(ifp, name, namelen, sa6)
  * XXX multiple loopback interface needs more care.  for instance,
  * nodelocal address needs to be configured onto only one of them.
  * XXX multiple link-local address case
+ *
+ * altifp - secondary EUI64 source
  */
 void
-in6_ifattach(ifp, altifp)
-	struct ifnet *ifp;
-	struct ifnet *altifp;	/* secondary EUI64 source */
+in6_ifattach(struct ifnet *ifp, struct ifnet *altifp)
 {
 	struct in6_ifaddr *ia;
 	struct in6_addr in6;
@@ -625,13 +626,11 @@ in6_ifattach(ifp, altifp)
  * NOTE: in6_ifdetach() does not support loopback if at this moment.
  */
 void
-in6_ifdetach(ifp)
-	struct ifnet *ifp;
+in6_ifdetach(struct ifnet *ifp)
 {
 	struct in6_ifaddr *ia, *oia;
 	struct ifaddr *ifa, *next;
 	struct rtentry *rt;
-	short rtflags;
 	struct sockaddr_in6 sin6;
 	struct in6_multi_mship *imm;
 
@@ -676,12 +675,20 @@ in6_ifdetach(ifp)
 		/* remove from the routing table */
 		if ((ia->ia_flags & IFA_ROUTE) &&
 		    (rt = rtalloc1((struct sockaddr *)&ia->ia_addr, 0, 0))) {
-			rtflags = rt->rt_flags;
+			struct rt_addrinfo info;
+			u_int8_t prio;
+
+			bzero(&info, sizeof(info));
+			info.rti_flags = rt->rt_flags;
+			prio = rt->rt_priority;
+			info.rti_info[RTAX_DST] =
+			    (struct sockaddr *)&ia->ia_addr;
+			info.rti_info[RTAX_GATEWAY] =
+			    (struct sockaddr *)&ia->ia_addr;
+			info.rti_info[RTAX_NETMASK] =
+			    (struct sockaddr *)&ia->ia_prefixmask;
 			rtfree(rt);
-			rtrequest(RTM_DELETE, (struct sockaddr *)&ia->ia_addr,
-			    (struct sockaddr *)&ia->ia_addr,
-			    (struct sockaddr *)&ia->ia_prefixmask,
-			    rtflags, (struct rtentry **)0, 0);
+			rtrequest1(RTM_DELETE, &info, prio, NULL, 0);
 		}
 
 		/* remove from the linked list */
@@ -728,8 +735,14 @@ in6_ifdetach(ifp)
 	sin6.sin6_addr.s6_addr16[1] = htons(ifp->if_index);
 	rt = rtalloc1((struct sockaddr *)&sin6, 0, 0);
 	if (rt && rt->rt_ifp == ifp) {
-		rtrequest(RTM_DELETE, (struct sockaddr *)rt_key(rt),
-		    rt->rt_gateway, rt_mask(rt), rt->rt_flags, 0, 0);
+		struct rt_addrinfo info;
+
+		bzero(&info, sizeof(info));
+		info.rti_flags = rt->rt_flags;
+		info.rti_info[RTAX_DST] = rt_key(rt);
+		info.rti_info[RTAX_GATEWAY] = rt->rt_gateway;
+		info.rti_info[RTAX_NETMASK] = rt_mask(rt);
+		rtrequest1(RTM_DELETE, &info, rt->rt_priority, NULL, 0);
 		rtfree(rt);
 	}
 }

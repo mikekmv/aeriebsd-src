@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_expm1.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 /* expm1(x)
@@ -36,7 +36,7 @@ static const char rcsid[] = "$ABSD$";
  *	    R1(r**2) = 6/r *((exp(r)+1)/(exp(r)-1) - 2/r)
  *		     = 6/r * ( 1 + 2.0*(1/(exp(r)-1) - 1/r))
  *		     = 1 - r^2/60 + r^4/2520 - r^6/100800 + ...
- *      We use a special Reme algorithm on [0,0.347] to generate 
+ *      We use a special Remes algorithm on [0,0.347] to generate 
  * 	a polynomial of degree 5 in r*r to approximate R1. The 
  *	maximum error of this polynomial approximation is bounded 
  *	by 2**-61. In other words,

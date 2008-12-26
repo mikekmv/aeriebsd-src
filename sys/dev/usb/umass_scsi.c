@@ -14,13 +14,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -191,13 +184,6 @@ umass_scsi_cmd(struct scsi_xfer *xs)
 		sc->sc_dev.dv_xname, sc->tv.tv_sec, sc->tv.tv_usec,
 		sc_link->target, sc_link->lun, xs, xs->cmd->opcode,
 		xs->datalen, sc_link->quirks, xs->flags & SCSI_POLL));
-
-#if defined(USB_DEBUG) && defined(SCSIDEBUG)
-	if (umassdebug & UDMASS_SCSI)
-		show_scsi_xs(xs);
-	else if (umassdebug & ~UDMASS_CMD)
-		show_scsi_cmd(xs);
-#endif
 
 	if (sc->sc_dying) {
 		xs->error = XS_DRIVER_STUFFUP;

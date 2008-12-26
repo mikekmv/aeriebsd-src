@@ -1,8 +1,3 @@
-#ifndef _BUF_H
-#define _BUF_H
-
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 1999 Marc Espie.
  *
@@ -74,6 +69,8 @@
  *	Buf_Destroy.
  */
 
+#ifndef _BUF_H
+#define _BUF_H
 
 /* Internal data structures and functions. BUFFER is visible so
  * that users can allocate the memory themselves.  */

@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -108,6 +101,7 @@
 #include <stand/boot/bootarg.h>
 
 #include <uvm/uvm_extern.h>
+#include <uvm/uvm_swap.h>
 
 #define _I386_BUS_DMA_PRIVATE
 #include <machine/bus.h>
@@ -161,17 +155,12 @@ extern struct proc *npxproc;
 
 #include "bios.h"
 #include "com.h"
-#include "pccom.h"
 
-#if (NCOM > 0 || NPCCOM > 0)
+#if NCOM > 0
 #include <sys/termios.h>
 #include <dev/ic/comreg.h>
-#if NCOM > 0
 #include <dev/ic/comvar.h>
-#elif NPCCOM > 0
-#include <arch/i386/isa/pccomvar.h>
-#endif
-#endif /* NCOM > 0 || NPCCOM > 0 */
+#endif /* NCOM > 0 */
 
 /* the following is used externally (sysctl_hw) */
 char machine[] = MACHINE;
@@ -288,14 +277,10 @@ int	_bus_dmamap_load_buffer(bus_dma_tag_t, bus_dmamap_t, void *,
 
 #ifdef KGDB
 #ifndef KGDB_DEVNAME
-#ifdef __i386__
-#define KGDB_DEVNAME "pccom"
-#else
 #define KGDB_DEVNAME "com"
-#endif
 #endif /* KGDB_DEVNAME */
 char kgdb_devname[] = KGDB_DEVNAME;
-#if (NCOM > 0 || NPCCOM > 0)
+#if NCOM > 0
 #ifndef KGDBADDR
 #define KGDBADDR 0x3f8
 #endif
@@ -308,7 +293,7 @@ int comkgdbrate = KGDBRATE;
 #define KGDBMODE ((TTYDEF_CFLAG & ~(CSIZE | CSTOPB | PARENB)) | CS8) /* 8N1 */
 #endif
 int comkgdbmode = KGDBMODE;
-#endif /* NCOM  || NPCCOM */
+#endif /* NCOM > 0 */
 void kgdb_port_init(void);
 #endif /* KGDB */
 
@@ -1068,6 +1053,7 @@ const struct cpu_cpuid_feature i386_cpuid_ecxfeatures[] = {
 	{ CPUIDECX_MWAIT,	"MWAIT" },
 	{ CPUIDECX_DSCPL,	"DS-CPL" },
 	{ CPUIDECX_VMX,		"VMX" },
+	{ CPUIDECX_SMX,		"SMX" },
 	{ CPUIDECX_EST,		"EST" },
 	{ CPUIDECX_TM2,		"TM2" },
 	{ CPUIDECX_CNXTID,	"CNXT-ID" },
@@ -2033,6 +2019,19 @@ p3_get_bus_clock(struct cpu_info *ci)
 			goto print_msr;
 		}
 		break;
+	case 0xc: /* Atom */
+		msr = rdmsr(MSR_FSB_FREQ);
+		bus = (msr >> 0) & 0x7;
+		switch (bus) {
+		case 1:
+			bus_clock = BUS133;
+			break;
+		default:
+			printf("%s: unknown Atom FSB_FREQ value %d",
+			    ci->ci_dev.dv_xname, bus);
+			goto print_msr;
+		}
+		break;
 	case 0x1: /* Pentium Pro, model 1 */
 	case 0x3: /* Pentium II, model 3 */
 	case 0x5: /* Pentium II, II Xeon, Celeron, model 5 */
@@ -2557,6 +2556,10 @@ dumpsys()
 		return;
 	printf("\ndumping to dev %x, offset %ld\n", dumpdev, dumplo);
 
+#ifdef UVM_SWAP_ENCRYPT
+	uvm_swap_finicrypt_all();
+#endif
+
 	error = (*bdevsw[major(dumpdev)].d_psize)(dumpdev);
 	printf("dump ");
 	if (error == -1) {
@@ -2910,8 +2913,10 @@ init386(paddr_t first_avail)
 	isa_defaultirq();
 #endif
 
-	consinit();	/* XXX SHOULD NOT BE DONE HERE */
-			/* XXX here, until we can use bios for printfs */
+	/*
+	 * Attach the glass console early in case we need to display a panic.
+	 */
+	cninit();
 
 	/*
 	 * Saving SSE registers won't work if the save area isn't
@@ -3049,7 +3054,9 @@ init386(paddr_t first_avail)
 	if (physmem < atop(4 * 1024 * 1024)) {
 		printf("\awarning: too little memory available;"
 		    "running in degraded mode\npress a key to confirm\n\n");
+		cnpollc(1);
 		cngetc();
+		cnpollc(0);
 	}
 
 #ifdef DEBUG
@@ -3157,18 +3164,11 @@ cpu_exec_aout_makecmds(struct proc *p, struct exec_package *epp)
 /*
  * consinit:
  * initialize the system console.
- * XXX - shouldn't deal with this initted thing, but then,
- * it shouldn't be called from init386 either.
  */
 void
 consinit()
 {
-	static int initted;
-
-	if (initted)
-		return;
-	initted = 1;
-	cninit();
+	/* Already done in init386(). */
 }
 
 #ifdef KGDB
@@ -3176,8 +3176,8 @@ void
 kgdb_port_init()
 {
 
-#if (NCOM > 0 || NPCCOM > 0)
-	if (!strcmp(kgdb_devname, "com") || !strcmp(kgdb_devname, "pccom")) {
+#if NCOM > 0
+	if (!strcmp(kgdb_devname, "com")) {
 		bus_space_tag_t tag = I386_BUS_SPACE_IO;
 		com_kgdb_attach(tag, comkgdbaddr, comkgdbrate, COM_FREQ,
 		    comkgdbmode);
@@ -3589,6 +3589,9 @@ bus_space_unmap(bus_space_tag_t t, bus_space_handle_t bsh, bus_size_t size)
 		(void) pmap_extract(pmap_kernel(), va, &bpa);
 		bpa += (bsh & PGOFSET);
 
+		pmap_kremove(va, endva - va);
+		pmap_update(pmap_kernel());
+
 		/*
 		 * Free the kernel virtual mapping.
 		 */
@@ -3632,6 +3635,9 @@ _bus_space_unmap(bus_space_tag_t t, bus_space_handle_t bsh, bus_size_t size,
 
 		(void) pmap_extract(pmap_kernel(), va, &bpa);
 		bpa += (bsh & PGOFSET);
+
+		pmap_kremove(va, endva - va);
+		pmap_update(pmap_kernel());
 
 		/*
 		 * Free the kernel virtual mapping.
@@ -3723,7 +3729,7 @@ int
 _bus_dmamap_load(bus_dma_tag_t t, bus_dmamap_t map, void *buf,
     bus_size_t buflen, struct proc *p, int flags)
 {
-	bus_addr_t lastaddr;
+	bus_addr_t lastaddr = 0;
 	int seg, error;
 
 	/*
@@ -3752,7 +3758,7 @@ int
 _bus_dmamap_load_mbuf(bus_dma_tag_t t, bus_dmamap_t map, struct mbuf *m0,
     int flags)
 {
-	paddr_t lastaddr;
+	paddr_t lastaddr = 0;
 	int seg, error, first;
 	struct mbuf *m;
 
@@ -3794,7 +3800,7 @@ int
 _bus_dmamap_load_uio(bus_dma_tag_t t, bus_dmamap_t map, struct uio *uio,
     int flags)
 {
-	paddr_t lastaddr;
+	paddr_t lastaddr = 0;
 	int seg, i, error, first;
 	bus_size_t minlen, resid;
 	struct proc *p = NULL;

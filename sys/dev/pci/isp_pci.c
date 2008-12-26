@@ -33,8 +33,6 @@
  *
  */
 
-#define ISP_DISABLE_12160_SUPPORT	/* XXX Doesn't quite work yet. */
-
 #include <dev/ic/isp_openbsd.h>
 
 #include <dev/pci/pcireg.h>
@@ -405,6 +403,28 @@ isp_pci_attach(struct device *parent, struct device *self, void *aux)
 	int ioh_valid, memh_valid;
 	bus_size_t iosize, msize;
 	u_int32_t confopts = 0;
+#ifdef __sparc64__
+	int node, iid;
+#endif
+
+	DEFAULT_IID(isp) = 7;
+#ifdef __sparc64__
+	/*
+	 * Walk up the Open Firmware device tree until we find a
+	 * "scsi-initiator-id" property.
+	 */
+	node = PCITAG_NODE(pa->pa_tag);
+	while (node) {
+		if (OF_getprop(node, "scsi-initiator-id",
+		    &iid, sizeof(iid)) == sizeof(iid)) {
+			DEFAULT_IID(isp) = iid;
+			confopts |= ISP_CFG_OWNLOOPID;
+			break;
+		}
+
+		node = OF_parent(node);
+	}
+#endif
 
 	ioh_valid = memh_valid = 0;
 

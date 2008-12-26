@@ -41,7 +41,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)write.c	8.2 (Berkeley) 4/27/95";
 #endif
-static char *rcsid = "$ABSD$";
+static char *rcsid = "$ABSD: write.c,v 1.1.1.1 2008/08/26 14:43:28 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -115,7 +115,7 @@ main(int argc, char *argv[])
 		do_write(argv[2], mytty, myuid);
 		break;
 	default:
-		(void)fprintf(stderr, "usage: write user [tty]\n");
+		(void)fprintf(stderr, "usage: write user [ttyname]\n");
 		exit(1);
 	}
 	done(0);

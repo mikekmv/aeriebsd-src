@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008 Robert Nagy <robert@openbsd.org>
+ * Copyright (c) 2008 Marcus Glocker <mglocker@openbsd.org>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -18,11 +19,17 @@
 #define _SYS_DEV_VIDEOVAR_H
 
 struct video_softc {
-	struct device	dev;
-	void		*hw_hdl;	/* hardware driver handle */
-	struct device	*sc_dev;	/* hardware device struct */
-	struct video_hw_if *hw_if;	/* hardware interface */
-	char		sc_dying;	/* device detached */
+	struct device		 dev;
+	void			*hw_hdl;	/* hardware driver handle */
+	struct device		*sc_dev;	/* hardware device struct */
+	struct video_hw_if	*hw_if;		/* hardware interface */
+	char			 sc_dying;	/* device detached */
+#define VIDEO_OPEN	0x01
+	char			 sc_open;
+
+	int			 sc_fsize;
+	uint8_t			*sc_fbuffer;
+	int			 sc_start_read;
 };
 
 #endif /* _SYS_DEV_VIDEOVAR_H */

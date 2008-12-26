@@ -328,7 +328,7 @@ checkdirs(struct vnode *olddp)
 		return;
 	if (VFS_ROOT(olddp->v_mountedhere, &newdp))
 		panic("mount: lost mount");
-	for (p = LIST_FIRST(&allproc); p != 0; p = LIST_NEXT(p, p_list)) {
+	LIST_FOREACH(p, &allproc, p_list) {
 		fdp = p->p_fd;
 		if (fdp->fd_cdir == olddp) {
 			vrele(fdp->fd_cdir);
@@ -487,10 +487,6 @@ sys_sync(struct proc *p, void *v, register_t *retval)
 		vfs_unbusy(mp);
 	}
 
-#ifdef DEBUG
-	if (syncprt)
-		vfs_bufstats();
-#endif /* DEBUG */
 	return (0);
 }
 
@@ -573,10 +569,7 @@ sys_statfs(struct proc *p, void *v, register_t *retval)
 	if ((error = VFS_STATFS(mp, sp, p)) != 0)
 		return (error);
 	sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
-#if notyet
-	if (mp->mnt_flag & MNT_SOFTDEP)
-		sp->f_eflags = STATFS_SOFTUPD;
-#endif
+
 	return (copyout_statfs(sp, SCARG(uap, buf), p));
 }
 

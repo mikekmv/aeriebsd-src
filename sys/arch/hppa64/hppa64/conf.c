@@ -81,6 +81,7 @@ struct bdevsw   bdevsw[] =
 int	nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
 
 #include "audio.h"
+#include "video.h"
 #include "bio.h"
 #include "pty.h"
 #include "wsdisplay.h"
@@ -157,7 +158,7 @@ struct cdevsw   cdevsw[] =
 #else
 	cdev_notdef(),
 #endif
-	cdev_notdef(),			/* 33: ALTQ (deprecated) */
+	cdev_video_init(NVIDEO,video),	/* 33: generic video I/O */
 	cdev_systrace_init(NSYSTRACE,systrace),	/* 34: system call tracing */
 	cdev_audio_init(NAUDIO,audio),	/* 35: /dev/audio */
 	cdev_crypto_init(NCRYPTO,crypto), /* 36: /dev/crypto */
@@ -196,12 +197,12 @@ int chrtoblktbl[] = {
 	/*  4 */	NODEV,
 	/*  5 */	NODEV,
 	/*  6 */	NODEV,
-	/*  7 */	1,
-	/*  8 */	2,
-	/*  9 */	3,
-	/* 10 */	4,
-	/* 11 */	5,
-	/* 12 */	6,
+	/*  7 */	1,		/* ccd */
+	/*  8 */	2,		/* vnd */
+	/*  9 */	3,		/* rd */
+	/* 10 */	4,		/* sd */
+	/* 11 */	5,		/* st */
+	/* 12 */	6,		/* cd */
 	/* 13 */	NODEV,
 	/* 14 */	NODEV,
 	/* 15 */	NODEV,
@@ -213,7 +214,7 @@ int chrtoblktbl[] = {
 	/* 21 */	NODEV,
 	/* 22 */	NODEV,
 	/* 23 */	NODEV,
-	/* 24 */	7,
+	/* 24 */	7,		/* fd */
 	/* 25 */	NODEV,
 	/* 26 */	NODEV,
 	/* 27 */	NODEV,
@@ -228,7 +229,7 @@ int chrtoblktbl[] = {
 	/* 36 */	NODEV,
 	/* 37 */	NODEV,
 	/* 38 */	NODEV,
-	/* 39 */	NODEV,
+	/* 39 */	8,		/* wd */
 };
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);
 

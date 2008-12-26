@@ -51,7 +51,6 @@ struct twe_softc {
 	struct device	sc_dev;
 	void		*sc_ih;
 	struct scsi_link sc_link;
-	struct lock	sc_lock;
 	struct proc	*sc_thread;
 	int		sc_thread_on;
 

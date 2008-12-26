@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: w_scalbf.c,v 1.1.1.1 2008/08/26 14:38:56 root Exp $";
 #endif
 
 /*
@@ -28,7 +28,7 @@ static const char rcsid[] = "$ABSD$";
 
 #include <errno.h>
 
-float 
+float
 #ifdef _SCALB_INT
 scalbf(float x, int fn)		/* wrapper scalbf */
 #else

@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD";
+static const char rcsid[] = "$ABSD$";
 #endif /* not lint */
 
 #include <sys/param.h>

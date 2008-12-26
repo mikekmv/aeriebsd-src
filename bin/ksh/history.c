@@ -19,7 +19,7 @@
 
 #ifdef HISTORY
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: history.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 # include <sys/file.h>
@@ -355,7 +355,7 @@ hist_get(const char *str, int approx, int allow_cur)
 
 	if (getn(str, &n)) {
 		hp = histptr + (n < 0 ? n : (n - hist_source->line));
-		if (hp < history) {
+		if ((long)hp < (long)history) {
 			if (approx)
 				hp = hist_get_oldest();
 			else {

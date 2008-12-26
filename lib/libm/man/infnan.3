@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)infnan.3	8.1 (Berkeley) 6/4/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt INFNAN 3
 .Os
 .Sh NAME
@@ -149,8 +149,7 @@ ALTERNATIVE
 #include <errno.h>
 
 double
-infnan(iarg)
-int iarg;
+infnan(int iarg)
 {
 	switch (iarg) {
 	case \0ERANGE:

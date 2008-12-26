@@ -113,6 +113,7 @@ struct psycho_softc {
 	int				sc_mode;	/* (whatareya?) */
 #define	PSYCHO_MODE_SABRE	1	/* i'm a sabre (yob) */
 #define	PSYCHO_MODE_PSYCHO	2	/* i'm a psycho (w*nker) */
+#define	PSYCHO_MODE_CMU_CH	3	/* i'm a CMU-CH (castrate) */
 
 	struct iommu_state		*sc_is;
 };

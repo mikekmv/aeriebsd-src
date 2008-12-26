@@ -135,6 +135,7 @@
 #define	T_OS_VENDOR_SYSCALL	0x166
 #define	T_HW_OEM_SYSCALL	0x167
 #define T_RTF_DEF_TRAP		0x168
+#define T_MON_BREAKPOINT	0x17f
 
 #ifdef _KERNEL			/* pseudo traps for locore.s */
 #define	T_RWRET		-1	/* need first user window for trap return */

@@ -10,11 +10,11 @@ option		SCSITERSE
 option		DDB			# in-kernel debugger
 
 option		FFS			# UFS
+option		FFS2			# UFS2
 option		NFSCLIENT		# Network File System client
 option		CD9660			# ISO 9660 + Rock Ridge file system
 #option		UDF			# UDF (DVD) file system
 option		MSDOSFS			# MS-DOS file system
-option		FIFO			# FIFOs; RECOMMENDED
 option		INET			# IP + ICMP + TCP + UDP
 option		INET6			# IPv6 (needs INET)
 
@@ -213,7 +213,7 @@ scsibus* at oosiop?
 #harmony* at gsc? irq 13	# Audio Type 2 (CS4215/AD1849)
 #audio*	at harmony?
 gsckbc*	at gsc? irq 26
-gsckbd*	at gsckbc?		# PS/2 keyboard
+pckbd*	at gsckbc?		# PS/2 keyboard
 #pms*	at gsckbc?		# PS/2 mouse
 
 #sh*	at eisa?		# Interphase Seahawk 4811 EISA/FDDI
@@ -268,8 +268,10 @@ sk*	at skc?			#  each port of above
 mskc*	at pci?			# Marvell Yukon-2
 msk*	at mskc?		#  each port of above
 bge*	at pci?			# Broadcom BCM570x (aka Tigon3)
+hme*	at pci?			# Sun Happy Meal
 
 dcphy*		at mii?		# Digital Clone PHYs
+acphy*		at mii?		# Altima AC101 PHYs
 amphy*		at mii?		# AMD 79C873 PHYs
 exphy*		at mii?		# 3Com internal PHYs
 inphy*		at mii?		# Intel 82555 PHYs
@@ -278,9 +280,10 @@ icsphy*		at mii?		# ICS1890 PHYs
 lxtphy*		at mii?		# Level One LXT-970 PHYs
 nsphy*		at mii?		# NS83840 PHYs
 nsphyter*	at mii?		# NS83843 PHYs
-#mtdphy*	at mii?		# Myson MTD972 PHYs
-#qsphy*		at mii?		# Quality Semi QS6612 PHYs
-#sqphy*		at mii?		# Seeq 8022[013] PHYs
+mtdphy*		at mii?		# Myson MTD972 PHYs
+qsphy*		at mii?		# Quality Semi QS6612 PHYs
+luphy*		at mii?		# Lucent LU6612 PHY
+sqphy*		at mii?		# Seeq 8022[013] PHYs
 #tlphy*		at mii?		# ThunderLAN PHYs
 tqphy*		at mii?		# TDK Semiconductor PHYs
 brgphy*		at mii?		# Broadcom 10/100/1000 PHYs
@@ -294,7 +297,7 @@ ukphy*		at mii?		# generic unknown PHYs
 # MI devices
 #wsdisplay*	at vgafb?
 wsdisplay*	at sti?
-wskbd*		at gsckbd? mux 1
+wskbd*		at pckbd? mux 1
 wskbd*		at hilkbd? mux 1
 #wsmouse*	at pms? mux 0
 #wsmouse*	at hilms? mux 0
@@ -328,3 +331,4 @@ pseudo-device	bpfilter 1	# packet filter
 pseudo-device	ksyms	1	# kernel symbols device
 #pseudo-device	ccd	4	# concatenated disk devices
 pseudo-device	wsmux	2
+pseudo-device	bio	1	# ioctl multiplexing device

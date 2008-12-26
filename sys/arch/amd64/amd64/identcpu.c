@@ -93,6 +93,7 @@ const struct {
 	{ CPUIDECX_MWAIT,	"MWAIT" },
 	{ CPUIDECX_DSCPL,	"DS-CPL" },
 	{ CPUIDECX_VMX,		"VMX" },
+	{ CPUIDECX_SMX,		"SMX" },
 	{ CPUIDECX_EST,		"EST" },
 	{ CPUIDECX_TM2,		"TM2" },
 	{ CPUIDECX_CNXTID,	"CNXT-ID" },

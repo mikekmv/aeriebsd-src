@@ -1138,7 +1138,7 @@ noct_ea_start_des(sc, q, crp, crd)
 		if (crd->crd_flags & CRD_F_IV_EXPLICIT)
 			bcopy(crd->crd_iv, iv, 8);
 		else
-			arc4random_bytes(iv, sizeof(iv));
+			arc4random_buf(iv, sizeof(iv));
 
 		if (!(crd->crd_flags & CRD_F_IV_PRESENT)) {
 			if (crp->crp_flags & CRYPTO_F_IMBUF)

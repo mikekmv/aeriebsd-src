@@ -1,4 +1,4 @@
-version	$ABSD$
+version	$ABSD: usbdevs,v 1.1.1.1 2008/08/26 14:42:16 root Exp $
 
 /*
  * Copyright (c) 1998, 1999, 2000 The NetBSD Foundation, Inc.
@@ -16,13 +16,6 @@ version	$ABSD$
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -138,6 +131,7 @@ vendor MYSON		0x04cf	Myson Technology
 vendor DIGI2		0x04d0	Digi
 vendor ITTCANON		0x04d1	ITT Canon
 vendor ALTEC		0x04d2	Altec Lansing
+vendor ITUNER		0x04d8	Ituner
 vendor PANASONIC	0x04da	Panasonic (Matsushita)
 vendor SHARP		0x04dd	Sharp
 vendor IIYAMA		0x04e1	Iiyama
@@ -380,6 +374,7 @@ vendor SHANTOU		0x0a46	ShanTou
 vendor BROADCOM		0x0a5c	Broadcom
 vendor GREENHOUSE	0x0a6b	GREENHOUSE
 vendor GEOCAST		0x0a79	Geocast Network Systems
+vendor DREAMCHEEKY	0x0a81	Dream Cheeky
 vendor IDQUANTIQUE	0x0aba	id Quantique
 vendor IDTECH		0x0acd	ID TECH
 vendor ZYDAS		0x0ace	ZyDAS Technology
@@ -422,6 +417,7 @@ vendor ELCON		0x0db7	ELCON Systemtechnik
 vendor SITECOMEU	0x0df6	Sitecom Europe
 vendor MOBILEACTION	0x0df7	Mobile Action
 vendor SPEEDDRAGON	0x0e55	Speed Dragon Multimedia
+vendor CTC		0x0e5e	CONWISE Technology
 vendor HAWKING		0x0e66	Hawking
 vendor FOSSIL		0x0e67	Fossil
 vendor GMATE		0x0e7e	G.Mate
@@ -517,6 +513,7 @@ vendor QCOM		0x18e8	Qcom
 vendor LINKSYS3		0x1915	Linksys
 vendor MEINBERG		0x1938	Meinberg Funkuhren
 vendor QUALCOMM3		0x19d2	Qualcomm Inc.
+vendor WCH2		0x1a86	QinHeng Electronics
 vendor DLINK		0x2001	D-Link
 vendor PLANEX2		0x2019	Planex Communications
 vendor DLINK3		0x2101	D-Link
@@ -540,6 +537,7 @@ vendor AVERATEC		0x50c2	Averatec
 vendor SWEEX		0x5173	Sweex
 vendor PROLIFIC2	0x5372	Prolific Technology
 vendor ONSPEC2		0x55aa	OnSpec
+vendor ACERLABS2	0x5986  Acer
 vendor ZINWELL		0x5a57	Zinwell
 vendor SITECOM		0x6189	Sitecom
 vendor 3COM2		0x6891	3Com
@@ -743,6 +741,7 @@ product ANCHOR EZUSB		0x2131	EZUSB
 product ANCHOR EZLINK		0x2720	EZLINK
 
 /* Anydata products */
+product ANYDATA A2502		0x6202	NTT DoCoMo A2502
 product ANYDATA ADU_E100H	0x6501	ADU-E100H
 product ANYDATA ADU_500A	0x6502	ADU-500A
 
@@ -888,6 +887,7 @@ product BELKIN F5D7050		0x7050	F5D7050 54g USB Network Adapter
 product BELKIN F5D7050A		0x705a	F5D705A 54g USB Network Adapter
 product BELKIN F5D7050C		0x705c	F5D705C 54g USB Network Adapter
 product BELKIN RT2870		0x8053	RT2870
+product BELKIN F5D9050C		0x905c	F5D9050C
 product BELKIN F5D9050V3	0x905b	F5D9050 ver 3
 
 /* Billionton products */
@@ -977,8 +977,8 @@ product COMPAQ W200		0x0076	WLAN MultiPort W200
 product COMPAQ PJB100		0x504a	Personal Jukebox PJB100
 product COMPAQ IPAQLINUX	0x505a	iPAQ Linux
 
-/* Billionton products */
-product BILLIONTON SNAPPORT	0x90ff	SnapPort Ethernet
+/* CONWISE Technology products */
+product CTC CW6622		0x6622	CW6622
 
 /* CMOTECH CDMA Technologies products */
 product CMOTECH CM5100P		0x5523	CM-5100P EVDO
@@ -1114,6 +1114,7 @@ product DLINK RT2570		0x3c00	RT2570
 product DLINK2 DWLG122C1	0x3c03	DWL-G122 rev C1
 product DLINK2 WUA1340		0x3c04	WUA-1340
 product DLINK DUBE100B1		0x3c05	DUB-E100 rev B1
+product DLINK2 DWA111		0x3c06	DWA-111
 product DLINK2 RT2870		0x3c09	RT2870
 product DLINK DSB650C		0x4000	10Mbps ethernet
 product DLINK DSB650TX1		0x4001	10/100 ethernet
@@ -1276,6 +1277,15 @@ product FTDI ATK16C		0xdf30	ATK-16C Camera
 product FTDI ATK16HR		0xdf30	ATK-16HR Camera
 product FTDI ATK16HRC		0xdf30	ATK-16HRC Camera
 product FTDI YEI_SC31		0xe050	ServoCenter3.1
+product FTDI ELV_FHZ1300PC	0xe0e8	FHZ 1300 PC
+product FTDI ELV_WS500		0xe0e9	WS 500
+product FTDI ELV_EM1010PC	0xe0ef	EM 1010 PC
+product FTDI ELV_CSI8		0xe0f0	CSI 8
+product FTDI ELV_EM1000DL	0xe0f1	EM 1000 DL
+product FTDI ELV_PCK100		0xe0f2	PCK 100
+product FTDI ELV_RFP500		0xe0f3	RFP 500
+product FTDI ELV_FS20SIG	0xe0f4	FS 20 SIG
+product FTDI ELV_WS300PC	0xe0f6	WS 300 PC
 product FTDI ECO_PRO		0xe520	EVER Eco Pro UPS
 product FTDI ACTROBOTS		0xe548	Active Robots comms
 product FTDI PYRAMID		0xe6c8	Pyramid Display
@@ -1308,6 +1318,12 @@ product FTDI MHAM_IC		0xeeec	IC
 product FTDI MHAM_DB9		0xeeed	DB9
 product FTDI MHAM_RS232		0xeeee	RS232
 product FTDI MHAM_Y9		0xeeef	Y9
+product FTDI ELV_UAD8		0xf068	UAD 8
+product FTDI ELV_UAD7		0xf069	UAD 7
+product FTDI ELV_USI2		0xf06a	USI 2
+product FTDI ELV_T1100		0xf06b	T 1100
+product FTDI ELV_PCD200		0xf06c	PCD 200
+product FTDI ELV_ULA200		0xf06d	ULA 200
 product FTDI ELV_ALC8500	0xf06e	ALC 8500 Expert
 product FTDI ELV_FHZ1000PC	0xf06f	FHZ 1000 PC
 product	FTDI PERLE_UP		0xf0c0	UltraPort
@@ -1336,8 +1352,13 @@ product FTDI PCDJ_DAC2		0xfa88	DAC-2
 product FTDI ACCESSO		0xfad0	Accesso reader
 product FTDI THORLABS		0xfaf0	Serial
 product FTDI ELV_UR100		0xfb58	UR 100
+product FTDI ELV_CLI7000	0xfb59	CLI 7000
 product FTDI ELV_UM100		0xfb5a	UM 100
 product FTDI ELV_UO100		0xfb5b	UO 100
+product FTDI ELV_PPS7330	0xfb5c	PPS 7330
+product FTDI ELV_TFM100		0xfb5d	TFM 100
+product FTDI ELV_UDF77		0xfb5e	UDF 77
+product FTDI ELV_UIO88		0xfb5f	UIO 88
 product FTDI LCD_CFA_632	0xfc08  Crystalfontz CFA-632 LCD
 product FTDI LCD_CFA_634	0xfc09  Crystalfontz CFA-634 LCD
 product FTDI LCD_CFA_547	0xfc0a	Crystalfontz CFA-547 LCD
@@ -1608,6 +1629,8 @@ product IODATA USBETTX		0x0904	USB ETTX
 product IODATA USBETTXS		0x0913	USB ETTX
 product IODATA USBWNB11A	0x0919	USB WN-B11
 product IODATA USBWNB11		0x0922	USB Airport WN-B11
+product IODATA USBWNG54US	0x0928	USB WN-G54/US
+product IODATA USBWNG54US_NF	0x0929	USB WN-G54/US
 product IODATA ETGUS2		0x0930	ETG-US2
 product IODATA FT232R		0x093c	FT232R
 product IODATA USBRSAQ		0x0a03	RSAQ1 Serial
@@ -1627,6 +1650,9 @@ product IRIVER IFP_5XX		0x1105	iFP-5xx
 
 /* iTegno products */
 product ITEGNO WM1080A		0x1080	WM1080A
+
+/* Ituner (mini-box.com) products */
+product ITUNER USBLCD20x2	0x0002	USB-LCD-20x2
 
 /* Jablotron products */
 product JABLOTRON PC60B		0x0001	PC-60B
@@ -1765,12 +1791,28 @@ product LOGITECH QUICKCAMWEB	0x0801	QuickCam Web
 product LOGITECH QUICKCAMPRO	0x0810	QuickCam Pro
 product LOGITECH QUICKCAMEXP	0x0840	QuickCam Express
 product LOGITECH QUICKCAM	0x0850	QuickCam
-product LOGITECH QUICKCAMDLXNB	0x08a9	QuickCam Notebook Deluxe
-product LOGITECH QUICKCAMPRO3k	0x08b0	QuickCam Pro 3000
-product LOGITECH QUICKCAMPRONB	0x08b1	QuickCam Notebook Pro
+product LOGITECH QUICKCAMNBDLX	0x08a9	QuickCam Notebook Deluxe
+product LOGITECH QUICKCAMPRO3K	0x08b0	QuickCam Pro 3000
+product LOGITECH QUICKCAMNBPRO_1 0x08b1	QuickCam Notebook Pro
 product LOGITECH QUICKCAMPRO4K	0x08b2	QuickCam Pro 4000
-product LOGITECH QUICKCAMFUSION	0x08ca	QuickCam Fusion
-product LOGITECH QUICKCAMPRO5K	0x08ce	QuickCam Pro 5000
+product LOGITECH QUICKCAMFUSION_1 0x08c1 QuickCam Fusion
+product LOGITECH QUICKCAMORBITMP_1 0x08c2 QuickCam Orbit MP
+product LOGITECH QUICKCAMNBPRO	0x08c3	QuickCam Notebook Pro
+product LOGITECH QUICKCAMPRO5K_1 0x08c5	QuickCam Pro 5000
+product LOGITECH QUICKCAMOEM_1	0x08c6	QuickCam OEM
+product LOGITECH QUICKCAMOEM_2	0x08c7	QuickCam OEM
+product LOGITECH QUICKCAMULTVIS	0x08c9	QuickCam Ultra Vision
+product LOGITECH QUICKCAMFUSION_2 0x08ca QuickCam Fusion
+product LOGITECH QUICKCAMNBPRO_2 0x08cb	QuickCam Notebook Pro
+product LOGITECH QUICKCAMORBITMP_2 0x08cc QuickCam Orbit MP
+product LOGITECH QUICKCAMPRO5K_2 0x08ce	QuickCam Pro 5000
+product LOGITECH QUICKCAMPRO9K	0x0990	QuickCam Pro 9000
+product LOGITECH QUICKCAMPRONB	0x0991	QuickCam Pro Notebook
+product LOGITECH QUICKCAMCOMMDLX 0x0992	QuickCam Communicate Deluxe
+product LOGITECH QUICKCAMORBITAF 0x0994 QuickCam Orbit AF
+product LOGITECH QUICKCAMCOMMMP	0x09a1	QuickCam Communicate MP
+product LOGITECH QUICKCAME3500P	0x09a4	QuickCam E 3500 Plus
+product LOGITECH QUICKCAMDLXNB	0x09c1	QuickCam Deluxe Notebook
 product LOGITECH N43		0xc000	N43
 product LOGITECH N48		0xc001	N48 mouse
 product LOGITECH MBA47		0xc002	M-BA47 mouse
@@ -1824,6 +1866,9 @@ product MELCO KB11		0x0044	WLI-USB-KB11 WLAN
 product MELCO KG54YB		0x005e	WLI-U2-KG54-YB WLAN
 product MELCO KG54		0x0066	WLI-U2-KG54 WLAN
 product MELCO KG54AI		0x0067	WLI-U2-KG54-AI WLAN
+product MELCO LUAU2GT		0x006e	LUA-U2-GT Ethernet
+product MELCO WLIU2KAMG54	0x0091	WLI-U2-KAMG54
+product MELCO WLIU2KAMG54_NF	0x0092	WLI-U2-KAMG54
 product MELCO PCOPRS1		0x00b3	PC-OP-RS1 RemoteStation
 product MELCO SG54HP		0x00d8	WLI-U2-SG54HP
 product MELCO G54HP		0x00d9	WLI-U2-G54HP
@@ -1850,6 +1895,7 @@ product MSI RT2573_2		0x6877	RT2573
 product MSI RT2573_3		0xa861	RT2573
 product MSI RT2573_4		0xa874	RT2573
 product MSI BLUETOOTH_2		0xa970	Bluetooth
+product MSI BLUETOOTH_3		0xa97a	Bluetooth
 
 /* Micronet Communications products */
 product MICRONET SP128AR	0x0003	SP128AR EtherFast
@@ -1860,16 +1906,17 @@ product MICROSOFT INTELLIMOUSE	0x0009	IntelliMouse
 product MICROSOFT NATURALKBD	0x000b	Natural
 product MICROSOFT DDS80		0x0014	Digital Sound System 80
 product MICROSOFT SIDEWINDER	0x001a	Sidewinder Precision Racing Wheel
+product MICROSOFT INETPRO	0x001c	Internet Keyboard Pro
 product MICROSOFT TBEXPLORER	0x0024	Trackball Explorer
 product MICROSOFT INTELLIEYE	0x0025	IntelliEye mouse
-product MICROSOFT INETPRO	0x002b	Internet Keyboard Pro
+product MICROSOFT INETPRO2	0x002b	Internet Keyboard Pro
 product MICROSOFT MN510		0x006e	MN510 Wireless
 product MICROSOFT 700WX		0x0079	Palm 700WX
 product MICROSOFT MN110		0x007a	10/100 Ethernet
 product MICROSOFT WLINTELLIMOUSE 0x008c	Wireless Optical IntelliMouse
 product MICROSOFT WLNOTEBOOK	0x00b9	Wireless Optical Mouse (Model 1023)
+product MICROSOFT WLNOTEBOOK3	0x00d2	Wireless Optical Mouse 3000 (Model 1049)
 product MICROSOFT WLNOTEBOOK2	0x00e1	Wireless Optical Mouse 3000 (Model 1056)
-product MICROSOFT WLUSBMOUSE	0x00b9	Wireless USB Mouse
 product MICROSOFT XBOX360	0x0292	XBOX 360 WLAN
 
 /* Microtech products */
@@ -2426,6 +2473,7 @@ product SIERRA EM5625		0x0017	EM5625
 product SIERRA MC5720		0x0018	MC5720
 product SIERRA AIRCARD_595	0x0019	AirCard 595
 product SIERRA MC5725		0x0020	MC5725
+product SIERRA MC5725_2		0x0220	MC5725
 product SIERRA AIRCARD_580	0x0112	Aircard 580 EVDO
 product SIERRA MC8755_2		0x6802	MC8755
 product SIERRA MC8765		0x6803	MC8765
@@ -2639,6 +2687,9 @@ product TENDA TWL541U		0x1fab	TWL541U WLAN
 /* Ten X Technology, Inc. */
 product TENX MISSILE		0x0202	Missile Launcher
 
+/* Dream Cheeky */
+product DREAMCHEEKY ROCKETBABY	0x0701	Missile Launcher
+
 /* Integrated System Solution Corp. */
 product ISSC KYBT100		0x1001	KY-BT100 Bluetooth
 
@@ -2771,10 +2822,14 @@ product VTECH ZD1211B		0x3014	ZD1211B
 product OPTION VODAFONEMC3G	0x5000	Vodafone Mobile Connect 3G
 product OPTION GT3GFUSION	0x6000	GlobeTrotter 3G FUSION
 product OPTION GT3GQUAD		0x6300	GlobeTrotter 3G QUAD
-product OPTION GT3GQUADPLUS		0x6600	GlobeTrotter 3G QUAD PLUS
+product OPTION GT3GQUADPLUS	0x6600	GlobeTrotter 3G QUAD PLUS
+product OPTION GT3GPLUS		0x6721	GlobeTrotter 3G PLUS
+product OPTION GSICON72		0x6911	GlobeSurfer Icon 7.2
+product OPTION GTHSDPA225	0x6971	GlobeTrotter HSDPA Icon 225
 
 /* WCH/QinHeng Electronics */
 product WCH CH341		0x5523	CH341 serial/parallel
+product WCH2 CH341		0x7523	CH341 serial/parallel
 
 /* Wacom products */
 product WACOM CT0405U		0x0000	CT-0405-U Tablet

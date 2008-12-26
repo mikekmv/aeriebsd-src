@@ -123,6 +123,7 @@
 #define CPUIDECX_MWAIT	0x00000008	/* Monitor/Mwait */
 #define CPUIDECX_DSCPL	0x00000010	/* CPL Qualified Debug Store */
 #define CPUIDECX_VMX	0x00000020	/* Virtual Machine Extensions */
+#define CPUIDECX_SMX	0x00000040	/* Safer Mode Extensions */
 #define CPUIDECX_EST	0x00000080	/* enhanced SpeedStep */
 #define CPUIDECX_TM2	0x00000100	/* thermal monitor 2 */
 #define CPUIDECX_CNXTID	0x00000400	/* Context ID */

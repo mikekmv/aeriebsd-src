@@ -48,6 +48,8 @@ int64_t	hv_cpu_qconf(uint64_t queue, uint64_t base, uint64_t nentries);
 int64_t	hv_cpu_mondo_send(uint64_t ncpus, paddr_t cpulist, paddr_t data);
 int64_t	hv_cpu_myid(uint64_t *cpuid);
 
+void hv_cpu_yield(void);
+
 /*
  * MMU services
  */

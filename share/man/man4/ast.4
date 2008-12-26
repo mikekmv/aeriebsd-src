@@ -33,7 +33,7 @@
 .\"     from: @(#)dca.4	5.2 (Berkeley) 3/27/91
 .\"	from: Id: com.4,v 1.1 1993/08/06 11:19:07 cgd Exp
 .\"
-.Dd $Mdocdate: January 26 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt AST 4
 .Os
 .Sh NAME
@@ -43,8 +43,6 @@
 .Cd "ast0 at isa? port 0x1a0 irq 5"
 .Cd "ast1 at isa? port 0x2a0 irq 6"
 .Cd "com* at ast?"
-or
-.Cd "pccom* at ast?"
 .Sh DESCRIPTION
 The
 .Nm
@@ -61,8 +59,6 @@ Each
 .Nm
 device is the master device for up to four
 .Nm com
-or
-.Nm pccom
 devices.
 The kernel configuration specifies these
 .Nm com

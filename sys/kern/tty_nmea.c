@@ -48,7 +48,7 @@ void	nmeaattach(int);
 #define TRUSTTIME	(10 * 60)	/* 10 minutes */
 #endif
 
-int nmea_count;	/* this is wrong, it should really be a SLIST */
+int nmea_count, nmea_nxid;
 static int t_trust;
 
 struct nmea {
@@ -78,6 +78,11 @@ void	nmea_gprmc(struct nmea *, struct tty *, char *fld[], int fldcnt);
 int	nmea_date_to_nano(char *s, int64_t *nano);
 int	nmea_time_to_nano(char *s, int64_t *nano);
 
+#if NMEA_POS_IN_DESC
+/* longitude and latitude formatting and copying */
+void	nmea_degrees(char *dst, char *src, int neg, size_t len);
+#endif
+
 /* degrade the timedelta sensor */
 void	nmea_timeout(void *);
 
@@ -100,7 +105,8 @@ nmeaopen(dev_t dev, struct tty *tp)
 		return error;
 	np = malloc(sizeof(struct nmea), M_DEVBUF, M_WAITOK | M_ZERO);
 	snprintf(np->timedev.xname, sizeof(np->timedev.xname), "nmea%d",
-	    nmea_count++);
+	    nmea_nxid++);
+	nmea_count++;
 	np->time.status = SENSOR_S_UNKNOWN;
 	np->time.type = SENSOR_TIMEDELTA;
 	np->time.value = 0LL;
@@ -143,6 +149,8 @@ nmeaclose(struct tty *tp, int flags)
 	free(np, M_DEVBUF);
 	tp->t_sc = NULL;
 	nmea_count--;
+	if (nmea_count == 0)
+		nmea_nxid = 0;
 	return linesw[TTYDISC].l_close(tp, flags);
 }
 
@@ -345,7 +353,7 @@ nmea_gprmc(struct nmea *np, struct tty *tp, char *fld[], int fldcnt)
 			    sizeof(np->time.desc));
 			break;
 		case 'N':
-			strlcpy(np->time.desc, "GPS not valid",
+			strlcpy(np->time.desc, "GPS invalid",
 			    sizeof(np->time.desc));
 			break;
 		default:
@@ -354,7 +362,12 @@ nmea_gprmc(struct nmea *np, struct tty *tp, char *fld[], int fldcnt)
 			DPRINTF(("gprmc: unknown mode '%c'\n", np->mode));
 		}
 	}
-
+#if NMEA_POS_IN_DESC
+	nmea_degrees(np->time.desc, fld[3], *fld[4] == 'S' ? 1 : 0,
+	    sizeof(np->time.desc));
+	nmea_degrees(np->time.desc, fld[5], *fld[6] == 'W' ? 1 : 0,
+	    sizeof(np->time.desc));
+#endif
 	switch (*fld[2]) {
 	case 'A':	/* The GPS has a fix, (re)arm the timeout. */
 		np->time.status = SENSOR_S_OK;
@@ -378,6 +391,63 @@ nmea_gprmc(struct nmea *np, struct tty *tp, char *fld[], int fldcnt)
 	if (np->no_pps)
 		np->time.status = SENSOR_S_CRIT;
 }
+
+#ifdef NMEA_POS_IN_DESC
+/* format a nmea position in the form DDDMM.MMMM to DDDdMM.MMm */
+void
+nmea_degrees(char *dst, char *src, int neg, size_t len)
+{
+	size_t dlen, ppos, rlen;
+	int n;
+	char *p;
+
+	for (dlen = 0; *dst; dlen++)
+		dst++;
+
+	while (*src == '0')
+		++src;	/* skip leading zeroes */
+
+	for (p = src, ppos = 0; *p; ppos++)
+		if (*p++ == '.')
+			break;
+
+	if (*p == '\0')
+		return;	/* no decimal point */
+
+	/*
+	 * we need at least room for a comma, an optional '-', the src data up
+	 * to the decimal point, the decimal point itself, two digits after
+	 * it and some additional characters:  an optional leading '0' in case
+	 * there a no degrees in src, the 'd' degrees indicator, the 'm'
+	 * minutes indicator and the terminating NUL character.
+	 */
+	rlen = dlen + ppos + 7;
+	if (neg)
+		rlen++;
+	if (ppos < 3)
+		rlen++;
+	if (len < rlen)
+		return;		/* not enough room in dst */
+
+	*dst++ = ',';
+	if (neg)
+		*dst++ = '-';
+
+	if (ppos < 3)
+		*dst++ = '0';
+
+	for (n = 0; *src && n + 2 < ppos; n++)
+		*dst++ = *src++;
+	*dst++ = 'd';
+	if (ppos == 0)
+		*dst++ = '0';
+
+	for (; *src && n < (ppos + 3); n++)
+		*dst++ = *src++;
+	*dst++ = 'm';
+	*dst = '\0';
+}
+#endif
 
 /*
  * Convert a NMEA 0183 formatted date string to seconds since the epoch.

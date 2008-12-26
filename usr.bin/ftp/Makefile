@@ -11,8 +11,8 @@ LDADD += -lsocks5
 .endif
 
 PROG=	ftp
-SRCS=	cmds.c cmdtab.c complete.c domacro.c fetch.c ftp.c main.c ruserpass.c \
-	cookie.c stringlist.c util.c
+SRCS=	cmds.c cmdtab.c complete.c cookie.c domacro.c fetch.c ftp.c list.c \
+	main.c ruserpass.c stringlist.c util.c
 
 CPPFLAGS+= -DINET6
 

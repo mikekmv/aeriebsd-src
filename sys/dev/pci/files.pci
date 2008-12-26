@@ -353,6 +353,14 @@ file	dev/pci/if_ixgb.c		ixgb
 file	dev/pci/ixgb_ee.c		ixgb
 file	dev/pci/ixgb_hw.c		ixgb
 
+# Intel 82598 10GbE
+device	ix: ether, ifnet, ifmedia
+attach	ix at pci
+file	dev/pci/if_ix.c			ix
+file	dev/pci/ixgbe.c			ix
+file	dev/pci/ixgbe_82598.c		ix
+file	dev/pci/ixgbe_phy.c		ix
+
 # Neterion Xframe 10 Gigabit ethernet 
 device	xge: ether, ifnet, ifmedia
 attach	xge  at pci

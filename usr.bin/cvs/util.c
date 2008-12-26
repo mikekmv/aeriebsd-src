@@ -40,9 +40,11 @@
 
 #include "cvs.h"
 #include "remote.h"
+#include "hash.h"
 
 extern int print_stdout;
 extern int build_dirs;
+extern int disable_fast_checkout;
 
 /* letter -> mode type map */
 static const int cvs_modetypes[26] = {
@@ -363,7 +365,7 @@ cvs_unlink(const char *path)
 	if (cvs_server_active == 0)
 		cvs_log(LP_TRACE, "cvs_unlink(%s)", path);
 
-	if (cvs_noexec == 1)
+	if (cvs_noexec == 1 && disable_fast_checkout != 0)
 		return (0);
 
 	if (unlink(path) == -1 && errno != ENOENT) {
@@ -392,7 +394,7 @@ cvs_rmdir(const char *path)
 	if (cvs_server_active == 0)
 		cvs_log(LP_TRACE, "cvs_rmdir(%s)", path);
 
-	if (cvs_noexec == 1)
+	if (cvs_noexec == 1 && disable_fast_checkout != 0)
 		return (0);
 
 	if ((dirp = opendir(path)) == NULL) {
@@ -523,6 +525,15 @@ cvs_mkadmin(const char *path, const char *root, const char *repo,
 	FILE *fp;
 	int fd;
 	char buf[MAXPATHLEN];
+	struct hash_data *hdata, hd;
+
+	hdata = hash_table_find(&created_cvs_directories, path, strlen(path));
+	if (hdata != NULL)
+		return;
+
+	hd.h_key = xstrdup(path);
+	hd.h_data = NULL;
+	hash_table_enter(&created_cvs_directories, &hd);
 
 	if (cvs_server_active == 0)
 		cvs_log(LP_TRACE, "cvs_mkadmin(%s, %s, %s, %s, %s)",
@@ -576,8 +587,17 @@ cvs_mkpath(const char *path, char *tag)
 	CVSENTRIES *ent;
 	FILE *fp;
 	size_t len;
+	struct hash_data *hdata, hd;
 	char *entry, sticky[CVS_REV_BUFSZ];
 	char *sp, *dp, *dir, *p, rpath[MAXPATHLEN], repo[MAXPATHLEN];
+
+	hdata = hash_table_find(&created_directories, path, strlen(path));
+	if (hdata != NULL)
+		return;
+
+	hd.h_key = xstrdup(path);
+	hd.h_data = NULL;
+	hash_table_enter(&created_directories, &hd);
 
 	if (current_cvsroot->cr_method != CVS_METHOD_LOCAL ||
 	    cvs_server_active == 1)
@@ -652,7 +672,6 @@ cvs_mkpath(const char *path, char *tag)
 
 			ent = cvs_ent_open(rpath);
 			cvs_ent_add(ent, entry);
-			cvs_ent_close(ent, ENT_SYNC);
 			xfree(entry);
 
 			if (p != NULL)
@@ -848,20 +867,57 @@ cvs_yesno(void)
 	return (ret);
 }
 
-void
-cvs_exec(const char *prog)
+/*
+ * cvs_exec()
+ *
+ * Execute <prog> and send <in> to the STDIN if not NULL.
+ * If <needwait> == 1, return the result of <prog>, 
+ * else, 0 or -1 if an error occur.
+ */
+int
+cvs_exec(char *prog, const char *in, int needwait)
 {
 	pid_t pid;
-	char *argp[] = { "sh", "-c", NULL, NULL };
+	int fds[2], size, st;
+	char *argp[4] = { "sh", "-c", prog, NULL };
 
-	argp[2] = prog;
+	if (in != NULL && pipe(fds) < 0) {
+		cvs_log(LP_ERR, "cvs_exec: pipe failed");
+		return (-1);
+	}
 
 	if ((pid = fork()) == -1) {
 		cvs_log(LP_ERR, "cvs_exec: fork failed");
-		return;
+		return (-1);
 	} else if (pid == 0) {
+		if (in != NULL) {
+			close(fds[1]);
+			dup2(fds[0], STDIN_FILENO);
+		}
+
+		setenv("CVSROOT", current_cvsroot->cr_dir, 1);
 		execv(_PATH_BSHELL, argp);
-		cvs_log(LP_ERR, "failed to run '%s'", prog);
+		cvs_log(LP_ERR, "cvs_exec: failed to run '%s'", prog);
 		_exit(127);
 	}
+
+	if (in != NULL) {
+		close(fds[0]);
+		size = strlen(in);
+		if (atomicio(vwrite, fds[1], in, size) != size)
+			cvs_log(LP_ERR, "cvs_exec: failed to write on STDIN");
+		close(fds[1]);
+	}
+
+	if (needwait == 1) {
+		while (waitpid(pid, &st, 0) == -1)
+			;
+		if (!WIFEXITED(st)) {
+			errno = EINTR;
+			return (-1);
+		}
+		return (WEXITSTATUS(st));
+	}
+
+	return (0);
 }

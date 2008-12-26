@@ -292,6 +292,7 @@ int		uvm_map_extract(vm_map_t, vaddr_t, vsize_t,
 			vm_map_t, vaddr_t *, int);
 vm_map_entry_t	uvm_map_findspace(vm_map_t, vaddr_t, vsize_t, vaddr_t *,
 			struct uvm_object *, voff_t, vsize_t, int);
+vaddr_t		uvm_map_pie(vaddr_t);
 vaddr_t		uvm_map_hint(struct proc *, vm_prot_t);
 int		uvm_map_inherit(vm_map_t, vaddr_t, vaddr_t, vm_inherit_t);
 int		uvm_map_advice(vm_map_t, vaddr_t, vaddr_t, int);

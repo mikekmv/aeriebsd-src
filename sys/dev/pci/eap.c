@@ -13,13 +13,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -173,6 +166,7 @@ int	eap_trigger_input(void *, void *, void *, int, void (*)(void *),
 	    void *, struct audio_params *);
 int	eap_halt_output(void *);
 int	eap_halt_input(void *);
+void	eap_get_default_params(void *, int, struct audio_params *);
 void    eap1370_write_codec(struct eap_softc *, int, int);
 int	eap_getdev(void *, struct audio_device *);
 int	eap1370_mixer_set_port(void *, mixer_ctrl_t *);
@@ -231,7 +225,7 @@ struct audio_hw_if eap1370_hw_if = {
 	eap_get_props,
 	eap_trigger_output,
 	eap_trigger_input,
-	NULL
+	eap_get_default_params
 };
 
 struct audio_hw_if eap1371_hw_if = {
@@ -261,7 +255,7 @@ struct audio_hw_if eap1371_hw_if = {
 	eap_get_props,
 	eap_trigger_output,
 	eap_trigger_input,
-	NULL
+	eap_get_default_params
 };
 
 #if NMIDI > 0
@@ -906,6 +900,12 @@ eap_query_encoding(void *addr, struct audio_encoding *fp)
 	default:
 		return (EINVAL);
 	}
+}
+
+void
+eap_get_default_params(void *addr, int mode, struct audio_params *params)
+{
+	ac97_get_default_params(params);
 }
 
 int

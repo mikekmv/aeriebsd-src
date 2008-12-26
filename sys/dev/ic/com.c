@@ -128,6 +128,7 @@ bus_addr_t comconsaddr = 0;
 int	comconsattached;
 bus_space_tag_t comconsiot;
 bus_space_handle_t comconsioh;
+int	comconsunit;
 tcflag_t comconscflag = TTYDEF_CFLAG;
 #endif
 
@@ -1334,7 +1335,7 @@ comcnprobe(struct consdev *cp)
 			break;
 
 	/* Initialize required fields. */
-	cp->cn_dev = makedev(commajor, CONUNIT);
+	cp->cn_dev = makedev(commajor, comconsunit);
 #if defined(COMCONSOLE) || defined(PCCOMCONSOLE) || !defined(__amd64__)
 	cp->cn_pri = CN_HIGHPRI;
 #else

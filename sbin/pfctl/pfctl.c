@@ -30,7 +30,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: pfctl.c,v 1.1.1.1 2008/08/26 14:40:27 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -70,7 +70,9 @@ int	 pfctl_clear_src_nodes(int, int);
 int	 pfctl_clear_states(int, const char *, int);
 void	 pfctl_addrprefix(char *, struct pf_addr *);
 int	 pfctl_kill_src_nodes(int, const char *, int);
-int	 pfctl_kill_states(int, const char *, int);
+int	 pfctl_net_kill_states(int, const char *, int);
+int	 pfctl_label_kill_states(int, const char *, int);
+int	 pfctl_id_kill_states(int, const char *, int);
 void	 pfctl_init_options(struct pfctl *);
 int	 pfctl_load_options(struct pfctl *);
 int	 pfctl_load_limit(struct pfctl *, unsigned int, unsigned int);
@@ -231,7 +233,7 @@ usage(void)
 	fprintf(stderr, "usage: %s [-AdeghmNnOqRrvz] ", __progname);
 	fprintf(stderr, "[-a anchor] [-D macro=value] [-F modifier]\n");
 	fprintf(stderr, "\t[-f file] [-i interface] [-K host | network] ");
-	fprintf(stderr, "[-k host | network]\n");
+	fprintf(stderr, "[-k host | network | label | id]\n");
 	fprintf(stderr, "\t[-o level] [-p device] [-s modifier]\n");
 	fprintf(stderr, "\t[-t table -T command [address ...]] [-x level]\n");
 	exit(1);
@@ -378,7 +380,7 @@ pfctl_clear_states(int dev, const char *iface, int opts)
 	if (ioctl(dev, DIOCCLRSTATES, &psk))
 		err(1, "DIOCCLRSTATES");
 	if ((opts & PF_OPT_QUIET) == 0)
-		fprintf(stderr, "%d states cleared\n", psk.psk_af);
+		fprintf(stderr, "%d states cleared\n", psk.psk_killed);
 	return (0);
 }
 
@@ -517,17 +519,13 @@ pfctl_kill_src_nodes(int dev, const char *iface, int opts)
 
 				if (ioctl(dev, DIOCKILLSRCNODES, &psnk))
 					err(1, "DIOCKILLSRCNODES");
-				killed += psnk.psnk_af;
-				/* fixup psnk.psnk_af */
-				psnk.psnk_af = resp[1]->ai_family;
+				killed += psnk.psnk_killed;
 			}
 			freeaddrinfo(res[1]);
 		} else {
 			if (ioctl(dev, DIOCKILLSRCNODES, &psnk))
 				err(1, "DIOCKILLSRCNODES");
-			killed += psnk.psnk_af;
-			/* fixup psnk.psnk_af */
-			psnk.psnk_af = res[0]->ai_family;
+			killed += psnk.psnk_killed;
 		}
 	}
 
@@ -540,7 +538,7 @@ pfctl_kill_src_nodes(int dev, const char *iface, int opts)
 }
 
 int
-pfctl_kill_states(int dev, const char *iface, int opts)
+pfctl_net_kill_states(int dev, const char *iface, int opts)
 {
 	struct pfioc_state_kill psk;
 	struct addrinfo *res[2], *resp[2];
@@ -627,17 +625,13 @@ pfctl_kill_states(int dev, const char *iface, int opts)
 
 				if (ioctl(dev, DIOCKILLSTATES, &psk))
 					err(1, "DIOCKILLSTATES");
-				killed += psk.psk_af;
-				/* fixup psk.psk_af */
-				psk.psk_af = resp[1]->ai_family;
+				killed += psk.psk_killed;
 			}
 			freeaddrinfo(res[1]);
 		} else {
 			if (ioctl(dev, DIOCKILLSTATES, &psk))
 				err(1, "DIOCKILLSTATES");
-			killed += psk.psk_af;
-			/* fixup psk.psk_af */
-			psk.psk_af = res[0]->ai_family;
+			killed += psk.psk_killed;
 		}
 	}
 
@@ -646,6 +640,68 @@ pfctl_kill_states(int dev, const char *iface, int opts)
 	if ((opts & PF_OPT_QUIET) == 0)
 		fprintf(stderr, "killed %d states from %d sources and %d "
 		    "destinations\n", killed, sources, dests);
+	return (0);
+}
+
+int
+pfctl_label_kill_states(int dev, const char *iface, int opts)
+{
+	struct pfioc_state_kill psk;
+
+	if (state_killers != 2 || (strlen(state_kill[1]) == 0)) {
+		warnx("no label specified");
+		usage();
+	}
+	memset(&psk, 0, sizeof(psk));
+	if (iface != NULL && strlcpy(psk.psk_ifname, iface,
+	    sizeof(psk.psk_ifname)) >= sizeof(psk.psk_ifname))
+		errx(1, "invalid interface: %s", iface);
+
+	if (strlcpy(psk.psk_label, state_kill[1], sizeof(psk.psk_label)) >=
+	    sizeof(psk.psk_label))
+		errx(1, "label too long: %s", state_kill[1]);
+
+	if (ioctl(dev, DIOCKILLSTATES, &psk))
+		err(1, "DIOCKILLSTATES");
+
+	if ((opts & PF_OPT_QUIET) == 0)
+		fprintf(stderr, "killed %d states\n", psk.psk_killed);
+
+	return (0);
+}
+
+int
+pfctl_id_kill_states(int dev, const char *iface, int opts)
+{
+	struct pfioc_state_kill psk;
+	
+	if (state_killers != 2 || (strlen(state_kill[1]) == 0)) {
+		warnx("no id specified");
+		usage();
+	}
+
+	memset(&psk, 0, sizeof(psk));
+	if ((sscanf(state_kill[1], "%llx/%x",
+	    &psk.psk_pfcmp.id, &psk.psk_pfcmp.creatorid)) == 2)
+		HTONL(psk.psk_pfcmp.creatorid);
+	else if ((sscanf(state_kill[1], "%llx", &psk.psk_pfcmp.id)) == 1) {
+		psk.psk_pfcmp.creatorid = 0;
+	} else {
+		warnx("wrong id format specified");
+		usage();
+	}
+	if (psk.psk_pfcmp.id == 0) {
+		warnx("cannot kill id 0");
+		usage();
+	}
+
+	psk.psk_pfcmp.id = htobe64(psk.psk_pfcmp.id);
+	if (ioctl(dev, DIOCKILLSTATES, &psk))
+		err(1, "DIOCKILLSTATES");
+
+	if ((opts & PF_OPT_QUIET) == 0)
+		fprintf(stderr, "killed %d states\n", psk.psk_killed);
+
 	return (0);
 }
 
@@ -1519,7 +1575,8 @@ pfctl_init_options(struct pfctl *pf)
 	mib[0] = CTL_HW;
 	mib[1] = HW_PHYSMEM64;
 	size = sizeof(mem);
-	(void) sysctl(mib, 2, &mem, &size, NULL, 0);
+	if (sysctl(mib, 2, &mem, &size, NULL, 0) == -1)
+		err(1, "sysctl");
 	if (mem <= 100*1024*1024)
 		pf->limit[PF_LIMIT_TABLE_ENTRIES] = PFR_KENTRY_HIWAT_SMALL; 
 
@@ -2249,8 +2306,14 @@ main(int argc, char *argv[])
 			break;
 		}
 	}
-	if (state_killers)
-		pfctl_kill_states(dev, ifaceopt, opts);
+	if (state_killers) {
+		if (!strcmp(state_kill[0], "label"))
+			pfctl_label_kill_states(dev, ifaceopt, opts);
+		else if (!strcmp(state_kill[0], "id"))
+			pfctl_id_kill_states(dev, ifaceopt, opts);
+		else
+			pfctl_net_kill_states(dev, ifaceopt, opts);
+	}
 
 	if (src_node_killers)
 		pfctl_kill_src_nodes(dev, ifaceopt, opts);

@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_j0.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 /* __ieee754_j0(x), __ieee754_y0(x)
@@ -268,8 +268,8 @@ static const double pS2[5] = {
   1.46576176948256193810e+01, /* 0x402D50B3, 0x44391809 */
 };
 
-static
-double pzero(double x)
+static double
+pzero(double x)
 {
 	const double *p,*q;
 	double z,r,s;
@@ -364,8 +364,8 @@ static const double qS2[6] = {
  -5.31095493882666946917e+00, /* 0xC0153E6A, 0xF8B32931 */
 };
 
-static
-double qzero(double x)
+static double
+qzero(double x)
 {
 	const double *p,*q;
 	double s,r,z;

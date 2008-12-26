@@ -376,7 +376,7 @@ glxsb_crypto_newsession(uint32_t *sidp, struct cryptoini *cri)
 				return (EINVAL);
 			}
 
-			arc4random_bytes(ses->ses_iv, sizeof(ses->ses_iv));
+			arc4random_buf(ses->ses_iv, sizeof(ses->ses_iv));
 			ses->ses_klen = c->cri_klen;
 
 			/* Copy the key (Geode LX wants the primary key only) */

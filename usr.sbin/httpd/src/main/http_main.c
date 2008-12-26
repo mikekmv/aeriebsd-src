@@ -167,7 +167,8 @@ API_VAR_EXPORT char *ap_pid_fname=NULL;
 API_VAR_EXPORT char *ap_scoreboard_fname=NULL;
 API_VAR_EXPORT char *ap_lock_fname=NULL;
 API_VAR_EXPORT char *ap_server_argv0=NULL;
-API_VAR_EXPORT struct in_addr ap_bind_address={0};
+API_VAR_EXPORT int ap_default_family = PF_INET;
+API_VAR_EXPORT struct sockaddr_storage ap_bind_address;
 API_VAR_EXPORT int ap_daemons_to_start=0;
 API_VAR_EXPORT int ap_daemons_min_free=0;
 API_VAR_EXPORT int ap_daemons_max_free=0;
@@ -692,13 +693,15 @@ static void usage(char *bin)
     for (i = 0; i < strlen(bin); i++)
 	pad[i] = ' ';
     pad[i] = '\0';
-    fprintf(stderr, "Usage: %s [-FhLlSTtuVvX] [-C directive] [-c directive] [-D parameter]\n", bin);
+    fprintf(stderr, "Usage: %s [-46FhLlSTtUuVvX] [-C directive] [-c directive] [-D parameter]\n", bin);
     fprintf(stderr, "       %s [-d serverroot] [-f config]\n", pad);
     fprintf(stderr, "Options:\n");
     fprintf(stderr, "  -C directive     : process directive before reading config files\n");
     fprintf(stderr, "  -c directive     : process directive after  reading config files\n");
     fprintf(stderr, "  -D parameter     : define a parameter for use in <IfDefine name> directives\n");
     fprintf(stderr, "  -d serverroot    : specify an alternate initial ServerRoot\n");
+    fprintf(stderr, "  -4               : assume IPv4 for ambigous directirves (default)\n");
+    fprintf(stderr, "  -6               : assume IPv6 for ambigous directives\n");
     fprintf(stderr, "  -F               : run main process in foreground, for process supervisors\n");
     fprintf(stderr, "  -f config        : specify an alternate ServerConfigFile\n");
     fprintf(stderr, "  -h               : list available command line options (this page)\n");
@@ -707,6 +710,7 @@ static void usage(char *bin)
     fprintf(stderr, "  -S               : show parsed settings (currently only vhost settings)\n");
     fprintf(stderr, "  -T               : run syntax check for config files (without docroot check)\n");
     fprintf(stderr, "  -t               : run syntax check for config files (with docroot check)\n");
+    fprintf(stderr, "  -U               : unspecified address family for ambigous directives\n"); 
     fprintf(stderr, "  -u               : unsecure mode: do not chroot into ServerRoot\n");
     fprintf(stderr, "  -V               : show compile settings\n");
     fprintf(stderr, "  -v               : show version number\n");
@@ -1806,11 +1810,13 @@ static int init_suexec(void)
 
 
 static conn_rec *new_connection(pool *p, server_rec *server, BUFF *inout,
-			     const struct sockaddr_in *remaddr,
-			     const struct sockaddr_in *saddr,
+			     const struct sockaddr *remaddr,
+			     const struct sockaddr *saddr,
 			     int child_num)
 {
     conn_rec *conn = (conn_rec *) ap_pcalloc(p, sizeof(conn_rec));
+    char hostnamebuf[MAXHOSTNAMELEN];
+    size_t addr_len;
 
     /* Got a connection structure, so initialize what fields we can
      * (the rest are zeroed out by pcalloc).
@@ -1819,17 +1825,21 @@ static conn_rec *new_connection(pool *p, server_rec *server, BUFF *inout,
     conn->child_num = child_num;
 
     conn->pool = p;
-    conn->local_addr = *saddr;
-    conn->local_ip = ap_pstrdup(conn->pool,
-				inet_ntoa(conn->local_addr.sin_addr));
+    addr_len = saddr->sa_len;
+    memcpy(&conn->local_addr, saddr, addr_len);
+    getnameinfo((struct sockaddr *)&conn->local_addr, addr_len,
+	hostnamebuf, sizeof(hostnamebuf), NULL, 0, NI_NUMERICHOST);
+    conn->local_ip = ap_pstrdup(conn->pool, hostnamebuf);
     conn->server = server; /* just a guess for now */
     ap_update_vhost_given_ip(conn);
     conn->base_server = conn->server;
     conn->client = inout;
 
-    conn->remote_addr = *remaddr;
-    conn->remote_ip = ap_pstrdup(conn->pool,
-			      inet_ntoa(conn->remote_addr.sin_addr));
+    addr_len = remaddr->sa_len;
+    memcpy(&conn->remote_addr, remaddr, addr_len);
+    getnameinfo((struct sockaddr *)&conn->remote_addr, addr_len,
+      hostnamebuf, sizeof(hostnamebuf), NULL, 0, NI_NUMERICHOST);
+    conn->remote_ip = ap_pstrdup(conn->pool, hostnamebuf);
     conn->ctx = ap_ctx_new(conn->pool);
 
     /*
@@ -1875,21 +1885,37 @@ static void sock_disable_nagle(int s, struct sockaddr_in *sin_client)
     }
 }
 
-static int make_sock(pool *p, const struct sockaddr_in *server)
+static int make_sock(pool *p, const struct sockaddr *server)
 {
     int s;
     int one = 1;
-    char addr[512];
+    char addr[INET6_ADDRSTRLEN + 128];
+    char a0[INET6_ADDRSTRLEN];
+    char p0[NI_MAXSERV];
 
-    if (server->sin_addr.s_addr != htonl(INADDR_ANY))
-	ap_snprintf(addr, sizeof(addr), "address %s port %d",
-		inet_ntoa(server->sin_addr), ntohs(server->sin_port));
-    else
-	ap_snprintf(addr, sizeof(addr), "port %d", ntohs(server->sin_port));
+    switch(server->sa_family){
+    case AF_INET:
+    case AF_INET6:
+      break;
+    default:
+      ap_log_error(APLOG_MARK, APLOG_CRIT, server_conf,
+                   "make_sock: unsupported address family %u", 
+		   server->sa_family);
+      ap_unblock_alarms();
+      exit(1);
+    }
+    
+    getnameinfo(server, server->sa_len, a0, sizeof(a0), p0, sizeof(p0),
+   	NI_NUMERICHOST | NI_NUMERICSERV);
+    ap_snprintf(addr, sizeof(addr), "address %s port %s", a0, p0);
+#ifdef MPE
+    if (atoi(p0) < 1024)
+      privport++;
+#endif
 
     /* note that because we're about to slack we don't use psocket */
     ap_block_alarms();
-    if ((s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+    if ((s = socket(server->sa_family, SOCK_STREAM, IPPROTO_TCP)) == -1) {
 	    ap_log_error(APLOG_MARK, APLOG_CRIT, server_conf,
 		    "make_sock: failed to get a socket for %s", addr);
 
@@ -1950,8 +1976,7 @@ static int make_sock(pool *p, const struct sockaddr_in *server)
 	}
     }
 
-
-    if (bind(s, (struct sockaddr *) server, sizeof(struct sockaddr_in)) == -1) {
+    if (bind(s, server, server->sa_len) == -1) {
 	ap_log_error(APLOG_MARK, APLOG_CRIT, server_conf,
 	    "make_sock: could not bind to %s", addr);
 
@@ -2064,15 +2089,17 @@ static void setup_listeners(pool *p)
     for (;;) {
 	fd = find_listener(lr);
 	if (fd < 0) {
-	    fd = make_sock(p, &lr->local_addr);
+		fd = make_sock(p, (struct sockaddr *)&lr->local_addr);
 	}
 	else {
 	    ap_note_cleanups_for_socket_ex(p, fd, 1);
 	}
 	/* if we get here, (fd >= 0) && (fd < FD_SETSIZE) */
-	FD_SET(fd, &listenfds);
-	if (fd > listenmaxfd)
-	    listenmaxfd = fd;
+	if (fd >= 0) {
+	    FD_SET(fd, &listenfds);
+	    if (fd > listenmaxfd)
+		listenmaxfd = fd;
+	}
 	lr->fd = fd;
 	if (lr->next == NULL)
 	    break;
@@ -2230,8 +2257,8 @@ API_EXPORT(void) ap_child_terminate(request_rec *r)
 static void child_main(int child_num_arg)
 {
     NET_SIZE_T clen;
-    struct sockaddr sa_server;
-    struct sockaddr sa_client;
+    struct sockaddr_storage sa_server;
+    struct sockaddr_storage sa_client;
     listen_rec *lr;
     struct rlimit rlp;
 
@@ -2421,7 +2448,7 @@ static void child_main(int child_num_arg)
 	    usr1_just_die = 0;
 	    for (;;) {
 		clen = sizeof(sa_client);
-		csd = ap_accept(sd, &sa_client, &clen);
+		csd = ap_accept(sd, (struct sockaddr *)&sa_client, &clen);
 		if (csd >= 0 || errno != EINTR)
 		    break;
 		if (deferred_die) {
@@ -2525,7 +2552,7 @@ static void child_main(int child_num_arg)
 	 */
 
 	clen = sizeof(sa_server);
-	if (getsockname(csd, &sa_server, &clen) < 0) {
+	if (getsockname(csd, (struct sockaddr *)&sa_server, &clen) < 0) {
 	    ap_log_error(APLOG_MARK, APLOG_DEBUG, server_conf, 
                          "getsockname, client %pA probably dropped the "
                          "connection", 
@@ -2544,8 +2571,8 @@ static void child_main(int child_num_arg)
 	ap_bpushfd(conn_io, csd, dupped_csd);
 
 	current_conn = new_connection(ptrans, server_conf, conn_io,
-				          (struct sockaddr_in *) &sa_client,
-				          (struct sockaddr_in *) &sa_server,
+				          (struct sockaddr *)&sa_client,
+				          (struct sockaddr *)&sa_server,
 				          my_child_num);
 
 	/*
@@ -3205,7 +3232,7 @@ int REALMAIN(int argc, char *argv[])
     ap_setup_prelinked_modules();
 
     while ((c = getopt(argc, argv,
-				    "D:C:c:xXd:Ff:vVlLR:StThu"
+				    "D:C:c:xXd:Ff:vVlLR:StThUu46"
 #ifdef DEBUG_SIGSTOP
 				    "Z:"
 #endif
@@ -3271,8 +3298,18 @@ int REALMAIN(int argc, char *argv[])
 	    break;
 	case 'h':
 	    usage(argv[0]);
+	    break;
+	case '4':
+	    ap_default_family = PF_INET;
+	    break;
+	case '6':
+	    ap_default_family = PF_INET6;
+	    break;
 	case 'u':
 	    ap_server_chroot = 0;
+	    break;
+	case 'U':
+	    ap_default_family = PF_UNSPEC;
 	    break;
 	case '?':
 	    usage(argv[0]);
@@ -3306,9 +3343,10 @@ int REALMAIN(int argc, char *argv[])
     else {
 	conn_rec *conn;
 	request_rec *r;
-	struct sockaddr sa_server, sa_client;
 	BUFF *cio;
+	struct sockaddr_storage sa_server, sa_client;
 	NET_SIZE_T l;
+	char servbuf[NI_MAXSERV];
 
 	ap_set_version();
 	/* Yes this is called twice. */
@@ -3337,25 +3375,32 @@ int REALMAIN(int argc, char *argv[])
     sock_out = fileno(stdout);
 
 	l = sizeof(sa_client);
-	if ((getpeername(sock_in, &sa_client, &l)) < 0) {
+	if ((getpeername(sock_in, (struct sockaddr *)&sa_client, &l)) < 0) {
 /* get peername will fail if the input isn't a socket */
 	    perror("getpeername");
 	    memset(&sa_client, '\0', sizeof(sa_client));
 	}
 
 	l = sizeof(sa_server);
-	if (getsockname(sock_in, &sa_server, &l) < 0) {
+	if (getsockname(sock_in, (struct sockaddr *)&sa_server, &l) < 0) {
 	    perror("getsockname");
 	    fprintf(stderr, "Error getting local address\n");
 	    exit(1);
 	}
-	server_conf->port = ntohs(((struct sockaddr_in *) &sa_server)->sin_port);
+	if (getnameinfo(((struct sockaddr *)&sa_server), l,
+			NULL, 0, servbuf, sizeof(servbuf), 
+			NI_NUMERICSERV)){
+	    fprintf(stderr, "getnameinfo(): family=%d\n", sa_server.ss_family);
+	    exit(1);
+	}
+	servbuf[sizeof(servbuf)-1] = '\0';
+	server_conf->port = atoi(servbuf);
 	cio = ap_bcreate(ptrans, B_RDWR | B_SOCKET);
         cio->fd = sock_out;
         cio->fd_in = sock_in;
 	conn = new_connection(ptrans, server_conf, cio,
-			          (struct sockaddr_in *) &sa_client,
-			          (struct sockaddr_in *) &sa_server, -1);
+			          (struct sockaddr *)&sa_client,
+			          (struct sockaddr *)&sa_server, -1);
 
 	while ((r = ap_read_request(conn)) != NULL) {
 

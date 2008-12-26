@@ -406,19 +406,28 @@ sync_send(struct iovec *iov, int iovlen)
 void
 sync_lease(struct lease *lease)
 {
-	struct iovec iov[3];
+	struct iovec iov[4];
 	struct dhcp_synchdr hdr;
 	struct dhcp_synctlv_lease ld;
 	struct dhcp_synctlv_hdr end;
+	char pad[DHCP_ALIGNBYTES];
+	u_int16_t leaselen, padlen;
 	int i = 0;
 	HMAC_CTX ctx;
 	u_int hmac_len;
 
+	if (sync_key == NULL)
+		return;
+
 	bzero(&hdr, sizeof(hdr));
 	bzero(&ld, sizeof(ld));
+	bzero(&pad, sizeof(pad));
 
 	HMAC_CTX_init(&ctx);
 	HMAC_Init(&ctx, sync_key, strlen(sync_key), EVP_sha1());
+
+	leaselen = sizeof(ld);
+	padlen = DHCP_ALIGN(leaselen) - leaselen;
 
 	/* Add DHCP sync packet header */
 	hdr.sh_version = DHCP_SYNC_VERSION;
@@ -432,7 +441,7 @@ sync_lease(struct lease *lease)
 
 	/* Add single DHCP sync address entry */
 	ld.type = htons(DHCP_SYNC_LEASE);
-	ld.length = htons(sizeof(ld));
+	ld.length = htons(leaselen + padlen);
 	ld.timestamp = htonl(lease->timestamp);
 	ld.starts = htonl(lease->starts);
 	ld.ends =  htonl(lease->ends);
@@ -448,6 +457,11 @@ sync_lease(struct lease *lease)
 	    ntohl(ld.ends));
 	iov[i].iov_base = &ld;
 	iov[i].iov_len = sizeof(ld);
+	HMAC_Update(&ctx, iov[i].iov_base, iov[i].iov_len);
+	i++;
+
+	iov[i].iov_base = pad;
+	iov[i].iov_len = padlen;
 	HMAC_Update(&ctx, iov[i].iov_base, iov[i].iov_len);
 	i++;
 

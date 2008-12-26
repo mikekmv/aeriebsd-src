@@ -250,8 +250,8 @@ ufs_access(void *v)
 	if ((mode & VWRITE) && (DIP(ip, flags) & IMMUTABLE))
 		return (EPERM);
 
-	return (vaccess(DIP(ip, mode), DIP(ip, uid), DIP(ip, gid), mode,
-	    ap->a_cred));
+	return (vaccess(vp->v_type, DIP(ip, mode), DIP(ip, uid), DIP(ip, gid),
+	    mode, ap->a_cred));
 }
 
 /* ARGSUSED */

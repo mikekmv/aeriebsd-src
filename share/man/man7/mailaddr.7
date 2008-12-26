@@ -29,7 +29,7 @@
 .\"
 .\"     @(#)mailaddr.7	8.1 (Berkeley) 6/16/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt MAILADDR 7
 .Os
 .Sh NAME
@@ -160,15 +160,16 @@ respectively.
 .Sh SEE ALSO
 .Xr mail 1 ,
 .Xr sendmail 8
-.Pp
-Crocker, D. H.,
-.Em "Standard for the Format of Arpa Internet Text Messages" ,
-RFC 822.
+.Rs
+.%R RFC 2822
+.%T Internet Message Format
+.%D April 2001
+.Re
 .Sh HISTORY
 .Nm
 appeared in 4.2 BSD.
 .Sh BUGS
-The RFC 822 group syntax
+The RFC 2822 group syntax
 .Pq Dq group:user1,user2,user3;
 is not supported
 except in the special case of

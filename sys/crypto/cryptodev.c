@@ -175,6 +175,9 @@ cryptof_ioctl(struct file *fp, u_long cmd, caddr_t data, struct proc *p)
 		case CRYPTO_AES_CTR:
 			txform = &enc_xform_aes_ctr;
 			break;
+		case CRYPTO_AES_XTS:
+			txform = &enc_xform_aes_xts;
+			break;
 		case CRYPTO_ARC4:
 			txform = &enc_xform_arc4;
 			break;

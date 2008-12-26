@@ -23,19 +23,10 @@ AFS?=		yes
 # Set `DEBUGLIBS' to `yes' to build libraries with debugging symbols
 DEBUGLIBS?=	no
 # Set toolchain to be able to know differences.
-.if ${MACHINE_ARCH} == "m68k" || ${MACHINE_ARCH} == "m88k" || \
-    ${MACHINE_ARCH} == "vax"
+.if ${MACHINE_ARCH} == "m68k" || ${MACHINE_ARCH} == "vax"
 ELF_TOOLCHAIN?=	no
 .else
 ELF_TOOLCHAIN?=	yes
-.endif
-
-# gcc3
-.if ${MACHINE_ARCH} == "m68k" || ${MACHINE_ARCH} == "m88k" || \
-    ${MACHINE_ARCH} == "sparc" || ${MACHINE_ARCH} == "vax"
-USE_GCC3?=no
-.else
-USE_GCC3?=yes
 .endif
 
 # where the system object and source trees are kept; can be configurable
@@ -115,7 +106,7 @@ STATIC?=	-static
 
 # don't try to generate PIC versions of libraries on machines
 # which don't support PIC.
-.if ${MACHINE_ARCH} == "m88k" || ${MACHINE_ARCH} == "vax"
+.if ${MACHINE_ARCH} == "vax"
 NOPIC=
 .endif
 

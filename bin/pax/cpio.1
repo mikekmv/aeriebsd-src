@@ -23,7 +23,7 @@
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt CPIO 1
 .Os
 .Sh NAME
@@ -32,7 +32,7 @@
 .Sh SYNOPSIS
 .Nm cpio
 .Fl o
-.Op Fl AaBcLvZz
+.Op Fl AaBcjLvZz
 .Op Fl C Ar bytes
 .Op Fl F Ar archive
 .Op Fl H Ar format
@@ -41,7 +41,7 @@
 .Op Ar \*(Gt archive
 .Nm cpio
 .Fl i
-.Op Fl 6BbcdfmrSstuvZz
+.Op Fl 6BbcdfjmrSstuvZz
 .Op Fl C Ar bytes
 .Op Fl E Ar file
 .Op Fl F Ar archive
@@ -107,6 +107,9 @@ Old tar format.
 .It Ar ustar
 POSIX ustar format.
 .El
+.It Fl j
+Compress archive using the bzip2 format.
+The bzip2 utility must be installed separately.
 .It Fl L
 Follow symbolic links.
 .It Fl O Ar archive
@@ -179,6 +182,9 @@ Old tar format.
 .It Ar ustar
 POSIX ustar format.
 .El
+.It Fl j
+Uncompress archive using the bzip2 format.
+The bzip2 utility must be installed separately.
 .It Fl m
 Restore modification times on files.
 .It Fl r

@@ -107,8 +107,6 @@ struct sockaddr_mpls {
 
 #define satosmpls(sa)		((struct sockaddr_mpls *)(sa))
 #define smplstosa(smpls)	((struct sockaddr *)(smpls))
-#define satosdl(sa)		((struct sockaddr_dl *)(sa))
-#define sdltosa(sdl)		((struct sockaddr *)(sdl))
 
 /*
  * Names for MPLS sysctl objects
@@ -155,7 +153,7 @@ void	mpe_input(struct mbuf *, struct ifnet *, struct sockaddr_mpls *,
 	    u_int32_t);
 
 extern int mpls_raw_usrreq(struct socket *, int, struct mbuf *,
-			struct mbuf *, struct mbuf *);
+			struct mbuf *, struct mbuf *, struct proc *);
 
 extern struct ifqueue	mplsintrq;	/* MPLS input queue */
 extern int		mplsqmaxlen;	/* MPLS input queue length */

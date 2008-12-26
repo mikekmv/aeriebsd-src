@@ -367,7 +367,7 @@ int	 rtable_add(u_int);
 int	 rtable_exists(u_int);
 int	 route_output(struct mbuf *, ...);
 int	 route_usrreq(struct socket *, int, struct mbuf *,
-			   struct mbuf *, struct mbuf *);
+			   struct mbuf *, struct mbuf *, struct proc *);
 void	 rt_ifmsg(struct ifnet *);
 void	 rt_ifannouncemsg(struct ifnet *, int);
 void	 rt_maskedcopy(struct sockaddr *,
@@ -406,9 +406,6 @@ int	 rtioctl(u_long, caddr_t, struct proc *);
 void	 rtredirect(struct sockaddr *, struct sockaddr *,
 			 struct sockaddr *, int, struct sockaddr *,
 			 struct rtentry **);
-int	 rtrequest(int, struct sockaddr *,
-			struct sockaddr *, struct sockaddr *, int,
-			struct rtentry **, u_int);
 int	 rtrequest1(int, struct rt_addrinfo *, u_int8_t, struct rtentry **,
 	     u_int);
 void	 rt_if_remove(struct ifnet *);

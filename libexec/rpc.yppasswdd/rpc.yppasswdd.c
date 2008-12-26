@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: rpc.yppasswdd.c,v 1.1.1.1 2008/08/26 14:39:40 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -58,8 +58,8 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: rpc.yppasswdd [-d dir] [-noshell] [-nogecos] [-nopw]\n"
-	    "       [-m arg1 arg2 ... ]\n");
+	    "usage: rpc.yppasswdd [-nogecos] [-nopw] [-noshell] [-d directory] "
+	    "[-m arg ...]\n");
 	exit(1);
 }
 

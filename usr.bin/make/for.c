@@ -1,5 +1,3 @@
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 1999 Marc Espie.
  *
@@ -26,7 +24,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Copyright (c) 1992, The Regents of the University of California.
  * All rights reserved.

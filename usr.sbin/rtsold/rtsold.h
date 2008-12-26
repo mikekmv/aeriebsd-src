@@ -39,6 +39,8 @@ struct ifinfo {
 	int probeinterval;	/* interval of probe timer(if necessary) */
 	int probetimer;		/* rest of probe timer */
 	int mediareqok;		/* wheter the IF supports SIOCGIFMEDIA */
+	int otherconfig;	/* need a separate protocol for the "other"
+				 * configuration */
 	int state;
 	int probes;
 	int dadcount;
@@ -62,6 +64,7 @@ struct ifinfo {
 /* rtsold.c */
 extern struct timeval tm_max;
 extern int dflag;
+extern char *otherconf_script;
 struct ifinfo *find_ifinfo(int ifindex);
 void rtsol_timer_update(struct ifinfo *);
 extern void warnmsg(int, const char *, const char *, ...)

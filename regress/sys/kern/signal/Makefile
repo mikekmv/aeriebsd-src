@@ -1,5 +1,5 @@
 
-SUBDIR+= sigfpe siginfo_addr fpsig earlysig
+SUBDIR+= sigfpe siginfo_addr fpsig earlysig cansig
 
 install:
 

@@ -397,7 +397,7 @@ readdoslabel(struct buf *bp, void (*strat)(struct buf *),
 		/* read boot record */
 		bp->b_blkno = part_blkno;
 		bp->b_bcount = lp->d_secsize;
-		bp->b_flags = B_BUSY | B_READ;
+		bp->b_flags = B_BUSY | B_READ | B_RAW;
 		(*strat)(bp);
 		if (biowait(bp)) {
 /*wrong*/		if (partoffp)
@@ -407,7 +407,7 @@ readdoslabel(struct buf *bp, void (*strat)(struct buf *),
 
 		bcopy(bp->b_data + DOSPARTOFF, dp, sizeof(dp));
 
-		if (ourpart == -1 && part_blkno == DOSBBSECTOR) {
+		if (ourpart == -1) {
 			/* Search for our MBR partition */
 			for (dp2=dp, i=0; i < NDOSPART && ourpart == -1;
 			    i++, dp2++)
@@ -452,11 +452,6 @@ donot:
 				continue;
 			if (letoh32(dp2->dp_size) == 0)
 				continue;
-			if (letoh32(dp2->dp_start))
-				DL_SETPOFFSET(pp,
-				    letoh32(dp2->dp_start) + part_blkno);
-
-			DL_SETPSIZE(pp, letoh32(dp2->dp_size));
 
 			switch (dp2->dp_typ) {
 			case DOSPTYP_UNUSED:
@@ -497,6 +492,19 @@ donot:
 				n++;
 				break;
 			}
+
+			/*
+			 * There is no need to set the offset/size when
+			 * wandering; it would also invalidate the
+			 * disklabel checksum.
+			 */
+			if (wander)
+				continue;
+
+			if (letoh32(dp2->dp_start))
+				DL_SETPOFFSET(pp,
+				    letoh32(dp2->dp_start) + part_blkno);
+			DL_SETPSIZE(pp, letoh32(dp2->dp_size));
 		}
 	}
 	lp->d_npartitions = MAXPARTITIONS;
@@ -540,7 +548,7 @@ notfat:
 
 	bp->b_blkno = dospartoff + DOS_LABELSECTOR;
 	bp->b_bcount = lp->d_secsize;
-	bp->b_flags = B_BUSY | B_READ;
+	bp->b_flags = B_BUSY | B_READ | B_RAW;
 	(*strat)(bp);
 	if (biowait(bp))
 		return ("disk label I/O error");
@@ -979,10 +987,6 @@ bufq_default_get(struct bufq *bq)
 	return (bp);
 }
 
-#ifdef RAMDISK_HOOKS
-static struct device fakerdrootdev = { DV_DISK, {}, NULL, 0, "rd0", NULL };
-#endif
-
 struct device *
 getdisk(char *str, int len, int defpart, dev_t *devp)
 {
@@ -990,9 +994,6 @@ getdisk(char *str, int len, int defpart, dev_t *devp)
 
 	if ((dv = parsedisk(str, len, defpart, devp)) == NULL) {
 		printf("use one of: exit");
-#ifdef RAMDISK_HOOKS
-		printf(" %s[a-p]", fakerdrootdev.dv_xname);
-#endif
 		TAILQ_FOREACH(dv, &alldevs, dv_list) {
 			if (dv->dv_class == DV_DISK)
 				printf(" %s[a-p]", dv->dv_xname);
@@ -1022,20 +1023,11 @@ parsedisk(char *str, int len, int defpart, dev_t *devp)
 	} else
 		part = defpart;
 
-#ifdef RAMDISK_HOOKS
-	if (strncmp(str, fakerdrootdev.dv_xname, len) == 0) {
-		dv = &fakerdrootdev;
-		goto gotdisk;
-	}
-#endif
 
 	TAILQ_FOREACH(dv, &alldevs, dv_list) {
 		if (dv->dv_class == DV_DISK &&
 		    strncmp(str, dv->dv_xname, len) == 0 &&
 		    dv->dv_xname[len] == '\0') {
-#ifdef RAMDISK_HOOKS
-gotdisk:
-#endif
 			majdev = findblkmajor(dv);
 			if (majdev < 0)
 				panic("parsedisk");
@@ -1066,12 +1058,6 @@ setroot(struct device *bootdv, int part, int exitflags)
 	char buf[128];
 #if defined(NFSCLIENT)
 	extern char *nfsbootdevname;
-#endif
-
-#ifdef RAMDISK_HOOKS
-	bootdv = &fakerdrootdev;
-	mountroot = NULL;
-	part = 0;
 #endif
 
 	/*
@@ -1169,10 +1155,9 @@ gotswap:
 		rootdv = bootdv;
 		rootdev = dumpdev = swapdev = NODEV;
 #endif
-	} else if (mountroot == NULL) {
+	} else if (mountroot == NULL && rootdev == NODEV) {
 		/*
-		 * `swap generic' or RAMDISK_HOOKS -- use the
-		 * device we were told to
+		 * `swap generic'
 		 */
 		rootdv = bootdv;
 		majdev = findblkmajor(rootdv);
@@ -1202,6 +1187,8 @@ gotswap:
 		snprintf(buf, sizeof buf, "%s%d%c",
 		    findblkname(majdev), unit, 'a' + part);
 		rootdv = parsedisk(buf, strlen(buf), 0, &nrootdev);
+		if (rootdv == NULL)
+			panic("root device (%s) not found", buf);
 	}
 
 	if (rootdv && rootdv == bootdv && rootdv->dv_class == DV_IFNET)

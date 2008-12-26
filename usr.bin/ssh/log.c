@@ -103,6 +103,17 @@ log_facility_number(char *name)
 	return SYSLOG_FACILITY_NOT_SET;
 }
 
+const char *
+log_facility_name(SyslogFacility facility)
+{
+	u_int i;
+
+	for (i = 0;  log_facilities[i].name; i++)
+		if (log_facilities[i].val == facility)
+			return log_facilities[i].name;
+	return NULL;
+}
+
 LogLevel
 log_level_number(char *name)
 {
@@ -113,6 +124,17 @@ log_level_number(char *name)
 			if (strcasecmp(log_levels[i].name, name) == 0)
 				return log_levels[i].val;
 	return SYSLOG_LEVEL_NOT_SET;
+}
+
+const char *
+log_level_name(LogLevel level)
+{
+	u_int i;
+
+	for (i = 0; log_levels[i].name != NULL; i++)
+		if (log_levels[i].val == level)
+			return log_levels[i].name;
+	return NULL;
 }
 
 /* Error messages that should be logged. */

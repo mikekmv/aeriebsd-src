@@ -2225,11 +2225,15 @@ audio_rint(void *v)
 		DPRINTFN(1, ("audio_rint: pdrops %lu\n", cb->pdrops));
 		cb->pdrops += blksize;
 		cb->outp += blksize;
+		if (cb->outp >= cb->end)
+			cb->outp = cb->start;
 		cb->used -= blksize;
 	} else if (cb->used >= cb->usedhigh && !cb->copying) {
 		DPRINTFN(1, ("audio_rint: drops %lu\n", cb->drops));
 		cb->drops += blksize;
 		cb->outp += blksize;
+		if (cb->outp >= cb->end)
+			cb->outp = cb->start;
 		cb->used -= blksize;
 	}
 

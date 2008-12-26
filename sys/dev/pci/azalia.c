@@ -14,13 +14,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -261,6 +254,7 @@ void	azalia_close(void *);
 int	azalia_query_encoding(void *, audio_encoding_t *);
 int	azalia_set_params(void *, int, int, audio_params_t *,
 	audio_params_t *);
+void	azalia_get_default_params(void *, int, struct audio_params*);
 int	azalia_round_blocksize(void *, int);
 int	azalia_halt_output(void *);
 int	azalia_halt_input(void *);
@@ -318,7 +312,7 @@ struct audio_hw_if azalia_hw_if = {
 	azalia_get_props,
 	azalia_trigger_output,
 	azalia_trigger_input,
-	NULL
+	azalia_get_default_params
 };
 
 static const char *pin_devices[16] = {
@@ -2135,6 +2129,17 @@ azalia_query_encoding(void *v, audio_encoding_t *enc)
 	return (EINVAL);
 }
 
+void
+azalia_get_default_params(void *addr, int mode, struct audio_params *params)
+{
+	params->sample_rate = 48000;
+	params->encoding = AUDIO_ENCODING_SLINEAR_LE;
+	params->precision = 16;
+	params->channels = 2;
+	params->sw_code = NULL;
+	params->factor = 1;
+}
+
 int
 azalia_set_params(void *v, int smode, int umode, audio_params_t *p,
     audio_params_t *r)
@@ -2148,11 +2153,6 @@ azalia_set_params(void *v, int smode, int umode, audio_params_t *p,
 	az = v;
 	codec = &az->codecs[az->codecno];
 	if (smode & AUMODE_RECORD && r != NULL) {
-		if (r->encoding == AUDIO_ENCODING_ULAW) {	 /*XXX*/
-			r->encoding = AUDIO_ENCODING_SLINEAR_LE;
-			r->precision = 16;
-			r->sample_rate = codec->rate;
-		}
 		for (i = 0; i < codec->nformats; i++) {
 			if (r->encoding != codec->formats[i].encoding)
 				continue;
@@ -2195,11 +2195,6 @@ azalia_set_params(void *v, int smode, int umode, audio_params_t *p,
 		r->sw_code = rswcode;
 	}
 	if (smode & AUMODE_PLAY && p != NULL) {
-		if (p->encoding == AUDIO_ENCODING_ULAW) {	 /*XXX*/
-			p->encoding = AUDIO_ENCODING_SLINEAR_LE;
-			p->precision = 16;
-			p->sample_rate = codec->rate;
-		}
 		for (i = 0; i < codec->nformats; i++) {
 			if (p->encoding != codec->formats[i].encoding)
 				continue;

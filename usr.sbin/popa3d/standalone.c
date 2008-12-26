@@ -145,7 +145,6 @@ int main(void)
 		if ((pfds[i].fd = socket(res->ai_family, res->ai_socktype,
 		    res->ai_protocol)) < 0)
 			continue;
-		pfds[i].events = POLLIN;
 
 		if (setsockopt(pfds[i].fd, SOL_SOCKET, SO_REUSEADDR,
 		    (void *)&true, sizeof(true))) {
@@ -169,6 +168,7 @@ int main(void)
 			continue;
 		}
 
+		pfds[i].events = POLLIN;
 		i++;
 	}
 	freeaddrinfo(res0);

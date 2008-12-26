@@ -437,7 +437,7 @@ _dmamem_alloc(t, size, alignment, boundary, segs, nsegs, rsegs, flags)
 	int flags;
 {
 	return (_dmamem_alloc_range(t, size, alignment, boundary,
-	    segs, nsegs, rsegs, flags, 0, 0xf0000000));
+	    segs, nsegs, rsegs, flags, 0, -1));
 }
 
 /*

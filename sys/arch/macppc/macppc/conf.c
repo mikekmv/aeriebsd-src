@@ -60,7 +60,7 @@ struct bdevsw bdevsw[] = {
 	bdev_disk_init(NSD,sd),		/* 2 SCSI Disk */
 	bdev_disk_init(NCD,cd),		/* 3 SCSI CD-ROM */
 	bdev_notdef(),			/* 4 unknown*/
-	bdev_notdef(),			/* 5 unknown*/
+	bdev_tape_init(NST,st),		/* 5 SCSI tape */
 	bdev_notdef(),			/* 6 unknown*/
 	bdev_notdef(),			/* 7 unknown*/
 	bdev_lkm_dummy(),		/* 8 */
@@ -130,6 +130,7 @@ cdev_decl(pci);
 #endif
 
 #include "audio.h"
+#include "video.h"
 
 #include "pf.h"
 
@@ -187,7 +188,7 @@ struct cdevsw cdevsw[] = {
 	cdev_ss_init(NSS,ss),		/* 42: SCSI scanner */
 	cdev_ksyms_init(NKSYMS,ksyms),	/* 43: Kernel symbols device */
 	cdev_audio_init(NAUDIO,audio),	/* 44: generic audio I/O */
-	cdev_notdef(),			/* 45 */
+	cdev_video_init(NVIDEO,video),	/* 45: generic video I/O */
 	cdev_notdef(),			/* 46 */
 	cdev_crypto_init(NCRYPTO,crypto), /* 47: /dev/crypto */
 	cdev_notdef(),			/* 48 */
@@ -282,19 +283,19 @@ int chrtoblktbl[] = {
 	/*  5 */	NODEV,
 	/*  6 */	NODEV,
 	/*  7 */	NODEV,
-	/*  8 */	2,
-	/*  9 */	NODEV,
+	/*  8 */	2,		/* sd */
+	/*  9 */	3,		/* cd */
 	/* 10 */	NODEV,
-	/* 11 */	0,
+	/* 11 */	0,		/* wd */
 	/* 12 */	NODEV,
-	/* 13 */	4,
+	/* 13 */	NODEV,
 	/* 14 */	NODEV,
 	/* 15 */	NODEV,
 	/* 16 */	NODEV,
-	/* 17 */	17,
-	/* 18 */	NODEV,
-	/* 19 */	NODEV,
-	/* 20 */	NODEV,
+	/* 17 */	17,		/* rd */
+	/* 18 */	16,		/* ccd */
+	/* 19 */	14,		/* vnd */
+	/* 20 */	5,		/* st */
 	/* 21 */	NODEV,
 	/* 22 */	NODEV,
 	/* 23 */	NODEV,
@@ -328,7 +329,7 @@ int chrtoblktbl[] = {
 	/* 51 */	NODEV,
 	/* 52 */	NODEV,
 	/* 53 */	NODEV,
-	/* 54 */	19,
+	/* 54 */	19,		/* raid */
 };
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);
 

@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)wc.c	8.2 (Berkeley) 5/2/95";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: wc.c,v 1.1.1.1 2008/08/26 14:43:27 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -223,7 +223,7 @@ cnt(char *file)
 		}
 	}
 
-	print_counts(linect, wordct, charct, file ? file : "");
+	print_counts(linect, wordct, charct, file);
 
 	/*
 	 * Don't bother checking doline, doword, or dochar -- speeds
@@ -262,5 +262,8 @@ print_counts(int64_t lines, int64_t words, int64_t chars, char *name)
 	if (dochar)
 		format_and_print((long long)chars);
 
-	(void)printf(" %s\n", name);
+	if (name)
+		(void)printf(" %s\n", name);
+	else
+		(void)printf("\n");
 }

@@ -29,7 +29,7 @@
 
 #if defined(LIBC_SCCS)
 	.rodata
-	.asciz "$ABSD$"
+	.asciz "$ABSD: exect.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 #include "SYS.h"
@@ -38,4 +38,4 @@
 SYSENTRY(exect)
 	bispsw	$PSL_T
 	chmk	$ SYS_execve
-	jmp	__cerror	# exect(file, argv, env)
+	jmp	_C_LABEL(_cerror)	# exect(file, argv, env)

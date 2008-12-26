@@ -203,6 +203,8 @@ const struct pci_matchid skc_devices[] = {
 	{ PCI_VENDOR_MARVELL,		PCI_PRODUCT_MARVELL_YUKON_BELKIN },
 	{ PCI_VENDOR_SCHNEIDERKOCH,	PCI_PRODUCT_SCHNEIDERKOCH_SK98XX },
 	{ PCI_VENDOR_SCHNEIDERKOCH,	PCI_PRODUCT_SCHNEIDERKOCH_SK98XX2 },
+	{ PCI_VENDOR_SCHNEIDERKOCH,	PCI_PRODUCT_SCHNEIDERKOCH_SK9821 },
+	{ PCI_VENDOR_SCHNEIDERKOCH,	PCI_PRODUCT_SCHNEIDERKOCH_SK9843 }
 };
 
 #define SK_LINKSYS_EG1032_SUBID 0x00151737
@@ -1334,16 +1336,9 @@ skc_attach(struct device *parent, struct device *self, void *aux)
 	/*
 	 * Map control/status registers.
 	 */
-
 	memtype = pci_mapreg_type(pc, pa->pa_tag, SK_PCI_LOMEM);
-	switch (memtype) {
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT:
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT:
-		if (pci_mapreg_map(pa, SK_PCI_LOMEM,
-				   memtype, 0, &sc->sk_btag, &sc->sk_bhandle,
-				   NULL, &size, 0) == 0)
-			break;
-	default:
+	if (pci_mapreg_map(pa, SK_PCI_LOMEM, memtype, 0, &sc->sk_btag,
+	    &sc->sk_bhandle, NULL, &size, 0)) {
 		printf(": can't map mem space\n");
 		return;
 	}

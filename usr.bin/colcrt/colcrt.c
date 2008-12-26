@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)colcrt.c	8.1 (Berkeley) 6/6/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: colcrt.c,v 1.1.1.1 2008/08/26 14:42:40 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -96,7 +96,7 @@ main(int argc, char *argv[])
 				break;
 			default:
 				fprintf(stderr,
-				    "usage: %s [ - ] [ -2 ] [ file ... ]\n",
+				    "usage: %s [-] [-2] [file ...]\n",
 				    __progname);
 				fflush(stdout);
 				exit(1);

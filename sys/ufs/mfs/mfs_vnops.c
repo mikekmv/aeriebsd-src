@@ -51,7 +51,7 @@
  */
 int (**mfs_vnodeop_p)(void *);
 struct vnodeopv_entry_desc mfs_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
+	{ &vop_default_desc, eopnotsupp },
 	{ &vop_lookup_desc, mfs_badop },		/* lookup */
 	{ &vop_create_desc, mfs_badop },		/* create */
 	{ &vop_mknod_desc, mfs_badop },			/* mknod */

@@ -126,15 +126,6 @@ struct rcs_kw {
 #define RCS_RD_DEAD	0x01	/* dead */
 #define RCS_RD_SELECT	0x02	/* select for operation */
 
-/* RCS error codes */
-#define RCS_ERR_NOERR	0
-#define RCS_ERR_NOENT	1
-#define RCS_ERR_DUPENT	2
-#define RCS_ERR_BADNUM	3
-#define RCS_ERR_BADSYM	4
-#define RCS_ERR_PARSE	5
-#define RCS_ERR_ERRNO	255
-
 /* used for rcs_checkout_rev */
 #define CHECKOUT_REV_CREATED	1
 #define CHECKOUT_REV_MERGED	2
@@ -220,6 +211,7 @@ RCSFILE			*rcs_open(const char *, int, int, ...);
 void			 rcs_close(RCSFILE *);
 RCSNUM			*rcs_head_get(RCSFILE *);
 int			 rcs_head_set(RCSFILE *, RCSNUM *);
+RCSNUM			*rcs_branch_new(RCSFILE *, RCSNUM *);
 const RCSNUM		*rcs_branch_get(RCSFILE *);
 int			 rcs_branch_set(RCSFILE *, const RCSNUM *);
 int			 rcs_access_add(RCSFILE *, const char *);

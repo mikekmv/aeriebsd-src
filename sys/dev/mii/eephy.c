@@ -98,6 +98,8 @@ static const struct mii_phydesc eephys[] = {
 	  MII_STR_MARVELL_E1118 },
 	{ MII_OUI_MARVELL,		MII_MODEL_MARVELL_E1149,
 	  MII_STR_MARVELL_E1149 },
+	{ MII_OUI_MARVELL,		MII_MODEL_MARVELL_E3016,
+	  MII_STR_MARVELL_E3016},
 	{ MII_OUI_MARVELL,		MII_MODEL_MARVELL_E3082,
 	  MII_STR_MARVELL_E3082 },
 	{ MII_OUI_xxMARVELL,		MII_MODEL_xxMARVELL_E1000_5,
@@ -197,6 +199,7 @@ eephyattach(struct device *parent, struct device *self, void *aux)
 
 	/* Enable auto crossover. */
 	switch (sc->mii_model) {
+	case MII_MODEL_MARVELL_E3016:
 	case MII_MODEL_MARVELL_E3082:
 		/* Bits are in a different position.  */
 		reg |= (E1000_SCR_AUTO_X_MODE >> 1);

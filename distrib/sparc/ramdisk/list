@@ -1,5 +1,6 @@
 
 # Sparc extra's
+LINK	instbin					sbin/bioctl
 LINK	instbin					sbin/disklabel
 LINK	instbin					sbin/restore
 LINK	instbin					usr/bin/grep usr/bin/egrep usr/bin/fgrep

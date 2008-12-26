@@ -49,8 +49,7 @@
 
 #include "sio.h"
 
-int	dec_2100_a50_intr_map(void *, pcitag_t, int, int,
-	    pci_intr_handle_t *);
+int	dec_2100_a50_intr_map(struct pci_attach_args *, pci_intr_handle_t *);
 const char *dec_2100_a50_intr_string(void *, pci_intr_handle_t);
 int	 dec_2100_a50_intr_line(void *, pci_intr_handle_t);
 void    *dec_2100_a50_intr_establish(void *, pci_intr_handle_t,
@@ -94,14 +93,13 @@ pci_2100_a50_pickintr(acp)
 }
 
 int
-dec_2100_a50_intr_map(acv, bustag, buspin, line, ihp)
-	void *acv;
-        pcitag_t bustag;
-	int buspin, line;
+dec_2100_a50_intr_map(pa, ihp)
+	struct pci_attach_args *pa;
 	pci_intr_handle_t *ihp;
 {
-	struct apecs_config *acp = acv;
-	pci_chipset_tag_t pc = &acp->ac_pc;
+	pcitag_t bustag = pa->pa_intrtag;
+	int buspin = pa->pa_intrpin;
+	pci_chipset_tag_t pc = pa->pa_pc;
 	int device, pirq;
 	pcireg_t pirqreg;
 	u_int8_t pirqline;

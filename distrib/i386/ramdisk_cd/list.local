@@ -6,6 +6,7 @@ LINK	instbin					sbin/rtsol
 LINK	instbin					sbin/apm sbin/zzz
 LINK	instbin					sbin/apmd
 LINK	instbin					sbin/mount_udf
+LINK	instbin					sbin/bioctl
 
 # firmwares that might need loading
 #COPY	${DESTDIR}/etc/firmware/tigon1		etc/firmware/tigon1

@@ -49,6 +49,7 @@
 #include <sys/socketvar.h>
 #include <sys/systm.h>
 #include <sys/sysctl.h>
+#include <sys/queue.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -108,10 +109,9 @@ nfs_statfs(mp, sbp, p)
 {
 	struct vnode *vp;
 	struct nfs_statfs *sfp = NULL;
-	caddr_t cp;
 	u_int32_t *tl;
 	int32_t t1;
-	caddr_t bpos, dpos, cp2;
+	caddr_t dpos, cp2;
 	struct nfsmount *nmp = VFSTONFS(mp);
 	int error = 0, v3 = (nmp->nm_flag & NFSMNT_NFSV3), retattr;
 	struct mbuf *mreq, *mrep = NULL, *md, *mb;
@@ -128,7 +128,7 @@ nfs_statfs(mp, sbp, p)
 	if (v3 && (nmp->nm_flag & NFSMNT_GOTFSINFO) == 0)
 		(void)nfs_fsinfo(nmp, vp, cred, p);
 	nfsstats.rpccnt[NFSPROC_FSSTAT]++;
-	nfsm_reqhead(vp, NFSPROC_FSSTAT, NFSX_FH(v3));
+	mb = mreq = nfsm_reqhead(NFSX_FH(v3));
 	nfsm_fhtom(vp, v3);
 	nfsm_request(vp, NFSPROC_FSSTAT, p, cred);
 	if (v3)
@@ -139,7 +139,6 @@ nfs_statfs(mp, sbp, p)
 		goto nfsmout;
 	}
 	nfsm_dissect(sfp, struct nfs_statfs *, NFSX_STATFS(v3));
-	sbp->f_flags = nmp->nm_flag;
 	sbp->f_iosize = min(nmp->nm_rsize, nmp->nm_wsize);
 	if (v3) {
 		sbp->f_bsize = NFS_FABLKSIZE;
@@ -183,15 +182,14 @@ nfs_fsinfo(nmp, vp, cred, p)
 	struct proc *p;
 {
 	struct nfsv3_fsinfo *fsp;
-	caddr_t cp;
 	int32_t t1;
 	u_int32_t *tl, pref, max;
-	caddr_t bpos, dpos, cp2;
+	caddr_t dpos, cp2;
 	int error = 0, retattr;
 	struct mbuf *mreq, *mrep, *md, *mb;
 
 	nfsstats.rpccnt[NFSPROC_FSINFO]++;
-	nfsm_reqhead(vp, NFSPROC_FSINFO, NFSX_FH(1));
+	mb = mreq = nfsm_reqhead(NFSX_FH(1));
 	nfsm_fhtom(vp, 1);
 	nfsm_request(vp, NFSPROC_FSINFO, p, cred);
 	nfsm_postop_attr(vp, retattr);
@@ -672,7 +670,6 @@ mountnfs(argp, mp, nam, pth, hst)
 		nmp = malloc(sizeof(struct nfsmount), M_NFSMNT,
 		    M_WAITOK|M_ZERO);
 		mp->mnt_data = (qaddr_t)nmp;
-		TAILQ_INIT(&nmp->nm_uidlruhead);
 	}
 
 	vfs_getnewfsid(mp);
@@ -772,7 +769,6 @@ nfs_root(mp, vpp)
 /*
  * Flush out the buffer cache
  */
-/* ARGSUSED */
 int
 nfs_sync(mp, waitfor, cred, p)
 	struct mount *mp;
@@ -793,8 +789,7 @@ nfs_sync(mp, waitfor, cred, p)
 	 * Force stale buffer cache information to be flushed.
 	 */
 loop:
-	for (vp = LIST_FIRST(&mp->mnt_vnodelist); vp != NULL;
-	     vp = LIST_NEXT(vp, v_mntvnodes)) {
+	LIST_FOREACH(vp, &mp->mnt_vnodelist, v_mntvnodes) {
 		/*
 		 * If the vnode that we are about to sync is no longer
 		 * associated with this mount point, start over.

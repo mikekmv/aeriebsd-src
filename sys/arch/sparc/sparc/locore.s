@@ -230,11 +230,6 @@ _C_LABEL(pgofset):
 _C_LABEL(trapbase):
 	.word	0
 
-#if defined(SUN4M)
-_C_LABEL(mapme):
-	.asciz "0 0 f8000000 15c6a0 map-pages"
-#endif
-
 #if !defined(SUN4M)
 sun4m_notsup:
 	.asciz	"cr .( OpenBSD/sparc: this kernel does not support the sun4m) cr"
@@ -4414,8 +4409,6 @@ ENTRY(cpu_switchto)
 
 	mov	SONPROC, %o0			! p->p_stat = SONPROC
 	stb	%o0, [%g3 + P_STAT]
-	sethi	%hi(_C_LABEL(want_resched)), %o0
-	st	%g0, [%o0 + %lo(_C_LABEL(want_resched))]	! want_resched = 0;
 	ld	[%g3 + P_ADDR], %g5		! newpcb = p->p_addr;
 	ld	[%g5 + PCB_PSR], %g2		! newpsr = newpcb->pcb_psr;
 	st	%g3, [%g7 + %lo(_C_LABEL(curproc))]	! curproc = p;
@@ -6114,10 +6107,7 @@ Lpanic_ljmp:
 	_ALIGN
 
 ENTRY(longjmp)
-	addcc	%o1, %g0, %g6	! compute v ? v : 1 in a global register
-	be,a	0f
-	 mov	1, %g6
-0:
+	mov	1, %g6
 	mov	%o0, %g1	! save a in another global register
 	ld	[%g1+8], %g7	/* get caller's frame */
 1:
@@ -6164,5 +6154,3 @@ _C_LABEL(proc0paddr):
 
 	.comm	_C_LABEL(nwindows), 4
 	.comm	_C_LABEL(promvec), 4
-	.comm	_C_LABEL(qs), 32 * 8
-	.comm	_C_LABEL(whichqs), 4

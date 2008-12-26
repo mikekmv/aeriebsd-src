@@ -86,6 +86,9 @@
 #define PN8_ACPI_CTRL_TO_RVO(x)		(((x) >> 28) & 0x03)
 #define PN8_ACPI_CTRL_TO_IRT(x)		(((x) >> 30) & 0x03)
 
+#define PN8_PSS_CFID(x)			((x) & 0x3f)
+#define PN8_PSS_CVID(x)			(((x) >> 6) & 0x1f)
+
 #define PN8_PLL_LOCK(x)			((x) * 1000/5)
 #define WRITE_FIDVID(fid, vid, ctrl)	\
 	wrmsr(MSR_AMDK7_FIDVID_CTL,	\
@@ -136,11 +139,12 @@ struct pst_s {
 
 struct k8pnow_cpu_state *k8pnow_current_state = NULL;
 extern int setperf_prio;
+extern int perflevel;
 
 int k8pnow_read_pending_wait(uint64_t *);
 int k8pnow_decode_pst(struct k8pnow_cpu_state *, uint8_t *);
-int k8pnow_states(struct k8pnow_cpu_state *, uint32_t, unsigned int,
-    unsigned int);
+int k8pnow_states(struct k8pnow_cpu_state *, uint32_t, unsigned int, unsigned int);
+void k8pnow_transition(struct k8pnow_cpu_state *e, int);
 
 #if NACPICPU > 0
 int k8pnow_acpi_init(struct k8pnow_cpu_state *, uint64_t);
@@ -168,10 +172,24 @@ void
 k8_powernow_setperf(int level)
 {
 	unsigned int i;
-	uint64_t status;
-	int cfid, cvid, fid = 0, vid = 0, rvo;
-	u_int val;
 	struct k8pnow_cpu_state *cstate;
+
+	cstate = k8pnow_current_state;
+
+	i = ((level * cstate->n_states) + 1) / 101;
+	if (i >= cstate->n_states)
+		i = cstate->n_states - 1;
+
+	k8pnow_transition(cstate, i);
+}
+
+void
+k8pnow_transition(struct k8pnow_cpu_state *cstate, int level)
+{
+	uint64_t status;
+	int cfid, cvid, fid = 0, vid = 0;
+	int rvo;
+	u_int val;
 
 	/*
 	 * We dont do a k8pnow_read_pending_wait here, need to ensure that the
@@ -183,13 +201,8 @@ k8_powernow_setperf(int level)
 	cfid = PN8_STA_CFID(status);
 	cvid = PN8_STA_CVID(status);
 
-	cstate = k8pnow_current_state;
-
-	i = ((level * cstate->n_states) + 1) / 101;
-	if (i >= cstate->n_states)
-		i = cstate->n_states - 1;
-	fid = cstate->state_table[i].fid;
-	vid = cstate->state_table[i].vid;
+	fid = cstate->state_table[level].fid;
+	vid = cstate->state_table[level].vid;
 
 	if (fid == cfid && vid == cvid)
 		return;
@@ -234,8 +247,7 @@ k8_powernow_setperf(int level)
 					val = FID_TO_VCO_FID(cfid) + 2;
 			} else
 				val = cfid - 2;
-			WRITE_FIDVID(val, cvid, (uint64_t)
-			    PN8_PLL_LOCK(cstate->pll));
+			WRITE_FIDVID(val, cvid, (uint64_t)cstate->pll * 1000 / 5);
 
 			if (k8pnow_read_pending_wait(&status))
 				return;
@@ -245,7 +257,7 @@ k8_powernow_setperf(int level)
 			vco_cfid = FID_TO_VCO_FID(cfid);
 		}
 
-		WRITE_FIDVID(fid, cvid, (uint64_t) PN8_PLL_LOCK(cstate->pll));
+		WRITE_FIDVID(fid, cvid, (uint64_t) cstate->pll * 1000 / 5);
 		if (k8pnow_read_pending_wait(&status))
 			return;
 		cfid = PN8_STA_CFID(status);
@@ -262,7 +274,7 @@ k8_powernow_setperf(int level)
 	}
 
 	if (cfid == fid || cvid == vid)
-		cpuspeed = cstate->state_table[i].freq;
+		cpuspeed = cstate->state_table[level].freq;
 }
 
 /*
@@ -355,7 +367,8 @@ k8pnow_acpi_states(struct k8pnow_cpu_state * cstate, struct acpicpu_pss * pss,
 	k = -1;
 
 	for (n = 0; n < cstate->n_states; n++) {
-		if (status == pss[n].pss_status)
+		if ((PN8_STA_CFID(status) == PN8_PSS_CFID(pss[n].pss_status)) &&
+		    (PN8_STA_CVID(status) == PN8_PSS_CVID(pss[n].pss_status)))
 			k = n;
 		ctrl = pss[n].pss_ctrl;
 		state.fid = PN8_ACPI_CTRL_TO_FID(ctrl);
@@ -389,6 +402,8 @@ k8pnow_acpi_pss_changed(struct acpicpu_pss * pss, int npss)
 
 	curs = k8pnow_acpi_states(cstate, pss, npss, status);
 	ctrl = pss[curs].pss_ctrl;
+
+	cstate->rvo = PN8_ACPI_CTRL_TO_RVO(ctrl);
 	cstate->vst = PN8_ACPI_CTRL_TO_VST(ctrl);
 	cstate->mvs = PN8_ACPI_CTRL_TO_MVS(ctrl);
 	cstate->pll = PN8_ACPI_CTRL_TO_PLL(ctrl);
@@ -412,6 +427,7 @@ k8pnow_acpi_init(struct k8pnow_cpu_state * cstate, uint64_t status)
 	curs = k8pnow_acpi_states(cstate, pss, cstate->n_states, status);
 	ctrl = pss[curs].pss_ctrl;
 
+	cstate->rvo = PN8_ACPI_CTRL_TO_RVO(ctrl);
 	cstate->vst = PN8_ACPI_CTRL_TO_VST(ctrl);
 	cstate->mvs = PN8_ACPI_CTRL_TO_MVS(ctrl);
 	cstate->pll = PN8_ACPI_CTRL_TO_PLL(ctrl);

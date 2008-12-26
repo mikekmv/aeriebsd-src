@@ -73,6 +73,7 @@
 #include <dev/cons.h>
 
 #include <uvm/uvm_extern.h>
+#include <uvm/uvm_swap.h>
 
 #ifdef SYSVMSG
 #include <sys/msg.h>
@@ -633,6 +634,10 @@ dumpsys()
 
 	printf("\ndumping to dev %u,%u offset %ld\n", major(dumpdev),
 	    minor(dumpdev), dumplo);
+
+#ifdef UVM_SWAP_ENCRYPT
+	uvm_swap_finicrypt_all();
+#endif
 
 	/* Setup the dump header */
 	kseg_p = (kcore_seg_t *)dump_hdr;

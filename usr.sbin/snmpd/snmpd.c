@@ -133,6 +133,11 @@ main(int argc, char *argv[])
 		}
 	}
 
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+		usage();
+
 	if ((env = parse_config(conffile, flags)) == NULL)
 		exit(1);
 	snmpd_env = env;

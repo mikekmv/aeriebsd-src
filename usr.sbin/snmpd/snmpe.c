@@ -233,7 +233,7 @@ snmpe_bind(struct address *addr)
 	if (bind(s, (struct sockaddr *)&addr->ss, addr->ss.ss_len) == -1)
 		goto bad;
 
-	if (log_host(&addr->ss, buf, sizeof(buf)) == NULL)
+	if (print_host(&addr->ss, buf, sizeof(buf)) == NULL)
 		goto bad;
 
 	log_info("snmpe_bind: binding to address %s:%d", buf, addr->port);
@@ -581,7 +581,7 @@ snmpe_parse(struct sockaddr_storage *ss,
 	msg->sm_error = errval;
 	msg->sm_errorindex = erridx;
 
-	log_host(ss, host, sizeof(host));
+	print_host(ss, host, sizeof(host));
 	log_debug("snmpe_parse: %s: SNMPv%d '%s' context %d request %lld",
 	    host, msg->sm_version + 1, msg->sm_community, msg->sm_context,
 	    msg->sm_request);
@@ -690,7 +690,7 @@ snmpe_parse(struct sockaddr_storage *ss,
  parsefail:
 	stats->snmp_inasnparseerrs++;
  fail:
-	log_host(ss, host, sizeof(host));
+	print_host(ss, host, sizeof(host));
 	log_debug("snmpe_parse: %s: %s", host, errstr);
 	return (-1);
 }

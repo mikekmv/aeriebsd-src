@@ -37,7 +37,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)rm.c	8.8 (Berkeley) 4/27/95";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: rm.c,v 1.1.1.1 2008/08/26 14:36:31 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -357,7 +357,8 @@ check(char *path, char *name, struct stat *sp)
 		 * because their permissions are meaningless.  Check stdin_ok
 		 * first because we may not have stat'ed the file.
 		 */
-		if (!stdin_ok || S_ISLNK(sp->st_mode) || !access(name, W_OK))
+		if (!stdin_ok || S_ISLNK(sp->st_mode) || !access(name, W_OK) ||
+		    errno != EACCES)
 			return (1);
 		strmode(sp->st_mode, modep);
 		(void)fprintf(stderr, "override %s%s%s/%s for %s? ",

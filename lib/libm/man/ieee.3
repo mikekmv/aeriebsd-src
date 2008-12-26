@@ -27,20 +27,16 @@
 .\"
 .\"     from: @(#)ieee.3	6.4 (Berkeley) 5/6/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt IEEE 3
 .Os
 .Sh NAME
 .Nm copysign ,
 .Nm copysignf ,
-.Nm finite ,
-.Nm finitef ,
 .Nm ilogb ,
 .Nm ilogbf ,
 .Nm nextafter ,
 .Nm nextafterf ,
-.Nm remainder ,
-.Nm remainderf ,
 .Nm scalbn ,
 .Nm scalbnf
 .Nd functions for IEEE arithmetic
@@ -51,10 +47,6 @@
 .Ft float
 .Fn copysignf "float x" "float y"
 .Ft int
-.Fn finite "double x"
-.Ft int
-.Fn finitef "float x"
-.Ft int
 .Fn ilogb "double x"
 .Ft int
 .Fn ilogbf "float x"
@@ -62,10 +54,6 @@
 .Fn nextafter "double x" "double y"
 .Ft float
 .Fn nextafterf "float x" "float y"
-.Ft double
-.Fn remainder "double x" "double y"
-.Ft float
-.Fn remainderf "float x" "float y"
 .Ft double
 .Fn scalbn "double x" "int n"
 .Ft float
@@ -83,23 +71,6 @@ The
 .Fn copysignf
 function is a single precision version of
 .Fn copysign .
-.Pp
-.Fn finite
-returns the value 1 just when
-\-\*(If \*(Lt
-.Fa x
-\*(Lt +\*(If;
-otherwise a
-zero is returned
-(when
-.Pf \\*(Ba Ns Fa x Ns \\*(Ba
-= \*(If or
-.Fa x
-is \*(Na.
-The
-.Fn finitef
-function is a single precision version of
-.Fn finite .
 .Pp
 .Fn ilogb
 returns
@@ -127,48 +98,6 @@ The
 .Fn nextafterf
 function is a single precision version of
 .Fn nextafter .
-.Pp
-.Fn remainder
-returns the remainder
-.Fa r
-:=
-.Fa x
-\-
-.Fa n\(**y
-where
-.Fa n
-is the integer nearest the exact value of
-.Bk -words
-.Fa x Ns / Ns Fa y ;
-.Ek
-moreover if
-.Pf \\*(Ba Fa n
-\-
-.Sm off
-.Fa x No / Fa y No \\*(Ba
-.Sm on
-=
-1/2
-then
-.Fa n
-is even.
-Consequently, the remainder is computed exactly and
-.Sm off
-.Pf \\*(Ba Fa r No \\*(Ba
-.Sm on
-\*(Le
-.Sm off
-.Pf \\*(Ba Fa y No \\*(Ba/2.
-.Sm on
-But
-.Fn remainder x 0
-and
-.Fn remainder \*(If 0
-are invalid operations that produce a \*(Na.
-The
-.Fn remainderf
-function is a single precision version of
-.Fn remainder .
 .Pp
 .Fn scalbn
 returns

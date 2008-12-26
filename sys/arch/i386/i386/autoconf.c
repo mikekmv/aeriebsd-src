@@ -205,7 +205,6 @@ diskconf(void)
 #if defined(NFSCLIENT)
 			printf("PXE boot MAC address %s, interface %s\n",
 			    ether_sprintf(bios_bootmac->mac), ifp->if_xname);
-			mountroot = nfs_mountroot;	/* potentially */
 			bootdv = parsedisk(ifp->if_xname, strlen(ifp->if_xname),
 			    0, &tmpdev);
 			part = 0;
@@ -227,5 +226,6 @@ struct nam2blk nam2blk[] = {
 	{ "mcd",	7 },
 	{ "rd",		17 },
 	{ "raid",	19 },
+	{ "vnd",	14 },
 	{ NULL,		-1 }
 };

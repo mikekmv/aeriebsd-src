@@ -43,6 +43,7 @@
 
 struct agpbus_attach_args {
         struct pci_attach_args apa_pci_args;
+        struct pci_attach_args apa_vga_args;
 };
 
 enum agp_acquire_state {
@@ -131,6 +132,9 @@ struct agp_softc {
 	pcitag_t		sc_pcitag;	/* PCI tag, in case we need it. */
 	pcireg_t		sc_id;
 	pci_chipset_tag_t	sc_pc;
+
+	pci_chipset_tag_t	sc_vgapc;
+	pcitag_t		sc_vgapcitag;
 
 	struct agp_methods 	*sc_methods;
 	void			*sc_chipc;	/* chipset-dependent state */

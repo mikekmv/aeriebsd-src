@@ -65,4 +65,4 @@ ENTRY(rfork_thread, R2|R3|R4)
 	/*
 	 * system call failed.
 	 */
-	jmp	__cerror
+	jmp	_C_LABEL(__cerror)

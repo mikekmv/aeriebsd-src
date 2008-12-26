@@ -14,13 +14,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -760,7 +753,7 @@ wsmux_evsrc_set_display(struct device *dv, struct device *displaydv)
 {
 	struct wsmux_softc *sc = (struct wsmux_softc *)dv;
 
-	DPRINTF(("wsmux_set_display: %s: displaydv=%p\n",
+	DPRINTF(("wsmux_evsrc_set_display: %s: displaydv=%p\n",
 		 sc->sc_base.me_dv.dv_xname, displaydv));
 
 	if (displaydv != NULL) {
@@ -799,7 +792,8 @@ wsmux_set_display(struct wsmux_softc *sc, struct device *displaydv)
 		}
 #endif
 		if (me->me_ops->dsetdisplay != NULL) {
-			error = wsevsrc_set_display(me, nsc->sc_displaydv);
+			error = wsevsrc_set_display(me,
+			    nsc ? nsc->sc_displaydv : NULL);
 			DPRINTF(("wsmux_set_display: m=%p dev=%s error=%d\n",
 				 me, me->me_dv.dv_xname, error));
 			if (!error) {

@@ -33,8 +33,8 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#include "extern.h"
 #include "monitor.h"
+#include "extern.h"
 
 enum monitor_command {
 	CMD_USER,

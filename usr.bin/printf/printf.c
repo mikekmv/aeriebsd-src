@@ -38,7 +38,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)printf.c	5.9 (Berkeley) 6/1/90";*/
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: printf.c,v 1.1.1.1 2008/08/26 14:43:08 root Exp $";
 #endif /* not lint */
 
 #include <ctype.h>
@@ -117,6 +117,12 @@ main(int argc, char *argv[])
 #if !defined(SHELL) && !defined(BUILTIN)
 	setlocale (LC_ALL, "");
 #endif
+
+	/* Need to accept/ignore "--" option. */
+	if (argc > 1 && strcmp(argv[1], "--") == 0) {
+		argc--;
+		argv++;
+	}
 
 	if (argc < 2) {
 		usage();

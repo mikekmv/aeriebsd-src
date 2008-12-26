@@ -31,7 +31,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: uname.c,v 1.1.1.1 2008/08/26 14:43:22 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -63,8 +63,8 @@ main(int argc, char *argv[])
 
 	setlocale(LC_ALL, "");
 
-	while ((c = getopt(argc,argv,"amnrsvp")) != -1 ) {
-		switch ( c ) {
+	while ((c = getopt(argc, argv, "amnrsvp")) != -1 ) {
+		switch (c) {
 		case 'a':
 			print_mask |= PRINT_ALL;
 			break;

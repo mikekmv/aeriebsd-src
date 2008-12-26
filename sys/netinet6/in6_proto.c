@@ -126,13 +126,13 @@ struct ip6protosw inet6sw[] = {
 },
 { SOCK_DGRAM,	&inet6domain,	IPPROTO_UDP,	PR_ATOMIC|PR_ADDR,
   udp6_input,	0,		udp6_ctlinput,	ip6_ctloutput,
-  udp6_usrreq,	0,
+  udp_usrreq,	0,
   0,		0,		0,
   udp_sysctl,
 },
 { SOCK_STREAM,	&inet6domain,	IPPROTO_TCP,	PR_CONNREQUIRED|PR_WANTRCVD|PR_ABRTACPTDIS,
   tcp6_input,	0,		tcp6_ctlinput,	tcp_ctloutput,
-  tcp6_usrreq,
+  tcp_usrreq,
 #ifdef INET	/* don't call initialization and timeout routines twice */
   0,		0,		0,		0,
 #else
@@ -269,6 +269,10 @@ int	ip6_rr_prune = 5;	/* router renumbering prefix
 				 * walk list every 5 sec.    */
 int	ip6_mcast_pmtu = 0;	/* enable pMTU discovery for multicast? */
 const int ip6_v6only = 1;
+int	ip6_neighborgcthresh = 2048; /* Threshold # of NDP entries for GC */
+int	ip6_maxifprefixes = 16; /* Max acceptable prefixes via RA per IF */
+int	ip6_maxifdefrouters = 16; /* Max acceptable def routers via RA */
+int	ip6_maxdynroutes = 4096; /* Max # of routes created via redirect */
 u_int32_t ip6_id = 0UL;
 int	ip6_keepfaith = 0;
 time_t	ip6_log_time = (time_t)0L;

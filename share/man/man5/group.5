@@ -30,7 +30,7 @@
 .\"
 .\"     @(#)group.5	8.3 (Berkeley) 4/19/94
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt GROUP 5
 .Os
 .Sh NAME
@@ -117,6 +117,18 @@ form should be on the last line, for historical reasons.
 Only the first group with a specific name encountered, whether in the
 .Nm
 file itself, or included via YP, will be used.
+.Pp
+Proper YP group support requires consistent
+.Pa group.byname ,
+.Pa group.bygid
+and
+.Pa netid.byname
+YP maps.
+See
+.Xr getgrent 3
+and
+.Xr getgrouplist 3
+for details.
 .Sh FILES
 .Bl -tag -width /etc/group -compact
 .It Pa /etc/group

@@ -219,10 +219,10 @@ oosiop_attach(struct oosiop_softc *sc)
 	if (sc->sc_minperiod < 25)
 		sc->sc_minperiod = 25;	/* limit to 10MB/s */
 
-	printf(": NCR53C700%s rev %d, %dMHz, SCSI ID %d\n",
+	printf(": NCR53C700%s rev %d, %dMHz\n",
 	    sc->sc_chip == OOSIOP_700_66 ? "-66" : "",
 	    oosiop_read_1(sc, OOSIOP_CTEST7) >> 4,
-	    sc->sc_freq / 1000000, sc->sc_id);
+	    sc->sc_freq / 1000000);
 	/*
 	 * Reset all
 	 */

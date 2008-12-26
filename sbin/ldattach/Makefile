@@ -1,9 +1,9 @@
 
-PROG=		ldattach
-MAN=		ldattach.8
-
-CFLAGS+=	-Wall -Werror
-
-BINDIR=		/sbin
+PROG=	ldattach
+SRCS=	ldattach.c atomicio.c
+CFLAGS+=-Wall -Werror
+LDADD+=	-lutil
+DPADD+=	${LIBUTIL}
+MAN=	ldattach.8
 
 .include <bsd.prog.mk>

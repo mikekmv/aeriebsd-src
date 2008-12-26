@@ -33,10 +33,7 @@
 
 .include <bsd.own.mk>	# for NOMAN, if it's there.
 
-SUBDIR+= lib include bin libexec sbin usr.bin usr.sbin share games
-SUBDIR+= gnu
-
-SUBDIR+= sys
+SUBDIR+= lib include bin libexec sbin usr.bin usr.sbin share games sys
 
 .if (${KERBEROS5:L} == "yes")
 SUBDIR+= kerberosV
@@ -72,8 +69,6 @@ build:
 	cd ${.CURDIR}/include && ${MAKE} prereq && exec ${SUDO} ${MAKE} includes
 	${SUDO} ${MAKE} cleandir
 	cd ${.CURDIR}/lib && ${MAKE} depend && ${MAKE} && \
-	    NOMAN=1 exec ${SUDO} ${MAKE} install
-	cd ${.CURDIR}/gnu/lib && ${MAKE} depend && ${MAKE} && \
 	    NOMAN=1 exec ${SUDO} ${MAKE} install
 	${MAKE} depend && ${MAKE} && exec ${SUDO} ${MAKE} install
 

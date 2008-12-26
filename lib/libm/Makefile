@@ -98,7 +98,8 @@ CFLAGS+= -D_MULTI_LIBM -D_POSIX_MODE
 
 LIB=	m
 WANTLINT=
-COMMON_SRCS = e_acos.c e_acosf.c e_acosh.c e_acoshf.c e_asin.c e_asinf.c \
+COMMON_SRCS = b_exp__D.c b_log__D.c b_tgamma.c \
+	e_acos.c e_acosf.c e_acosh.c e_acoshf.c e_asin.c e_asinf.c \
 	e_atan2.c e_atan2f.c e_atanh.c e_atanhf.c e_cosh.c e_coshf.c e_exp.c \
 	e_expf.c e_fmod.c e_fmodf.c e_hypot.c e_hypotf.c e_j0.c e_j0f.c \
 	e_j1.c e_j1f.c e_jn.c e_jnf.c e_lgamma_r.c e_lgammaf_r.c e_log.c \
@@ -110,12 +111,13 @@ COMMON_SRCS = e_acos.c e_acosf.c e_acosh.c e_acoshf.c e_asin.c e_asinf.c \
 	s_lround.c s_lroundf.c s_llround.c s_llroundf.c \
 	s_asinh.c s_asinhf.c s_atan.c s_atanf.c s_cbrt.c s_cbrtf.c s_ceil.c \
 	s_ceilf.c s_copysign.c s_copysignf.c s_cos.c s_cosf.c s_erf.c s_erff.c \
-	s_expm1.c s_expm1f.c s_fabsf.c s_finite.c s_finitef.c \
+	s_exp2.c s_exp2f.c s_expm1.c s_expm1f.c s_fabsf.c s_finite.c s_finitef.c \
 	s_floor.c s_floorf.c s_frexpf.c s_ilogb.c s_ilogbf.c \
-	s_isinff.c s_isnanf.c s_ldexpf.c s_lib_version.c s_log1p.c \
+	s_ldexpf.c s_lib_version.c s_log1p.c \
 	s_log1pf.c s_logb.c s_logbf.c s_llrint.c s_llrintf.c s_lrint.c \
-	s_lrintf.c s_matherr.c s_modff.c \
-	s_nextafter.c s_nextafterf.c s_rint.c s_rintf.c s_round.c s_roundf.c \
+	s_lrintf.c s_matherr.c s_modff.c s_nan.c \
+	s_nextafter.c s_nextafterf.c s_remquo.c s_remquof.c s_rint.c \
+	s_rintf.c s_round.c s_roundf.c \
 	s_scalbn.c s_scalbnf.c s_signgam.c s_significand.c s_significandf.c \
 	s_sin.c s_sinf.c s_tan.c s_tanf.c s_tanh.c s_tanhf.c s_trunc.c s_truncf.c \
 	w_acos.c w_acosf.c w_acosh.c w_acoshf.c w_asin.c w_asinf.c w_atan2.c \
@@ -129,17 +131,20 @@ COMMON_SRCS = e_acos.c e_acosf.c e_acosh.c e_acoshf.c e_asin.c e_asinf.c \
 
 # math routines for non-IEEE architectures.
 NOIEEE_SRCS = n_asincos.c n_acosh.c n_asinh.c n_atan.c n_atanh.c n_cosh.c \
-	n_erf.c n_exp.c n_exp__E.c n_expm1.c n_floor.c n_fmod.c n_gamma.c \
+	n_erf.c n_exp.c n_exp__E.c n_expm1.c n_floor.c n_fmod.c n_tgamma.c \
 	n_lgamma.c n_j0.c n_j1.c n_jn.c n_log.c n_log10.c n_log1p.c \
 	n_log__L.c n_pow.c n_sinh.c n_tanh.c n_atan2.c n_cabs.c n_cbrt.c \
-	n_sqrt.c n_sincos.c n_tan.c n_argred.c n_support.c n_infnan.c
-        
+	n_sqrt.c n_sincos.c n_tan.c n_argred.c n_support.c n_infnan.c \
+	n_round.c
 
-# NetBSD's C library supplies these functions:
-#COMMON_SRCS+=	s_fabs.c s_frexp.c s_isinf.c s_isnan.c s_ldexp.c s_modf.c
+
+# OpenBSD's C library supplies these functions:
+#COMMON_SRCS+=	s_fabs.c s_frexp.c s_isinf.c s_isinff.c s_isnan.c s_isnanf.c \
+#		s_ldexp.c s_modf.c
 
 .if (${MACHINE_ARCH} == "vax")
 SRCS=	${NOIEEE_SRCS} ${NOIEEE_ARCH}
+MAN+=	infnan.3
 .else
 SRCS=	${COMMON_SRCS}
 .endif
@@ -159,18 +164,21 @@ SRCS=	${COMMON_SRCS}
 
 MAN+=	acos.3 acosh.3 asin.3 asinh.3 atan.3 atan2.3 atanh.3 ceil.3 \
 	cos.3 cosh.3 erf.3 exp.3 fabs.3 floor.3 fmod.3 hypot.3 ieee.3 \
-	infnan.3 logb.3 j0.3 lgamma.3 lrint.3 lround.3 math.3 rint.3 \
-	round.3 sin.3 sinh.3 sqrt.3 tan.3 tanh.3 trunc.3
+	logb.3 j0.3 lgamma.3 lrint.3 lround.3 math.3 nan.3 remainder.3 \
+	rint.3 round.3 sin.3 sinh.3 sqrt.3 tan.3 tanh.3 trunc.3
 
 MLINKS+=erf.3 erfc.3
-MLINKS+=exp.3 expm1.3 exp.3 log.3 exp.3 log10.3 exp.3 log1p.3 exp.3 pow.3
+MLINKS+=exp.3 exp2.3 exp.3 expm1.3 exp.3 log.3 exp.3 log10.3 exp.3 log1p.3 \
+	exp.3 pow.3
 MLINKS+=hypot.3 cabs.3
-MLINKS+=ieee.3 copysign.3 ieee.3 finite.3 ieee.3 ilogb.3 \
-	ieee.3 nextafter.3 ieee.3 remainder.3 ieee.3 scalbn.3
+MLINKS+=ieee.3 copysign.3 ieee.3 ilogb.3 ieee.3 nextafter.3 ieee.3 scalbn.3
 MLINKS+=logb.3 scalb.3
 MLINKS+=logb.3 significand.3
 MLINKS+=j0.3 j1.3 j0.3 jn.3 j0.3 y0.3 j0.3 y1.3 j0.3 yn.3
-MLINKS+=lgamma.3 gamma.3
+MLINKS+=lgamma.3 gamma.3 lgamma.3 tgamma.3
+MLINKS+=lrint.3 llrint.3
+MLINKS+=lround.3 llround.3
+MLINKS+=remainder.3 drem.3 remainder.3 remquo.3
 MLINKS+=sqrt.3 cbrt.3
 
 # float versions
@@ -187,6 +195,7 @@ MLINKS+=cosh.3 coshf.3
 MLINKS+=erf.3 erfcf.3
 MLINKS+=erf.3 erff.3
 MLINKS+=exp.3 expf.3
+MLINKS+=exp.3 exp2f.3
 MLINKS+=exp.3 expm1f.3
 MLINKS+=exp.3 log10f.3
 MLINKS+=exp.3 log1pf.3
@@ -198,15 +207,10 @@ MLINKS+=fmod.3 fmodf.3
 MLINKS+=hypot.3 cabsf.3
 MLINKS+=hypot.3 hypotf.3
 MLINKS+=ieee.3 copysignf.3
-MLINKS+=ieee.3 finitef.3
 MLINKS+=ieee.3 ieeef.3
 MLINKS+=ieee.3 ilogbf.3
 MLINKS+=ieee.3 nextafterf.3
-MLINKS+=ieee.3 remainderf.3
 MLINKS+=ieee.3 scalbnf.3
-MLINKS+=logb.3 logbf.3
-MLINKS+=logb.3 scalbf.3
-MLINKS+=logb.3 significandf.3
 MLINKS+=j0.3 j0f.3
 MLINKS+=j0.3 j1f.3
 MLINKS+=j0.3 jnf.3
@@ -215,13 +219,19 @@ MLINKS+=j0.3 y1f.3
 MLINKS+=j0.3 ynf.3
 MLINKS+=lgamma.3 gammaf.3
 MLINKS+=lgamma.3 lgammaf.3
+MLINKS+=lgamma.3 tgammaf.3
+MLINKS+=logb.3 logbf.3
+MLINKS+=logb.3 scalbf.3
+MLINKS+=logb.3 significandf.3
 MLINKS+=lrint.3 lrintf.3
-MLINKS+=lrint.3 llrint.3
 MLINKS+=lrint.3 llrintf.3
 MLINKS+=lround.3 lroundf.3
-MLINKS+=lround.3 llround.3
 MLINKS+=lround.3 llroundf.3
 MLINKS+=math.3 mathf.3
+MLINKS+=nan.3 nanf.3
+MLINKS+=remainder.3 dremf.3
+MLINKS+=remainder.3 remainderf.3
+MLINKS+=remainder.3 remquof.3
 MLINKS+=rint.3 rintf.3
 MLINKS+=round.3 roundf.3
 MLINKS+=sin.3 sinf.3

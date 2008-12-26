@@ -14,13 +14,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -211,8 +204,10 @@ gdt_reload_cpu(struct cpu_info *ci)
 void
 gdt_grow(void)
 {
-	size_t old_len;
+	CPU_INFO_ITERATOR cii;
+	struct cpu_info *ci;
 	struct vm_page *pg;
+	size_t old_len;
 	vaddr_t va;
 
 	old_len = gdt_size;
@@ -220,15 +215,18 @@ gdt_grow(void)
 	gdt_dynavail =
 	    (gdt_size - DYNSEL_START) / sizeof (struct sys_segment_descriptor);
 
-	for (va = (vaddr_t)gdtstore + old_len;
-	    va < (vaddr_t)gdtstore + gdt_size;
-	    va += PAGE_SIZE) {
-		while ((pg = uvm_pagealloc(NULL, 0, NULL, UVM_PGA_ZERO)) ==
-		       NULL) {
-			uvm_wait("gdt_grow");
+	CPU_INFO_FOREACH(cii, ci) {
+		for (va = (vaddr_t)(ci->ci_gdt) + old_len;
+		    va < (vaddr_t)(ci->ci_gdt) + gdt_size;
+		    va += PAGE_SIZE) {
+			while ((pg =
+			    uvm_pagealloc(NULL, 0, NULL, UVM_PGA_ZERO)) ==
+			    NULL) {
+				uvm_wait("gdt_grow");
+			}
+			pmap_kenter_pa(va, VM_PAGE_TO_PHYS(pg),
+			    VM_PROT_READ | VM_PROT_WRITE);
 		}
-		pmap_kenter_pa(va, VM_PAGE_TO_PHYS(pg),
-		    VM_PROT_READ | VM_PROT_WRITE);
 	}
 }
 

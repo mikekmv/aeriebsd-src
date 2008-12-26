@@ -230,7 +230,7 @@ ENTRY(setjmp, 0)
 
 ENTRY(longjmp, 0)
 	movl	4(ap), r1
-	movl	8(ap), r0
+	movl	$1, r0
 	movl	(r1), ap
 	movl	4(r1), fp
 	movl	12(r1), sp

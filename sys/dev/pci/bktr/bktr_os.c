@@ -171,14 +171,13 @@ bktr_attach(struct device *parent, struct device *self, void *aux)
 	unit = bktr->bktr_dev.dv_unit;
         bktr->dmat = pa->pa_dmat;
 
-	/* Enabled Bus Master
+	/* Enable Back-to-Back
 	   XXX: check if all old DMA is stopped first (e.g. after warm
 	   boot) */
 	fun = pci_conf_read(pa->pa_pc, pa->pa_tag, PCI_COMMAND_STATUS_REG);
 	DPR((" fun=%b", fun, PCI_COMMAND_STATUS_BITS));
 	pci_conf_write(pa->pa_pc, pa->pa_tag, PCI_COMMAND_STATUS_REG,
-	    fun | PCI_COMMAND_MEM_ENABLE | PCI_COMMAND_MASTER_ENABLE |
-	    PCI_COMMAND_BACKTOBACK_ENABLE);
+	    fun | PCI_COMMAND_BACKTOBACK_ENABLE);
 
 	/*
 	 * map memory

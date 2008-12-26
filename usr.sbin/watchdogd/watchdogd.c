@@ -85,6 +85,11 @@ main(int argc, char *argv[])
 		}
 	}
 
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+		usage();
+
 	if (interval == 0 && (interval = period / 3) == 0)
 		interval = 1;
 

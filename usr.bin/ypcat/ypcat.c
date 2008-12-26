@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: ypcat.c,v 1.1.1.1 2008/08/26 14:43:30 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -65,9 +65,9 @@ int key;
 void
 usage(void)
 {
-	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, "\typcat [-k] [-d domainname] [-t] mapname\n");
-	fprintf(stderr, "\typcat -x\n");
+	fprintf(stderr,
+	    "usage: ypcat [-kt] [-d domainname] mapname\n"
+	    "       ypcat -x\n");
 	exit(1);
 }
 

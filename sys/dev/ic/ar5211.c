@@ -506,7 +506,7 @@ ar5k_ar5211_reset(struct ath_hal *hal, HAL_OPMODE op_mode, HAL_CHANNEL *channel,
 	/*
 	 * Write initial RF gain settings
 	 */
-	if (ar5k_rfgain(hal, AR5K_INI_PHY_5111, freq) == AH_FALSE)
+	if (ar5k_rfgain(hal, freq) == AH_FALSE)
 		return (AH_FALSE);
 
 	AR5K_DELAY(1000);

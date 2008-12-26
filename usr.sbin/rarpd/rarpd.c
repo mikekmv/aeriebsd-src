@@ -26,15 +26,14 @@ char    copyright[] =
 #endif				/* not lint */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: rarpd.c,v 1.1.1.1 2008/08/26 14:44:31 root Exp $";
 #endif
 
 
 /*
  * rarpd - Reverse ARP Daemon
  *
- * Usage:	rarpd -a [-d] [-f] [-l] [-t]
- *		rarpd [-d] [-f] [-l] [-t] interface
+ * usage:	rarpd [-adflt] interface
  */
 
 #include <stdio.h>
@@ -256,8 +255,7 @@ init_all(void)
 void
 usage(void)
 {
-	(void) fprintf(stderr, "usage: rarpd -a [-dflt]\n");
-	(void) fprintf(stderr, "       rarpd [-dflt] interface\n");
+	(void) fprintf(stderr, "usage: rarpd [-adflt] interface\n");
 	exit(1);
 }
 

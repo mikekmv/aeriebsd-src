@@ -28,11 +28,10 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: show.c,v 1.1.1.1 2008/08/26 14:40:28 root Exp $";
 #endif
 
 #include <sys/param.h>
-#include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/mbuf.h>
 #include <sys/sysctl.h>

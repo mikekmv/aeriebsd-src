@@ -32,7 +32,7 @@
 #if 0
 static const char sccsid[] = "@(#)head.c	8.2 (Berkeley) 4/20/95";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: head.c,v 1.1.1.1 2008/08/26 14:43:01 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -112,7 +112,7 @@ parse(char *line, struct headline *hl, char *pbuf)
 	cp = nextword(cp, word);
 	if (*word)
 		hl->l_from = copyin(word, &sp);
-	if (cp != NULL && cp[0] == 't' && cp[1] == 't' && cp[2] == 'y') {
+	if (cp != NULL && strncmp(cp, "tty", 3) == 0) {
 		cp = nextword(cp, word);
 		hl->l_tty = copyin(word, &sp);
 	}

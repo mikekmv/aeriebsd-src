@@ -169,11 +169,6 @@ _thread_malloc_unlock(void)
 	_spinunlock(&malloc_lock);
 }
 
-void
-_thread_malloc_init(void)
-{
-}
-
 /*
  * atexit lock
  */

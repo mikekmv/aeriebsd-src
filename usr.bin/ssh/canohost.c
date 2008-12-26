@@ -80,7 +80,7 @@ get_remote_hostname(int sock, int use_dns)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_DGRAM;	/*dummy*/
 	hints.ai_flags = AI_NUMERICHOST;
-	if (getaddrinfo(name, "0", &hints, &ai) == 0) {
+	if (getaddrinfo(name, NULL, &hints, &ai) == 0) {
 		logit("Nasty PTR record \"%s\" is set up for %s, ignoring",
 		    name, ntop);
 		freeaddrinfo(ai);

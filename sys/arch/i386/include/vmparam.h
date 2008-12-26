@@ -75,6 +75,10 @@
 /* I386 has a line where all code is executable: 0 - I386_MAX_EXE_ADDR */
 #define I386_MAX_EXE_ADDR 0x20000000		/* exec line */
 
+/* map PIE into 320MB - 448MB address range */
+#define VM_PIE_MIN_ADDR 0x14000000
+#define VM_PIE_MAX_ADDR 0x1C000000
+
 /*
  * Size of shared memory map
  */
@@ -94,7 +98,7 @@
 #define	DEADBEEF1	0xefffaabb	/* pool's filler */
 
 /* user/kernel map constants */
-#define VM_MIN_ADDRESS		((vaddr_t)0)
+#define VM_MIN_ADDRESS		((vaddr_t)PAGE_SIZE)
 #define VM_MAXUSER_ADDRESS	((vaddr_t)((PDSLOT_PTE<<PDSHIFT) - USPACE))
 #define VM_MAX_ADDRESS		((vaddr_t)((PDSLOT_PTE<<PDSHIFT) + \
 				    (PDSLOT_PTE<<PGSHIFT)))

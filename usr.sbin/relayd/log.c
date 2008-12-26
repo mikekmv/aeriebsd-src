@@ -33,6 +33,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <event.h>
+#include <netdb.h>
 
 #include <openssl/ssl.h>
 
@@ -217,15 +218,12 @@ print_availability(u_long cnt, u_long up)
 const char *
 print_host(struct sockaddr_storage *ss, char *buf, size_t len)
 {
-	int af = ss->ss_family;
-	void *ptr;
-
-	bzero(buf, len);
-	if (af == AF_INET)
-		ptr = &((struct sockaddr_in *)ss)->sin_addr;
-	else
-		ptr = &((struct sockaddr_in6 *)ss)->sin6_addr;
-	return (inet_ntop(af, ptr, buf, len));
+	if (getnameinfo((struct sockaddr *)ss, ss->ss_len,
+	    buf, len, NULL, 0, NI_NUMERICHOST) != 0) {
+		buf[0] = '\0';
+		return (NULL);
+	}
+	return (buf);
 }
 
 const char *

@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: April 17 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt RTW 4
 .Os
 .Sh NAME
@@ -61,16 +61,14 @@ capture packets from networks which it wouldn't normally have access to,
 or to scan for access points.
 .El
 .Pp
+The
 .Nm
-supports software WEP.
-Wired Equivalent Privacy (WEP) is the de facto encryption standard
-for wireless networks.
-It can be typically configured in one of three modes:
-no encryption; 40-bit encryption; or 104-bit encryption.
-Unfortunately, due to serious weaknesses in WEP protocol
-it is strongly recommended that it not be used as the
-sole mechanism to secure wireless communication.
-WEP is not enabled by default.
+driver can be configured to use software
+Wireless Equivalent Privacy (WEP).
+It is strongly recommended that WEP
+not be used as the sole mechanism
+to secure wireless communication,
+due to serious weaknesses in it.
 .Pp
 The
 .Nm
@@ -173,6 +171,7 @@ Join an existing BSS network,
 .Rs
 .%T Realtek
 .%O http://www.realtek.com.tw
+.Re
 .Sh HISTORY
 The
 .Nm

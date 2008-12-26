@@ -4,9 +4,9 @@
 
 /*
  * Patchlevel file for Ian Darwin's MAGIC command.
- * $File: patchlevel.h,v 1.65 2007/05/24 17:22:27 christos Exp $
+ * File: patchlevel.h,v 1.65 2007/05/24 17:22:27 christos Exp
  *
- * $Log: patchlevel.h,v $
+ * Log: patchlevel.h,v
  * Revision 1.8  2008/05/08 01:40:56  chl
  * Update file to 4.21.
  *

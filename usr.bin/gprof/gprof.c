@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)gprof.c	8.1 (Berkeley) 6/6/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: gprof.c,v 1.1.1.1 2008/08/26 14:42:48 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -74,7 +74,8 @@ main(int argc, char *argv[])
 	    cyclethreshold = atoi( *++argv );
 	    break;
 	case 'c':
-#if defined(__i386__) || defined(__vax__) || defined(__tahoe__) || defined(__sparc__)
+#if defined(__i386__) || defined(__vax__) || defined(__tahoe__) || \
+    defined(__sparc__) || defined(__sparc64__)
 	    cflag = TRUE;
 #else
 	    fprintf(stderr, "%s: -c isn't supported on this architecture yet\n", __progname);

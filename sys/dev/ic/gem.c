@@ -385,19 +385,32 @@ gem_tick(void *arg)
 	bus_space_tag_t t = sc->sc_bustag;
 	bus_space_handle_t mac = sc->sc_h1;
 	int s;
+	u_int32_t v;
 
 	/* unload collisions counters */
-	ifp->if_collisions +=
-	    bus_space_read_4(t, mac, GEM_MAC_NORM_COLL_CNT) +
-	    bus_space_read_4(t, mac, GEM_MAC_FIRST_COLL_CNT) +
-	    bus_space_read_4(t, mac, GEM_MAC_EXCESS_COLL_CNT) +
+	v = bus_space_read_4(t, mac, GEM_MAC_EXCESS_COLL_CNT) +
 	    bus_space_read_4(t, mac, GEM_MAC_LATE_COLL_CNT);
+	ifp->if_collisions += v +
+	    bus_space_read_4(t, mac, GEM_MAC_NORM_COLL_CNT) +
+	    bus_space_read_4(t, mac, GEM_MAC_FIRST_COLL_CNT);
+	ifp->if_oerrors += v;
+
+	/* read error counters */
+	ifp->if_ierrors +=
+	    bus_space_read_4(t, mac, GEM_MAC_RX_LEN_ERR_CNT) +
+	    bus_space_read_4(t, mac, GEM_MAC_RX_ALIGN_ERR) +
+	    bus_space_read_4(t, mac, GEM_MAC_RX_CRC_ERR_CNT) +
+	    bus_space_read_4(t, mac, GEM_MAC_RX_CODE_VIOL);
 
 	/* clear the hardware counters */
 	bus_space_write_4(t, mac, GEM_MAC_NORM_COLL_CNT, 0);
 	bus_space_write_4(t, mac, GEM_MAC_FIRST_COLL_CNT, 0);
 	bus_space_write_4(t, mac, GEM_MAC_EXCESS_COLL_CNT, 0);
 	bus_space_write_4(t, mac, GEM_MAC_LATE_COLL_CNT, 0);
+	bus_space_write_4(t, mac, GEM_MAC_RX_LEN_ERR_CNT, 0);
+	bus_space_write_4(t, mac, GEM_MAC_RX_ALIGN_ERR, 0);
+	bus_space_write_4(t, mac, GEM_MAC_RX_CRC_ERR_CNT, 0);
+	bus_space_write_4(t, mac, GEM_MAC_RX_CODE_VIOL, 0);
 
 	s = splnet();
 	mii_tick(&sc->sc_mii);
@@ -1665,10 +1678,12 @@ gem_tint(struct gem_softc *sc, u_int32_t status)
 	}
 	sc->sc_tx_cons = cons;
 
-	gem_start(ifp);
-
+	if (sc->sc_tx_cnt < GEM_NTXDESC - 2)
+		ifp->if_flags &= ~IFF_OACTIVE;
 	if (sc->sc_tx_cnt == 0)
 		ifp->if_timer = 0;
+
+	gem_start(ifp);
 
 	return (1);
 }
@@ -1703,7 +1718,7 @@ gem_start(struct ifnet *ifp)
 		 * or fail...
 		 */
 		if (gem_encap(sc, m, &bix)) {
-			ifp->if_timer = 2;
+			ifp->if_flags |= IFF_OACTIVE;
 			break;
 		}
 

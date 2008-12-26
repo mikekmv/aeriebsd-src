@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)tr.c	8.2 (Berkeley) 5/4/95";
 #endif
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: tr.c,v 1.1.1.1 2008/08/26 14:43:22 root Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -249,9 +249,10 @@ setup(int *string, char *arg, STR *str, int cflag)
 static void
 usage(void)
 {
-	fprintf(stderr, "usage:\ttr [-cs] string1 string2\n"
-	    "\ttr [-c] -d string1\n"
-	    "\ttr [-c] -s string1\n"
-	    "\ttr [-c] -ds string1 string2\n");
+	fprintf(stderr,
+	    "usage: tr [-cs] string1 string2\n"
+	    "       tr [-c] -d string1\n"
+	    "       tr [-c] -s string1\n"
+	    "       tr [-c] -ds string1 string2\n");
 	exit(1);
 }

@@ -819,6 +819,10 @@ dumpsys()
 		return;
 	printf("dumping to dev %x, offset %ld\n", dumpdev, dumplo);
 
+#ifdef UVM_SWAP_ENCRYPT
+	uvm_swap_finicrypt_all();
+#endif
+
 	error = (*bdevsw[major(dumpdev)].d_psize)(dumpdev);
 	if (error == -1) {
 		printf("area unavailable\n");

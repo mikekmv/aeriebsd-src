@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)recv.2	8.3 (Berkeley) 2/21/94
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt RECV 2
 .Os
 .Sh NAME
@@ -329,6 +329,13 @@ member of
 .Fa msg
 was less than 0 or larger than
 .Dv IOV_MAX .
+.It Bq Er EMSGSIZE
+The receiving program did not have sufficient
+free file descriptor slots.
+The descriptors are closed
+and any pending data can be returned
+by another call to
+.Fn recvmsg .
 .El
 .Sh SEE ALSO
 .Xr connect 2 ,

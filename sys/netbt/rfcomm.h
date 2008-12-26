@@ -400,7 +400,8 @@ int rfcomm_session_send_uih(struct rfcomm_session *, struct rfcomm_dlc *, int, s
 int rfcomm_session_send_mcc(struct rfcomm_session *, int, uint8_t, void *, int);
 
 /* rfcomm_socket.c */
-int rfcomm_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *);
+int rfcomm_usrreq(struct socket *, int, struct mbuf *, struct mbuf *,
+    struct mbuf *, struct proc *);
 int rfcomm_ctloutput(int, struct socket *, int, int, struct mbuf **);
 
 /* rfcomm_upper.c */

@@ -79,6 +79,11 @@ db_stack_trace_print(db_expr_t addr, int have_addr, db_expr_t count,
 	db_addr_t callpc, frame, lastframe;
 	uint32_t vbr;
 
+	if (have_addr) {
+		(*print)("sh trace requires a trap frame... giving up\n");
+		return;
+	}
+
 	__asm volatile("stc vbr, %0" : "=r"(vbr));
 
 	frame = ddb_regs.tf_r14;

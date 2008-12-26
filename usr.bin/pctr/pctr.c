@@ -526,6 +526,6 @@ usage(void)
 		break;
 	}
 
-	fprintf(stderr, "%s: %s\n", __progname, usg);
+	fprintf(stderr, "usage: %s %s\n", __progname, usg);
 	exit(1);
 }

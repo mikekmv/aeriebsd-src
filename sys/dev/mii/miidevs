@@ -1,4 +1,4 @@
-version	$ABSD$
+version	$ABSD: miidevs,v 1.1.1.1 2008/08/26 14:42:05 root Exp $
 
 /*-
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
@@ -16,13 +16,6 @@ version	$ABSD$
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -59,6 +52,7 @@ oui AGERE			0x00a0bc	Agere
 oui ICS				0x00a0be	Integrated Circuit Systems
 oui INTEL			0x00aa00	Intel
 oui JATO			0x00e083	Jato Technologies
+oui JMICRON			0x001b8c	JMicron Technologies
 oui LEVEL1			0x00207b	Level 1
 oui MYSON			0x00c0b4	Myson Technology
 oui NATSEMI			0x080017	National Semiconductor
@@ -140,7 +134,7 @@ model xxBROADCOM BCM5705	0x001a BCM5705 10/100/1000baseT PHY
 model xxBROADCOM BCM5750	0x0018 BCM5750 10/100/1000baseT PHY
 model xxBROADCOM BCM54K2	0x002e BCM54K2 10/100/1000baseT PHY
 model xxBROADCOM BCM5714	0x0034 BCM5714 10/100/1000baseT PHY
-model xxBROADCOM BCM5780	0x0035 BCM5780 10/100/1000baseT PHY
+model xxBROADCOM BCM5780	0x0035 BCM5780 10/100/1000baseT/SX PHY
 model xxBROADCOM BCM5708C	0x0036 BCM5708C 10/100/1000baseT PHY
 model xxBROADCOM2 BCM5755	0x000c BCM5755 10/100/1000baseT PHY
 model xxBROADCOM2 BCM5787	0x000e BCM5787 10/100/1000baseT PHY
@@ -222,6 +216,10 @@ model INTEL I82553		0x0035 i82553 10/100 PHY
 
 /* Jato Technologies PHYs */
 model JATO BASEX		0x0000 Jato 1000baseX PHY
+
+/* JMicron Technologies PHYs */
+model JMICRON JMP211		0x0021 JMP211 10/100/1000 PHY
+model JMICRON JMP202		0x0022 JMP202 10/100 PHY
 
 /* Level 1 PHYs */
 model xxLEVEL1 LXT970		0x0000 LXT970 10/100 PHY

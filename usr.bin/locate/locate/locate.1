@@ -29,7 +29,7 @@
 .\"
 .\"	@(#)locate.1	8.1 (Berkeley) 6/6/93
 .\"
-.Dd $Mdocdate: June 25 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt LOCATE 1
 .Os
 .Sh NAME
@@ -37,7 +37,7 @@
 .Nd find filenames quickly
 .Sh SYNOPSIS
 .Nm locate
-.Op Fl cimSs
+.Op Fl bcimSs
 .Op Fl d Ar database
 .Op Fl l Ar limit
 .Ar pattern ...
@@ -88,6 +88,9 @@ Characters less than 32 or greater than 127 are stored as 2 bytes.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl b
+For each entry in the database, perform the search on the last
+component of path.
 .It Fl c
 Suppress normal output; instead print a count of matching file names.
 .It Fl d Ar database

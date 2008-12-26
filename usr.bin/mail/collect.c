@@ -32,7 +32,7 @@
 #if 0
 static const char sccsid[] = "@(#)collect.c	8.2 (Berkeley) 4/19/94";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: collect.c,v 1.1.1.1 2008/08/26 14:43:01 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -531,7 +531,7 @@ forward(char *ms, FILE *fp, char *fn, int f)
 		}
 		msgvec[1] = NULL;
 	}
-	if (f == 'f' || f == 'F')
+	if (tolower(f) == 'f')
 		tabst = NULL;
 	else if ((tabst = value("indentprefix")) == NULL)
 		tabst = "\t";

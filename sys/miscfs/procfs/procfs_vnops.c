@@ -128,7 +128,6 @@ int	procfs_readdir(void *);
 int	procfs_readlink(void *);
 int	procfs_inactive(void *);
 int	procfs_reclaim(void *);
-int	procfs_bmap(void *);
 int	procfs_print(void *);
 int	procfs_pathconf(void *);
 
@@ -139,7 +138,7 @@ static pid_t atopid(const char *, u_int);
  */
 int (**procfs_vnodeop_p)(void *);
 struct vnodeopv_entry_desc procfs_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
+	{ &vop_default_desc, eopnotsupp },
 	{ &vop_lookup_desc, procfs_lookup },		/* lookup */
 	{ &vop_create_desc, procfs_badop },		/* create */
 	{ &vop_mknod_desc, procfs_badop },		/* mknod */
@@ -166,7 +165,7 @@ struct vnodeopv_entry_desc procfs_vnodeop_entries[] = {
 	{ &vop_reclaim_desc, procfs_reclaim },		/* reclaim */
 	{ &vop_lock_desc, nullop },			/* lock */
 	{ &vop_unlock_desc, nullop },			/* unlock */
-	{ &vop_bmap_desc, procfs_bmap },		/* bmap */
+	{ &vop_bmap_desc, vop_generic_bmap },		/* bmap */
 	{ &vop_strategy_desc, procfs_badop },		/* strategy */
 	{ &vop_print_desc, procfs_print },		/* print */
 	{ &vop_islocked_desc, nullop },			/* islocked */
@@ -268,28 +267,6 @@ procfs_ioctl(void *v)
 {
 
 	return (ENOTTY);
-}
-
-/*
- * do block mapping for pfsnode (vp).
- * since we don't use the buffer cache
- * for procfs this function should never
- * be called.  in any case, it's not clear
- * what part of the kernel ever makes use
- * of this function.  for sanity, this is the
- * usual no-op bmap, although returning
- * (EIO) would be a reasonable alternative.
- */
-int
-procfs_bmap(void *v)
-{
-	struct vop_bmap_args *ap = v;
-
-	if (ap->a_vpp != NULL)
-		*ap->a_vpp = ap->a_vp;
-	if (ap->a_bnp != NULL)
-		*ap->a_bnp = ap->a_bn;
-	return (0);
 }
 
 /*
@@ -641,8 +618,8 @@ procfs_access(void *v)
 	if ((error = VOP_GETATTR(ap->a_vp, &va, ap->a_cred, ap->a_p)) != 0)
 		return (error);
 
-	return (vaccess(va.va_mode, va.va_uid, va.va_gid, ap->a_mode,
-			ap->a_cred));
+	return (vaccess(ap->a_vp->v_type, va.va_mode, va.va_uid, va.va_gid,
+			ap->a_mode, ap->a_cred));
 }
 
 /*

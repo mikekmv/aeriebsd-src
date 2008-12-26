@@ -39,6 +39,7 @@
 #endif
 
 #include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_priv.h>
 
 #include <dev/rndvar.h>
 #include <crypto/arc4.h>
@@ -246,7 +247,7 @@ aes_key_wrap(const u_int8_t *kek, size_t kek_len, const u_int8_t *pt,
 	a = ct;
 	memcpy(a, aes_key_wrap_iv, 8);	/* default IV */
 
-	rijndael_set_key_enc_only(&ctx, (u_int8_t *)kek, kek_len * 8);
+	rijndael_set_key_enc_only(&ctx, kek, kek_len * 8);
 
 	for (j = 0, t = 1; j < 6; j++) {
 		r = ct + 8;
@@ -277,7 +278,7 @@ aes_key_unwrap(const u_int8_t *kek, size_t kek_len, const u_int8_t *ct,
 	/* allow ciphertext and plaintext to overlap (ct == pt) */
 	ovbcopy(ct + 8, pt, len * 8);
 
-	rijndael_set_key(&ctx, (u_int8_t *)kek, kek_len * 8);
+	rijndael_set_key(&ctx, kek, kek_len * 8);
 
 	for (j = 0, t = 6 * len; j < 6; j++) {
 		r = pt + (len - 1) * 8;
@@ -464,17 +465,6 @@ ieee80211_derive_pmkid(const u_int8_t *pmk, size_t pmk_len, const u_int8_t *aa,
 	/* use the first 128 bits of the HMAC-SHA1 */
 	memcpy(pmkid, hash, IEEE80211_PMKID_LEN);
 }
-
-/* unaligned big endian access */
-#define BE_READ_2(p)				\
-	((u_int16_t)				\
-         ((((const u_int8_t *)(p))[0] << 8) |	\
-          (((const u_int8_t *)(p))[1])))
-
-#define BE_WRITE_2(p, v) do {			\
-	((u_int8_t *)(p))[0] = (v) >> 8;	\
-	((u_int8_t *)(p))[1] = (v) & 0xff;	\
-} while (0)
 
 /*
  * Compute the Key MIC field of an EAPOL-Key frame using the specified Key

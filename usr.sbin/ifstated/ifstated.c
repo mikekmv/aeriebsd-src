@@ -121,6 +121,11 @@ main(int argc, char *argv[])
 		}
 	}
 
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+		usage();
+
 	if (opts & IFSD_OPT_NOACTION) {
 		if ((newconf = parse_config(configfile, opts)) == NULL)
 			exit(1);

@@ -77,7 +77,7 @@ mpls_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp)
 
 int
 mpls_raw_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam,
-    struct mbuf *control)
+    struct mbuf *control, struct proc *p)
 {
 	int error = 0;
 

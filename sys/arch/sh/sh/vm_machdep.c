@@ -320,7 +320,7 @@ vmapbuf(struct buf *bp, vsize_t len)
 	faddr = trunc_page((vaddr_t)bp->b_data);
 	off = (vaddr_t)bp->b_data - faddr;
 	len = round_page(off + len);
-	taddr = uvm_km_valloc_wait(phys_map, len);
+	taddr = uvm_km_valloc_prefer_wait(phys_map, len, faddr);
 	bp->b_data = (caddr_t)(taddr + off);
 	/*
 	 * The region is locked, so we expect that pmap_pte() will return

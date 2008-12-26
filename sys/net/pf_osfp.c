@@ -334,6 +334,7 @@ pf_osfp_add(struct pf_osfp_ioctl *fpioc)
 	fpadd.fp_wscale = fpioc->fp_wscale;
 	fpadd.fp_ttl = fpioc->fp_ttl;
 
+#if 0	/* XXX RYAN wants to fix logging */
 	DPFPRINTF("adding osfp %s %s %s = %s%d:%d:%d:%s%d:0x%llx %d "
 	    "(TS=%s,M=%s%d,W=%s%d) %x\n",
 	    fpioc->fp_os.fp_class_nm, fpioc->fp_os.fp_version_nm,
@@ -357,17 +358,19 @@ pf_osfp_add(struct pf_osfp_ioctl *fpioc)
 	    (fpadd.fp_flags & PF_OSFP_WSCALE_DC) ? "*" : "",
 	    fpadd.fp_wscale,
 	    fpioc->fp_os.fp_os);
-
+#endif
 
 	if ((fp = pf_osfp_find_exact(&pf_osfp_list, &fpadd))) {
 		 SLIST_FOREACH(entry, &fp->fp_oses, fp_entry) {
 			if (PF_OSFP_ENTRY_EQ(entry, &fpioc->fp_os))
 				return (EEXIST);
 		}
-		if ((entry = pool_get(&pf_osfp_entry_pl, PR_NOWAIT)) == NULL)
+		if ((entry = pool_get(&pf_osfp_entry_pl,
+		    PR_WAITOK|PR_LIMITFAIL)) == NULL)
 			return (ENOMEM);
 	} else {
-		if ((fp = pool_get(&pf_osfp_pl, PR_NOWAIT)) == NULL)
+		if ((fp = pool_get(&pf_osfp_pl,
+		    PR_WAITOK|PR_LIMITFAIL)) == NULL)
 			return (ENOMEM);
 		memset(fp, 0, sizeof(*fp));
 		fp->fp_tcpopts = fpioc->fp_tcpopts;
@@ -379,7 +382,8 @@ pf_osfp_add(struct pf_osfp_ioctl *fpioc)
 		fp->fp_wscale = fpioc->fp_wscale;
 		fp->fp_ttl = fpioc->fp_ttl;
 		SLIST_INIT(&fp->fp_oses);
-		if ((entry = pool_get(&pf_osfp_entry_pl, PR_NOWAIT)) == NULL) {
+		if ((entry = pool_get(&pf_osfp_entry_pl,
+		    PR_WAITOK|PR_LIMITFAIL)) == NULL) {
 			pool_put(&pf_osfp_pl, fp);
 			return (ENOMEM);
 		}

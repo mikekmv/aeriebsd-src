@@ -166,6 +166,7 @@ interface_status(struct ifinfo *ifinfo)
 	if (ifmr.ifm_status & IFM_AVALID) {
 		switch (ifmr.ifm_active & IFM_NMASK) {
 		case IFM_ETHER:
+		case IFM_IEEE80211:
 			if (ifmr.ifm_status & IFM_ACTIVE)
 				goto active;
 			else

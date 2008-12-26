@@ -1,5 +1,6 @@
 
 PROG=	bioctl
+SRCS=	bioctl.c pbkdf2.c
 CFLAGS+=-Wall
 LDADD=	-lutil
 DPADD=	${LIBUTIL}

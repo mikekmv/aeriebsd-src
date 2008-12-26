@@ -40,6 +40,7 @@
 */
 
 #define ENABLE_DECREMENTER_WORKAROUND
+void patch_dec_intr();
 
 static int (*openfirmware)(void *);
 
@@ -112,7 +113,7 @@ __asm (	"	.globl handle_decr_intr\n"
 	"handle_decr_intr:\n"
 	"	rfi\n");
 
-
+void
 patch_dec_intr()
 {
 	int time;

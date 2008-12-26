@@ -69,27 +69,23 @@
 struct ELFNAME(probe_entry) {
 	int (*func)(struct proc *, struct exec_package *, char *,
 	    u_long *, u_int8_t *);
-	int os_mask;
 } ELFNAME(probes)[] = {
 	/* XXX - bogus, shouldn't be size independent.. */
 #ifdef COMPAT_FREEBSD
-	{ freebsd_elf_probe, 1 << OOS_FREEBSD },
-#endif
-#ifdef COMPAT_SVR4
-	{ svr4_elf_probe,
-	    1 << OOS_SVR4 | 1 << OOS_ESIX | 1 << OOS_SOLARIS | 1 << OOS_SCO |
-	    1 << OOS_DELL | 1 << OOS_NCR },
+	{ freebsd_elf_probe },
 #endif
 #ifdef COMPAT_LINUX
-	{ linux_elf_probe, 1 << OOS_LINUX },
+	{ linux_elf_probe },
 #endif
-	{ 0, 1 << OOS_OPENBSD }
+#ifdef COMPAT_SVR4
+	{ svr4_elf_probe },
+#endif
+	{ NULL }
 };
 
 int ELFNAME(load_file)(struct proc *, char *, struct exec_package *,
 	struct elf_args *, Elf_Addr *);
-int ELFNAME(check_header)(Elf_Ehdr *, int);
-int ELFNAME(olf_check_header)(Elf_Ehdr *, int, u_int8_t *);
+int ELFNAME(check_header)(Elf_Ehdr *);
 int ELFNAME(read_from)(struct proc *, struct vnode *, u_long, caddr_t, int);
 void ELFNAME(load_psection)(struct exec_vmcmd_set *, struct vnode *,
 	Elf_Phdr *, Elf_Addr *, Elf_Addr *, int *, int);
@@ -160,7 +156,7 @@ ELFNAME(copyargs)(struct exec_package *pack, struct ps_strings *arginfo,
  * Check header for validity; return 0 for ok, ENOEXEC if error
  */
 int
-ELFNAME(check_header)(Elf_Ehdr *ehdr, int type)
+ELFNAME(check_header)(Elf_Ehdr *ehdr)
 {
 	/*
 	 * We need to check magic, class size, endianess, and version before
@@ -178,64 +174,12 @@ ELFNAME(check_header)(Elf_Ehdr *ehdr, int type)
 	    ehdr->e_version != ELF_TARG_VER)
 		return (ENOEXEC);
 
-	/* Check the type */
-	if (ehdr->e_type != type)
-		return (ENOEXEC);
-
 	/* Don't allow an insane amount of sections. */
 	if (ehdr->e_phnum > ELF_MAX_VALID_PHDR)
 		return (ENOEXEC);
 
 	return (0);
 }
-
-#ifndef	SMALL_KERNEL
-/*
- * Check header for validity; return 0 for ok, ENOEXEC if error.
- * Remember OS tag for callers sake.
- */
-int
-ELFNAME(olf_check_header)(Elf_Ehdr *ehdr, int type, u_int8_t *os)
-{
-	int i;
-
-	/*
-	 * We need to check magic, class size, endianess, version, and OS
-	 * before we look at the rest of the Elf_Ehdr structure. These few
-	 * elements are represented in a machine independant fashion.
-	 */
-	if (!IS_OLF(*ehdr) ||
-	    ehdr->e_ident[OI_CLASS] != ELF_TARG_CLASS ||
-	    ehdr->e_ident[OI_DATA] != ELF_TARG_DATA ||
-	    ehdr->e_ident[OI_VERSION] != ELF_TARG_VER)
-		return (ENOEXEC);
-
-	for (i = 0;
-	    i < sizeof(ELFNAME(probes)) / sizeof(ELFNAME(probes)[0]);
-	    i++) {
-		if ((1 << ehdr->e_ident[OI_OS]) & ELFNAME(probes)[i].os_mask)
-			goto os_ok;
-	}
-	return (ENOEXEC);
-
-os_ok:
-	/* Now check the machine dependant header */
-	if (ehdr->e_machine != ELF_TARG_MACH ||
-	    ehdr->e_version != ELF_TARG_VER)
-		return (ENOEXEC);
-
-	/* Check the type */
-	if (ehdr->e_type != type)
-		return (ENOEXEC);
-
-	/* Don't allow an insane amount of sections. */
-	if (ehdr->e_phnum > ELF_MAX_VALID_PHDR)
-		return (ENOEXEC);
-
-	*os = ehdr->e_ident[OI_OS];
-	return (0);
-}
-#endif	/* !SMALL_KERNEL */
 
 /*
  * Load a psection at the appropriate address
@@ -348,9 +292,6 @@ ELFNAME(load_file)(struct proc *p, char *path, struct exec_package *epp,
 	u_long phsize;
 	Elf_Addr addr;
 	struct vnode *vp;
-#ifndef SMALL_KERNEL
-	u_int8_t os;			/* Just a dummy in this routine */
-#endif
 	Elf_Phdr *base_ph = NULL;
 	struct interp_ld_sec {
 		Elf_Addr vaddr;
@@ -381,11 +322,7 @@ ELFNAME(load_file)(struct proc *p, char *path, struct exec_package *epp,
 				    (caddr_t)&eh, sizeof(eh))) != 0)
 		goto bad1;
 
-	if (ELFNAME(check_header)(&eh, ET_DYN)
-#ifndef SMALL_KERNEL
-	    && ELFNAME(olf_check_header)(&eh, ET_DYN, &os)
-#endif
-	    ) {
+	if (ELFNAME(check_header)(&eh) || eh.e_type != ET_DYN) {
 		error = ENOEXEC;
 		goto bad1;
 	}
@@ -532,8 +469,8 @@ int
 ELFNAME2(exec,makecmds)(struct proc *p, struct exec_package *epp)
 {
 	Elf_Ehdr *eh = epp->ep_hdr;
-	Elf_Phdr *ph, *pp;
-	Elf_Addr phdr = 0;
+	Elf_Phdr *ph, *pp, *base_ph = NULL;
+	Elf_Addr phdr = 0, exe_base = 0;
 	int error, i;
 	char *interp = NULL;
 	u_long pos = 0, phsize;
@@ -542,11 +479,8 @@ ELFNAME2(exec,makecmds)(struct proc *p, struct exec_package *epp)
 	if (epp->ep_hdrvalid < sizeof(Elf_Ehdr))
 		return (ENOEXEC);
 
-	if (ELFNAME(check_header)(eh, ET_EXEC)
-#ifndef SMALL_KERNEL
-	    && ELFNAME(olf_check_header)(eh, ET_EXEC, &os)
-#endif
-	    )
+	if (ELFNAME(check_header)(eh) ||
+	   (eh->e_type != ET_EXEC && eh->e_type != ET_DYN))
 		return (ENOEXEC);
 
 	/*
@@ -574,9 +508,8 @@ ELFNAME2(exec,makecmds)(struct proc *p, struct exec_package *epp)
 	epp->ep_tsize = ELFDEFNNAME(NO_ADDR);
 	epp->ep_dsize = ELFDEFNNAME(NO_ADDR);
 
-	for (i = 0; i < eh->e_phnum; i++) {
-		pp = &ph[i];
-		if (pp->p_type == PT_INTERP) {
+	for (i = 0, pp = ph; i < eh->e_phnum; i++, pp++) {
+		if (pp->p_type == PT_INTERP && !interp) {
 			if (pp->p_filesz >= MAXPATHLEN)
 				goto bad;
 			interp = pool_get(&namei_pool, PR_WAITOK);
@@ -584,8 +517,18 @@ ELFNAME2(exec,makecmds)(struct proc *p, struct exec_package *epp)
 			    pp->p_offset, interp, pp->p_filesz)) != 0) {
 				goto bad;
 			}
-			break;
+		} else if (pp->p_type == PT_LOAD) {
+			if (base_ph == NULL)
+				base_ph = pp;
 		}
+	}
+
+	if (eh->e_type == ET_DYN) {
+		/* need an interpreter and load sections for PIE */
+		if (interp == NULL || base_ph == NULL)
+			goto bad;
+		/* randomize exe_base for PIE */
+		exe_base = uvm_map_pie(base_ph->p_align);
 	}
 
 	/*
@@ -611,13 +554,8 @@ ELFNAME2(exec,makecmds)(struct proc *p, struct exec_package *epp)
 		goto native;
 	}
 #endif
-	for (i = 0;
-	    i < sizeof(ELFNAME(probes)) / sizeof(ELFNAME(probes)[0]) && error;
-	    i++) {
-		if (os == OOS_NULL || ((1 << os) & ELFNAME(probes)[i].os_mask))
-			error = ELFNAME(probes)[i].func ?
-			    (*ELFNAME(probes)[i].func)(p, epp, interp, &pos, &os) :
-			    0;
+	for (i = 0; ELFNAME(probes)[i].func != NULL && error; i++) {
+		error = (*ELFNAME(probes)[i].func)(p, epp, interp, &pos, &os);
 	}
 	if (!error)
 		p->p_os = os;
@@ -627,17 +565,28 @@ ELFNAME2(exec,makecmds)(struct proc *p, struct exec_package *epp)
 #else
 native:
 #endif /* NATIVE_EXEC_ELF */
+
 	/*
 	 * Load all the necessary sections
 	 */
-	for (i = 0; i < eh->e_phnum; i++) {
-		Elf_Addr addr = ELFDEFNNAME(NO_ADDR), size = 0;
+	for (i = 0, pp = ph; i < eh->e_phnum; i++, pp++) {
+		Elf_Addr addr, size = 0;
 		int prot = 0;
+		int flags = 0;
 
-		pp = &ph[i];
-
-		switch (ph[i].p_type) {
+		switch (pp->p_type) {
 		case PT_LOAD:
+			if (exe_base != 0) {
+				if (pp == base_ph) {
+					flags = VMCMD_BASE;
+					addr = exe_base;
+				} else {
+					flags = VMCMD_RELATIVE;
+					addr = pp->p_vaddr - base_ph->p_vaddr;
+				}
+			} else
+				addr = ELFDEFNNAME(NO_ADDR);
+
 			/*
 			 * Calculates size of text and data segments
 			 * by starting at first and going to end of last.
@@ -646,7 +595,18 @@ native:
 			 * for DATA_PLT, is fine for TEXT_PLT.
 			 */
 			ELFNAME(load_psection)(&epp->ep_vmcmds, epp->ep_vp,
-			    &ph[i], &addr, &size, &prot, 0);
+			    pp, &addr, &size, &prot, flags);
+
+			/*
+			 * Update exe_base in case allignment was off.
+			 * For PIE, addr is relative to exe_base so
+			 * adjust it (non PIE exe_base is 0 so no change).
+			 */
+			if (flags == VMCMD_BASE)
+				exe_base = addr;
+			else
+				addr += exe_base;
+
 			/*
 			 * Decide whether it's text or data by looking
 			 * at the protection of the section
@@ -710,6 +670,8 @@ native:
 		}
 	}
 
+	phdr += exe_base;
+
 	/*
 	 * Strangely some linux programs may have all load sections marked
 	 * writeable, in this case, textsize is not -1, but rather 0;
@@ -727,7 +689,7 @@ native:
 	}
 
 	epp->ep_interp = interp;
-	epp->ep_entry = eh->e_entry;
+	epp->ep_entry = eh->e_entry + exe_base;
 
 	/*
 	 * Check if we found a dynamically linked binary and arrange to load
@@ -741,14 +703,14 @@ native:
 		ap->arg_phaddr = phdr;
 		ap->arg_phentsize = eh->e_phentsize;
 		ap->arg_phnum = eh->e_phnum;
-		ap->arg_entry = eh->e_entry;
+		ap->arg_entry = eh->e_entry + exe_base;
 		ap->arg_os = os;
 
 		epp->ep_emul_arg = ap;
 		epp->ep_interp_pos = pos;
 	}
 
-#if defined(COMPAT_SVR4) && defined(i386)
+#if defined(COMPAT_SVR4) && defined(i386) && 0	/* nothing sets OOS_DELL... */
 #ifndef ELF_MAP_PAGE_ZERO
 	/* Dell SVR4 maps page zero, yeuch! */
 	if (p->p_os == OOS_DELL)

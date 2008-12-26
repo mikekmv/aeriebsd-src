@@ -12,6 +12,7 @@ option		DST=0		# daylight saving time used by RTC
 #makeoptions	DEBUG="-g"	# compile full symbol table
 
 option		FFS		# UFS
+option		FFS2		# UFS2
 #option		EXT2FS		# Linux ext2fs
 
 option		NFSCLIENT	# Network File System client
@@ -19,12 +20,12 @@ option		NFSCLIENT	# Network File System client
 option		CD9660		# ISO 9660 + Rock Ridge file system
 option		UDF
 option		MSDOSFS		# MS-DOS file system
-option		FIFO		# FIFOs; RECOMMENDED
 
 option		INET		# IP + ICMP + TCP + UDP
 option		INET6		# IPv6 (needs INET)
 
 option		BOOT_CONFIG	# boot-time kernel config
+option		CRYPTO		# Cryptographic framework
 
 option		RAMDISK_HOOKS
 option		MINIROOTSIZE=4480
@@ -196,6 +197,8 @@ pcscp*	at pci?			# AMD 53c974 PCscsi-PCI SCSI
 scsibus* at pcscp?
 #trm*	at pci?			# Tekram DC-3x5U SCSI Controllers
 #scsibus* at trm?
+softraid0	at root		# Software RAID
+scsibus* at softraid?
 
 # I2O
 iop*	at pci?			# I2O processor
@@ -286,7 +289,6 @@ bwi*	at pci?			# Broadcom AirForce (802.11b/g)
 bwi*	at cardbus?		# Broadcom AirForce (802.11b/g)
 wi*	at pci?			# WaveLAN IEEE 802.11DS
 wi*	at pcmcia?		# WaveLAN IEEE 802.11DS
-#awi*	at pcmcia?		# Bay Networks IEEE 802.11FH
 an*	at pcmcia?		# Aironet IEEE 802.11DS
 #cnw*	at pcmcia?		# Xircom Netwave
 #ray*	at pcmcia?		# Raylink Aviator2.4/Pro 802.11FH
@@ -337,3 +339,4 @@ pseudo-device	bpfilter 1	# packet filter
 pseudo-device	rd	1	# ramdisk
 pseudo-device	ccd	4	# concatenated disk devices
 pseudo-device	wsmux	2
+pseudo-device	bio	1	# ioctl multiplexing device

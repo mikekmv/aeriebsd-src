@@ -111,6 +111,12 @@ struct timecounter tick_timecounter = {
 	tick_get_timecount, NULL, ~0u, 0, "tick", 0, NULL
 };
 
+u_int sys_tick_get_timecount(struct timecounter *);
+
+struct timecounter sys_tick_timecounter = {
+	sys_tick_get_timecount, NULL, ~0u, 0, "sys_tick", 1000, NULL
+};
+
 /*
  * Statistics clock interval and variance, in usec.  Variance must be a
  * power of two.  Since this gives us an even number, not an odd number,
@@ -322,7 +328,14 @@ clockattach_ebus(parent, self, aux)
 	/* hard code to 8K? */
 	sz = ea->ea_regs[0].size;
 
-	if (ebus_bus_map(ea->ea_iotag, 0,
+	if (ea->ea_nvaddrs) {
+		if (bus_space_map(ea->ea_memtag, ea->ea_vaddrs[0], 0,
+		    BUS_SPACE_MAP_PROMADDRESS, &cwi.cwi_bh) != 0) {
+			printf("%s: can't map register\n", self->dv_xname);
+			return;
+		}
+		bt = ea->ea_memtag;
+	} else if (ebus_bus_map(ea->ea_iotag, 0,
 	    EBUS_PADDR_FROM_REG(&ea->ea_regs[0]), sz, 0, 0, &cwi.cwi_bh) == 0) {
 		bt = ea->ea_iotag;
 	} else if (ebus_bus_map(ea->ea_memtag, 0,
@@ -467,13 +480,13 @@ timerattach(parent, self, aux)
 	timerreg_4u.t_mapintr = (int64_t *)(u_long)va[2];
 
 	/* Install the appropriate interrupt vector here */
-	level10.ih_number = ma->ma_interrupts[0];
+	level10.ih_number = INTVEC(ma->ma_interrupts[0]);
 	level10.ih_clr = (void *)&timerreg_4u.t_clrintr[0];
 	level10.ih_map = (void *)&timerreg_4u.t_mapintr[0];
 	strlcpy(level10.ih_name, "clock", sizeof(level10.ih_name));
 	intr_establish(10, &level10);
 
-	level14.ih_number = ma->ma_interrupts[1];
+	level14.ih_number = INTVEC(ma->ma_interrupts[1]);
 	level14.ih_clr = (void *)&timerreg_4u.t_clrintr[1];
 	level14.ih_map = (void *)&timerreg_4u.t_mapintr[1];
 	strlcpy(level14.ih_name, "prof", sizeof(level14.ih_name));
@@ -531,12 +544,14 @@ myetheraddr(cp)
  * The frequencies of these clocks must be an even number of microseconds.
  */
 void
-cpu_initclocks()
+cpu_initclocks(void)
 {
 	int statint, minint;
 #ifdef DEBUG
 	extern int intrdebug;
 #endif
+	u_int sys_tick_rate;
+	int impl = 0;
 
 #ifdef DEBUG
 	/* Set a 1s clock */
@@ -560,7 +575,21 @@ cpu_initclocks()
 
 	tick_timecounter.tc_frequency = cpu_clockrate;
 	tc_init(&tick_timecounter);
-	
+
+	/*
+	 * UltraSPARC IIe processors do have a STICK register, but it
+	 * lives on the PCI host bridge and isn't accessable through
+	 * ASR24.
+	 */
+	if (CPU_ISSUN4U || CPU_ISSUN4US)
+		impl = (getver() & VER_IMPL) >> VER_IMPL_SHIFT;
+
+	sys_tick_rate = getpropint(findroot(), "stick-frequency", 0);
+	if (sys_tick_rate > 0 && impl != IMPL_HUMMINGBIRD) {
+		sys_tick_timecounter.tc_frequency = sys_tick_rate;
+		tc_init(&sys_tick_timecounter);
+	}
+
 	/*
 	 * Now handle machines w/o counter-timers.
 	 */
@@ -898,6 +927,16 @@ tick_get_timecount(struct timecounter *tc)
 	u_int64_t tick;
 
 	__asm __volatile("rd %%tick, %0" : "=r" (tick) :);
+
+	return (tick & ~0u);
+}
+
+u_int
+sys_tick_get_timecount(struct timecounter *tc)
+{
+	u_int64_t tick;
+
+	__asm __volatile("rd %%sys_tick, %0" : "=r" (tick) :);
 
 	return (tick & ~0u);
 }

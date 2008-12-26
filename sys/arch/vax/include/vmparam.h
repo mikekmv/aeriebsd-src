@@ -95,7 +95,7 @@
 #define	vax_trunc_page(x) ((vaddr_t)(x) & ~VAX_PGOFSET)
 
 /* user/kernel map constants */
-#define VM_MIN_ADDRESS		((vaddr_t)0)
+#define VM_MIN_ADDRESS		((vaddr_t)PAGE_SIZE)
 #define VM_MAXUSER_ADDRESS	((vaddr_t)KERNBASE)
 #define VM_MAX_ADDRESS		((vaddr_t)KERNBASE)
 #define VM_MIN_KERNEL_ADDRESS	((vaddr_t)KERNBASE)

@@ -1,13 +1,13 @@
 ./pcs750.bin
 ./sbin/kbd
 ./sbin/wsconsctl
-./usr/lib/gcc-lib/vax-unknown-openbsd4.3
-./usr/lib/gcc-lib/vax-unknown-openbsd4.3/2.95.3
-./usr/lib/gcc-lib/vax-unknown-openbsd4.3/2.95.3/cc1
-./usr/lib/gcc-lib/vax-unknown-openbsd4.3/2.95.3/collect2
-./usr/lib/gcc-lib/vax-unknown-openbsd4.3/2.95.3/cpp0
-./usr/lib/gcc-lib/vax-unknown-openbsd4.3/2.95.3/include
-./usr/lib/gcc-lib/vax-unknown-openbsd4.3/2.95.3/specs
+./usr/lib/gcc-lib/vax-unknown-openbsd4.4
+./usr/lib/gcc-lib/vax-unknown-openbsd4.4/2.95.3
+./usr/lib/gcc-lib/vax-unknown-openbsd4.4/2.95.3/cc1
+./usr/lib/gcc-lib/vax-unknown-openbsd4.4/2.95.3/collect2
+./usr/lib/gcc-lib/vax-unknown-openbsd4.4/2.95.3/cpp0
+./usr/lib/gcc-lib/vax-unknown-openbsd4.4/2.95.3/include
+./usr/lib/gcc-lib/vax-unknown-openbsd4.4/2.95.3/specs
 ./usr/libdata/perl5/site_perl/vax-openbsd
 ./usr/libdata/perl5/site_perl/vax-openbsd/_h2ph_pre.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/a.out.ph
@@ -49,6 +49,7 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/crypto/deflate.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/crypto/des.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/crypto/des_locl.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/crypto/idgen.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/crypto/md5.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/crypto/michael.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/crypto/podd.ph
@@ -171,8 +172,6 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/am79900reg.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/am7990reg.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/am7990var.ph
-./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/am79c930reg.ph
-./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/am79c930var.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/amireg.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/amivar.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/anreg.ph
@@ -189,8 +188,6 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/atwreg.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/atwvar.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/atxxreg.ph
-./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/awireg.ph
-./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/awivar.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/ax88190reg.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/ax88190var.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/ic/bhareg.ph
@@ -487,6 +484,7 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/drm.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/drmP.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/drm_atomic.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/drm_internal.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/drm_linux_list.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/drm_pciids.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/drm_sarea.ph
@@ -502,6 +500,7 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/r300_reg.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/radeon_drm.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/radeon_drv.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/radeon_microcode.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/savage_drm.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/savage_drv.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/drm/sis_drm.ph
@@ -546,6 +545,7 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/if_iwivar.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/if_iwnreg.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/if_iwnvar.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/if_ix.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/if_ixgb.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/if_ixgb_osdep.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/if_lgereg.ph
@@ -583,6 +583,8 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/ixgb_ee.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/ixgb_hw.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/ixgb_ids.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/ixgbe.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/ixgbe_type.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/lofnreg.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/lofnvar.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/pci/musyccreg.ph
@@ -850,6 +852,7 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/vesa/vesafbvar.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/video_if.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/videovar.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/dev/vmtvar.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/vndioctl.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/wscons
 ./usr/libdata/perl5/site_perl/vax-openbsd/dev/wscons/ascii.ph
@@ -1123,6 +1126,7 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/net/route.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/net/slcompress.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/net/slip.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/net/trunklacp.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/net/zlib.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/net80211
 ./usr/libdata/perl5/site_perl/vax-openbsd/net80211/ieee80211.ph
@@ -1130,6 +1134,7 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/net80211/ieee80211_crypto.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/net80211/ieee80211_ioctl.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/net80211/ieee80211_node.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/net80211/ieee80211_priv.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/net80211/ieee80211_proto.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/net80211/ieee80211_radiotap.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/net80211/ieee80211_regdomain.ph
@@ -1237,7 +1242,6 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/objc/typedstream.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/ocurses.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/ohash.ph
-./usr/libdata/perl5/site_perl/vax-openbsd/olf_abi.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/openssl
 ./usr/libdata/perl5/site_perl/vax-openbsd/openssl/acss.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/openssl/aes.ph
@@ -1641,6 +1645,7 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/ka820.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/kcore.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/limits.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/vax/loadfile_machdep.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/lock.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/macros.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/mtpr.ph
@@ -1667,6 +1672,7 @@
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/trap.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/uvax.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/varargs.ph
+./usr/libdata/perl5/site_perl/vax-openbsd/vax/vaxfp.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/vmparam.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vax/vsbus.ph
 ./usr/libdata/perl5/site_perl/vax-openbsd/vis.ph

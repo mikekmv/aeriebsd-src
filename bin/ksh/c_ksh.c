@@ -8,7 +8,7 @@
 #include <ctype.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: c_ksh.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 int
@@ -1158,8 +1158,8 @@ c_kill(char **wp)
 	}
 	if ((lflag && t) || (!wp[i] && !lflag)) {
 		shf_fprintf(shl_out,
-		    "Usage: kill [ -s signame | -signum | -signame ] {pid|job}...\n"
-		    "       kill -l [exit_status]\n");
+		    "usage: kill [-s signame | -signum | -signame] { job | pid | pgrp } ...\n"
+		    "       kill -l [exit_status ...]\n");
 		bi_errorf(null);
 		return 1;
 	}

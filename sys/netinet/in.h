@@ -265,6 +265,7 @@ struct ip_opts {
 #define IP_RECVIF		30   /* bool; receive reception if w/dgram */
 #define IP_RECVTTL		31   /* bool; receive IP TTL w/dgram */
 #define IP_MINTTL		32   /* minimum TTL for packet or drop */
+#define IP_RECVDSTPORT		33   /* bool; receive IP dst port w/dgram */
 
 /*
  * Security levels - IPsec, not IPSO

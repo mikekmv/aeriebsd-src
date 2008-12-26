@@ -66,6 +66,7 @@
 #define	SO_REUSEPORT	0x0200		/* allow local address & port reuse */
 #define SO_JUMBO	0x0400		/* try to use jumbograms */
 #define SO_TIMESTAMP	0x0800		/* timestamp received dgram traffic */
+#define	SO_BINDANY	0x1000		/* allow bind to any address */
 
 /*
  * Additional options, not kept in so_options.

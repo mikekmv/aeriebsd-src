@@ -89,9 +89,9 @@ struct pool pipe_pool;
 void	pipeclose(struct pipe *);
 void	pipe_free_kmem(struct pipe *);
 int	pipe_create(struct pipe *);
-static __inline int pipelock(struct pipe *);
-static __inline void pipeunlock(struct pipe *);
-static __inline void pipeselwakeup(struct pipe *);
+int	pipelock(struct pipe *);
+void	pipeunlock(struct pipe *);
+void	pipeselwakeup(struct pipe *);
 int	pipespace(struct pipe *, u_int);
 
 /*
@@ -222,7 +222,7 @@ pipe_create(struct pipe *cpipe)
 /*
  * lock a pipe for I/O, blocking other access
  */
-static __inline int
+int
 pipelock(struct pipe *cpipe)
 {
 	int error;
@@ -238,7 +238,7 @@ pipelock(struct pipe *cpipe)
 /*
  * unlock a pipe I/O lock
  */
-static __inline void
+void
 pipeunlock(struct pipe *cpipe)
 {
 	cpipe->pipe_state &= ~PIPE_LOCK;
@@ -248,7 +248,7 @@ pipeunlock(struct pipe *cpipe)
 	}
 }
 
-static __inline void
+void
 pipeselwakeup(struct pipe *cpipe)
 {
 	if (cpipe->pipe_state & PIPE_SEL) {

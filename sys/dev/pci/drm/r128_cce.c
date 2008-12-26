@@ -353,11 +353,9 @@ static int r128_do_init_cce(struct drm_device * dev, drm_r128_init_t * init)
 
 	DRM_DEBUG("\n");
 
-	dev_priv = drm_alloc(sizeof(drm_r128_private_t), DRM_MEM_DRIVER);
+	dev_priv = drm_calloc(1, sizeof(drm_r128_private_t), DRM_MEM_DRIVER);
 	if (dev_priv == NULL)
 		return -ENOMEM;
-
-	memset(dev_priv, 0, sizeof(drm_r128_private_t));
 
 	dev_priv->is_pci = init->is_pci;
 
@@ -558,6 +556,7 @@ static int r128_do_init_cce(struct drm_device * dev, drm_r128_init_t * init)
 #if __OS_HAS_AGP
 	if (dev_priv->is_pci) {
 #endif
+		dev_priv->gart_info.table_mask = DMA_BIT_MASK(32);
 		dev_priv->gart_info.gart_table_location = DRM_ATI_GART_MAIN;
 		dev_priv->gart_info.table_size = R128_PCIGART_TABLE_SIZE;
 		dev_priv->gart_info.addr = NULL;
@@ -649,7 +648,7 @@ int r128_cce_start(struct drm_device *dev, void *data, struct drm_file *file_pri
 	LOCK_TEST_WITH_RETURN(dev, file_priv);
 
 	if (dev_priv->cce_running || dev_priv->cce_mode == R128_PM4_NONPM4) {
-		DRM_DEBUG("%s while CCE running\n", __FUNCTION__);
+		DRM_DEBUG("while CCE running\n");
 		return 0;
 	}
 
@@ -708,7 +707,7 @@ int r128_cce_reset(struct drm_device *dev, void *data, struct drm_file *file_pri
 	LOCK_TEST_WITH_RETURN(dev, file_priv);
 
 	if (!dev_priv) {
-		DRM_DEBUG("%s called before init done\n", __FUNCTION__);
+		DRM_DEBUG("called before init done\n");
 		return -EINVAL;
 	}
 
@@ -764,11 +763,11 @@ static int r128_freelist_init(struct drm_device * dev)
 	drm_r128_freelist_t *entry;
 	int i;
 
-	dev_priv->head = drm_alloc(sizeof(drm_r128_freelist_t), DRM_MEM_DRIVER);
+	dev_priv->head = drm_calloc(1, sizeof(drm_r128_freelist_t),
+	    DRM_MEM_DRIVER);
 	if (dev_priv->head == NULL)
 		return -ENOMEM;
 
-	memset(dev_priv->head, 0, sizeof(drm_r128_freelist_t));
 	dev_priv->head->age = R128_BUFFER_USED;
 
 	for (i = 0; i < dma->buf_count; i++) {

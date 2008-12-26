@@ -32,7 +32,7 @@
 #if 0
 static const char sccsid[] = "@(#)edit.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: edit.c,v 1.1.1.1 2008/08/26 14:43:01 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -127,7 +127,7 @@ edit1(int *msgvec, int type)
 					break;
 			}
 			if (ferror(otf))
-				warn("/tmp");
+				warn("%s", tmpdir);
 			(void)Fclose(fp);
 		}
 		(void)sigprocmask(SIG_SETMASK, &oset, NULL);

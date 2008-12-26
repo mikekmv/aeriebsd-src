@@ -394,7 +394,7 @@ main(void *framep)
 	{
 		volatile long newguard[8];
 
-		arc4random_bytes((long *)newguard, sizeof(newguard));
+		arc4random_buf((long *)newguard, sizeof(newguard));
 
 		for (i = sizeof(__guard)/sizeof(__guard[0]) - 1; i; i--)
 			__guard[i] = newguard[i];

@@ -41,7 +41,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)cut.c	8.3 (Berkeley) 5/4/95";
 #endif
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: cut.c,v 1.1.1.1 2008/08/26 14:42:42 root Exp $";
 #endif /* not lint */
 
 #include <ctype.h>
@@ -281,8 +281,8 @@ void
 usage(void)
 {
 	(void)fprintf(stderr,
-		"usage:  cut -b list [-n] [file ...]\n"
-		"\tcut -c list [file ...]\n"
-		"\tcut -f list [-d delim] [-s] [file ...]\n");
+	    "usage: cut -b list [-n] [file ...]\n"
+	    "       cut -c list [file ...]\n"
+	    "       cut -f list [-s] [-d delim] [file ...]\n");
 	exit(1);
 }

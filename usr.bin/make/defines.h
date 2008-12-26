@@ -1,8 +1,3 @@
-#ifndef DEFINES_H
-#define DEFINES_H
-
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -27,6 +22,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef DEFINES_H
+#define DEFINES_H
 
 #ifdef HAS_STDBOOL_H
 # include <stdbool.h>

@@ -63,6 +63,12 @@
 #define DPRINTF(x...)	do {} while(0)
 #endif
 
+/* Used for DNS request ID randomization */
+struct shuffle {
+	u_int16_t	 id_shuffle[65536];
+	int		 isindex;
+};
+
 /* buffer */
 struct buf {
 	TAILQ_ENTRY(buf)	 entry;
@@ -156,7 +162,8 @@ enum imsg_type {
 	IMSG_RECONF_RELAY,
 	IMSG_RECONF_END,
 	IMSG_SCRIPT,
-	IMSG_SNMPSOCK
+	IMSG_SNMPSOCK,
+	IMSG_BINDANY
 };
 
 struct imsg_hdr {
@@ -273,6 +280,16 @@ struct ctl_natlook {
 	in_port_t		 rsport;
 	in_port_t		 rdport;
 	int			 in;
+	int			 proto;
+};
+
+struct ctl_bindany {
+	objid_t			 bnd_id;
+	int			 bnd_proc;
+
+	struct sockaddr_storage	 bnd_ss;
+	in_port_t		 bnd_port;
+	int			 bnd_proto;
 };
 
 struct ctl_stats {
@@ -318,10 +335,16 @@ TAILQ_HEAD(addresslist, address);
 #define F_RETURN		0x00020000
 #define F_TRAP			0x00040000
 #define F_NEEDPF		0x00080000
-#define F_ROUTE			0x00100000
+
+enum forwardmode {
+	FWD_NORMAL		= 0,
+	FWD_ROUTE,
+	FWD_TRANS
+};
 
 struct host_config {
 	objid_t			 id;
+	objid_t			 parentid;
 	objid_t			 tableid;
 	int			 retry;
 	char			 name[MAXHOSTNAMELEN];
@@ -330,6 +353,8 @@ struct host_config {
 
 struct host {
 	TAILQ_ENTRY(host)	 entry;
+	SLIST_ENTRY(host)	 child;
+	SLIST_HEAD(,host)	 children;
 	struct host_config	 conf;
 	u_int32_t		 flags;
 	char			*tablename;
@@ -372,6 +397,7 @@ struct table_config {
 	char			 exbuf[64];
 	char			 digest[41]; /* length of sha1 digest * 2 */
 	u_int8_t		 digest_type;
+	enum forwardmode	 fwdmode;
 };
 
 struct table {
@@ -435,6 +461,7 @@ struct session {
 	struct evbuffer			*se_log;
 	struct relay			*se_relay;
 	struct ctl_natlook		*se_cnl;
+	int				 se_bnds;
 
 	SPLAY_ENTRY(session)		 se_nodes;
 };
@@ -540,7 +567,7 @@ struct protocol {
 	struct proto_tree	 response_tree;
 
 	int			(*cmp)(struct session *, struct session *);
-	void			*(*validate)(struct relay *,
+	void			*(*validate)(struct session *, struct relay *,
 				    struct sockaddr_storage *,
 				    u_int8_t *, size_t);
 	int			(*request)(struct session *);
@@ -554,6 +581,7 @@ struct relay_config {
 	u_int32_t		 flags;
 	objid_t			 proto;
 	char			 name[MAXHOSTNAMELEN];
+	char			 ifname[IFNAMSIZ];
 	in_port_t		 port;
 	in_port_t		 dstport;
 	int			 dstmode;
@@ -561,7 +589,9 @@ struct relay_config {
 	objid_t			 dsttable;
 	struct sockaddr_storage	 ss;
 	struct sockaddr_storage	 dstss;
+	struct sockaddr_storage	 dstaf;
 	struct timeval		 timeout;
+	enum forwardmode	 fwdmode;
 };
 
 struct relay {
@@ -739,10 +769,10 @@ void	 show(struct ctl_conn *);
 void	 show_sessions(struct ctl_conn *);
 int	 enable_rdr(struct ctl_conn *, struct ctl_id *);
 int	 enable_table(struct ctl_conn *, struct ctl_id *);
-int	 enable_host(struct ctl_conn *, struct ctl_id *);
+int	 enable_host(struct ctl_conn *, struct ctl_id *, struct host *);
 int	 disable_rdr(struct ctl_conn *, struct ctl_id *);
 int	 disable_table(struct ctl_conn *, struct ctl_id *);
-int	 disable_host(struct ctl_conn *, struct ctl_id *);
+int	 disable_host(struct ctl_conn *, struct ctl_id *, struct host *);
 
 /* pfe_filter.c */
 void	 init_filter(struct relayd *);
@@ -780,6 +810,7 @@ SPLAY_PROTOTYPE(session_tree, session, se_nodes, relay_session_cmp);
 
 /* relay_udp.c */
 void	 relay_udp_privinit(struct relayd *, struct relay *);
+void	 relay_udp_init(struct relay *);
 int	 relay_udp_bind(struct sockaddr_storage *, in_port_t,
 	    struct protocol *);
 void	 relay_udp_server(int, short, void *);
@@ -832,6 +863,8 @@ struct protonode *protonode_header(enum direction, struct protocol *,
 		    struct protonode *);
 int		 protonode_add(enum direction, struct protocol *,
 		    struct protonode *);
+int		 map6to4(struct sockaddr_storage *);
+int		 map4to6(struct sockaddr_storage *, struct sockaddr_storage *);
 
 /* carp.c */
 int	 carp_demote_init(char *, int);
@@ -850,3 +883,8 @@ void		 pn_ref(u_int16_t);
 void	 snmp_init(struct relayd *, struct imsgbuf *);
 int	 snmp_sendsock(struct imsgbuf *);
 void	 snmp_hosttrap(struct table *, struct host *);
+
+/* shuffle.c */
+void		shuffle_init(struct shuffle *);
+u_int16_t	shuffle_generate16(struct shuffle *);
+

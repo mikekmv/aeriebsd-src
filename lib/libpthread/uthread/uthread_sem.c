@@ -36,7 +36,9 @@
 #include "pthread_private.h"
 
 #define _SEM_CHECK_VALIDITY(sem)		\
-	if ((*(sem))->magic != SEM_MAGIC) {	\
+	if ((sem) == NULL ||			\
+	    *(sem) == NULL ||			\
+	    (*(sem))->magic != SEM_MAGIC) {	\
 		errno = EINVAL;			\
 		retval = -1;			\
 		goto RETURN;			\

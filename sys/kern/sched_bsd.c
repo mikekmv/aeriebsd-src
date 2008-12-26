@@ -87,7 +87,6 @@ scheduler_start(void)
 /*
  * Force switch among equal priority processes every 100ms.
  */
-/* ARGSUSED */
 void
 roundrobin(struct cpu_info *ci)
 {
@@ -202,7 +201,6 @@ fixpt_t	ccpu = 0.95122942450071400909 * FSCALE;		/* exp(-1/20) */
 /*
  * Recompute process priorities, every hz ticks.
  */
-/* ARGSUSED */
 void
 schedcpu(void *arg)
 {
@@ -222,7 +220,7 @@ schedcpu(void *arg)
 	phz = stathz ? stathz : profhz;
 	KASSERT(phz);
 
-	for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
+	LIST_FOREACH(p, &allproc, p_list) {
 		/*
 		 * Increment time in/out of memory and sleep time
 		 * (if sleeping).  We ignore overflow; with 16-bit int's
@@ -414,6 +412,8 @@ mi_switch(void)
 	} else {
 		p->p_stat = SONPROC;
 	}
+
+	clear_resched(curcpu());
 
 	SCHED_ASSERT_LOCKED();
 

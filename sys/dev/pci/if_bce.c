@@ -246,13 +246,8 @@ bce_attach(struct device *parent, struct device *self, void *aux)
 	 * Map control/status registers.
 	 */
 	memtype = pci_mapreg_type(pa->pa_pc, pa->pa_tag, BCE_PCI_BAR0);
-	switch (memtype) {
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT:
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT:
-		if (pci_mapreg_map(pa, BCE_PCI_BAR0, memtype, 0, &sc->bce_btag,
-		    &sc->bce_bhandle, &memaddr, &memsize, 0) == 0)
-			break;
-	default:
+	if (pci_mapreg_map(pa, BCE_PCI_BAR0, memtype, 0, &sc->bce_btag,
+	    &sc->bce_bhandle, &memaddr, &memsize, 0)) {
 		printf(": unable to find mem space\n");
 		return;
 	}
@@ -1492,9 +1487,11 @@ void
 bce_tick(void *v)
 {
 	struct bce_softc *sc = v;
+	int s;
 
-	/* Tick the MII. */
+	s = splnet();
 	mii_tick(&sc->bce_mii);
+	splx(s);
 
 	timeout_add(&sc->bce_timeout, hz);
 }

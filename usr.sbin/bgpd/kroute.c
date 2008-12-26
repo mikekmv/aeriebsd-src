@@ -1758,6 +1758,7 @@ send_rtmsg(int fd, int action, struct kroute *kroute)
 	hdr.rtm_type = action;
 	hdr.rtm_tableid = kr_state.rtableid;
 	hdr.rtm_flags = RTF_PROTO1;
+	hdr.rtm_priority = RTP_BGP;
 	if (kroute->flags & F_BLACKHOLE)
 		hdr.rtm_flags |= RTF_BLACKHOLE;
 	if (kroute->flags & F_REJECT)
@@ -2029,8 +2030,6 @@ fetchtable(u_int rtableid, int connected_only)
 
 			kr->r.flags = F_KERNEL;
 			kr->r.ifindex = rtm->rtm_index;
-			if (rtm->rtm_index)
-				kr->r.flags |= F_CONNECTED;
 			kr->r.prefix.s_addr =
 			    ((struct sockaddr_in *)sa)->sin_addr.s_addr;
 			sa_in = (struct sockaddr_in *)rti_info[RTAX_NETMASK];
@@ -2063,8 +2062,6 @@ fetchtable(u_int rtableid, int connected_only)
 
 			kr6->r.flags = F_KERNEL;
 			kr6->r.ifindex = rtm->rtm_index;
-			if (rtm->rtm_index)
-				kr6->r.flags |= F_CONNECTED;
 			memcpy(&kr6->r.prefix,
 			    &((struct sockaddr_in6 *)sa)->sin6_addr,
 			    sizeof(kr6->r.prefix));
@@ -2107,6 +2104,10 @@ fetchtable(u_int rtableid, int connected_only)
 				    sizeof(kr6->r.nexthop));
 				break;
 			case AF_LINK:
+				if (sa->sa_family == AF_INET)
+					kr->r.flags |= F_CONNECTED;
+				else if (sa->sa_family == AF_INET6)
+					kr6->r.flags |= F_CONNECTED;
 				break;
 			}
 

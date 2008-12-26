@@ -82,6 +82,12 @@ struct timeout {
 #ifdef _KERNEL
 void timeout_set(struct timeout *, void (*)(void *), void *);
 void timeout_add(struct timeout *, int);
+void timeout_add_tv(struct timeout *, struct timeval *);
+void timeout_add_ts(struct timeout *, struct timespec *);
+void timeout_add_bt(struct timeout *, struct bintime *);
+void timeout_add_sec(struct timeout *, int);
+void timeout_add_usec(struct timeout *, int);
+void timeout_add_nsec(struct timeout *, int);
 void timeout_del(struct timeout *);
 
 void timeout_startup(void);

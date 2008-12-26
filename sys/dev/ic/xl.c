@@ -2229,7 +2229,7 @@ xl_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
 			if (CSR_READ_1(sc, XL_W3_MAC_CTRL) & XL_MACCTRL_DUPLEX)
 				ifmr->ifm_active |= IFM_FDX;
 			else
-				ifmr->ifm_active |= IFM_FDX;
+				ifmr->ifm_active |= IFM_HDX;
 		} else
 			ifmr->ifm_active = IFM_ETHER|IFM_10_5;
 		break;

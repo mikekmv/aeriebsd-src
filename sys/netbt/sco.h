@@ -63,7 +63,7 @@ struct socket;
 extern int sco_sendspace;
 extern int sco_recvspace;
 int sco_usrreq(struct socket *, int, struct mbuf *,
-		struct mbuf *, struct mbuf *);
+		struct mbuf *, struct mbuf *, struct proc *);
 int sco_ctloutput(int, struct socket *, int, int, struct mbuf **);
 
 /* sco_upper.c */

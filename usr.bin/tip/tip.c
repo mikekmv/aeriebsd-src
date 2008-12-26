@@ -38,7 +38,7 @@ static const char copyright[] =
 #if 0
 static char sccsid[] = "@(#)tip.c	8.1 (Berkeley) 6/6/93";
 #endif
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: tip.c,v 1.1.1.1 2008/08/26 14:43:20 root Exp $";
 #endif /* not lint */
 
 /*
@@ -77,7 +77,7 @@ main(int argc, char *argv[])
 	}
 
 	if (argc > 4) {
-		fprintf(stderr, "usage: tip [-v] [-speed] [system-name]\n");
+		fprintf(stderr, "usage: tip [-nv] [-speed] [system-name]\n");
 		exit(1);
 	}
 	if (!isatty(0)) {

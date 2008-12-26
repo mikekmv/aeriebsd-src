@@ -30,7 +30,91 @@
 #include "extern.h"
 
 extern int fd;
+extern int mediacap;
 extern char *cdname;
+
+#define SCSI_GET_CONFIGURATION		0x46
+#define SCSI_SET_SPEED			0xbb
+
+#define MMC_FEATURE_CDRW_CAV		0x27
+#define MMC_FEATURE_CD_TAO		0x2d
+#define MMC_FEATURE_CDRW_WRITE		0x37
+
+int
+get_media_capabilities(int *cap)
+{
+	scsireq_t scr;
+	u_char buf[4096];
+	int error;
+	u_int32_t i, dsz;
+	u_int16_t feature;
+
+	*cap = 0;
+	memset(buf, 0, sizeof(buf));
+	memset(&scr, 0, sizeof(scr));
+
+	scr.cmd[0] = SCSI_GET_CONFIGURATION;
+	scr.cmd[1] = 1;	/* enumerate only "current" features */
+	*(u_int16_t *)(scr.cmd + 7) = betoh16(sizeof(buf));
+
+	scr.flags = SCCMD_ESCAPE | SCCMD_READ;
+	scr.databuf = buf;
+	scr.datalen = sizeof(buf);
+	scr.cmdlen = 10;
+	scr.timeout = 120000;
+	scr.senselen = SENSEBUFLEN;
+
+	error = ioctl(fd, SCIOCCOMMAND, &scr);
+	if (error == -1 || scr.retsts != 0)
+		return (-1);
+	if (scr.datalen_used < 8)
+		return (-1);	/* can't get header */
+
+	dsz = betoh32(*(u_int32_t *)buf);
+	if (dsz > scr.datalen_used - 4)
+		dsz = scr.datalen_used - 4;
+
+	dsz += 4;	/* total size of bufer for all features */
+	i = 8;
+	while (i <= dsz - 4) {
+		if (dsz - i < (u_int32_t)buf[i + 3] + 4)
+			break;	/* partial feature descriptor */
+		feature = betoh16(*(u_int16_t *)(buf + i));
+
+		if (feature == MMC_FEATURE_CDRW_CAV)
+			*cap |= MEDIACAP_CDRW_CAV;
+		else if (feature == MMC_FEATURE_CD_TAO)
+			*cap |= MEDIACAP_TAO;
+		else if (feature == MMC_FEATURE_CDRW_WRITE)
+			*cap |= MEDIACAP_CDRW_WRITE;
+
+		i += 4 + buf[i + 3];
+	}
+
+	return (0);
+}
+
+int
+set_speed(int wspeed)
+{
+	scsireq_t scr;
+	int r;
+
+	memset(&scr, 0, sizeof(scr));
+	scr.cmd[0] = SCSI_SET_SPEED;
+	scr.cmd[1] = (mediacap & MEDIACAP_CDRW_CAV) != 0;
+	*(u_int16_t *)(scr.cmd + 2) = htobe16(DRIVE_SPEED_OPTIMAL);
+	*(u_int16_t *)(scr.cmd + 4) = htobe16(wspeed);
+
+	scr.cmdlen = 12;
+	scr.datalen = 0;
+	scr.timeout = 120000;
+	scr.flags = SCCMD_ESCAPE;
+	scr.senselen = SENSEBUFLEN;
+
+	r = ioctl(fd, SCIOCCOMMAND, &scr);
+	return (r == 0 ? scr.retsts : -1);
+}
 
 int
 blank(void)
@@ -49,13 +133,6 @@ blank(void)
 	scr.flags = SCCMD_ESCAPE;
 	scr.senselen = SENSEBUFLEN;
 
-	r = ioctl(fd, SCIOCCOMMAND, &scr);
-	if (r == -1 && errno == EPERM) {
-		close(fd);
-		fd = -1;
-		if (!open_cd(cdname, 1))
-			return (-1);
-	}
 	r = ioctl(fd, SCIOCCOMMAND, &scr);
 	return (r == 0 ? scr.retsts : -1);
 }
@@ -159,6 +236,8 @@ writetao(struct track_head *thp)
 			warnx("mode select failed: %d", r);
 			return (r);
 		}
+
+		set_speed(tr->speed);
 		writetrack(tr, track);
 		synchronize_cache();
 	}
@@ -210,10 +289,8 @@ writetrack(struct track_info *tr, int track)
 	} else {
 		end_lba = tr->sz / tr->blklen + lba;
 	}
-	if (tr->type == 'a') {
-		if (lseek(tr->fd, WAVHDRLEN, SEEK_SET) == -1)
-			err(1, "seek failed for file %s", tr->file);
-	}
+	if (lseek(tr->fd, tr->off, SEEK_SET) == -1)
+		err(1, "seek failed for file %s", tr->file);
 	while (lba < end_lba && nblk != 0) {
 		while (lba + nblk <= end_lba) {
 			read(tr->fd, databuf, nblk * tr->blklen);

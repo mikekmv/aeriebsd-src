@@ -177,7 +177,7 @@ buffer_get_string_ret(Buffer *buffer, u_int *length_ptr)
 		return (NULL);
 	}
 	/* Append a null character to make processing easier. */
-	value[len] = 0;
+	value[len] = '\0';
 	/* Optionally return the length of the string. */
 	if (length_ptr)
 		*length_ptr = len;

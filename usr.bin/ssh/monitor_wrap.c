@@ -559,7 +559,7 @@ mm_send_keystate(struct monitor *monitor)
 	u_char *blob, *p;
 	u_int bloblen, plen;
 	u_int32_t seqnr, packets;
-	u_int64_t blocks;
+	u_int64_t blocks, bytes;
 
 	buffer_init(&m);
 
@@ -608,14 +608,16 @@ mm_send_keystate(struct monitor *monitor)
 	buffer_put_string(&m, blob, bloblen);
 	xfree(blob);
 
-	packet_get_state(MODE_OUT, &seqnr, &blocks, &packets);
+	packet_get_state(MODE_OUT, &seqnr, &blocks, &packets, &bytes);
 	buffer_put_int(&m, seqnr);
 	buffer_put_int64(&m, blocks);
 	buffer_put_int(&m, packets);
-	packet_get_state(MODE_IN, &seqnr, &blocks, &packets);
+	buffer_put_int64(&m, bytes);
+	packet_get_state(MODE_IN, &seqnr, &blocks, &packets, &bytes);
 	buffer_put_int(&m, seqnr);
 	buffer_put_int64(&m, blocks);
 	buffer_put_int(&m, packets);
+	buffer_put_int64(&m, bytes);
 
 	debug3("%s: New keys have been sent", __func__);
  skip:
@@ -652,7 +654,20 @@ mm_pty_allocate(int *ptyfd, int *ttyfd, char *namebuf, size_t namebuflen)
 {
 	Buffer m;
 	char *p, *msg;
-	int success = 0;
+	int success = 0, tmp1 = -1, tmp2 = -1;
+
+	/* Kludge: ensure there are fds free to receive the pty/tty */
+	if ((tmp1 = dup(pmonitor->m_recvfd)) == -1 ||
+	    (tmp2 = dup(pmonitor->m_recvfd)) == -1) {
+		error("%s: cannot allocate fds for pty", __func__);
+		if (tmp1 > 0)
+			close(tmp1);
+		if (tmp2 > 0)
+			close(tmp2);
+		return 0;
+	}
+	close(tmp1);
+	close(tmp2);
 
 	buffer_init(&m);
 	mm_request_send(pmonitor->m_recvfd, MONITOR_REQ_PTY, &m);
@@ -697,8 +712,9 @@ mm_session_pty_cleanup2(Session *s)
 	buffer_free(&m);
 
 	/* closed dup'ed master */
-	if (close(s->ptymaster) < 0)
-		error("close(s->ptymaster): %s", strerror(errno));
+	if (s->ptymaster != -1 && close(s->ptymaster) < 0)
+		error("close(s->ptymaster/%d): %s",
+		    s->ptymaster, strerror(errno));
 
 	/* unlink pty from session */
 	s->ttyfd = -1;

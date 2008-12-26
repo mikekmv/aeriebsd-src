@@ -50,7 +50,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: res_send.c,v 1.1.1.1 2008/08/26 14:38:31 root Exp $";
 #endif
 
 #ifndef INET6
@@ -91,16 +91,6 @@ static int s = -1;	/* socket used for communications */
 static int connected = 0;	/* is the socket connected */
 static int vc = 0;	/* is the socket a virtual ciruit? */
 static int af = 0;		/* address family of socket */
-
-#ifndef FD_SET
-/* XXX - should be in portability.h */
-#define	NFDBITS		32
-#define	FD_SETSIZE	32
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
-#endif
 
 #define CAN_RECONNECT 1
 

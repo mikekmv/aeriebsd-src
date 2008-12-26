@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -750,7 +743,7 @@ usb_transfer_complete(usbd_xfer_handle xfer)
 
 #ifdef DIAGNOSTIC
 	if (pipe == NULL) {
-		printf("usbd_transfer_cb: pipe==0, xfer=%p\n", xfer);
+		printf("usbd_transfer_complete: pipe==0, xfer=%p\n", xfer);
 		return;
 	}
 #endif
@@ -800,7 +793,7 @@ usb_transfer_complete(usbd_xfer_handle xfer)
 	xfer->done = 1;
 	if (!xfer->status && xfer->actlen < xfer->length &&
 	    !(xfer->flags & USBD_SHORT_XFER_OK)) {
-		DPRINTFN(-1,("usbd_transfer_cb: short transfer %d<%d\n",
+		DPRINTFN(-1,("usbd_transfer_complete: short transfer %d<%d\n",
 		    xfer->actlen, xfer->length));
 		xfer->status = USBD_SHORT_XFER;
 	}

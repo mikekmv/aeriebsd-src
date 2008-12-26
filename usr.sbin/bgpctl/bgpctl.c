@@ -42,7 +42,6 @@ enum neighbor_views {
 	NV_TIMERS
 };
 
-__dead void	 usage(void);
 int		 main(int, char *[]);
 char		*fmt_peer(const char *, const struct bgpd_addr *, int, int);
 void		 show_summary_head(void);
@@ -89,7 +88,7 @@ usage(void)
 {
 	extern char	*__progname;
 
-	fprintf(stderr, "usage: %s [-n] [-o directory] [-s socket] "
+	fprintf(stderr, "usage: %s [-n] [-s socket] "
 	    "command [arguments ...]\n", __progname);
 	exit(1);
 }
@@ -104,19 +103,15 @@ main(int argc, char *argv[])
 	struct parse_result	*res;
 	struct ctl_neighbor	 neighbor;
 	struct ctl_show_rib_request	ribreq;
-	char			*sockname, *outdir;
+	char			*sockname;
 	enum imsg_type		 type;
 
 	sockname = SOCKET_NAME;
-	outdir = getcwd(NULL, 0);
-	while ((ch = getopt(argc, argv, "no:s:")) != -1) {
+	while ((ch = getopt(argc, argv, "ns:")) != -1) {
 		switch (ch) {
 		case 'n':
 			if (++nodescr > 1)
 				usage();
-			break;
-		case 'o':
-			outdir = optarg;
 			break;
 		case 's':
 			sockname = optarg;
@@ -133,7 +128,7 @@ main(int argc, char *argv[])
 		exit(1);
 
 	if (res->action == IRRFILTER)
-		irr_main(res->as.as, res->flags, outdir);
+		irr_main(res->as.as, res->flags, res->irr_outdir);
 
 	memcpy(&neighbor.addr, &res->peeraddr, sizeof(neighbor.addr));
 	strlcpy(neighbor.descr, res->peerdesc, sizeof(neighbor.descr));

@@ -69,6 +69,17 @@
 #include <dev/audio_if.h>
 #include <dev/ic/ac97.h>
 
+
+/* default parameters; supported by all ac97 codecs */
+const struct audio_params ac97_audio_default = {
+	48000,		/* sample_rate */
+	AUDIO_ENCODING_SLINEAR_LE, /* encoding */
+	16,		/* precision */
+	2,		/* channels */
+	NULL,		/* sw_code */
+	1		/* factor */
+};
+
 const struct audio_mixer_enum ac97_on_off = {
 	2,
 	{ { { AudioNoff } , 0 },
@@ -581,6 +592,12 @@ int	ac97debug = 0;
 #define DPRINTF(x)
 #define DPRINTFN(n,x)
 #endif
+
+void
+ac97_get_default_params(struct audio_params *params)
+{
+	*params = ac97_audio_default;
+}
 
 int
 ac97_read(struct ac97_softc *as, u_int8_t reg, u_int16_t *val)

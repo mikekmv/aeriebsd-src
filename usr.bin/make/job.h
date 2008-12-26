@@ -1,8 +1,3 @@
-#ifndef _JOB_H_
-#define _JOB_H_
-
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 1988, 1989, 1990 The Regents of the University of California.
  * Copyright (c) 1988, 1989 by Adam de Boor
@@ -43,6 +38,9 @@
  * job.h --
  *	Definitions pertaining to the running of jobs in parallel mode.
  */
+
+#ifndef _JOB_H_
+#define _JOB_H_
 
 extern void Job_Make(GNode *);
 extern void Job_Init(int);

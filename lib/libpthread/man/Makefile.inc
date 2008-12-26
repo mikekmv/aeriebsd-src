@@ -5,6 +5,7 @@
 MAN+=	\
 	pthread_atfork.3 \
 	pthread_attr_init.3 \
+	pthread_attr_setstack.3 \
 	pthread_attr_setstackaddr.3 \
 	pthread_attr_setstacksize.3 \
 	pthread_attr_setdetachstate.3 \
@@ -78,6 +79,7 @@ MLINKS+=flockfile.3 funlockfile.3 \
 	pthread_suspend_np.3 pthread_resume_np.3 \
 	pthread_single_np.3 pthread_multi_np.3 \
 	pthread_attr_init.3 pthread_attr_destroy.3 \
+	pthread_attr_setstack.3 pthread_attr_getstack.3 \
 	pthread_attr_setstackaddr.3 pthread_attr_getstackaddr.3 \
 	pthread_attr_setstacksize.3 pthread_attr_getstacksize.3 \
 	pthread_attr_setdetachstate.3 pthread_attr_getdetachstate.3 \

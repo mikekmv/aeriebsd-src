@@ -37,7 +37,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: xdr_float.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -49,14 +49,6 @@ static const char rcsid[] = "$ABSD$";
  * NB: Not portable.
  * This routine works on machines with IEEE754 FP and Vaxen.
  */
-
-#if defined(__m68k__) || defined(__sparc__) || defined(__i386__) || \
-    defined(__mips__) || defined(__ns32k__) || defined(__alpha__) || \
-    defined(__arm__) || defined(__powerpc__) || defined(__m88k__) || \
-    defined(__hppa__) || defined(__x86_64__) || defined(__sh__)
-#include <machine/endian.h>
-#define IEEEFP
-#endif
 
 #ifdef __vax__
 
@@ -87,7 +79,11 @@ static struct sgl_limits {
 	{{ 0x0, 0x0, 0x0, 0x0 },	/* Min Vax */
 	{ 0x0, 0x0, 0x0 }}		/* Min IEEE */
 };
-#endif /* __vax__ */
+
+#else
+#include <machine/endian.h>
+#define IEEEFP
+#endif
 
 bool_t
 xdr_float(XDR *xdrs, float *fp)

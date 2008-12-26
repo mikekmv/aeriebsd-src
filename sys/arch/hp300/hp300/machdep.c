@@ -86,6 +86,7 @@
 #include <dev/cons.h>
 
 #include <uvm/uvm_extern.h>
+#include <uvm/uvm_swap.h>
 
 #ifdef USELEDS
 #include <hp300/hp300/leds.h>
@@ -690,7 +691,9 @@ haltsys:
 	/* Finally, halt/reboot the system. */
 	if (howto & RB_HALT) {
 		printf("System halted.  Hit any key to reboot.\n\n");
+		cnpollc(1);
 		while (cngetc() == 0);
+		cnpollc(0);
 	}
 
 	printf("rebooting...\n");
@@ -792,6 +795,10 @@ dumpsys()
 
 	printf("\ndumping to dev %u,%u offset %ld\n", major(dumpdev),
 	    minor(dumpdev), dumplo);
+
+#ifdef UVM_SWAP_ENCRYPT
+	uvm_swap_finicrypt_all();
+#endif
 
 	kseg_p = (kcore_seg_t *)dump_hdr;
 	chdr_p = (cpu_kcore_hdr_t *)&dump_hdr[ALIGN(sizeof(*kseg_p))];

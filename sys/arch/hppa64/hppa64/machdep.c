@@ -47,6 +47,7 @@
 
 #include <uvm/uvm.h>
 #include <uvm/uvm_page.h>
+#include <uvm/uvm_swap.h>
 
 #include <dev/cons.h>
 #include <dev/clock_subr.h>
@@ -766,6 +767,10 @@ dumpsys(void)
 		return;
 	}
 	printf("\ndumping to dev %x, offset %ld\n", dumpdev, dumplo);
+
+#ifdef UVM_SWAP_ENCRYPT
+	uvm_swap_finicrypt_all();
+#endif
 
 	psize = (*bdevsw[major(dumpdev)].d_psize)(dumpdev);
 	printf("dump ");

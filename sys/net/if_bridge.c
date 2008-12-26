@@ -599,9 +599,10 @@ bridge_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 			break;
 		}
 		sc->sc_brttimeout = bparam->ifbrp_ctime;
-		timeout_del(&sc->sc_brtimeout);
 		if (bparam->ifbrp_ctime != 0)
 			timeout_add(&sc->sc_brtimeout, sc->sc_brttimeout * hz);
+		else
+			timeout_del(&sc->sc_brtimeout);
 		break;
 	case SIOCBRDGGTO:
 		bparam->ifbrp_ctime = sc->sc_brttimeout;
@@ -1468,7 +1469,7 @@ bridge_input(struct ifnet *ifp, struct ether_header *eh, struct mbuf *m)
 		if (bcmp(ac->ac_enaddr, eh->ether_dhost, ETHER_ADDR_LEN) == 0
 #if NCARP > 0
 		    || (ifl->ifp->if_carp && carp_ourether(ifl->ifp->if_carp,
-			eh, IFT_ETHER, 0) != NULL)
+			eh, 0) != NULL)
 #endif
 		    ) {
 			if (srcifl->bif_flags & IFBIF_LEARNING)
@@ -1491,7 +1492,7 @@ bridge_input(struct ifnet *ifp, struct ether_header *eh, struct mbuf *m)
 		if (bcmp(ac->ac_enaddr, eh->ether_shost, ETHER_ADDR_LEN) == 0
 #if NCARP > 0
 		    || (ifl->ifp->if_carp && carp_ourether(ifl->ifp->if_carp,
-			eh, IFT_ETHER, 1) != NULL)
+			eh, 1) != NULL)
 #endif
 		    ) {
 			m_freem(m);

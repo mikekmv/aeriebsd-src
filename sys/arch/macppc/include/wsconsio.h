@@ -1,2 +1,0 @@
-
-#include <powerpc/wsconsio.h>

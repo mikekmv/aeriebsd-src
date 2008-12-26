@@ -29,13 +29,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -158,6 +151,20 @@ static const keysym_t ukbd_keydesc_us[] = {
     KC(98),	KS_KP_Insert,	KS_KP_0,
     KC(99),	KS_Cmd_KbdReset,KS_KP_Delete,
     KC(101),	KS_Menu,
+    KC(116),	KS_Open,
+    KC(117),	KS_Help,
+    KC(118),	KS_Props,
+    KC(119),	KS_Front,
+    KC(120),	KS_Cmd,
+    KC(121),	KS_Again,
+    KC(122),	KS_Undo,
+    KC(123),	KS_Cut,
+    KC(124),	KS_Copy,
+    KC(125),	KS_Paste,
+    KC(126),	KS_Find,
+    KC(127),	KS_AudioMute,
+    KC(128),	KS_AudioRaise,
+    KC(129),	KS_AudioLower,
     KC(224),	KS_Cmd1,	KS_Control_L,
     KC(225),	KS_Shift_L,
     KC(226),	KS_Cmd2,	KS_Alt_L,

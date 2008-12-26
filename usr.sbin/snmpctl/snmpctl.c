@@ -73,7 +73,7 @@ usage(void)
 {
 	extern char *__progname;
 
-	fprintf(stderr, "usage: %s [-n] <command> [arg [...]]\n", __progname);
+	fprintf(stderr, "usage: %s [-n] command [arg ...]\n", __progname);
 	exit(1);
 }
 

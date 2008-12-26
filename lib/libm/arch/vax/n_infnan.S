@@ -31,8 +31,11 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: n_infnan.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
 #endif /* LIBM_SCCS */
+
+#include <machine/asm.h>
+#include <sys/errno.h>
 
 /*
  * infnan(arg) int arg;
@@ -42,17 +45,11 @@
  *
  * The Reserved Operand Fault is generated inside of this routine.
  */	
-	.globl	_infnan
-	.set	EDOM,33
-	.set	ERANGE,34
-	.text
-	.align 1
-_infnan:
-	.word	0x0
+ENTRY(infnan,0)
 	cmpl	4(ap),$ERANGE
 	bneq	1f
-	movl	$ERANGE,_errno
+	movl	$ERANGE,_C_LABEL(errno)
 	brb	2f
-1:	movl	$EDOM,_errno
+1:	movl	$EDOM,_C_LABEL(errno)
 2:	emodd	$0,$0,$0x8000,r0,r0	# generates the reserved operand fault
 	ret

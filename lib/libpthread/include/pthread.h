@@ -70,7 +70,6 @@
 #define _POSIX_THREAD_PRIO_INHERIT		1
 #define _POSIX_THREAD_PRIO_PROTECT		1
 /* #define _POSIX_THREAD_PROCESS_SHARED */
-#define _POSIX_THREAD_SAFE_FUNCTIONS		1
 
 /*
  * Flags for threads and thread attributes.

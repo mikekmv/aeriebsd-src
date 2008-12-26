@@ -1203,6 +1203,7 @@ wpi_rx_intr(struct wpi_softc *sc, struct wpi_rx_desc *desc,
 	struct wpi_rx_tail *tail;
 	struct wpi_rbuf *rbuf;
 	struct ieee80211_frame *wh;
+	struct ieee80211_rxinfo rxi;
 	struct ieee80211_node *ni;
 	struct mbuf *m, *mnew;
 
@@ -1316,7 +1317,10 @@ wpi_rx_intr(struct wpi_softc *sc, struct wpi_rx_desc *desc,
 	ni = ieee80211_find_rxnode(ic, wh);
 
 	/* send the frame to the 802.11 layer */
-	ieee80211_input(ifp, m, ni, stat->rssi, 0);
+	rxi.rxi_flags = 0;
+	rxi.rxi_rssi = stat->rssi;
+	rxi.rxi_tstamp = 0;	/* unused */
+	ieee80211_input(ifp, m, ni, &rxi);
 
 	/* node is no longer needed */
 	ieee80211_release_node(ic, ni);
@@ -2294,7 +2298,7 @@ wpi_get_power_index(struct wpi_softc *sc, struct wpi_power_group *group,
 	}
 
 	/* never exceed channel's maximum allowed Tx power */
-	pwr = min(pwr, sc->maxpwr[chan]);
+	pwr = MIN(pwr, sc->maxpwr[chan]);
 
 	/* retrieve power index into gain tables from samples */
 	for (sample = group->samples; sample < &group->samples[3]; sample++)
@@ -2720,12 +2724,12 @@ wpi_reset(struct wpi_softc *sc)
 	WPI_WRITE(sc, WPI_GPIO_CTL, tmp | WPI_GPIO_INIT);
 
 	/* wait for clock stabilization */
-	for (ntries = 0; ntries < 1000; ntries++) {
+	for (ntries = 0; ntries < 25000; ntries++) {
 		if (WPI_READ(sc, WPI_GPIO_CTL) & WPI_GPIO_CLOCK)
 			break;
-		DELAY(10);
+		DELAY(100);
 	}
-	if (ntries == 1000) {
+	if (ntries == 25000) {
 		printf("%s: timeout waiting for clock stabilization\n",
 		    sc->sc_dev.dv_xname);
 		return ETIMEDOUT;

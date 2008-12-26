@@ -27,7 +27,7 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt RTADVD.CONF 5
 .Os
 .Sh NAME
@@ -270,7 +270,7 @@ option to
 .Xr rtadvd 8 .
 .Bd -literal -offset
 ef0:\\
-	:addr="3ffe:501:ffff:1000::":prefixlen#64:
+	:addr="2001:db8:ffff:1000::":prefixlen#64:
 .Ed
 .Pp
 The following example presents the default values in an explicit manner.
@@ -281,7 +281,7 @@ default:\\
 	:chlim#64:raflags#0:rltime#1800:rtime#0:retrans#0:\\
 	:pinfoflags="la":vltime#2592000:pltime#604800:mtu#0:
 ef0:\\
-	:addr="3ffe:501:ffff:1000::":prefixlen#64:tc=default:
+	:addr="2001:db8:ffff:1000::":prefixlen#64:tc=default:
 .Ed
 .Sh SEE ALSO
 .Xr termcap 5 ,

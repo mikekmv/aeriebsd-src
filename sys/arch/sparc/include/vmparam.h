@@ -87,7 +87,7 @@
  * IO space virtual base, which must be the same as VM_MAX_KERNEL_ADDRESS:
  * tread with care.
  */
-#define VM_MIN_ADDRESS		((vaddr_t)0)
+#define VM_MIN_ADDRESS		((vaddr_t)0x2000)
 #define VM_MAX_ADDRESS		((vaddr_t)VM_MIN_KERNEL_ADDRESS)
 #define VM_MAXUSER_ADDRESS	((vaddr_t)VM_MIN_KERNEL_ADDRESS)
 #define VM_MIN_KERNEL_ADDRESS	((vaddr_t)KERNBASE)

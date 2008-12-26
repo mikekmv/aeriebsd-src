@@ -16,19 +16,25 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fabs.c,v 1.1.1.1 2008/08/26 14:38:22 root Exp $";
 #endif
+
+#if !defined(__SH4__) || defined(__SH4_NOFPU__)
+#include <sys/types.h>
+#include <machine/ieee.h>
+#endif /* !defined(__SH4__) || defined(__SH4_NOFPU__) */
 
 #include <math.h>
 
 double
-fabs(double x)
+fabs(double d)
 {
 #if defined(__SH4__) && !defined(__SH4_NOFPU__)
-	__asm__ __volatile__("fabs %0" : "=f"(x));
+	__asm__ __volatile__("fabs %0" : "=f"(d));
 #else
-	if (x < 0)
-		x = -x;
+	struct ieee_double *p = (struct ieee_double *)&d;
+
+	p->dbl_sign = 0;
 #endif
-	return (x);
+	return (d);
 }

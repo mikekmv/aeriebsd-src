@@ -30,7 +30,7 @@
 .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: May 7 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt PCI 4
 .Os
 .Sh NAME
@@ -195,8 +195,10 @@ Intel EtherExpress PRO/100 10/100 Ethernet device
 GEM 10/100/Gigabit Ethernet device
 .It Xr hme 4
 Sun Happy Meal 10/100 Ethernet device
+.It Xr ix 4
+Intel 82598 PCI Express 10Gb Ethernet device
 .It Xr ixgb 4
-Intel(R) PRO/10GbE 10Gb Ethernet device
+Intel PRO/10GbE 10Gb Ethernet device
 .It Xr lge 4
 Level 1 LXT1001 NetCellerator PCI Gigabit Ethernet device
 .It Xr lii 4
@@ -325,6 +327,8 @@ VGA graphics cards
 .El
 .Ss Audio devices
 .Bl -tag -width 10n -offset ind -compact
+.It Xr auglx 4
+AMD Geode LX CS5536 integrated AC'97 audio device
 .It Xr auich 4
 ICH-based PCI audio device
 .It Xr auixp 4

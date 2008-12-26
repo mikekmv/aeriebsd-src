@@ -51,6 +51,11 @@ include "dev/eisa/files.eisa"
 #
 include "dev/pci/files.pci"
 
+device	hme: ether, ifnet, mii, ifmedia
+file	dev/ic/hme.c			hme
+attach	hme at pci with hme_pci
+file	dev/pci/if_hme_pci.c		hme_pci
+
 #
 # CardBus support
 #
@@ -256,13 +261,7 @@ device	gsckbc: pckbcslot
 attach	gsckbc at gsc
 file	arch/hppa/gsc/gsckbc.c			gsckbc
 
-# PS/2 keyboard
-device	gsckbd: wskbddev
-attach	gsckbd at pckbcslot
-file	arch/hppa/gsc/gsckbd.c			gsckbd	needs-flag
-file	arch/hppa/gsc/gsckbdmap.c		gsckbd
-
-# PS/2 mouse
+# PS/2 keyboard and mouse
 include	"dev/pckbc/files.pckbc"
 
 #

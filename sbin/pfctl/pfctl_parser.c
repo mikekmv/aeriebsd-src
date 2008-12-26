@@ -30,7 +30,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: pfctl_parser.c,v 1.1.1.1 2008/08/26 14:40:28 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -861,6 +861,8 @@ print_rule(struct pf_rule *r, const char *anchor_call, int verbose)
 		opts = 1;
 	if (r->rule_flag & PFRULE_IFBOUND)
 		opts = 1;
+	if (r->rule_flag & PFRULE_STATESLOPPY)
+		opts = 1;
 	for (i = 0; !opts && i < PFTM_MAX; ++i)
 		if (r->timeout[i])
 			opts = 1;
@@ -927,6 +929,12 @@ print_rule(struct pf_rule *r, const char *anchor_call, int verbose)
 			printf("if-bound");
 			opts = 0;
 		}
+		if (r->rule_flag & PFRULE_STATESLOPPY) {
+			if (!opts)
+				printf(", ");
+			printf("sloppy");
+			opts = 0;
+		}
 		for (i = 0; i < PFTM_MAX; ++i)
 			if (r->timeout[i]) {
 				int j;
@@ -984,6 +992,22 @@ print_rule(struct pf_rule *r, const char *anchor_call, int verbose)
 	}
 	if (r->rtableid != -1)
 		printf(" rtable %u", r->rtableid);
+	if (r->divert.port) {
+		if (PF_AZERO(&r->divert.addr, r->af)) {
+			printf(" divert-reply");
+		} else {
+			/* XXX cut&paste from print_addr */
+			char buf[48];
+
+			printf(" divert-to ");
+			if (inet_ntop(r->af, &r->divert.addr, buf,
+			    sizeof(buf)) == NULL)
+				printf("?");
+			else
+				printf("%s", buf);
+			printf(" port %u", ntohs(r->divert.port));
+		}
+	}
 	if (!anchor_call[0] && (r->action == PF_NAT ||
 	    r->action == PF_BINAT || r->action == PF_RDR)) {
 		printf(" -> ");
@@ -1004,6 +1028,8 @@ print_tabledef(const char *name, int flags, int addrs,
 		printf(" const");
 	if (flags & PFR_TFLAG_PERSIST)
 		printf(" persist");
+	if (flags & PFR_TFLAG_COUNTERS)
+		printf(" counters");
 	SIMPLEQ_FOREACH(ti, nodes, entries) {
 		if (ti->file) {
 			printf(" file \"%s\"", ti->file);

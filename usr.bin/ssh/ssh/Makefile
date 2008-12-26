@@ -12,7 +12,7 @@ LINKS=	${BINDIR}/ssh ${BINDIR}/slogin
 MLINKS=	ssh.1 slogin.1
 
 SRCS=	ssh.c readconf.c clientloop.c sshtty.c \
-	sshconnect.c sshconnect1.c sshconnect2.c
+	sshconnect.c sshconnect1.c sshconnect2.c mux.c
 
 .include <bsd.own.mk> # for AFS
 

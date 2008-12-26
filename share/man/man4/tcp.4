@@ -29,7 +29,7 @@
 .\"
 .\"     @(#)tcp.4	8.1 (Berkeley) 6/5/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt TCP 4
 .Os
 .Sh NAME
@@ -200,6 +200,7 @@ socket with a network address for which no network interface
 exists.
 .El
 .Sh SEE ALSO
+.Xr tcpbench 1 ,
 .Xr getsockopt 2 ,
 .Xr socket 2 ,
 .Xr inet 4 ,
@@ -207,7 +208,8 @@ exists.
 .Xr ip 4 ,
 .Xr ip6 4 ,
 .Xr netintro 4 ,
-.Xr ipsecctl 8
+.Xr ipsecctl 8 ,
+.Xr tcpdrop 8
 .Sh HISTORY
 The
 .Nm

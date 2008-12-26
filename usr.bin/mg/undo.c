@@ -1,27 +1,5 @@
 /*
- * Copyright (c) 2002 Vincent Labrecque <vincent@openbsd.org>
- * Copyright (c) 2005, 2006 Kjell Wooding <kjell@openbsd.org>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * This file is in the public domain
  */
 
 #include "def.h"
@@ -194,7 +172,8 @@ undo_enable(int on)
 
 /*
  * If undo is enabled, then:
- *   undo_boundary_enable(FALS) stops recording undo boundaries between actions.
+ *   undo_boundary_enable(FALSE) stops recording undo boundaries
+ *   between actions.
  *   undo_boundary_enable(TRUE) enables undo boundaries.
  * If undo is disabled, this function has no effect.
  */
@@ -464,12 +443,15 @@ undo(int f, int n)
 	static int	 nulled = FALSE;
 	int		 lineno;
 
+	if (n < 0)
+		return (FALSE);
+
 	dot = find_dot(curwp->w_dotp, curwp->w_doto);
 
 	ptr = curbp->b_undoptr;
 
-	/* if we moved, make ptr point back to the top of the list */
-	if ((ptr == NULL && nulled == TRUE) || curbp->b_undopos != dot) {
+	/* first invocation, make ptr point back to the top of the list */
+	if ((ptr == NULL && nulled == TRUE) ||  rptcount == 0) {
 		ptr = LIST_FIRST(&curbp->b_undo);
 		nulled = TRUE;
 	}
@@ -536,8 +518,12 @@ undo(int f, int n)
 				ldelete(ptr->region.r_size, KNONE);
 				break;
 			case DELETE:
+				lp = curwp->w_dotp;
+				offset = curwp->w_doto;
 				region_put_data(ptr->content,
 				    ptr->region.r_size);
+				curwp->w_dotp = lp;
+				curwp->w_doto = offset;
 				break;
 			case BOUNDARY:
 				done = 1;

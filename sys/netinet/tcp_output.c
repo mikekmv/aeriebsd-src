@@ -203,8 +203,7 @@ tcp_sack_adjust(struct tcpcb *tp)
  * Tcp output routine: figure out what should be sent and send it.
  */
 int
-tcp_output(tp)
-	struct tcpcb *tp;
+tcp_output(struct tcpcb *tp)
 {
 	struct socket *so = tp->t_inpcb->inp_socket;
 	long len, win, txmaxseg;
@@ -217,8 +216,6 @@ tcp_output(tp)
 #ifdef TCP_SACK
 	int i, sack_rxmit = 0;
 	struct sackhole *p;
-#endif
-#if defined(TCP_SACK)
 	int maxburst = TCP_MAXBURST;
 #endif
 #ifdef TCP_SIGNATURE
@@ -292,9 +289,7 @@ again:
 		    (p = tcp_sack_output(tp))) {
 			off = p->rxmit - tp->snd_una;
 			sack_rxmit = 1;
-#if 0
 			/* Coalesce holes into a single retransmission */
-#endif
 			len = min(tp->t_maxseg, p->end - p->rxmit);
 #ifndef TCP_FACK
 			/* in FACK, hold snd_cwnd constant during recovery */
@@ -618,7 +613,7 @@ send:
 		 * terminate it.
 		 */
 		*bp++ = TCPOPT_NOP;
-		*bp++ = TCPOPT_EOL;
+		*bp++ = TCPOPT_NOP;
 
 		optlen += TCPOLEN_SIGLEN;
 	}
@@ -764,6 +759,7 @@ send:
 	}
 	m->m_pkthdr.rcvif = (struct ifnet *)0;
 	m->m_pkthdr.len = hdrlen + len;
+	m->m_pkthdr.pf.statekey = tp->t_inpcb->inp_pf_sk;
 
 	if (!tp->t_template)
 		panic("tcp_output");

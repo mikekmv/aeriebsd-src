@@ -31,14 +31,14 @@
 #if 0
 static char sccsid[] = "@(#)cosh.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_cosh.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
 /* COSH(X)
  * RETURN THE HYPERBOLIC COSINE OF X
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
- * CODED IN C BY K.C. NG, 1/8/85; 
+ * CODED IN C BY K.C. NG, 1/8/85;
  * REVISED BY K.C. NG on 2/8/85, 2/23/85, 3/7/85, 3/29/85, 4/16/85.
  *
  * Required system supported functions :
@@ -46,20 +46,20 @@ static const char rcsid[] = "$ABSD$";
  *	scalbn(x,N)
  *
  * Required kernel function:
- *	exp(x) 
+ *	exp(x)
  *	exp__E(x,c)	...return exp(x+c)-1-x for |x|<0.3465
  *
  * Method :
- *	1. Replace x by |x|. 
- *	2. 
- *		                                        [ exp(x) - 1 ]^2 
+ *	1. Replace x by |x|.
+ *	2.
+ *		                                        [ exp(x) - 1 ]^2
  *	    0        <= x <= 0.3465  :  cosh(x) := 1 + -------------------
  *			       			           2*exp(x)
  *
  *		                                   exp(x) +  1/exp(x)
  *	    0.3465   <= x <= 22      :  cosh(x) := -------------------
  *			       			           2
- *	    22       <= x <= lnovfl  :  cosh(x) := exp(x)/2 
+ *	    22       <= x <= lnovfl  :  cosh(x) := exp(x)/2
  *	    lnovfl   <= x <= lnovfl+log(2)
  *				     :  cosh(x) := exp(x)/2 (avoid overflow)
  *	    log(2)+lnovfl <  x <  INF:  overflow to INF
@@ -82,6 +82,7 @@ static const char rcsid[] = "$ABSD$";
  * shown.
  */
 
+#include "math.h"
 #include "mathimpl.h"
 
 vc(mln2hi, 8.8029691931113054792E1   ,0f33,43b0,2bdb,c7e2,   7, .B00F33C7E22BDB)
@@ -98,36 +99,36 @@ ic(lnovfl, 7.0978271289338397310E2,     9, 1.62E42FEFA39EF)
 #define   lnovfl    vccast(lnovfl)
 #endif
 
-#if defined(__vax__)||defined(tahoe)
+#if defined(__vax__)
 static max = 126                      ;
-#else	/* defined(__vax__)||defined(tahoe) */
+#else	/* defined(__vax__) */
 static max = 1023                     ;
-#endif	/* defined(__vax__)||defined(tahoe) */
+#endif	/* defined(__vax__) */
 
-double cosh(x)
-double x;
-{	
+double
+cosh(double x)
+{
 	static const double half=1.0/2.0,
 		one=1.0, small=1.0E-18; /* fl(1+small)==1 */
 	double t;
 
-#if !defined(__vax__)&&!defined(tahoe)
-	if(x!=x) return(x);	/* x is NaN */
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
+	if (isnan(x))
+		return (x);
+
 	if((x=copysign(x,one)) <= 22)
-	    if(x<0.3465) 
+	    if(x<0.3465)
 		if(x<small) return(one+x);
 		else {t=x+__exp__E(x,0.0);x=t+t; return(one+t*t/(2.0+x)); }
 
 	    else /* for x lies in [0.3465,22] */
 	        { t=exp(x); return((t+one/t)*half); }
 
-	if( lnovfl <= x && x <= (lnovfl+0.7)) 
-        /* for x lies in [lnovfl, lnovfl+ln2], decrease x by ln(2^(max+1)) 
-         * and return 2^max*exp(x) to avoid unnecessary overflow 
+	if( lnovfl <= x && x <= (lnovfl+0.7))
+        /* for x lies in [lnovfl, lnovfl+ln2], decrease x by ln(2^(max+1))
+         * and return 2^max*exp(x) to avoid unnecessary overflow
          */
-	    return(scalbn(exp((x-mln2hi)-mln2lo), max)); 
+	    return(scalbn(exp((x-mln2hi)-mln2lo), max));
 
-	else 
+	else
 	    return(exp(x)*half);	/* for large x,  cosh(x)=exp(x)/2 */
 }

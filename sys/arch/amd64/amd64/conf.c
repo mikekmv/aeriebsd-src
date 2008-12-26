@@ -145,6 +145,7 @@ cdev_decl(cy);
 cdev_decl(mcd);
 #include "tun.h"
 #include "audio.h"
+#include "video.h"
 #include "midi.h"
 #include "sequencer.h"
 cdev_decl(music);
@@ -172,6 +173,8 @@ cdev_decl(cztty);
 cdev_decl(nvram);
 #include "agp.h"
 cdev_decl(agp);
+#include "drmbase.h"
+cdev_decl(drm);
 
 #include "wsdisplay.h"
 #include "wskbd.h"
@@ -241,7 +244,7 @@ struct cdevsw	cdevsw[] =
 #else
 	cdev_notdef(),			/* 43 */
 #endif
-	cdev_notdef(),			/* 44 */
+	cdev_video_init(NVIDEO,video),	/* 44: generic video I/O */
 	cdev_random_init(1,random),	/* 45: random data source */
 	cdev_ocis_init(NPCTR,pctr),	/* 46: performance counters */
 	cdev_disk_init(NRD,rd),		/* 47: ram disk driver */
@@ -295,6 +298,7 @@ struct cdevsw	cdevsw[] =
 	cdev_bthub_init(NBTHUB,bthub),	/* 84: bthub */
 	cdev_nvram_init(NNVRAM,nvram),	/* 85: NVRAM interface */
 	cdev_agp_init(NAGP,agp),	/* 86: agp */
+	cdev_drm_init(NDRMBASE,drm),	/* 87: drm */
 };
 int	nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 
@@ -343,28 +347,28 @@ int chrtoblktbl[] = {
 	/*  0 */	NODEV,
 	/*  1 */	NODEV,
 	/*  2 */	NODEV,
-	/*  3 */	0,
+	/*  3 */	0,		/* wd */
 	/*  4 */	NODEV,
 	/*  5 */	NODEV,
 	/*  6 */	NODEV,
 	/*  7 */	NODEV,
 	/*  8 */	NODEV,
-	/*  9 */	2,
-	/* 10 */	3,
-	/* 11 */	15,
+	/*  9 */	2,		/* fd */
+	/* 10 */	NODEV,
+	/* 11 */	NODEV,
 	/* 12 */	NODEV,
-	/* 13 */	4,
-	/* 14 */	5,
-	/* 15 */	6,
+	/* 13 */	4,		/* sd */
+	/* 14 */	5,		/* st */
+	/* 15 */	6,		/* cd */
 	/* 16 */	NODEV,
 	/* 17 */	NODEV,
-	/* 18 */	16,
+	/* 18 */	16,		/* ccd */
 	/* 19 */	NODEV,
 	/* 20 */	NODEV,
 	/* 21 */	NODEV,
 	/* 22 */	NODEV,
 	/* 23 */	NODEV,
-	/* 24 */	18,
+	/* 24 */	NODEV,
 	/* 25 */	NODEV,
 	/* 26 */	NODEV,
 	/* 27 */	NODEV,
@@ -379,22 +383,22 @@ int chrtoblktbl[] = {
 	/* 36 */	NODEV,
 	/* 37 */	NODEV,
 	/* 38 */	NODEV,
-	/* 39 */	7,
+	/* 39 */	7,		/* mcd */
 	/* 40 */	NODEV,
-	/* 41 */	14,
+	/* 41 */	14,		/* vnd */
 	/* 42 */	NODEV,
 	/* 43 */	NODEV,
 	/* 44 */	NODEV,
 	/* 45 */	NODEV,
 	/* 46 */	NODEV,
-	/* 47 */	17,
+	/* 47 */	17,		/* rd */
 	/* 48 */	NODEV,
 	/* 49 */	NODEV,
 	/* 50 */	NODEV,
 	/* 51 */	NODEV,
 	/* 52 */	NODEV,
 	/* 53 */	NODEV,
-	/* 54 */	19,
+	/* 54 */	19,		/* raid */
 };
 
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);

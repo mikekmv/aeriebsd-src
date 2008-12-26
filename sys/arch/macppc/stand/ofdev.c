@@ -54,9 +54,8 @@ char namebuf[256];
 static char *
 filename(char *str)
 {
-	char *cp, *lp;
+	char *cp;
 	char savec;
-	int dhandle;
 
 	cp = strrchr(str, ':');
 	if (cp == NULL)
@@ -157,8 +156,6 @@ int
 read_mac_label(struct of_dev *devp, char *buf, struct disklabel *lp)
 {
 	struct part_map_entry *part;
-	struct buf *bp;
-	int err;
 	size_t read;
 	int part_cnt;
 	int i;
@@ -282,7 +279,6 @@ devopen(struct open_file *of, const char *name, char **file)
 {
 	char *cp;
 	char fname[256];
-	char devname[256];
 	char buf[DEV_BSIZE];
 	struct disklabel label;
 	int handle, part;

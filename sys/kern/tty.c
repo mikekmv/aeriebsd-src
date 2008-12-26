@@ -1665,7 +1665,8 @@ ttwrite(struct tty *tp, struct uio *uio, int flag)
 	u_char *cp = NULL;
 	int cc, ce, obufcc = 0;
 	struct proc *p;
-	int i, hiwat, cnt, error, s;
+	int i, hiwat, error, s;
+	size_t cnt;
 	u_char obuf[OBUFSIZ];
 
 	hiwat = tp->t_hiwat;
@@ -1730,7 +1731,7 @@ loop:
 		 * leftover from last time.
 		 */
 		if (cc == 0) {
-			cc = min(uio->uio_resid, OBUFSIZ);
+			cc = MIN(uio->uio_resid, OBUFSIZ);
 			cp = obuf;
 			error = uiomove(cp, cc, uio);
 			if (error) {
@@ -2190,8 +2191,8 @@ tputchar(int c, struct tty *tp)
 	int s;
 
 	s = spltty();
-	if (ISSET(tp->t_state,
-	    TS_CARR_ON | TS_ISOPEN) != (TS_CARR_ON | TS_ISOPEN)) {
+	if (ISSET(tp->t_state, TS_ISOPEN) == 0 ||
+	    !(ISSET(tp->t_state, TS_CARR_ON) || ISSET(tp->t_cflag, CLOCAL))) {
 		splx(s);
 		return (-1);
 	}

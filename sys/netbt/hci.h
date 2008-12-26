@@ -2541,7 +2541,8 @@ void hci_memo_free(struct hci_memo *);
 
 /* hci_socket.c */
 void hci_drop(void *);
-int hci_usrreq(struct socket *, int, struct mbuf *, struct mbuf *, struct mbuf *);
+int hci_usrreq(struct socket *, int, struct mbuf *, struct mbuf *,
+    struct mbuf *, struct proc *);
 int hci_ctloutput(int, struct socket *, int, int, struct mbuf **);
 void hci_mtap(struct mbuf *, struct hci_unit *);
 

@@ -141,7 +141,7 @@ sys_rfork(struct proc *p, void *v, register_t *retval)
 		flags |= FORK_SHAREVM;
 #ifdef RTHREADS
 	if (rforkflags & RFTHREAD)
-		flags |= FORK_THREAD;
+		flags |= FORK_THREAD | FORK_SIGHAND;
 #endif
 
 	return (fork1(p, SIGCHLD, flags, NULL, 0, NULL, NULL, retval, NULL));
@@ -222,6 +222,7 @@ fork1(struct proc *p1, int exitsig, int flags, void *stack, size_t stacksize,
 
 	p2->p_stat = SIDL;			/* protect against others */
 	p2->p_exitsig = exitsig;
+	p2->p_flag = 0;
 
 #ifdef RTHREADS
 	if (flags & FORK_THREAD) {
@@ -258,7 +259,6 @@ fork1(struct proc *p1, int exitsig, int flags, void *stack, size_t stacksize,
 	 * Increase reference counts on shared objects.
 	 * The p_stats and p_sigacts substructs are set in vm_fork.
 	 */
-	p2->p_flag = 0;
 	p2->p_emul = p1->p_emul;
 	if (p1->p_flag & P_PROFIL)
 		startprofclock(p2);

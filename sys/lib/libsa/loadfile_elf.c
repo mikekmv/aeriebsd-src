@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -160,7 +153,7 @@ ELFNAME(exec)(int fd, Elf_Ehdr *elf, u_long *marks, int flags)
 	/*
 	 * Copy the ELF and section headers.
 	 */
-	elfp = maxp = roundup(maxp, sizeof(long));
+	elfp = maxp = roundup(maxp, sizeof(Elf_Addr));
 	if (flags & (LOAD_HDR|COUNT_HDR))
 		maxp += sizeof(Elf_Ehdr);
 
@@ -179,14 +172,14 @@ ELFNAME(exec)(int fd, Elf_Ehdr *elf, u_long *marks, int flags)
 		}
 
 		shpp = maxp;
-		maxp += roundup(sz, sizeof(long));
+		maxp += roundup(sz, sizeof(Elf_Addr));
 
 		/*
 		 * Now load the symbol sections themselves.  Make sure the
 		 * sections are aligned. Don't bother with string tables if
 		 * there are no symbol sections.
 		 */
-		off = roundup((sizeof(Elf_Ehdr) + sz), sizeof(long));
+		off = roundup((sizeof(Elf_Ehdr) + sz), sizeof(Elf_Addr));
 
 		for (havesyms = i = 0; i < elf->e_shnum; i++)
 			if (shp[i].sh_type == SHT_SYMTAB)
@@ -212,9 +205,9 @@ ELFNAME(exec)(int fd, Elf_Ehdr *elf, u_long *marks, int flags)
 					}
 				}
 				maxp += roundup(shp[i].sh_size,
-				    sizeof(long));
+				    sizeof(Elf_Addr));
 				shp[i].sh_offset = off;
-				off += roundup(shp[i].sh_size, sizeof(long));
+				off += roundup(shp[i].sh_size, sizeof(Elf_Addr));
 				first = 0;
 			}
 		}

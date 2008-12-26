@@ -484,6 +484,6 @@ struct acpi_facs {
 #define ACPI_DEV_THZ	"THERMALZONE"	/* Thermal Zone */
 #define ACPI_DEV_FFB	"FIXEDBUTTON"	/* Fixed Feature Button */
 #define ACPI_DEV_ASUS	"ASUS010"	/* ASUS Hotkeys */
-#define ACPI_DEV_THINKPAD "IBM0068"	/* Thinkpad support */
+#define ACPI_DEV_THINKPAD "IBM0068"	/* ThinkPad support */
 
 #endif	/* !_DEV_ACPI_ACPIREG_H_ */

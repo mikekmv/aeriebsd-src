@@ -1,4 +1,3 @@
-#	$NetBSD: Makefile,v 1.5 1995/09/06 21:36:42 jtc Exp $
 
 MAN=	MAKEDEV.8 boot_vax.8 format.8
 #MAN+=	drtest.8 installboot.8

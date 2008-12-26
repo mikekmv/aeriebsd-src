@@ -188,6 +188,7 @@ struct interface_info {
 	int			 noifmedia;
 	int			 errors;
 	u_int16_t		 index;
+	int			 linkstat;
 };
 
 struct timeout {
@@ -253,6 +254,7 @@ void got_one(void);
 void add_timeout(time_t, void (*)(void));
 void cancel_timeout(void (*)(void));
 int interface_link_status(char *);
+int interface_status(char *);
 int interface_link_forceup(char *);
 void interface_link_forcedown(char *);
 

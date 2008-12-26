@@ -158,14 +158,14 @@ ip6_init()
 		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
 			ip6_protox[pr->pr_protocol] = pr - inet6sw;
 	ip6intrq.ifq_maxlen = ip6qmaxlen;
+	ip6_randomid_init();
 	nd6_init();
 	frag6_init();
 	ip6_init2((void *)0);
 }
 
 static void
-ip6_init2(dummy)
-	void *dummy;
+ip6_init2(void *dummy)
 {
 
 	/* nd6_timer_init */
@@ -197,8 +197,7 @@ extern struct	route_in6 ip6_forward_rt;
 extern int	ip6_forward_rtableid;
 
 void
-ip6_input(m)
-	struct mbuf *m;
+ip6_input(struct mbuf *m)
 {
 	struct ip6_hdr *ip6;
 	int off = sizeof(struct ip6_hdr), nest;
@@ -396,6 +395,12 @@ ip6_input(m)
 			return;
 		}
 
+		ours = 1;
+		deliverifp = m->m_pkthdr.rcvif;
+		goto hbhcheck;
+	}
+
+	if (m->m_pkthdr.pf.flags & PF_TAG_DIVERTED) {
 		ours = 1;
 		deliverifp = m->m_pkthdr.rcvif;
 		goto hbhcheck;
@@ -785,13 +790,12 @@ ip6_check_rh0hdr(struct mbuf *m)
 /*
  * Hop-by-Hop options header processing. If a valid jumbo payload option is
  * included, the real payload length will be stored in plenp.
+ *
+ * rtalertp - XXX: should be stored in a more smart way
  */
 static int
-ip6_hopopts_input(plenp, rtalertp, mp, offp)
-	u_int32_t *plenp;
-	u_int32_t *rtalertp;	/* XXX: should be stored more smart way */
-	struct mbuf **mp;
-	int *offp;
+ip6_hopopts_input(u_int32_t *plenp, u_int32_t *rtalertp, struct mbuf **mp,
+	int *offp)
 {
 	struct mbuf *m = *mp;
 	int off = *offp, hbhlen;
@@ -836,12 +840,8 @@ ip6_hopopts_input(plenp, rtalertp, mp, offp)
  * opthead + hbhlen is located in continuous memory region.
  */
 int
-ip6_process_hopopts(m, opthead, hbhlen, rtalertp, plenp)
-	struct mbuf *m;
-	u_int8_t *opthead;
-	int hbhlen;
-	u_int32_t *rtalertp;
-	u_int32_t *plenp;
+ip6_process_hopopts(struct mbuf *m, u_int8_t *opthead, int hbhlen, 
+	u_int32_t *rtalertp, u_int32_t *plenp)
 {
 	struct ip6_hdr *ip6;
 	int optlen = 0;
@@ -973,10 +973,7 @@ ip6_process_hopopts(m, opthead, hbhlen, rtalertp, plenp)
  * is not continuous in order to return an ICMPv6 error.
  */
 int
-ip6_unknown_opt(optp, m, off)
-	u_int8_t *optp;
-	struct mbuf *m;
-	int off;
+ip6_unknown_opt(u_int8_t *optp, struct mbuf *m, int off)
 {
 	struct ip6_hdr *ip6;
 
@@ -1018,10 +1015,7 @@ ip6_unknown_opt(optp, m, off)
  * you are using IP6_EXTHDR_CHECK() not m_pulldown())
  */
 void
-ip6_savecontrol(in6p, m, mp)
-	struct inpcb *in6p;
-	struct mbuf *m;
-	struct mbuf **mp;
+ip6_savecontrol(struct inpcb *in6p, struct mbuf *m, struct mbuf **mp)
 {
 #define IS2292(x, y)	((in6p->in6p_flags & IN6P_RFC2292) ? (x) : (y))
 # define in6p_flags	inp_flags
@@ -1231,10 +1225,7 @@ ip6_savecontrol(in6p, m, mp)
  * contains the result, or NULL on error.
  */
 static struct mbuf *
-ip6_pullexthdr(m, off, nxt)
-	struct mbuf *m;
-	size_t off;
-	int nxt;
+ip6_pullexthdr(struct mbuf *m, size_t off, int nxt)
 {
 	struct ip6_ext ip6e;
 	size_t elen;
@@ -1293,9 +1284,7 @@ ip6_pullexthdr(m, off, nxt)
  * we develop `neater' mechanism to process extension headers.
  */
 u_int8_t *
-ip6_get_prevhdr(m, off)
-	struct mbuf *m;
-	int off;
+ip6_get_prevhdr(struct mbuf *m, int off)
 {
 	struct ip6_hdr *ip6 = mtod(m, struct ip6_hdr *);
 
@@ -1334,11 +1323,7 @@ ip6_get_prevhdr(m, off)
  * get next header offset.  m will be retained.
  */
 int
-ip6_nexthdr(m, off, proto, nxtp)
-	struct mbuf *m;
-	int off;
-	int proto;
-	int *nxtp;
+ip6_nexthdr(struct mbuf *m, int off, int proto, int *nxtp)
 {
 	struct ip6_hdr ip6;
 	struct ip6_ext ip6e;
@@ -1416,11 +1401,7 @@ ip6_nexthdr(m, off, proto, nxtp)
  * get offset for the last header in the chain.  m will be kept untainted.
  */
 int
-ip6_lasthdr(m, off, proto, nxtp)
-	struct mbuf *m;
-	int off;
-	int proto;
-	int *nxtp;
+ip6_lasthdr(struct mbuf *m, int off, int proto, int *nxtp)
 {
 	int newoff;
 	int nxt;
@@ -1462,13 +1443,8 @@ u_char	inet6ctlerrmap[PRC_NCMDS] = {
 int *ipv6ctl_vars[IPV6CTL_MAXID] = IPV6CTL_VARS;
 
 int
-ip6_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
-	int *name;
-	u_int namelen;
-	void *oldp;
-	size_t *oldlenp;
-	void *newp;
-	size_t newlen;
+ip6_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, 
+	void *newp, size_t newlen)
 {
 #ifdef MROUTING
 	extern int ip6_mrtproto;

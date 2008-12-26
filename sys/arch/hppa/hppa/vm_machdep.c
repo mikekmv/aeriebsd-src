@@ -150,7 +150,8 @@ cpu_fork(p1, p2, stack, stacksize, func, arg)
 	 */
 	tf->tf_sr7 = HPPA_SID_KERNEL;
 	mfctl(CR_EIEM, tf->tf_eiem);
-	tf->tf_ipsw = PSL_C | PSL_Q | PSL_P | PSL_D | PSL_I /* | PSL_L */;
+	tf->tf_ipsw = PSL_C | PSL_Q | PSL_P | PSL_D | PSL_I /* | PSL_L */ |
+	    (kpsw & PSL_O);
 
 	/*
 	 * If specified, give the child a different stack.

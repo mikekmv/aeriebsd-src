@@ -13,7 +13,7 @@
 .\" AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 .\" OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: December 11 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt NTPD 8
 .Os
 .Sh NAME
@@ -59,8 +59,7 @@ Only check the configuration file for validity.
 Do not set the time immediately at startup.
 This is the default.
 .It Fl s
-Set the time immediately at startup if the local clock is off by more
-than 180 seconds.
+Set the time immediately at startup.
 Allows for a large time correction,
 eliminating the need to run
 .Xr rdate 8

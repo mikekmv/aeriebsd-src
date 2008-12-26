@@ -78,6 +78,10 @@
 #define	VM_MAX_ADDRESS		VM_MAXUSER_ADDRESS
 #define	VM_MIN_KERNEL_ADDRESS	((vaddr_t)(PPC_KERNEL_SR << ADDR_SR_SHIFT))
 
+/* map PIE into approximately the first quarter of user va space */
+#define VM_PIE_MIN_ADDR		PAGE_SIZE
+#define VM_PIE_MAX_ADDR		0x40000000
+
 /* ppc_kvm_stolen is so that vm space can be stolen before vm is fully
  * initialized.
  */

@@ -201,7 +201,7 @@
 .de Os
 .ds oS Null
 .if "\\$1"" \{\
-.	ds oS OpenBSD 4.3
+.	ds oS OpenBSD 4.4
 .\}
 .if "\\$2"" \{\
 .	ds aa Non-Null
@@ -282,6 +282,7 @@
 .	if "\\$2"4.1"  .as oS \04.1
 .	if "\\$2"4.2"  .as oS \04.2
 .	if "\\$2"4.3"  .as oS \04.3
+.	if "\\$2"4.4"  .as oS \04.4
 .\}
 .if "\\*(oS"Null" .ds oS \0\\$1
 .if "\\*(aa"Non-Null" .as oS \0\\$2

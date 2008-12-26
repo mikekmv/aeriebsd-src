@@ -32,7 +32,7 @@
 #if 0
 static const char sccsid[] = "@(#)cmd3.c	8.2 (Berkeley) 4/20/95";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: cmd3.c,v 1.1.1.1 2008/08/26 14:43:01 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -263,9 +263,7 @@ reedit(char *subj)
 
 	if (subj == NULL)
 		return(NULL);
-	if ((subj[0] == 'r' || subj[0] == 'R') &&
-	    (subj[1] == 'e' || subj[1] == 'E') &&
-	    subj[2] == ':')
+	if (strncasecmp(subj, "re:", 3) == 0)
 		return(subj);
 	len = strlen(subj) + 5;
 	newsubj = salloc(len);

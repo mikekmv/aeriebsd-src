@@ -33,7 +33,7 @@
 #if 0
 static char sccsid[] = "@(#)ruserpass.c	8.4 (Berkeley) 4/27/95";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ruserpass.c,v 1.1.1.1 2008/08/26 14:42:48 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -317,4 +317,4 @@ token(void)
 			return (t->tval);
 	return (ID);
 }
-#endif
+#endif /* !SMALL */

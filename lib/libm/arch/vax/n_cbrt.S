@@ -31,8 +31,10 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: n_cbrt.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
 #endif /* LIBM_SCCS */
+
+#include <machine/asm.h>
 
 /*
  * double cbrt(double arg)
@@ -41,20 +43,13 @@
  * Revised and tested by K.C. Ng, 5/2/85  
  * Max error less than 0.667 ulps (unit in the last places)
  */
-
-	.globl	_cbrt
-	.globl	_d_cbrt
-	.globl  _dcbrt_
 	.text
-	.align	1
-
-_cbrt:
-_d_cbrt:
-	.word	0x00fc		# save r2 to r7
+	_ALIGN_TEXT
+ALTENTRY(d_cbrt)
+ENTRY(cbrt, R2|R3|R4|R5|R6|R7)
 	movq	4(ap),r0	# r0 = argument x
 	jmp 	dcbrt2
-_dcbrt_:
-	.word	0x00fc		# save r2 to r7
+ENTRY(dcbrt, R2|R3|R4|R5|R6|R7)
 	movq	*4(ap),r0	# r0 = argument x
 
 dcbrt2:	bicw3	$0x807f,r0,r2	# biased exponent of x
@@ -91,11 +86,10 @@ return:
 	ret			# error less than 0.667 ulps
 
 .data
-.align	2
+	.align 2
 B :	.long		 721142941		# (86-0.03306235651)*(2^23)
 C :	.float		0f0.5428571429		# 19/35
 D :	.float		0f-0.7053061224		# -864/1225
 E :	.float		0f1.414285714		# 99/70
 F :	.float		0f1.607142857		# 45/28
 G :	.float		0f0.3571428571		# 5/14
-

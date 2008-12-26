@@ -164,6 +164,9 @@ freebsd_elf_probe(p, epp, itp, pos, os)
 	int error;
 	size_t len;
 
+	if (!(emul_freebsd_elf.e_flags & EMUL_ENABLED))
+		return (ENOEXEC);
+
 	/*
 	 * Older FreeBSD ELF binaries use a brand; newer ones use EI_OSABI
 	 */

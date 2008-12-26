@@ -99,7 +99,7 @@ process_write_regs(p, regs)
 	struct proc *p;
 	struct reg *regs;
 {
-	register_t sr;
+	register_t sr, ic, cpl;
 	extern struct proc *machFPCurProcPtr;
 
 	if (p == machFPCurProcPtr) {
@@ -109,8 +109,12 @@ process_write_regs(p, regs)
 			MipsSaveCurFPState16(p);
 	}
 	sr = p->p_md.md_regs->sr;
+	ic = p->p_md.md_regs->ic;
+	cpl = p->p_md.md_regs->cpl;
 	bcopy((caddr_t)regs, (caddr_t)p->p_md.md_regs, REGSIZE);
 	p->p_md.md_regs->sr = sr;
+	p->p_md.md_regs->ic = ic;
+	p->p_md.md_regs->cpl = cpl;
 	return (0);
 }
 

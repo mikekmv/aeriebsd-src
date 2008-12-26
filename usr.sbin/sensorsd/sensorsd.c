@@ -73,7 +73,9 @@ struct sdlim_t {
 };
 
 void		 usage(void);
+void		 create(void);
 struct sdlim_t	*create_sdlim(struct sensordev *);
+void		 destroy_sdlim(struct sdlim_t *);
 void		 check(time_t);
 void		 check_sdlim(struct sdlim_t *, time_t);
 void		 execute(char *);
@@ -81,11 +83,12 @@ void		 report(time_t);
 void		 report_sdlim(struct sdlim_t *, time_t);
 static char	*print_sensor(enum sensor_type, int64_t);
 void		 parse_config(char *);
-void		 parse_config_sdlim(struct sdlim_t *, char **);
+void		 parse_config_sdlim(struct sdlim_t *, char *);
 int64_t		 get_val(char *, int, enum sensor_type);
 void		 reparse_cfg(int);
 
-TAILQ_HEAD(, sdlim_t) sdlims = TAILQ_HEAD_INITIALIZER(sdlims);
+TAILQ_HEAD(sdlimhead_t, sdlim_t);
+struct sdlimhead_t sdlims = TAILQ_HEAD_INITIALIZER(sdlims);
 
 char			 *configfile;
 volatile sig_atomic_t	  reload = 0;
@@ -102,13 +105,8 @@ usage(void)
 int
 main(int argc, char *argv[])
 {
-	struct sensordev sensordev;
-	struct sdlim_t	*sdlim;
-	size_t		 sdlen = sizeof(sensordev);
 	time_t		 last_report = 0, this_check;
-	int		 mib[3], dev;
-	int		 sensor_cnt = 0, ch;
-	int		 check_period = CHECK_PERIOD;
+	int		 ch, check_period = CHECK_PERIOD;
 	const char	*errstr;
 
 	while ((ch = getopt(argc, argv, "c:d")) != -1) {
@@ -126,25 +124,14 @@ main(int argc, char *argv[])
 		}
 	}
 
-	mib[0] = CTL_HW;
-	mib[1] = HW_SENSORS;
-
-	for (dev = 0; dev < MAXSENSORDEVICES; dev++) {
-		mib[2] = dev;
-		if (sysctl(mib, 3, &sensordev, &sdlen, NULL, 0) == -1) {
-			if (errno != ENOENT)
-				warn("sysctl");
-			continue;
-		}
-		sdlim = create_sdlim(&sensordev);
-		TAILQ_INSERT_TAIL(&sdlims, sdlim, entries);
-		sensor_cnt += sdlim->sensor_cnt;
-	}
-
-	if (sensor_cnt == 0)
-		errx(1, "no sensors found");
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+		usage();
 
 	openlog("sensorsd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
+
+	create();
 
 	if (configfile == NULL)
 		if (asprintf(&configfile, "/etc/sensorsd.conf") == -1)
@@ -156,8 +143,6 @@ main(int argc, char *argv[])
 
 	signal(SIGHUP, reparse_cfg);
 	signal(SIGCHLD, SIG_IGN);
-
-	syslog(LOG_INFO, "startup, system has %d sensors", sensor_cnt);
 
 	for (;;) {
 		if (reload) {
@@ -173,6 +158,32 @@ main(int argc, char *argv[])
 		last_report = this_check;
 		sleep(check_period);
 	}
+}
+
+void
+create(void)
+{
+	struct sensordev sensordev;
+	struct sdlim_t	*sdlim;
+	size_t		 sdlen = sizeof(sensordev);
+	int		 mib[3], dev, sensor_cnt = 0;
+
+	mib[0] = CTL_HW;
+	mib[1] = HW_SENSORS;
+
+	for (dev = 0; dev < MAXSENSORDEVICES; dev++) {
+		mib[2] = dev;
+		if (sysctl(mib, 3, &sensordev, &sdlen, NULL, 0) == -1) {
+			if (errno != ENOENT)
+				warn("sysctl");
+			continue;
+		}
+		sdlim = create_sdlim(&sensordev);
+		TAILQ_INSERT_TAIL(&sdlims, sdlim, entries);
+		sensor_cnt += sdlim->sensor_cnt;
+	}
+
+	syslog(LOG_INFO, "startup, system has %d sensors", sensor_cnt);
 }
 
 struct sdlim_t *
@@ -219,12 +230,92 @@ create_sdlim(struct sensordev *snsrdev)
 }
 
 void
+destroy_sdlim(struct sdlim_t *sdlim)
+{
+	struct limits_t		*limit;
+
+	while((limit = TAILQ_FIRST(&sdlim->limits)) != NULL) {
+		TAILQ_REMOVE(&sdlim->limits, limit, entries);
+		if (limit->command != NULL)
+			free(limit->command);
+		free(limit);
+	}
+	free(sdlim);
+}
+
+void
 check(time_t this_check)
 {
-	struct sdlim_t	*sdlim;
+	struct sensordev	 sensordev;
+	struct sdlim_t		*sdlim, *next;
+	int			 mib[3];
+	int			 h, t, i;
+	size_t			 sdlen = sizeof(sensordev);
 
-	TAILQ_FOREACH(sdlim, &sdlims, entries)
+	if (TAILQ_EMPTY(&sdlims)) {
+		h = 0;
+		t = -1;
+	} else {
+		h = TAILQ_FIRST(&sdlims)->dev;
+		t = TAILQ_LAST(&sdlims, sdlimhead_t)->dev;
+	}
+	sdlim = TAILQ_FIRST(&sdlims);
+
+	mib[0] = CTL_HW;
+	mib[1] = HW_SENSORS;
+	/* look ahead for 4 more sensordevs */
+	for (i = h; i <= t + 4; i++) {
+		if (sdlim != NULL && i > sdlim->dev)
+			sdlim = TAILQ_NEXT(sdlim, entries);
+		if (sdlim == NULL && i <= t)
+			syslog(LOG_ALERT, "inconsistent sdlim logic");
+		mib[2] = i;
+		if (sysctl(mib, 3, &sensordev, &sdlen, NULL, 0) == -1) {
+			if (errno != ENOENT)
+				warn("sysctl");
+			if (sdlim != NULL && i == sdlim->dev) {
+				next = TAILQ_NEXT(sdlim, entries);
+				TAILQ_REMOVE(&sdlims, sdlim, entries);
+				syslog(LOG_INFO, "%s has disappeared",
+				    sdlim->dxname);
+				destroy_sdlim(sdlim);
+				sdlim = next;
+			}
+			continue;
+		}
+		if (sdlim != NULL && i == sdlim->dev) {
+			if (strcmp(sdlim->dxname, sensordev.xname) == 0) {
+				check_sdlim(sdlim, this_check);
+				continue;
+			} else {
+				next = TAILQ_NEXT(sdlim, entries);
+				TAILQ_REMOVE(&sdlims, sdlim, entries);
+				syslog(LOG_INFO, "%s has been replaced",
+				    sdlim->dxname);
+				destroy_sdlim(sdlim);
+				sdlim = next;
+			}
+		}
+		next = create_sdlim(&sensordev);
+		/* inserting next before sdlim */
+		if (sdlim != NULL)
+			TAILQ_INSERT_BEFORE(sdlim, next, entries);
+		else
+			TAILQ_INSERT_TAIL(&sdlims, next, entries);
+		syslog(LOG_INFO, "%s has appeared", next->dxname);
+		sdlim = next;
+		parse_config_sdlim(sdlim, configfile);
 		check_sdlim(sdlim, this_check);
+	}
+
+	if (TAILQ_EMPTY(&sdlims))
+		return;
+	/* Ensure that our queue is consistent. */
+	for (sdlim = TAILQ_FIRST(&sdlims);
+	    (next = TAILQ_NEXT(sdlim, entries)) != NULL;
+	    sdlim = next)
+		if (sdlim->dev > next->dev)
+			syslog(LOG_ALERT, "inconsistent sdlims queue");
 }
 
 void
@@ -573,24 +664,21 @@ void
 parse_config(char *cf)
 {
 	struct sdlim_t	 *sdlim;
-	char		**cfa;
-
-	if ((cfa = calloc(2, sizeof(char *))) == NULL)
-		err(1, "calloc");
-	cfa[0] = cf;
-	cfa[1] = NULL;
 
 	TAILQ_FOREACH(sdlim, &sdlims, entries)
-		parse_config_sdlim(sdlim, cfa);
-	free(cfa);
+		parse_config_sdlim(sdlim, cf);
 }
 
 void
-parse_config_sdlim(struct sdlim_t *sdlim, char **cfa)
+parse_config_sdlim(struct sdlim_t *sdlim, char *cf)
 {
 	struct limits_t	 *p;
 	char		 *buf = NULL, *ebuf = NULL;
 	char		  node[48];
+	char		 *cfa[2];
+	
+	cfa[0] = cf;
+	cfa[1] = NULL;
 
 	TAILQ_FOREACH(p, &sdlim->limits, entries) {
 		snprintf(node, sizeof(node), "hw.sensors.%s.%s%d",

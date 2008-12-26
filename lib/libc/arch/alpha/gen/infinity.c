@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994, 1995 Carnegie-Mellon University.
  * All rights reserved.
@@ -27,7 +26,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: infinity.c,v 1.1.1.1 2008/08/26 14:38:15 root Exp $";
 #endif
 
 #include <math.h>

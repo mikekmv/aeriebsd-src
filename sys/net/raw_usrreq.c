@@ -145,10 +145,11 @@ raw_ctlinput(cmd, arg, d)
 
 /*ARGSUSED*/
 int
-raw_usrreq(so, req, m, nam, control)
+raw_usrreq(so, req, m, nam, control, p)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *control;
+	struct proc *p;
 {
 	struct rawcb *rp = sotorawcb(so);
 	int error = 0;

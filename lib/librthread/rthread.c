@@ -26,6 +26,7 @@
 
 #include <machine/spinlock.h>
 
+#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -48,11 +49,6 @@ _spinlock_lock_t _thread_lock = _SPINLOCK_UNLOCKED;
 struct pthread _initial_thread;
 
 int rfork_thread(int, void *, void (*)(void *), void *);
-
-#if defined(__ELF__) && defined(PIC)
-static void rthread_dl_lock(int what);
-static void rthread_bind_lock(int what);
-#endif
 
 /*
  * internal support functions
@@ -99,6 +95,16 @@ _rthread_start(void *v)
 	pthread_exit(retval);
 }
 
+int
+_rthread_open_kqueue(void)
+{
+	_rthread_kq = kqueue();
+	if (_rthread_kq == -1)
+		return 1;
+	fcntl(_rthread_kq, F_SETFD, FD_CLOEXEC);
+	return 0;
+}
+
 static int
 _rthread_init(void)
 {
@@ -111,8 +117,7 @@ _rthread_init(void)
 	thread->flags_lock = _SPINLOCK_UNLOCKED;
 	strlcpy(thread->name, "Main process", sizeof(thread->name));
 	LIST_INSERT_HEAD(&_thread_list, thread, threads);
-	_rthread_kq = kqueue();
-	if (_rthread_kq == -1)
+	if (_rthread_open_kqueue())
 		return (errno);
 	_rthread_debug_init();
 	_rthread_debug(1, "rthread init\n");
@@ -125,12 +130,12 @@ _rthread_init(void)
 	 * functions once to fully bind them before registering them
 	 * for use.
 	 */
-	rthread_dl_lock(0);
-	rthread_dl_lock(1);
-	rthread_bind_lock(0);
-	rthread_bind_lock(1);
-	dlctl(NULL, DL_SETTHREADLCK, rthread_dl_lock);
-	dlctl(NULL, DL_SETBINDLCK, rthread_bind_lock);
+	_rthread_dl_lock(0);
+	_rthread_dl_lock(1);
+	_rthread_bind_lock(0);
+	_rthread_bind_lock(1);
+	dlctl(NULL, DL_SETTHREADLCK, _rthread_dl_lock);
+	dlctl(NULL, DL_SETBINDLCK, _rthread_bind_lock);
 #endif
 
 	return (0);
@@ -469,8 +474,8 @@ _thread_dump_info(void)
 }
 
 #if defined(__ELF__) && defined(PIC)
-static void
-rthread_dl_lock(int what)
+void
+_rthread_dl_lock(int what)
 {
 	static _spinlock_lock_t lock = _SPINLOCK_UNLOCKED;
 
@@ -480,8 +485,8 @@ rthread_dl_lock(int what)
 		_spinunlock(&lock);
 }
 
-static void
-rthread_bind_lock(int what)
+void
+_rthread_bind_lock(int what)
 {
 	static _spinlock_lock_t lock = _SPINLOCK_UNLOCKED;
 

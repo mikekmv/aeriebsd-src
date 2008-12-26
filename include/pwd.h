@@ -62,6 +62,7 @@
 #define	_PASSWORD_LEN		128	/* max length, not counting NUL */
 #define	_PW_NAME_LEN		31	/* max length, not counting NUL */
 					/* Should be MAXLOGNAME - 1 */
+#define _PW_BUF_LEN		1024	/* length of getpw*_r buffer */
 
 #define _PASSWORD_NOUID		0x01	/* flag for no specified uid. */
 #define _PASSWORD_NOGID		0x02	/* flag for no specified gid. */
@@ -90,6 +91,10 @@ struct passwd {
 __BEGIN_DECLS
 struct passwd	*getpwuid(uid_t);
 struct passwd	*getpwnam(const char *);
+int		getpwnam_r(const char *, struct passwd *, char *, size_t,
+		    struct passwd **result);
+int		getpwuid_r(uid_t uid, struct passwd *, char *buf, size_t buflen,
+		    struct passwd **result);
 #if __BSD_VISIBLE || __XPG_VISIBLE
 struct passwd	*getpwent(void);
 void		 setpwent(void);

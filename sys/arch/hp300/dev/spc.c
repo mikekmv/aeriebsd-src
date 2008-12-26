@@ -138,12 +138,12 @@ spc_dio_attach(struct device *parent, struct device *self, void *aux)
 	if ((hconf & HCONF_PARITY) == 0)
 		printf(", no parity");
 
-	id &= ID_MASK;
-	printf(", SCSI ID %d\n", id);
+	printf("\n");
 
 	if ((hconf & HCONF_PARITY) != 0)
 		sc->sc_ctlflags = SCTL_PARITY_ENAB;
 
+	id &= ID_MASK;
 	sc->sc_initiator = id;
 
 	if ((sc->sc_dev.dv_cfdata->cf_flags & SPC_NODMA) == 0) {

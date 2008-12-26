@@ -35,7 +35,7 @@
 	     (PCI_CLASS(class) == PCI_CLASS_PREHISTORIC &&		\
 	      PCI_SUBCLASS(class) == PCI_SUBCLASS_PREHISTORIC_VGA)) ? 1 : 0)
 
-#define VGA_PCI_MAX_BARS 4
+#define VGA_PCI_MAX_BARS 6
 
 struct vga_pci_bar {
 	int		addr;

@@ -27,7 +27,7 @@
 .\"
 .\"	from: @(#)mail.local.8	6.8 (Berkeley) 4/27/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt MAIL.LOCAL 8
 .Os
 .Sh NAME
@@ -35,8 +35,7 @@
 .Nd store mail in a mailbox
 .Sh SYNOPSIS
 .Nm mail.local
-.Op Fl L
-.Op Fl l
+.Op Fl Ll
 .Op Fl f Ar from
 .Ar user ...
 .Sh DESCRIPTION
@@ -53,15 +52,15 @@ The options are as follows:
 .Bl -tag -width Ds
 .It Fl f Ar from
 Specify the sender's name.
+.It Fl L
+Don't create a
+.Pa username.lock
+file while locking the spool.
 .It Fl l
 For compatibility, request that files named
 .Pa username.lock
 be used for locking.
 (This is the default behavior.)
-.It Fl L
-Don't create a
-.Pa username.lock
-file while locking the spool.
 .El
 .Pp
 Individual mail messages in the mailbox are delimited by an empty

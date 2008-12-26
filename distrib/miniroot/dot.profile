@@ -34,12 +34,14 @@ umask 022
 # emacs-style command line editing
 set -o emacs
 
-rootdisk=`dmesg|sed -n '/^root on /!d;${s#^root on \([^ ]*\).*#/dev/\1#;p;}'`
+# Extract rootdisk from last 'root on wd0a swap on wd0b dump on wd0b' line.
+set -- `dmesg | sed -n '/^root on /h;${g;p;}'`
+rootdisk=$3
 
 if [ "X${DONEPROFILE}" = "X" ]; then
 	DONEPROFILE=YES
 
-	mount -u ${rootdisk:-/dev/rd0a} /
+	mount -u /dev/${rootdisk:-rd0a} /
 
 	# set up some sane defaults
 	echo 'erase ^?, werase ^W, kill ^U, intr ^C, status ^T'

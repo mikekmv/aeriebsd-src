@@ -1,7 +1,3 @@
-/*	$OpenPackages$ */
-/* ex:ts=8 sw=4:
- */
-
 /*
  * Copyright (c) 1999 Marc Espie.
  *

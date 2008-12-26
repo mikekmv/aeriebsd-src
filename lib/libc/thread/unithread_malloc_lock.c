@@ -4,11 +4,9 @@
 
 WEAK_PROTOTYPE(_thread_malloc_lock);
 WEAK_PROTOTYPE(_thread_malloc_unlock);
-WEAK_PROTOTYPE(_thread_malloc_init);
 
 WEAK_ALIAS(_thread_malloc_lock);
 WEAK_ALIAS(_thread_malloc_unlock);
-WEAK_ALIAS(_thread_malloc_init);
 
 WEAK_PROTOTYPE(_thread_atexit_lock);
 WEAK_PROTOTYPE(_thread_atexit_unlock);
@@ -30,12 +28,6 @@ WEAK_NAME(_thread_malloc_lock)(void)
 
 void
 WEAK_NAME(_thread_malloc_unlock)(void)
-{
-	return;
-}
-
-void
-WEAK_NAME(_thread_malloc_init)(void)
 {
 	return;
 }

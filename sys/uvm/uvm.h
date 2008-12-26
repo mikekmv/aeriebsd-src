@@ -126,11 +126,13 @@ struct uvm {
 #define UVM_ET_SUBMAP		0x02	/* it is a vm_map submap */
 #define UVM_ET_COPYONWRITE 	0x04	/* copy_on_write */
 #define UVM_ET_NEEDSCOPY	0x08	/* needs_copy */
+#define	UVM_ET_HOLE		0x10	/* no backend */
 
 #define UVM_ET_ISOBJ(E)		(((E)->etype & UVM_ET_OBJ) != 0)
 #define UVM_ET_ISSUBMAP(E)	(((E)->etype & UVM_ET_SUBMAP) != 0)
 #define UVM_ET_ISCOPYONWRITE(E)	(((E)->etype & UVM_ET_COPYONWRITE) != 0)
 #define UVM_ET_ISNEEDSCOPY(E)	(((E)->etype & UVM_ET_NEEDSCOPY) != 0)
+#define UVM_ET_ISHOLE(E)	(((E)->etype & UVM_ET_HOLE) != 0)
 
 #ifdef _KERNEL
 

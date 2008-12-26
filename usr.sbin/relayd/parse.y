@@ -129,11 +129,11 @@ typedef struct {
 %token	ON PATH PORT PREFORK PROTO QUERYSTR REAL REDIRECT RELAY REMOVE TRAP
 %token	REQUEST RESPONSE RETRY RETURN ROUNDROBIN SACK SCRIPT SEND SESSION
 %token	SOCKET SSL STICKYADDR STYLE TABLE TAG TCP TIMEOUT TO UPDATES URL
-%token	VIRTUAL WITH ERROR ROUTE
+%token	VIRTUAL WITH ERROR ROUTE TRANSPARENT PARENT INET INET6
 %token	<v.string>	STRING
 %token  <v.number>	NUMBER
 %type	<v.string>	interface hostname table
-%type	<v.number>	port http_type loglevel sslcache optssl mark
+%type	<v.number>	port http_type loglevel sslcache optssl mark parent
 %type	<v.number>	proto_type dstmode retry log flag direction forwardmode
 %type	<v.host>	host
 %type	<v.tv>		timeout
@@ -335,7 +335,7 @@ rdr		: REDIRECT STRING	{
 				YYERROR;
 			}
 			free($2);
-			srv->conf.id = last_rdr_id++;
+			srv->conf.id = ++last_rdr_id;
 			srv->conf.timeout.tv_sec = RELAY_TIMEOUT;
 			if (last_rdr_id == INT_MAX) {
 				yyerror("too many redirections defined");
@@ -368,7 +368,7 @@ rdr		: REDIRECT STRING	{
 			}
 			if (!(rdr->conf.flags & F_DISABLE))
 				rdr->conf.flags |= F_ADD;
-			TAILQ_INSERT_HEAD(conf->sc_rdrs, rdr, entry);
+			TAILQ_INSERT_TAIL(conf->sc_rdrs, rdr, entry);
 			tableport = 0;
 			rdr = NULL;
 		}
@@ -379,17 +379,25 @@ rdropts_l	: rdropts_l rdroptsl nl
 		;
 
 rdroptsl	: forwardmode TO tablespec interface	{
+			switch ($1) {
+			case FWD_NORMAL:
+				if ($4 == NULL)
+					break;
+				yyerror("superfluous interface");
+				YYERROR;
+			case FWD_ROUTE:
+				if ($4 != NULL)
+					break;
+				yyerror("missing interface to route to");
+				YYERROR;
+			case FWD_TRANS:
+				yyerror("no transparent forward here");
+				YYERROR;
+			}
 			if ($4 != NULL) {
 				strlcpy($3->conf.ifname, $4,
 				    sizeof($3->conf.ifname));
 				free($4);
-				if (($1 & F_ROUTE) == 0) {
-					yyerror("superfluous interface");
-					YYERROR;
-				}
-			} else if ($1 & F_ROUTE) {
-				yyerror("missing interface to route to");
-				YYERROR;
 			}
 
 			if ($3->conf.check == CHECK_NOCHECK) {
@@ -409,6 +417,7 @@ rdroptsl	: forwardmode TO tablespec interface	{
 				rdr->table = $3;
 				rdr->conf.table_id = $3->conf.id;
 			}
+			$3->conf.fwdmode = $1;
 			$3->conf.rdrid = rdr->conf.id;
 			$3->conf.flags |= F_USED | $1;
 		}
@@ -448,8 +457,9 @@ rdroptsl	: forwardmode TO tablespec interface	{
 		| include
 		;
 
-forwardmode	: FORWARD		{ $$ = 0; }
-		| ROUTE			{ $$ = F_ROUTE; }
+forwardmode	: FORWARD		{ $$ = FWD_NORMAL; }
+		| ROUTE			{ $$ = FWD_ROUTE; }
+		| TRANSPARENT FORWARD	{ $$ = FWD_TRANS; }
 		;
 
 table		: '<' STRING '>'	{
@@ -481,14 +491,10 @@ tabledef	: TABLE table		{
 			(void)strlcpy(tb->conf.name, $2, sizeof(tb->conf.name));
 			free($2);
 
-			tb->conf.id = last_table_id++;
+			tb->conf.id = 0; /* will be set later */
 			bcopy(&conf->sc_timeout, &tb->conf.timeout,
 			    sizeof(struct timeval));
-			if (last_table_id == INT_MAX) {
-				yyerror("too many tables defined");
-				free(tb);
-				YYERROR;
-			}
+			TAILQ_INIT(&tb->hosts);
 			table = tb;
 		} tabledefopts_l 	{
 			if (TAILQ_EMPTY(&table->hosts)) {
@@ -497,7 +503,7 @@ tabledef	: TABLE table		{
 				YYERROR;
 			}
 			conf->sc_tablecount++;
-			TAILQ_INSERT_HEAD(conf->sc_tables, table, entry);
+			TAILQ_INSERT_TAIL(conf->sc_tables, table, entry);
 		}
 		;
 
@@ -516,7 +522,7 @@ tablelist_l	: tablelist comma tablelist_l
 tablelist	: host			{
 			$1->conf.tableid = table->conf.id;
 			$1->tablename = table->conf.name;
-			TAILQ_INSERT_HEAD(&table->hosts, $1, entry);
+			TAILQ_INSERT_TAIL(&table->hosts, $1, entry);
 		}
 		| include
 		;
@@ -711,7 +717,7 @@ proto		: proto_type PROTO STRING	{
 				YYERROR;
 			}
 			free($3);
-			p->id = last_proto_id++;
+			p->id = ++last_proto_id;
 			p->type = $1;
 			p->cache = RELAY_CACHESIZE;
 			p->tcpflags = TCPFLAG_DEFAULT;
@@ -735,7 +741,7 @@ proto		: proto_type PROTO STRING	{
 				YYERROR;
 			}
 
-			TAILQ_INSERT_HEAD(conf->sc_protos, proto, entry);
+			TAILQ_INSERT_TAIL(conf->sc_protos, proto, entry);
 		}
 		;
 
@@ -1056,7 +1062,7 @@ relay		: RELAY STRING	{
 				YYERROR;
 			}
 			free($2);
-			r->rl_conf.id = last_relay_id++;
+			r->rl_conf.id = ++last_relay_id;
 			r->rl_conf.timeout.tv_sec = RELAY_TIMEOUT;
 			r->rl_proto = NULL;
 			r->rl_conf.proto = EMPTY_ID;
@@ -1093,7 +1099,7 @@ relay		: RELAY STRING	{
 			}
 			conf->sc_relaycount++;
 			SPLAY_INIT(&rlay->rl_sessions);
-			TAILQ_INSERT_HEAD(conf->sc_relays, rlay, rl_entry);
+			TAILQ_INSERT_TAIL(conf->sc_relays, rlay, rl_entry);
 			tableport = 0;
 			rlay = NULL;
 		}
@@ -1129,7 +1135,29 @@ relayoptsl	: LISTEN ON STRING port optssl {
 			}
 			tableport = h->port;
 		}
-		| FORWARD TO forwardspec
+		| forwardmode TO forwardspec interface dstaf	{
+			rlay->rl_conf.fwdmode = $1;
+			switch ($1) {
+			case FWD_NORMAL:
+				if ($4 == NULL)
+					break;
+				yyerror("superfluous interface");
+				YYERROR;
+			case FWD_ROUTE:
+				yyerror("no route for redirections");
+				YYERROR;
+			case FWD_TRANS:
+				if ($4 != NULL)
+					break;
+				yyerror("missing interface");
+				YYERROR;
+			}
+			if ($4 != NULL) {
+				strlcpy(rlay->rl_conf.ifname, $4,
+				    sizeof(rlay->rl_conf.ifname));
+				free($4);
+			}
+		}
 		| SESSION TIMEOUT NUMBER		{
 			if ((rlay->rl_conf.timeout.tv_sec = $3) < 0) {
 				yyerror("invalid timeout: %d", $3);
@@ -1205,11 +1233,33 @@ dstmode		: /* empty */		{ $$ = RELAY_DSTMODE_DEFAULT; }
 		| HASH			{ $$ = RELAY_DSTMODE_HASH; }
 		;
 
+dstaf		: /* empty */		{
+			rlay->rl_conf.dstaf.ss_family = AF_UNSPEC;
+		}
+		| INET			{
+			rlay->rl_conf.dstaf.ss_family = AF_INET;
+		}
+		| INET6	STRING		{
+			struct sockaddr_in6	*sin6;
+
+			sin6 = (struct sockaddr_in6 *)&rlay->rl_conf.dstaf;
+			if (inet_pton(AF_INET6, $2, &sin6->sin6_addr) == -1) {
+				yyerror("invalid ipv6 address %s", $2);
+				free($2);
+				YYERROR;
+			}
+			free($2);
+
+			sin6->sin6_family = AF_INET6;
+			sin6->sin6_len = sizeof(*sin6);
+		}
+		;
+
 interface	: /*empty*/		{ $$ = NULL; }
 		| INTERFACE STRING	{ $$ = $2; }
 		;
 
-host		: STRING retry		{
+host		: STRING retry parent	{
 			struct address *a;
 			struct addresslist al;
 
@@ -1235,13 +1285,10 @@ host		: STRING retry		{
 				YYERROR;
 			}
 			free($1);
-			$$->conf.id = last_host_id++;
+			$$->conf.id = 0; /* will be set later */
 			$$->conf.retry = $2;
-			if (last_host_id == INT_MAX) {
-				yyerror("too many hosts defined");
-				free($$);
-				YYERROR;
-			}
+			$$->conf.parentid = $3;
+			SLIST_INIT(&$$->children);
 		}
 		;
 
@@ -1249,6 +1296,15 @@ retry		: /* nothing */		{ $$ = 0; }
 		| RETRY NUMBER		{
 			if (($$ = $2) < 0) {
 				yyerror("invalid retry value: %d\n", $2);
+				YYERROR;
+			}
+		}
+		;
+
+parent		: /* nothing */		{ $$ = 0; }
+		| PARENT NUMBER		{
+			if (($$ = $2) < 0) {
+				yyerror("invalid parent value: %d\n", $2);
 				YYERROR;
 			}
 		}
@@ -1338,6 +1394,8 @@ lookup(char *s)
 		{ "host",		HOST },
 		{ "icmp",		ICMP },
 		{ "include",		INCLUDE },
+		{ "inet",		INET },
+		{ "inet6",		INET6 },
 		{ "interface",		INTERFACE },
 		{ "interval",		INTERVAL },
 		{ "ip",			IP },
@@ -1354,6 +1412,7 @@ lookup(char *s)
 		{ "nodelay",		NODELAY },
 		{ "nothing",		NOTHING },
 		{ "on",			ON },
+		{ "parent",		PARENT },
 		{ "path",		PATH },
 		{ "port",		PORT },
 		{ "prefork",		PREFORK },
@@ -1382,6 +1441,7 @@ lookup(char *s)
 		{ "tcp",		TCP },
 		{ "timeout",		TIMEOUT },
 		{ "to",			TO },
+		{ "transparent",	TRANSPARENT },
 		{ "trap",		TRAP },
 		{ "updates",		UPDATES },
 		{ "url",		URL },
@@ -1704,7 +1764,7 @@ parse_config(const char *filename, int opts)
 {
 	struct sym	*sym, *next;
 	struct table	*nexttb;
-	struct host	*h;
+	struct host	*h, *ph;
 
 	if ((conf = calloc(1, sizeof(*conf))) == NULL ||
 	    (conf->sc_tables = calloc(1, sizeof(*conf->sc_tables))) == NULL ||
@@ -1808,6 +1868,26 @@ parse_config(const char *filename, int opts)
 			free(table);
 			continue;
 		}
+
+		TAILQ_FOREACH(h, &table->hosts, entry) {
+			if (h->conf.parentid) {
+				ph = host_find(conf, h->conf.parentid);
+
+				/* Validate the parent id */
+				if (h->conf.id == h->conf.parentid ||
+				    ph == NULL || ph->conf.parentid)
+					ph = NULL;
+
+				if (ph == NULL) {
+					log_warnx("host parent id %d invalid",
+					    h->conf.parentid);
+					errors++;
+				} else
+					SLIST_INSERT_HEAD(&ph->children,
+					    h, child);
+			}
+		}
+
 		if (!(table->conf.flags & F_USED)) {
 			log_warnx("unused table: %s", table->conf.name);
 			errors++;
@@ -1932,20 +2012,28 @@ host_v4(const char *s)
 struct address *
 host_v6(const char *s)
 {
-	struct in6_addr		 ina6;
-	struct sockaddr_in6	*sin6;
-	struct address		*h;
+	struct addrinfo		 hints, *res;
+	struct sockaddr_in6	*sa_in6;
+	struct address		*h = NULL;
 
-	bzero(&ina6, sizeof(ina6));
-	if (inet_pton(AF_INET6, s, &ina6) != 1)
-		return (NULL);
+	bzero(&hints, sizeof(hints));
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = SOCK_DGRAM; /* dummy */
+	hints.ai_flags = AI_NUMERICHOST;
+	if (getaddrinfo(s, "0", &hints, &res) == 0) {
+		if ((h = calloc(1, sizeof(*h))) == NULL)
+			fatal(NULL);
+		sa_in6 = (struct sockaddr_in6 *)&h->ss;
+		sa_in6->sin6_len = sizeof(struct sockaddr_in6);
+		sa_in6->sin6_family = AF_INET6;
+		memcpy(&sa_in6->sin6_addr,
+		    &((struct sockaddr_in6 *)res->ai_addr)->sin6_addr,
+		    sizeof(sa_in6->sin6_addr));
+		sa_in6->sin6_scope_id =
+		    ((struct sockaddr_in6 *)res->ai_addr)->sin6_scope_id;
 
-	if ((h = calloc(1, sizeof(*h))) == NULL)
-		fatal(NULL);
-	sin6 = (struct sockaddr_in6 *)&h->ss;
-	sin6->sin6_len = sizeof(struct sockaddr_in6);
-	sin6->sin6_family = AF_INET6;
-	memcpy(&sin6->sin6_addr, &ina6, sizeof(ina6));
+		freeaddrinfo(res);
+	}
 
 	return (h);
 }
@@ -2073,7 +2161,7 @@ table_inherit(struct table *tb)
 		return (oldtb);
 
 	/* Create a new table */
-	tb->conf.id = last_table_id++;
+	tb->conf.id = ++last_table_id;
 	if (last_table_id == INT_MAX) {
 		yyerror("too many tables defined");
 		purge_table(NULL, tb);
@@ -2088,13 +2176,13 @@ table_inherit(struct table *tb)
 	    sizeof(tb->conf.demote_group));
 
 	/* Copy the associated hosts */
-	bzero(&tb->hosts, sizeof(tb->hosts));
+	TAILQ_INIT(&tb->hosts);
 	TAILQ_FOREACH(dsth, &dsttb->hosts, entry) {
 		if ((h = (struct host *)
 		    calloc(1, sizeof (*h))) == NULL)
 			fatal("out of memory");
 		bcopy(dsth, h, sizeof(*h));
-		h->conf.id = last_host_id++;
+		h->conf.id = ++last_host_id;
 		if (last_host_id == INT_MAX) {
 			yyerror("too many hosts defined");
 			purge_table(NULL, tb);
@@ -2102,11 +2190,12 @@ table_inherit(struct table *tb)
 		}
 		h->conf.tableid = tb->conf.id;
 		h->tablename = tb->conf.name;
-		TAILQ_INSERT_HEAD(&tb->hosts, h, entry);
+		SLIST_INIT(&h->children);
+		TAILQ_INSERT_TAIL(&tb->hosts, h, entry);
 	}
 
 	conf->sc_tablecount++;
-	TAILQ_INSERT_HEAD(conf->sc_tables, tb, entry);
+	TAILQ_INSERT_TAIL(conf->sc_tables, tb, entry);
 
 	return (tb);
 }

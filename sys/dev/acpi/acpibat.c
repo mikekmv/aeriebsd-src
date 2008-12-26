@@ -69,18 +69,19 @@ acpibat_attach(struct device *parent, struct device *self, void *aux)
 	struct aml_value	res;
 
 	sc->sc_acpi = (struct acpi_softc *)parent;
-	sc->sc_devnode = aa->aaa_node->child;
+	sc->sc_devnode = aa->aaa_node;
 
 	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "_STA", 0, NULL, &res)) {
 		dnprintf(10, "%s: no _STA\n", DEVNAME(sc));
 		return;
 	}
 
-	if ((sc->sc_bat_present = aml_val2int(&res) & STA_BATTERY) != 0) {
+	if ((res.v_integer & STA_BATTERY) != 0) {
+		sc->sc_bat_present = 1;
 		acpibat_getbif(sc);
 		acpibat_getbst(sc);
 
-		printf(": %s", sc->sc_devnode->parent->name);
+		printf(": %s", sc->sc_devnode->name);
 		if (sc->sc_bif.bif_model[0])
 			printf(" model \"%s\"", sc->sc_bif.bif_model);
 		if (sc->sc_bif.bif_serial[0])
@@ -90,8 +91,10 @@ acpibat_attach(struct device *parent, struct device *self, void *aux)
 		if (sc->sc_bif.bif_oem[0])
 			printf(" oem \"%s\"", sc->sc_bif.bif_oem);
 		printf("\n");
-	} else
-		printf(": %s not present\n", sc->sc_devnode->parent->name);
+	} else {
+		sc->sc_bat_present = 0;
+		printf(": %s not present\n", sc->sc_devnode->name);
+	}
 
 	aml_freevalue(&res);
 
@@ -101,7 +104,7 @@ acpibat_attach(struct device *parent, struct device *self, void *aux)
 	/* populate sensors */
 	acpibat_refresh(sc);
 
-	aml_register_notify(sc->sc_devnode->parent, aa->aaa_dev,
+	aml_register_notify(sc->sc_devnode, aa->aaa_dev,
 	    acpibat_notify, sc, ACPIDEV_POLL);
 }
 
@@ -172,7 +175,7 @@ acpibat_refresh(void *arg)
 	int			i;
 
 	dnprintf(30, "%s: %s: refresh\n", DEVNAME(sc),
-	    sc->sc_devnode->parent->name);
+	    sc->sc_devnode->name);
 
 	if (!sc->sc_bat_present) {
 		for (i = 0; i < 8; i++) {
@@ -288,11 +291,10 @@ acpibat_getbif(struct acpibat_softc *sc)
 	struct aml_value	res;
 	int			rv = EINVAL;
 
-	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "_STA", 0, NULL, &res)) {
-		dnprintf(10, "%s: no _STA\n", DEVNAME(sc));
-		goto out;
+	if (!sc->sc_bat_present) {
+		memset(&sc->sc_bif, 0, sizeof(sc->sc_bif));
+		return (0);
 	}
-	aml_freevalue(&res);
 
 	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "_BIF", 0, NULL, &res)) {
 		dnprintf(10, "%s: no _BIF\n", DEVNAME(sc));
@@ -305,7 +307,6 @@ acpibat_getbif(struct acpibat_softc *sc)
 		goto out;
 	}
 
-	memset(&sc->sc_bif, 0, sizeof sc->sc_bif);
 	sc->sc_bif.bif_power_unit = aml_val2int(res.v_package[0]);
 	sc->sc_bif.bif_capacity = aml_val2int(res.v_package[1]);
 	sc->sc_bif.bif_last_capacity = aml_val2int(res.v_package[2]);
@@ -354,6 +355,11 @@ acpibat_getbst(struct acpibat_softc *sc)
 	struct aml_value	res;
 	int			rv = EINVAL;
 
+	if (!sc->sc_bat_present) {
+		memset(&sc->sc_bst, 0, sizeof(sc->sc_bst));
+		return (0);
+	}
+
 	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "_BST", 0, NULL, &res)) {
 		dnprintf(10, "%s: no _BST\n", DEVNAME(sc));
 		goto out;
@@ -395,25 +401,31 @@ int
 acpibat_notify(struct aml_node *node, int notify_type, void *arg)
 {
 	struct acpibat_softc	*sc = arg;
+	struct aml_value	res;
+	int			present
 
 	dnprintf(10, "acpibat_notify: %.2x %s\n", notify_type,
-	    sc->sc_devnode->parent->name);
+	    sc->sc_devnode->name);
 
-	switch (notify_type) {
-	case 0x80:	/* _BST changed */
-		if (!sc->sc_bat_present) {
-			printf("%s: %s: inserted\n", DEVNAME(sc),
-			    sc->sc_devnode->parent->name);
+	/* Check if installed state of battery has changed */
+	memset(&res, 0, sizeof(res));
+	if (aml_evalname(sc->sc_acpi, node, "_STA", 0, NULL, &res) == 0) {
+ 		present = res.v_integer & STA_BATTERY;
+		if (!sc->sc_bat_present && present) {
+			printf("%s: %s inserted\n", DEVNAME(sc),
+			    sc->sc_devnode->name);
 			sc->sc_bat_present = 1;
 		}
-		break;
-	case 0x81:	/* _BIF changed */
-		/* XXX consider this a device removal */
-		if (sc->sc_bat_present) {
-			printf("%s: %s: removed\n", DEVNAME(sc),
-			    sc->sc_devnode->parent->name);
+		else if (sc->sc_bat_present && !present) {
+			printf("%s: %s removed\n", DEVNAME(sc),
+			    sc->sc_devnode->name);
 			sc->sc_bat_present = 0;
 		}
+	}
+	switch (notify_type) {
+	case 0x80:	/* _BST changed */
+		break;
+	case 0x81:	/* _BIF changed */
 		break;
 	default:
 		break;

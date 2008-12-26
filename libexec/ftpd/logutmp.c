@@ -43,6 +43,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ttyent.h>
+
+#include "monitor.h"
 #include "extern.h"
 
 static int fd = -1;

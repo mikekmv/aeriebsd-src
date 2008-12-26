@@ -42,13 +42,13 @@
 #endif
 
 #define	__SYSCALL(p,x,y)						\
-	err:	jmp __cerror;						\
+	err:	jmp _C_LABEL(_cerror);					\
 	__ENTRY(p,x);							\
 		__DO_SYSCALL(y);					\
 		jcs err
 
 #define	__PSEUDO(p,x,y)							\
-	err:	jmp __cerror;						\
+	err:	jmp _C_LABEL(_cerror);					\
 	__ENTRY(p,x);							\
 		__DO_SYSCALL(y);					\
 		jcs err;						\
@@ -83,4 +83,4 @@
 				__ENTRY(_thread_sys_,x)
 #define	SYSNAME(x)		_CAT(__thread_sys_,x)
 
-	.globl	__cerror
+	.globl	_C_LABEL(_cerror)

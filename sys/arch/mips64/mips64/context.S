@@ -141,7 +141,6 @@ NON_LEAF(cpu_switchto, FRAMESZ(CF_SZ), ra)
 	 * Switch to new context
  	*/
 	move	s0, a1				# save p
-	sw	zero, want_resched
 	jal	pmap_activate
 	move	a0, s0
 

@@ -49,8 +49,6 @@
 #include <scsi/scsiconf.h>
 #include <scsi/ssvar.h>
 
-#define SCANJET_RETRIES 4
-
 int scanjet_set_params(struct ss_softc *, struct scan_io *);
 int scanjet_trigger_scanner(struct ss_softc *);
 int scanjet_read(struct ss_softc *, struct buf *);
@@ -298,7 +296,7 @@ scanjet_read(ss, bp)
 	 * go ask the adapter to do all this for us
 	 */
 	if (scsi_scsi_cmd(sc_link, (struct scsi_generic *) &cmd, sizeof(cmd),
-	    (u_char *) bp->b_data, bp->b_bcount, SCANJET_RETRIES, 100000, bp,
+	    (u_char *) bp->b_data, bp->b_bcount, SCSI_RETRIES, 100000, bp,
 	    SCSI_NOSLEEP | SCSI_DATA_IN) != SUCCESSFULLY_QUEUED)
 		printf("%s: not queued\n", ss->sc_dev.dv_xname);
 	else {

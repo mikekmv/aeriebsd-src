@@ -245,6 +245,10 @@ extern int	ip6_rr_prune;		/* router renumbering prefix
 					 * walk list every 5 sec.    */
 extern int	ip6_mcast_pmtu;		/* path MTU discovery for multicast */
 extern const int	ip6_v6only;
+extern int	ip6_neighborgcthresh; /* Threshold # of NDP entries for GC */
+extern int	ip6_maxifprefixes; /* Max acceptable prefixes via RA per IF */
+extern int	ip6_maxifdefrouters; /* Max acceptable def routers via RA */
+extern int	ip6_maxdynroutes; /* Max # of routes created via redirect */
 
 extern struct socket *ip6_mrouter; 	/* multicast routing daemon */
 extern int	ip6_sendredirects;	/* send IP redirects when forwarding? */
@@ -295,6 +299,8 @@ int	ip6_setpktopts(struct mbuf *, struct ip6_pktopts *,
 void	ip6_clearpktopts(struct ip6_pktopts *, int);
 struct ip6_pktopts *ip6_copypktopts(struct ip6_pktopts *, int);
 int	ip6_optlen(struct inpcb *);
+void	ip6_randomid_init(void);
+u_int32_t ip6_randomid(void);
 
 int	route6_input(struct mbuf **, int *, int);
 
@@ -322,7 +328,6 @@ int	in6_selectroute(struct sockaddr_in6 *, struct ip6_pktopts *,
 	    struct ip6_moptions *, struct route_in6 *, struct ifnet **,
 	    struct rtentry **);
 
-u_int32_t ip6_randomid(void);
 u_int32_t ip6_randomflowlabel(void);
 #endif /* _KERNEL */
 

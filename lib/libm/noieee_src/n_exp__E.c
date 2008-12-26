@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)exp__E.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_exp__E.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
@@ -41,7 +41,7 @@ static const char rcsid[] = "$ABSD$";
  * exp__E RETURNS
  *
  *			 /  exp(x+c) - 1 - x ,  1E-19 < |x| < .3465736
- *       exp__E(x,c) = 	| 		     
+ *       exp__E(x,c) = 	|
  *			 \  0 ,  |x| < 1E-19.
  *
  * DOUBLE PRECISION (IEEE 53 bits, VAX D FORMAT 56 BITS)
@@ -50,12 +50,12 @@ static const char rcsid[] = "$ABSD$";
  * REVISED BY K.C. NG on 3/16/85, 4/16/85.
  *
  * Required system supported function:
- *	copysign(x,y)	
+ *	copysign(x,y)
  *
  * Method:
  *	1. Rational approximation. Let r=x+c.
  *	   Based on
- *                                   2 * sinh(r/2)     
+ *                                   2 * sinh(r/2)
  *                exp(r) - 1 =   ----------------------   ,
  *                               cosh(r/2) - sinh(r/2)
  *	   exp__E(r) is computed using
@@ -71,12 +71,12 @@ static const char rcsid[] = "$ABSD$";
  *	    and cosh :
  *		sinh(r/2) =  r/2 + r * P  ,  cosh(r/2) =  1 + Q . )
  *
- *         The coefficients were obtained by a special Remez algorithm.
+ *         The coefficients were obtained by a special Remes algorithm.
  *
  * Approximation error:
  *
  *   |	exp(x) - 1			   |        2**(-57),  (IEEE double)
- *   | ------------  -  (exp__E(x,0)+x)/x  |  <= 
+ *   | ------------  -  (exp__E(x,0)+x)/x  |  <=
  *   |	     x			           |	    2**(-69).  (VAX D)
  *
  * Constants:
@@ -86,6 +86,7 @@ static const char rcsid[] = "$ABSD$";
  * shown.
  */
 
+#include "math.h"
 #include "mathimpl.h"
 
 vc(p1, 1.5150724356786683059E-2 ,3abe,3d78,066a,67e1,  -6, .F83ABE67E1066A)
@@ -107,20 +108,20 @@ ic(q2, 9.9176615021572857300E-4, -10, 1.03FC4CB8C98E8)
 #define       q3    vccast(q3)
 #endif
 
-double __exp__E(x,c)
-double x,c;
+double
+__exp__E(double x, double c)
 {
 	const static double zero=0.0, one=1.0, half=1.0/2.0, small=1.0E-19;
 	double z,p,q,xp,xh,w;
 	if(copysign(x,one)>small) {
            z = x*x  ;
 	   p = z*( p1 +z* p2 );
-#if defined(__vax__)||defined(tahoe)
+#if defined(__vax__)
            q = z*( q1 +z*( q2 +z* q3 ));
-#else	/* defined(__vax__)||defined(tahoe) */
+#else	/* defined(__vax__) */
            q = z*( q1 +z*  q2 );
-#endif	/* defined(__vax__)||defined(tahoe) */
-           xp= x*p     ; 
+#endif	/* defined(__vax__) */
+           xp= x*p     ;
 	   xh= x*half  ;
            w = xh-(q-xp)  ;
 	   p = p+p;
@@ -130,7 +131,13 @@ double x,c;
 	/* end of |x| > small */
 
 	else {
-	    if(x!=zero) one+small;	/* raise the inexact flag */
-	    return(copysign(zero,x));
+	    if(x != zero) {
+		if (one + small >= 1.0)	/* raise the inexact flag */
+			return(copysign(zero,x));
+	    }
+	    else
+		return(copysign(zero,x));
 	}
+
+	/* NOTREACHED */
 }

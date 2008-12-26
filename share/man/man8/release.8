@@ -8,7 +8,7 @@
 .\"	LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
 .\"	FOR A PARTICULAR PURPOSE.
 .\"
-.Dd $Mdocdate: April 23 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt RELEASE 8
 .Os
 .Sh NAME
@@ -154,7 +154,7 @@ Build the kernel compilation directory and compile the kernel:
 .Bd -literal -offset indent
 $ config ${NAME}
 $ cd ../compile/${NAME}
-$ make clean depend && make
+$ make clean && make depend && make
 .Ed
 .Pp
 (In this instance
@@ -266,8 +266,8 @@ You must be root to create a release:
 .Pp
 Create the special tools needed to build the release:
 .Bd -literal -offset indent
-# cd /usr/src/distrib/crunch && make obj depend \e
-	&& make all install
+# cd /usr/src/distrib/crunch && make obj && make depend \e
+	&& make all && make install
 # export DESTDIR=your-destdir; export RELEASEDIR=your-releasedir
 # test -d ${DESTDIR} && mv ${DESTDIR} ${DESTDIR}- && \e
 	rm -rf ${DESTDIR}- &

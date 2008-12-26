@@ -33,7 +33,7 @@
 
 
 /*
- * From: curses.priv.h,v 1.171 2000/12/10 00:13:52 tom Exp 
+ * $From: curses.priv.h,v 1.171 2000/12/10 00:13:52 tom Exp $
  *
  *	curses.priv.h
  *

@@ -35,7 +35,7 @@
 #if 0
 static const char sccsid[] = "@(#)ar_io.c	8.2 (Berkeley) 4/18/94";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ar_io.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -1280,7 +1280,7 @@ ar_start_gzip(int fd, const char *gzip_program, int wr)
 		close(fds[0]);
 		close(fds[1]);
 		if (execlp(gzip_program, gzip_program, gzip_flags, (char *)NULL) < 0)
-			err(1, "could not exec");
+			err(1, "could not exec %s", gzip_program);
 		/* NOTREACHED */
 	}
 }

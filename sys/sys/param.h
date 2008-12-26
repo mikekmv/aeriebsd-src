@@ -39,8 +39,8 @@
 #define BSD4_3	1
 #define BSD4_4	1
 
-#define OpenBSD	200805		/* OpenBSD version (year & month). */
-#define OpenBSD4_3 1		/* OpenBSD 4.3 */
+#define OpenBSD	200811		/* OpenBSD version (year & month). */
+#define OpenBSD4_4 1		/* OpenBSD 4.4 */
 
 #ifndef NULL
 #ifdef 	__GNUG__

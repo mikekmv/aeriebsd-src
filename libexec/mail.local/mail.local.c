@@ -40,7 +40,7 @@ char copyright[] =
 #if 0
 static char sccsid[] = "from: @(#)mail.local.c	5.6 (Berkeley) 6/19/91";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: mail.local.c,v 1.1.1.1 2008/08/26 14:39:39 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -333,5 +333,5 @@ notifybiff(char *msg)
 void
 usage(void)
 {
-	merr(FATAL, "usage: mail.local [-lL] [-f from] user ...");
+	merr(FATAL, "usage: mail.local [-Ll] [-f from] user ...");
 }

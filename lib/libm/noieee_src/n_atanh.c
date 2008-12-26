@@ -31,21 +31,21 @@
 #if 0
 static char sccsid[] = "@(#)atanh.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_atanh.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
 /* ATANH(X)
  * RETURN THE HYPERBOLIC ARC TANGENT OF X
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
- * CODED IN C BY K.C. NG, 1/8/85; 
+ * CODED IN C BY K.C. NG, 1/8/85;
  * REVISED BY K.C. NG on 2/7/85, 3/7/85, 8/18/85.
  *
  * Required kernel function:
  *	log1p(x) 	...return log(1+x)
  *
- * Method :
- *	Return 
+ * Method:
+ *	Return
  *                          1              2x                          x
  *		atanh(x) = --- * log(1 + -------) = 0.5 * log1p(2 * --------)
  *                          2             1 - x                      1 - x
@@ -61,23 +61,25 @@ static const char rcsid[] = "$ABSD$";
  *	observed error was 1.87 ulps (units in the last place) at
  *	x= -3.8962076028810414000e-03.
  */
+
+#include "math.h"
 #include "mathimpl.h"
 
-#if defined(__vax__)||defined(tahoe)
+#if defined(__vax__)
 #include <errno.h>
-#endif	/* defined(__vax__)||defined(tahoe) */
+#endif	/* defined(__vax__) */
 
-double atanh(x)
-double x;
+double
+atanh(double x)
 {
 	double z;
 	z = copysign(0.5,x);
 	x = copysign(x,1.0);
-#if defined(__vax__)||defined(tahoe)
+#if defined(__vax__)
 	if (x == 1.0) {
 	    return(copysign(1.0,z)*infnan(ERANGE));	/* sign(x)*INF */
 	}
-#endif	/* defined(__vax__)||defined(tahoe) */
+#endif	/* defined(__vax__) */
 	x = x/(1.0-x);
 	return( z*log1p(x+x) );
 }

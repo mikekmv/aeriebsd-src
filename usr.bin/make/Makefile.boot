@@ -1,4 +1,3 @@
-#	$OpenPackages: Makefile.boot,v 1.5 2001/04/06 00:09:55 will Exp $
 #
 # a very simple makefile...
 #

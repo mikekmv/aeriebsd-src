@@ -212,8 +212,6 @@ cbq_add_altq(struct pf_altq *a)
 
 	/* allocate and initialize cbq_state_t */
 	cbqp = malloc(sizeof(cbq_state_t), M_DEVBUF, M_WAITOK|M_ZERO);
-	if (cbqp == NULL)
-		return (ENOMEM);
 	CALLOUT_INIT(&cbqp->cbq_callout);
 	cbqp->cbq_qlen = 0;
 	cbqp->ifnp.ifq_ = &ifp->if_snd;	    /* keep the ifq */
@@ -510,9 +508,8 @@ cbqrestart(struct ifaltq *ifq)
 		return;
 
 	ifp = ifq->altq_ifp;
-	if (ifp->if_start &&
-	    cbqp->cbq_qlen > 0 && (ifp->if_flags & IFF_OACTIVE) == 0)
-		(*ifp->if_start)(ifp);
+	if (ifp->if_start && cbqp->cbq_qlen > 0)
+		if_start(ifp);
 }
 
 static void cbq_purge(cbq_state_t *cbqp)

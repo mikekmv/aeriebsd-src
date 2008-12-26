@@ -37,6 +37,7 @@
 #include <sys/reboot.h>
 #include <sys/socket.h>
 #include <sys/socketvar.h>
+#include <sys/queue.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -140,8 +141,7 @@ nfs_boot_init(nd, procp)
 	if (nfsbootdevname)
 		ifp = ifunit(nfsbootdevname);
 	else {
-		for (ifp = TAILQ_FIRST(&ifnet); ifp != NULL;
-		    ifp = TAILQ_NEXT(ifp, if_list)) {
+		TAILQ_FOREACH(ifp, &ifnet, if_list) {
 			if ((ifp->if_flags &
 			     (IFF_LOOPBACK|IFF_POINTOPOINT)) == 0)
 				break;
@@ -173,7 +173,7 @@ nfs_boot_init(nd, procp)
 	 * Do RARP for the interface address.
 	 */
 	if ((error = revarpwhoami(&my_ip, ifp)) != 0)
-		panic("revarp failed, error=%d", error);
+		panic("reverse arp not answered by rarpd(8) or dhcpd(8)");
 	printf("nfs_boot: client_addr=%s\n", inet_ntoa(my_ip));
 
 	/*
@@ -228,6 +228,7 @@ nfs_boot_init(nd, procp)
 	 */
 	if (gw_ip.s_addr) {
 		struct sockaddr dst, gw, mask;
+		struct rt_addrinfo info;
 		/* Destination: (default) */
 		bzero((caddr_t)&dst, sizeof(dst));
 		dst.sa_len = sizeof(dst);
@@ -240,11 +241,15 @@ nfs_boot_init(nd, procp)
 		sin->sin_addr.s_addr = gw_ip.s_addr;
 		/* Mask: (zero length) */
 		bzero(&mask, sizeof(mask));
+		bzero(&info, sizeof(info));
+		info.rti_info[RTAX_DST] = &dst;
+		info.rti_info[RTAX_GATEWAY] = &gw;
+		info.rti_info[RTAX_NETMASK] = &mask;
+		info.rti_flags = (RTF_UP | RTF_GATEWAY | RTF_STATIC);
 
 		printf("nfs_boot: gateway=%s\n", inet_ntoa(gw_ip));
 		/* add, dest, gw, mask, flags, 0 */
-		error = rtrequest(RTM_ADD, &dst, (struct sockaddr *)&gw,
-		    &mask, (RTF_UP | RTF_GATEWAY | RTF_STATIC), NULL, 0);
+		error = rtrequest1(RTM_ADD, &info, RTP_STATIC, NULL, 0);
 		if (error)
 			printf("nfs_boot: add route, error=%d\n", error);
 	}

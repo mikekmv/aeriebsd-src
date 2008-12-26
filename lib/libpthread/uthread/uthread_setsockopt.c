@@ -33,6 +33,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <errno.h>
 #ifdef _THREAD_SAFE
 #include <pthread.h>
 #include "pthread_private.h"
@@ -41,11 +42,22 @@ int
 setsockopt(int fd, int level, int optname, const void *optval, socklen_t optlen)
 {
 	int             ret;
+	struct fd_table_entry *entry;
 
-	if ((ret = _FD_LOCK(fd, FD_RDWR, NULL)) == 0) {
-		ret = _thread_sys_setsockopt(fd, level, optname, optval, optlen);
-		_FD_UNLOCK(fd, FD_RDWR);
+	ret = _thread_fd_table_init(fd, FD_INIT_UNKNOWN, NULL);
+	if (ret == 0) {
+		entry = _thread_fd_table[fd];
+		 
+		_SPINLOCK(&entry->lock);
+		if (entry->state == FD_ENTRY_OPEN) {
+			ret = _thread_sys_setsockopt(fd, level, optname, optval, optlen);
+		} else {
+			ret = -1;
+			errno = EBADF;
+		}
+		_SPINUNLOCK(&entry->lock);
 	}
+
 	return ret;
 }
 #endif

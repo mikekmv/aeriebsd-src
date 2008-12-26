@@ -245,7 +245,7 @@ static int check_user_access(request_rec *r)
     char *user = r->connection->user;
     int m = r->method_number;
     int method_restricted = 0;
-    register int x;
+    int x;
     const char *t, *w;
     table *grpstatus;
     const array_header *reqs_arr = ap_requires(r);

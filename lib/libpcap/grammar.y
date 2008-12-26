@@ -22,7 +22,7 @@
  *
  */
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: grammar.y,v 1.1.1.1 2008/08/26 14:38:58 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -117,6 +117,7 @@ pcap_parse()
 %token	LSH RSH
 %token  LEN
 %token  IPV6 ICMPV6 AH ESP
+%token	VLAN
 
 %type	<s> ID
 %type	<e> EID
@@ -278,6 +279,8 @@ other:	  pqual TK_BROADCAST	{ $$ = gen_broadcast($1); }
 	| BYTE NUM byteop NUM	{ $$ = gen_byteop($3, $2, $4); }
 	| INBOUND		{ $$ = gen_inbound(0); }
 	| OUTBOUND		{ $$ = gen_inbound(1); }
+	| VLAN pnum		{ $$ = gen_vlan($2); }
+	| VLAN			{ $$ = gen_vlan(-1); }
 	| pfvar			{ $$ = $1; }
 	| pqual p80211		{ $$ = $2; }
 	;

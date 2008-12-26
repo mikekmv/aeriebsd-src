@@ -331,6 +331,19 @@ Sigfunc *signal(int signo, Sigfunc * func);
 #define ap_wait_t int
 #endif
 
+#ifndef INET6_ADDRSTRLEN
+#define INET6_ADDRSTRLEN	46
+#endif
+#ifndef INET_ADDRSTRLEN
+#define INET_ADDRSTRLEN		16
+#endif
+#ifndef NI_MAXHOST
+#define NI_MAXHOST		1025
+#endif
+#ifndef NI_MAXSERV
+#define	NI_MAXSERV		32
+#endif
+
 #ifdef __cplusplus
 }
 #endif

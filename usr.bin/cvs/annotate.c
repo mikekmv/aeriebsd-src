@@ -162,8 +162,7 @@ cvs_annotate_local(struct cvs_file *cf)
 
 	cvs_file_classify(cf, cvs_directory_tag);
 
-	if (cf->file_status == FILE_UNKNOWN || cf->file_status == FILE_UNLINK ||
-	    cf->file_type != CVS_FILE)
+	if (cf->file_rcs == NULL || cf->file_rcs->rf_head == NULL)
 		return;
 
 	if (cvs_specified_tag != NULL) {
@@ -208,8 +207,9 @@ cvs_annotate_local(struct cvs_file *cf)
 		}
 		rcsnum_free(rev);
 	} else {
-		rcs_rev_getlines(cf->file_rcs, (cvs_specified_date != -1) ?
-		    cf->file_rcsrev : cf->file_rcs->rf_head, &alines);
+		rcs_rev_getlines(cf->file_rcs, (cvs_specified_date != -1 ||
+		    cvs_directory_date != -1) ? cf->file_rcsrev :
+		    cf->file_rcs->rf_head, &alines);
 	}
 
 	/* Stick at weird GNU cvs, ignore error. */

@@ -1307,7 +1307,9 @@ cas_add_rxbuf(struct cas_softc *sc, int idx)
 	if ((sc->sc_rxdptr % 4) == 0)
 		bus_space_write_4(t, h, CAS_RX_KICK, sc->sc_rxdptr);
 
-	sc->sc_rxdptr++;
+	if (++sc->sc_rxdptr == CAS_NRXDESC)
+		sc->sc_rxdptr = 0;
+
 	return (0);
 }
 
@@ -1922,11 +1924,11 @@ cas_tint(struct cas_softc *sc, u_int32_t status)
 {
 	struct ifnet *ifp = &sc->sc_arpcom.ac_if;
 	struct cas_sxd *sd;
-	u_int32_t cons, hwcons;
+	u_int32_t cons, comp;
 
-	hwcons = status >> 19;
+	comp = bus_space_read_4(sc->sc_memt, sc->sc_memh, CAS_TX_COMPLETION);
 	cons = sc->sc_tx_cons;
-	while (cons != hwcons) {
+	while (cons != comp) {
 		sd = &sc->sc_txd[cons];
 		if (sd->sd_mbuf != NULL) {
 			bus_dmamap_sync(sc->sc_dmatag, sd->sd_map, 0,
@@ -1942,10 +1944,12 @@ cas_tint(struct cas_softc *sc, u_int32_t status)
 	}
 	sc->sc_tx_cons = cons;
 
-	cas_start(ifp);
-
+	if (sc->sc_tx_cnt < CAS_NTXDESC - 2)
+		ifp->if_flags &= ~IFF_OACTIVE;
 	if (sc->sc_tx_cnt == 0)
 		ifp->if_timer = 0;
+
+	cas_start(ifp);
 
 	return (1);
 }
@@ -1980,7 +1984,7 @@ cas_start(struct ifnet *ifp)
 		 * or fail...
 		 */
 		if (cas_encap(sc, m, &bix)) {
-			ifp->if_timer = 2;
+			ifp->if_flags |= IFF_OACTIVE;
 			break;
 		}
 

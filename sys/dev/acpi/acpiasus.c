@@ -58,7 +58,8 @@ struct acpiasus_softc {
 	void 			*sc_powerhook;
 };
 
-#define ASUS_NOTIFY_WirelessSwitch	0x10
+#define ASUS_NOTIFY_WirelessSwitchOn	0x10
+#define ASUS_NOTIFY_WirelessSwitchOff	0x11
 #define ASUS_NOTIFY_BrightnessLow	0x20
 #define ASUS_NOTIFY_BrightnessHigh	0x2f
 #define ASUS_NOTIFY_DisplayCycle	0x30
@@ -66,6 +67,9 @@ struct acpiasus_softc {
 #define ASUS_NOTIFY_VolumeMute		0x13
 #define ASUS_NOTIFY_VolumeDown		0x14
 #define ASUS_NOTIFY_VolumeUp		0x15
+
+#define ASUS_NOTIFY_PowerConnect	0x50
+#define ASUS_NOTIFY_PowerDisconnect	0x51
 
 #define	ASUS_SDSP_LCD			0x01
 #define	ASUS_SDSP_CRT			0x02
@@ -113,7 +117,7 @@ acpiasus_attach(struct device *parent, struct device *self, void *aux)
 	struct acpi_attach_args *aa = aux;
 
 	sc->sc_acpi = (struct acpi_softc *)parent;
-	sc->sc_devnode = aa->aaa_node->child;
+	sc->sc_devnode = aa->aaa_node;
 
 	sc->sc_powerhook = powerhook_establish(acpiasus_power, sc);
 
@@ -121,7 +125,7 @@ acpiasus_attach(struct device *parent, struct device *self, void *aux)
 
 	acpiasus_init(self);
 
-	aml_register_notify(sc->sc_devnode->parent, aa->aaa_dev,
+	aml_register_notify(sc->sc_devnode, aa->aaa_dev,
 	    acpiasus_notify, sc, ACPIDEV_NOPOLL);
 }
 
@@ -132,11 +136,14 @@ acpiasus_init(struct device *self)
 	struct aml_value cmd;
 	struct aml_value ret;
 
+	bzero(&cmd, sizeof(cmd));
 	cmd.type = AML_OBJTYPE_INTEGER;
 	cmd.v_integer = 0x40;		/* Disable ASL display switching. */
 
 	if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "INIT", 1, &cmd, &ret))
 		printf("%s: no INIT\n", DEVNAME(sc));
+	else
+		aml_freevalue(&ret);
 }
 
 int
@@ -154,7 +161,8 @@ acpiasus_notify(struct aml_node *node, int notify, void *arg)
 	}
 
 	switch (notify) {
-	case ASUS_NOTIFY_WirelessSwitch:	/* Handled by AML. */
+	case ASUS_NOTIFY_WirelessSwitchOn:	/* Handled by AML. */
+	case ASUS_NOTIFY_WirelessSwitchOff:	/* Handled by AML. */
 		break;
 	case ASUS_NOTIFY_TaskSwitch:
 		break;
@@ -179,6 +187,10 @@ acpiasus_notify(struct aml_node *node, int notify, void *arg)
 	case ASUS_NOTIFY_VolumeUp:
 		break;
 #endif
+	case ASUS_NOTIFY_PowerConnect:
+	case ASUS_NOTIFY_PowerDisconnect:
+		break;
+
 	default:
 		printf("%s: unknown event 0x%02x\n", DEVNAME(sc), notify);
 		break;
@@ -201,12 +213,16 @@ acpiasus_power(int why, void *arg)
 	case PWR_RESUME:
 		acpiasus_init(arg);
 
+		bzero(&cmd, sizeof(cmd));
 		cmd.type = AML_OBJTYPE_INTEGER;
 		cmd.v_integer = ASUS_SDSP_LCD;
 
 		if (aml_evalname(sc->sc_acpi, sc->sc_devnode, "SDSP", 1,
 		    &cmd, &ret))
 			printf("%s: no SDSP\n", DEVNAME(sc));
+		else
+			aml_freevalue(&ret);
+
 		break;
 	}
 }

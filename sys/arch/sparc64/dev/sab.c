@@ -211,7 +211,8 @@ sab_match(parent, match, aux)
 	struct ebus_attach_args *ea = aux;
 	char *compat;
 
-	if (strcmp(ea->ea_name, "se") == 0)
+	if (strcmp(ea->ea_name, "se") == 0 ||
+	    strcmp(ea->ea_name, "FJSV,se") == 0)
 		return (1);
 	compat = getpropstring(ea->ea_node, "compatible");
 	if (compat != NULL && !strcmp(compat, "sab82532"))

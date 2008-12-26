@@ -185,6 +185,11 @@ MaxSTACKPerChild 0
 #Listen 3000
 #Listen 12.34.56.78:80
 
+# Listen can take two arguments.
+# (this is an extension for supporting IPv6 addresses)
+#Listen :: 80
+#Listen 0.0.0.0 80
+
 #
 # BindAddress: You can support virtual hosts with this option. This directive
 # is used to tell the server which IP address to listen to. It can either
@@ -567,19 +572,6 @@ ServerSignature On
         Allow from all
     </Directory>
 
-    # This Alias will project the on-line documentation tree under /manual/
-    # even if you change the DocumentRoot. Comment it if you don't want to 
-    # provide access to the on-line documentation.
-    #
-    Alias /manual/ "@@ServerRoot@@/htdocs/manual/"
-
-    <Directory "@@ServerRoot@@/htdocs/manual">
-        Options Indexes FollowSymlinks MultiViews
-        AllowOverride None
-        Order allow,deny
-        Allow from all
-    </Directory>
-
     #
     # ScriptAlias: This controls which directories contain server scripts.
     # ScriptAliases are essentially the same as Aliases, except that
@@ -945,7 +937,7 @@ ServerSignature On
 #
 # Use name-based virtual hosting.
 #
-#NameVirtualHost *:80
+#NameVirtualHost 0.0.0.0:80
 
 #
 # VirtualHost example:
@@ -953,7 +945,7 @@ ServerSignature On
 # The first VirtualHost section is used for requests without a known
 # server name.
 #
-#<VirtualHost *:80>
+#<VirtualHost 0.0.0.0:80>
 #    ServerAdmin webmaster@dummy-host.example.com
 #    DocumentRoot /www/docs/dummy-host.example.com
 #    ServerName dummy-host.example.com

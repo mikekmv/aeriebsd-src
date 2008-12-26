@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)get_names.c	8.1 (Berkeley) 6/6/93";
 #endif
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: get_names.c,v 1.1.1.1 2008/08/26 14:43:18 root Exp $";
 #endif /* not lint */
 
 #include "talk.h"
@@ -73,8 +73,7 @@ get_names(argc, argv)
 	}
 
 	if ((argc < 2 ) || ('@' == argv[1][0])) {
-		fprintf(stderr, "usage: talk [-Hs] user [ttyname]\n"
-				"       talk [-Hs] user@hostname [ttyname]\n");
+		fprintf(stderr, "usage: talk [-Hs] person [ttyname]\n");
 		exit(1);
 	}
 	if (!isatty(STDIN_FILENO))

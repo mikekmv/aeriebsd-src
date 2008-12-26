@@ -29,7 +29,7 @@
 
 #if defined(LIBC_SCCS)
 	.rodata
-	.asciz "$ABSD$"
+	.asciz "$ABSD: _setjmp.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 /*
@@ -91,7 +91,7 @@ done:
 	jmp	*4(r1)			# done, return....
 
 botch:
-	calls	$0,_longjmperror
+	calls	$0,_C_LABEL(longjmperror)
 	halt
 
 	.data

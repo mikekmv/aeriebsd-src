@@ -509,7 +509,7 @@ rn_addroute(void *v_arg, void *n_arg, struct radix_node_head *head,
 	struct radix_node *t, *x = NULL, *tt;
 	struct radix_node *saved_tt, *top = head->rnh_treetop;
 	short b = 0, b_leaf = 0;
-	int keyduplicated, prioinv = 0;
+	int keyduplicated, prioinv = -1;
 	caddr_t mmask;
 	struct radix_mask *m, **mp;
 
@@ -546,6 +546,7 @@ rn_addroute(void *v_arg, void *n_arg, struct radix_node_head *head,
 				 * Additionally keep the list sorted by route
 				 * priority.
 				 */
+				prioinv = 0;
 				tt = rn_mpath_prio(tt, prio);
 				if (((struct rtentry *)tt)->rt_priority !=
 				    prio) {
@@ -606,7 +607,7 @@ rn_addroute(void *v_arg, void *n_arg, struct radix_node_head *head,
 				x->rn_r = tt;
 			saved_tt = tt;
 			x = xx;
-		} else if (prioinv) {
+		} else if (prioinv == 1) {
 			(tt = treenodes)->rn_dupedkey = t;
 			if (t->rn_p == NULL)
 				panic("rn_addroute: t->rn_p is NULL");

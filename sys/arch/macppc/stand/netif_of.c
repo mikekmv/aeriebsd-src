@@ -76,8 +76,6 @@ netif_open(void *machdep_hint)
 {
 	struct of_dev *op = machdep_hint;
 	struct iodesc *io;
-	int fd, error;
-	char addr[32];
 
 #ifdef	NETIF_DEBUG
 	printf("netif_open...");

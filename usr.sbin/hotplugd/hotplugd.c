@@ -71,6 +71,11 @@ main(int argc, char *argv[])
 			/* NOTREACHED */
 		}
 
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+		usage();
+
 	if ((devfd = open(device, O_RDONLY)) == -1)
 		err(1, "%s", device);
 
@@ -135,9 +140,10 @@ exec_script(const char *file, int class, char *name)
 
 	snprintf(strclass, sizeof(strclass), "%d", class);
 
-	if (access(file, X_OK | R_OK))
-		/* do nothing if file can't be accessed */
+	if (access(file, X_OK | R_OK)) {
+		syslog(LOG_ERR, "could not access %s", file);
 		return;
+	}
 
 	if ((pid = fork()) == -1) {
 		syslog(LOG_ERR, "fork: %m");

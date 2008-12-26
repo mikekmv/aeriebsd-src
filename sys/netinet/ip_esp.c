@@ -903,7 +903,7 @@ esp_output(struct mbuf *m, struct tdb *tdb, struct mbuf **mp, int skip,
 		for (ilen = 0; ilen < padding - 2; ilen++)
 			pad[ilen] = ilen + 1;
 	else
-		arc4random_bytes((void *) pad, padding - 2);
+		arc4random_buf((void *) pad, padding - 2);
 
 	/* Fix padding length and Next Protocol in padding itself. */
 	pad[padding - 2] = padding - 2;

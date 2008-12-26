@@ -221,6 +221,7 @@ void setsoftnet(void);
  * or after the current trap/syscall if in system mode.
  */
 extern void need_resched(struct cpu_info *);
+#define clear_resched(ci) (ci)->ci_want_resched = 0
 
 /*
  * This is used during profiling to integrate system time.
@@ -302,7 +303,7 @@ int	emul_popc(int32_t, struct proc *, union sigval, struct trapframe64 *);
 struct trapvec {
 	int	tv_instr[8];		/* the eight instructions */
 };
-extern struct trapvec *trapbase;	/* the 256 vectors */
+extern struct trapvec trapbase[];	/* the 256 vectors */
 
 extern void wzero(void *, u_int);
 extern void wcopy(const void *, void *, u_int);

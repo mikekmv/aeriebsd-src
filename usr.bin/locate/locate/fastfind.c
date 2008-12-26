@@ -293,8 +293,17 @@ fastfind
 					    )
 						break;
 				if (*p == '\0') {   /* fast match success */
+					char	*shortpath;
+
 					found = 1;
-					if (!globflag || !fnmatch(pathpart, path, 0)) {
+					shortpath = path;
+					if (f_basename)
+						shortpath = basename(path);
+
+					if ((!f_basename && (!globflag ||
+					    !fnmatch(pathpart, shortpath, 0)))
+					    || (strstr(shortpath, pathpart) !=
+					    NULL)) {
 						if (f_silent)
 							counter++;
 						else if (f_limit) {

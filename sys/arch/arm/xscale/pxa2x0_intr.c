@@ -549,7 +549,7 @@ pxa2x0_intr_establish(int irqno, int level,
 
 #ifdef MULTIPLE_HANDLERS_ON_ONE_IRQ
 	/* no point in sleeping unless someone can free memory. */
-	MALLOC(ih, struct intrhand *, sizeof *ih, M_DEVBUF, 
+	ih = (struct intrhand *)malloc(sizeof *ih, M_DEVBUF, 
 	    cold ? M_NOWAIT : M_WAITOK);
 	if (ih == NULL)
 		panic("intr_establish: can't malloc handler info");
@@ -595,7 +595,7 @@ pxa2x0_intr_disestablish(void *cookie)
 	psw = disable_interrupts(I32_bit);
 	TAILQ_REMOVE(&handler[irqno].list, ih, ih_list);
 
-	FREE(ih, M_DEVBUF);
+	free(ih, M_DEVBUF);
 
 	pxa2x0_update_intr_masks();
 

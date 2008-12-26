@@ -31,8 +31,10 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: n_tan.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
 #endif /* LIBM_SCCS */
+
+#include <machine/asm.h>
 
 /*  This is the implementation of Peter Tang's double precision  
  *  tangent for the VAX using Bob Corbett's argument reduction.
@@ -41,16 +43,13 @@
  *       under 1,024,000 random arguments testing on [0,2*pi] 
  *       tan() observed maximum error = 2.15 ulps
  *
- * double tan(arg)
- * double arg;
+ * double
+ * tan(double arg)
  * method: true range reduction to [-pi/4,pi/4], P. Tang  &  B. Corbett
  * S. McDonald, April 4,  1985
  */
-	.globl	_tan
-	.text
-	.align	1
 
-_tan:	.word	0xffc		# save r2-r11
+ENTRY(tan, R2|R3|R4|R5|R6|R7|R8|R9|R10|R11)
 	movq	4(ap),r0
 	bicw3	$0x807f,r0,r2
 	beql	1f		# if x is zero or reserved operand then return x
@@ -63,7 +62,7 @@ _tan:	.word	0xffc		# save r2-r11
  *  Clear the IV & FU bits.
  */
 	bicpsw	$0x0060
-	jsb	libm$argred
+	jsb	__libm_argred
 /*
  *  At this point,
  *	   r0  contains the quadrant number, 0, 1, 2, or 3;
@@ -78,7 +77,7 @@ _tan:	.word	0xffc		# save r2-r11
  *  Call sine.  r4 = 0  implies sine.
  */
 	movl	$0,r4
-	jsb	libm$sincos
+	jsb	__libm_sincos
 /*
  *  Save  sin(x)  in  r11/r10 .
  */
@@ -89,7 +88,7 @@ _tan:	.word	0xffc		# save r2-r11
 	movq	(sp)+,r0
 	movq	(sp)+,r2
 	movl	$1,r4
-	jsb	libm$sincos
+	jsb	__libm_sincos
 	divd3	r0,r10,r0
 	bispsw	(sp)+
 1:	ret

@@ -34,7 +34,7 @@
 .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: October 29 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt SSH_CONFIG 5
 .Os
 .Sh NAME
@@ -102,6 +102,7 @@ Restricts the following declarations (up to the next
 .Cm Host
 keyword) to be only for those hosts that match one of the patterns
 given after the keyword.
+If more than one pattern is provided, they should be separated by whitespace.
 A single
 .Ql *
 as a pattern can be used to provide global
@@ -599,6 +600,21 @@ Specifies a command to execute on the local machine after successfully
 connecting to the server.
 The command string extends to the end of the line, and is executed with
 the user's shell.
+The following escape character substitutions will be performed:
+.Ql %d
+(local user's home directory),
+.Ql %h
+(remote host name),
+.Ql %l
+(local host name),
+.Ql %n
+(host name as provided on the command line),
+.Ql %p
+(remote port),
+.Ql %r
+(remote user name) or
+.Ql %u
+(local user name).
 This directive is ignored unless
 .Cm PermitLocalCommand
 has been enabled.
@@ -1043,6 +1059,16 @@ See also
 .Sx VERIFYING HOST KEYS
 in
 .Xr ssh 1 .
+.It Cm VisualHostKey
+If this flag is set to
+.Dq yes ,
+an ASCII art representation of the remote host key fingerprint is
+printed additionally to the hex fingerprint string.
+If this flag is set to
+.Dq no ,
+only the hex fingerprint string will be printed.
+The default is
+.Dq no .
 .It Cm XAuthLocation
 Specifies the full pathname of the
 .Xr xauth 1

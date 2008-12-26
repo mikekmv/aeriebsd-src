@@ -35,7 +35,7 @@ int af = PF_UNSPEC;
 
 static void usage(void)
 {
-	fprintf(stderr, "Usage: %s [-46DV]\n", progname);
+	fprintf(stderr, "usage: %s [-46DV]\n", progname);
 	exit(1);
 }
 

@@ -94,6 +94,9 @@ errno_to_portable(int unixerrno)
 	case EINVAL:
 		ret = SSH2_FX_BAD_MESSAGE;
 		break;
+	case ENOSYS:
+		ret = SSH2_FX_OP_UNSUPPORTED;
+		break;
 	default:
 		ret = SSH2_FX_FAILURE;
 		break;
@@ -483,17 +486,17 @@ send_statvfs(u_int32_t id, struct statvfs *st)
 	buffer_init(&msg);
 	buffer_put_char(&msg, SSH2_FXP_EXTENDED_REPLY);
 	buffer_put_int(&msg, id);
-	buffer_put_int(&msg, st->f_bsize);
-	buffer_put_int(&msg, st->f_frsize);
+	buffer_put_int64(&msg, st->f_bsize);
+	buffer_put_int64(&msg, st->f_frsize);
 	buffer_put_int64(&msg, st->f_blocks);
 	buffer_put_int64(&msg, st->f_bfree);
 	buffer_put_int64(&msg, st->f_bavail);
 	buffer_put_int64(&msg, st->f_files);
 	buffer_put_int64(&msg, st->f_ffree);
 	buffer_put_int64(&msg, st->f_favail);
-	buffer_put_int(&msg, st->f_fsid);
-	buffer_put_int(&msg, flag);
-	buffer_put_int(&msg, st->f_namemax);
+	buffer_put_int64(&msg, st->f_fsid);
+	buffer_put_int64(&msg, flag);
+	buffer_put_int64(&msg, st->f_namemax);
 	send_msg(&msg);
 	buffer_free(&msg);
 }
@@ -513,10 +516,12 @@ process_init(void)
 	/* POSIX rename extension */
 	buffer_put_cstring(&msg, "posix-rename@openssh.com");
 	buffer_put_cstring(&msg, "1"); /* version */
+	/* statvfs extension */
 	buffer_put_cstring(&msg, "statvfs@openssh.com");
-	buffer_put_cstring(&msg, "1"); /* version */
+	buffer_put_cstring(&msg, "2"); /* version */
+	/* fstatvfs extension */
 	buffer_put_cstring(&msg, "fstatvfs@openssh.com");
-	buffer_put_cstring(&msg, "1"); /* version */
+	buffer_put_cstring(&msg, "2"); /* version */
 	send_msg(&msg);
 	buffer_free(&msg);
 }
@@ -748,7 +753,7 @@ process_setstat(void)
 	}
 	if (a->flags & SSH2_FILEXFER_ATTR_PERMISSIONS) {
 		logit("set \"%s\" mode %04o", name, a->perm);
-		ret = chmod(name, a->perm & 0777);
+		ret = chmod(name, a->perm & 07777);
 		if (ret == -1)
 			status = errno_to_portable(errno);
 	}
@@ -801,7 +806,7 @@ process_fsetstat(void)
 		}
 		if (a->flags & SSH2_FILEXFER_ATTR_PERMISSIONS) {
 			logit("set \"%s\" mode %04o", name, a->perm);
-			ret = fchmod(fd, a->perm & 0777);
+			ret = fchmod(fd, a->perm & 07777);
 			if (ret == -1)
 				status = errno_to_portable(errno);
 		}
@@ -943,7 +948,7 @@ process_mkdir(void)
 	name = get_string(NULL);
 	a = get_attrib();
 	mode = (a->flags & SSH2_FILEXFER_ATTR_PERMISSIONS) ?
-	    a->perm & 0777 : 0777;
+	    a->perm & 07777 : 0777;
 	debug3("request %u: mkdir", id);
 	logit("mkdir name \"%s\" mode 0%o", name, mode);
 	ret = mkdir(name, mode);

@@ -41,7 +41,7 @@ Tue May 18 11:24:12 NDT 1999 Michael Rendell (michael@deimos.cs.mun.ca)
 
 Thu May 13 17:23:17 NDT 1999 Michael Rendell (michael@deimos.cs.mun.ca)
 
-	* emacs.c(x_bound,bind_if_not_bound): new variable/fucntion.
+	* emacs.c(x_bound,bind_if_not_bound): new variable/function.
 	* emacs.c(x_bind): set bit in x_bound[].
 	* emacs.c(x_emacs_keys): call bind_if_not_bound.
 

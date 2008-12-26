@@ -162,6 +162,7 @@ major	{fd = 4}
 
 include	"dev/eisa/files.eisa"
 
+file	arch/alpha/eisa/eisa_machdep.c		eisa
 
 #
 # PCI Bus support
@@ -265,8 +266,6 @@ file	dev/pci/if_hme_pci.c		hme_pci
 
 include	"../../../dev/isa/files.isapnp"
 file	arch/alpha/isa/isapnp_machdep.c		isapnp
-
-attach	com at isapnp with com_isapnp
 
 #
 # Devices that can live on multiple busses

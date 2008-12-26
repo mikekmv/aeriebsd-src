@@ -1,5 +1,5 @@
 
-SUBDIR+= exp floor rint toint trivial1
+SUBDIR+= exp floor rint tgamma toint trivial1
 
 install:
 

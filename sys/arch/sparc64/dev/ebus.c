@@ -129,6 +129,13 @@ ebus_match(struct device *parent, void *match, void *aux)
 		strcmp(name, "ebus") == 0)
 		return (1);
 
+	/* Or a fake ebus */
+	if (PCI_CLASS(pa->pa_class) == PCI_CLASS_BRIDGE &&
+	    PCI_VENDOR(pa->pa_id) == PCI_VENDOR_ALTERA &&
+	    PCI_PRODUCT(pa->pa_id) == PCI_PRODUCT_ALTERA_EBUS &&
+		strcmp(name, "ebus") == 0)
+		return (1);
+
 	/* Or a PCI-ISA bridge XXX I hope this is on-board. */
 	if (PCI_CLASS(pa->pa_class) == PCI_CLASS_BRIDGE &&
 	    PCI_SUBCLASS(pa->pa_class) == PCI_SUBCLASS_BRIDGE_ISA) {

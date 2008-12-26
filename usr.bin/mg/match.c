@@ -7,9 +7,6 @@
  * The hacks in this file implement automatic matching * of (), [], {}, and
  * other characters.  It would be better to have a full-blown syntax table,
  * but there's enough overhead in the editor as it is.
- *
- * Since I often edit Scribe code, I've made it possible to blink arbitrary
- * characters -- just bind delimiter characters to "blink-matching-paren-hack"
  */
 
 #include "def.h"
@@ -22,39 +19,26 @@ static void	displaymatch(struct line *, int);
  * Balance table. When balance() encounters a character that is to be
  * matched, it first searches this table for a balancing left-side character.
  * If the character is not in the table, the character is balanced by itself.
- * This is to allow delimiters in Scribe documents to be matched.
  */
 static struct balance {
 	char	left, right;
 } bal[] = {
-	{
-		'(', ')'
-	},
-	{
-		'[', ']'
-	},
-	{
-		'{', '}'
-	},
-	{
-		'<', '>'
-	},
-	{
-		'\0', '\0'
-	}
+	{ '(', ')' },
+	{ '[', ']' },
+	{ '{', '}' },
+	{ '<', '>' },
+	{ '\0', '\0' }
 };
 
 /*
  * Hack to show matching paren.  Self-insert character, then show matching
- * character, if any.  Bound to "blink-matching-paren-command".
+ * character, if any.  Bound to "blink-and-insert".
  */
 int
 showmatch(int f, int n)
 {
 	int	i, s;
 
-	if (f & FFRAND)
-		return (FALSE);
 	for (i = 0; i < n; i++) {
 		if ((s = selfinsert(FFRAND, 1)) != TRUE)
 			return (s);

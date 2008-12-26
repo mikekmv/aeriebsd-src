@@ -212,6 +212,9 @@ struct arc_fw_bufhdr {
 #define ARC_FW_NOP		0x38	/* opcode only */
 
 #define ARC_FW_CMD_OK		0x41
+#define ARC_FW_BLINK		0x43
+#define  ARC_FW_BLINK_ENABLE			0x00
+#define  ARC_FW_BLINK_DISABLE			0x01
 #define ARC_FW_CMD_PASS_REQD	0x4d
 
 struct arc_fw_comminfo {
@@ -297,7 +300,7 @@ struct arc_fw_diskinfo {
 	u_int8_t		drive_select;
 	u_int8_t		raid_number; // 0xff unowned
 	struct arc_fw_scsiattr	scsi_attr;
-	u_int8_t		reserved[40];
+	u_int8_t		reserved[44];
 } __packed;
 
 struct arc_fw_sysinfo {
@@ -381,6 +384,8 @@ struct arc_softc {
 	struct ksensor		*sc_sensors;
 	struct ksensordev	sc_sensordev;
 	int			sc_nsensors;
+
+	u_int32_t		sc_ledmask;
 };
 #define DEVNAME(_s)		((_s)->sc_dev.dv_xname)
 
@@ -477,7 +482,7 @@ void			arc_unlock(struct arc_softc *);
 void			arc_wait(struct arc_softc *);
 u_int8_t		arc_msg_cksum(void *, u_int16_t);
 int			arc_msgbuf(struct arc_softc *, void *, size_t,
-			    void *, size_t);
+			    void *, size_t, int);
 
 /* bioctl */
 int			arc_bioctl(struct device *, u_long, caddr_t);
@@ -487,6 +492,7 @@ int			arc_bio_disk(struct arc_softc *, struct bioc_disk *);
 int			arc_bio_alarm(struct arc_softc *, struct bioc_alarm *);
 int			arc_bio_alarm_state(struct arc_softc *,
 			    struct bioc_alarm *);
+int			arc_bio_blink(struct arc_softc *, struct bioc_blink *);
 
 int			arc_bio_getvol(struct arc_softc *, int,
 			    struct arc_fw_volinfo *);
@@ -1068,6 +1074,10 @@ arc_bioctl(struct device *self, u_long cmd, caddr_t addr)
 		error = arc_bio_alarm(sc, (struct bioc_alarm *)addr);
 		break;
 
+	case BIOCBLINK:
+		error = arc_bio_blink(sc, (struct bioc_blink *)addr);
+		break;
+
 	default:
 		error = ENOTTY;
 		break;
@@ -1109,7 +1119,7 @@ arc_bio_alarm(struct arc_softc *sc, struct bioc_alarm *ba)
 	}
 
 	arc_lock(sc);
-	error = arc_msgbuf(sc, request, len, reply, sizeof(reply));
+	error = arc_msgbuf(sc, request, len, reply, sizeof(reply), 0);
 	arc_unlock(sc);
 
 	if (error != 0)
@@ -1138,7 +1148,7 @@ arc_bio_alarm_state(struct arc_softc *sc, struct bioc_alarm *ba)
 
 	arc_lock(sc);
 	error = arc_msgbuf(sc, &request, sizeof(request),
-	    sysinfo, sizeof(struct arc_fw_sysinfo));
+	    sysinfo, sizeof(struct arc_fw_sysinfo), 0);
 	arc_unlock(sc);
 
 	if (error != 0)
@@ -1168,7 +1178,7 @@ arc_bio_inq(struct arc_softc *sc, struct bioc_inq *bi)
 
 	request[0] = ARC_FW_SYSINFO;
 	error = arc_msgbuf(sc, request, 1, sysinfo,
-	    sizeof(struct arc_fw_sysinfo));
+	    sizeof(struct arc_fw_sysinfo), 0);
 	if (error != 0)
 		goto out;
 
@@ -1178,7 +1188,7 @@ arc_bio_inq(struct arc_softc *sc, struct bioc_inq *bi)
 	for (i = 0; i < maxvols; i++) {
 		request[1] = i;
 		error = arc_msgbuf(sc, request, sizeof(request), volinfo,
-		    sizeof(struct arc_fw_volinfo));
+		    sizeof(struct arc_fw_volinfo), 0);
 		if (error != 0)
 			goto out;
 
@@ -1202,6 +1212,37 @@ out:
 }
 
 int
+arc_bio_blink(struct arc_softc *sc, struct bioc_blink *blink)
+{
+	u_int8_t			 request[5];
+	u_int32_t			 mask;
+	int				 error = 0;
+
+	request[0] = ARC_FW_BLINK;
+	request[1] = ARC_FW_BLINK_ENABLE;
+
+	switch (blink->bb_status) {
+	case BIOC_SBUNBLINK:
+		sc->sc_ledmask &= ~(1 << blink->bb_target);
+		break;
+	case BIOC_SBBLINK:
+		sc->sc_ledmask |= (1 << blink->bb_target);
+		break;
+	default:
+		return (EINVAL);
+	}
+
+	mask = htole32(sc->sc_ledmask);
+	bcopy(&mask, &request[2], 3);
+
+	error = arc_msgbuf(sc, request, sizeof(request), NULL, 0, 0);
+	if (error)
+		return (EIO);
+
+	return (0);
+}
+
+int
 arc_bio_getvol(struct arc_softc *sc, int vol, struct arc_fw_volinfo *volinfo)
 {
 	u_int8_t			request[2];
@@ -1213,7 +1254,7 @@ arc_bio_getvol(struct arc_softc *sc, int vol, struct arc_fw_volinfo *volinfo)
 
 	request[0] = ARC_FW_SYSINFO;
 	error = arc_msgbuf(sc, request, 1, sysinfo,
-	    sizeof(struct arc_fw_sysinfo));
+	    sizeof(struct arc_fw_sysinfo), 0);
 	if (error != 0)
 		goto out;
 
@@ -1223,7 +1264,7 @@ arc_bio_getvol(struct arc_softc *sc, int vol, struct arc_fw_volinfo *volinfo)
 	for (i = 0; i < maxvols; i++) {
 		request[1] = i;
 		error = arc_msgbuf(sc, request, sizeof(request), volinfo,
-		    sizeof(struct arc_fw_volinfo));
+		    sizeof(struct arc_fw_volinfo), 0);
 		if (error != 0)
 			goto out;
 
@@ -1354,7 +1395,7 @@ arc_bio_disk(struct arc_softc *sc, struct bioc_disk *bd)
 	request[0] = ARC_FW_RAIDINFO;
 	request[1] = volinfo->raid_set_number;
 	error = arc_msgbuf(sc, request, sizeof(request), raidinfo,
-	    sizeof(struct arc_fw_raidinfo));
+	    sizeof(struct arc_fw_raidinfo), 0);
 	if (error != 0)
 		goto out;
 
@@ -1379,7 +1420,7 @@ arc_bio_disk(struct arc_softc *sc, struct bioc_disk *bd)
 	request[0] = ARC_FW_DISKINFO;
 	request[1] = raidinfo->device_array[bd->bd_diskid];
 	error = arc_msgbuf(sc, request, sizeof(request), diskinfo,
-	    sizeof(struct arc_fw_diskinfo));
+	    sizeof(struct arc_fw_diskinfo), 1);
 	if (error != 0)
 		goto out;
 
@@ -1435,11 +1476,12 @@ arc_msg_cksum(void *cmd, u_int16_t len)
 
 int
 arc_msgbuf(struct arc_softc *sc, void *wptr, size_t wbuflen, void *rptr,
-    size_t rbuflen)
+    size_t rbuflen, int sreadok)
 {
 	u_int8_t			rwbuf[ARC_RA_IOC_RWBUF_MAXLEN];
 	u_int8_t			*wbuf, *rbuf;
 	int				wlen, wdone = 0, rlen, rdone = 0;
+	u_int16_t			rlenhdr = 0;
 	struct arc_fw_bufhdr		*bufhdr;
 	u_int32_t			reg, rwlen;
 	int				error = 0;
@@ -1497,6 +1539,9 @@ arc_msgbuf(struct arc_softc *sc, void *wptr, size_t wbuflen, void *rptr,
 			wdone += rwlen;
 		}
 
+		if (rptr == NULL)
+			goto out;
+
 		while ((reg = arc_read(sc, ARC_RA_OUTB_DOORBELL)) == 0)
 			arc_wait(sc);
 		arc_write(sc, ARC_RA_OUTB_DOORBELL, reg);
@@ -1538,6 +1583,24 @@ arc_msgbuf(struct arc_softc *sc, void *wptr, size_t wbuflen, void *rptr,
 
 			bcopy(rwbuf, &rbuf[rdone], rwlen);
 			rdone += rwlen;
+
+			/*
+			 * Allow for short reads, by reading the length
+			 * value from the response header and shrinking our
+			 * idea of size, if required.
+			 * This deals with the growth of diskinfo struct from
+			 * 128 to 132 bytes.
+			 */ 
+			if (sreadok && rdone >= sizeof(struct arc_fw_bufhdr) &&
+			    rlenhdr == 0) {
+				bufhdr = (struct arc_fw_bufhdr *)rbuf;
+				rlenhdr = letoh16(bufhdr->len);
+				if (rlenhdr < rbuflen) {
+					rbuflen = rlenhdr;
+					rlen = sizeof(struct arc_fw_bufhdr) +
+					    rbuflen + 1; /* 1 for cksum */
+				}
+			}
 		}
 	} while (rdone != rlen);
 

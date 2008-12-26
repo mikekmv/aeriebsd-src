@@ -60,12 +60,11 @@ ino_t	unp_ino;			/* prototype for fake inode numbers */
 /*ARGSUSED*/
 int
 uipc_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam,
-    struct mbuf *control)
+    struct mbuf *control, struct proc *p)
 {
 	struct unpcb *unp = sotounpcb(so);
 	struct socket *so2;
 	int error = 0;
-	struct proc *p = curproc;	/* XXX */
 
 	if (req == PRU_CONTROL)
 		return (EOPNOTSUPP);

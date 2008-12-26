@@ -103,8 +103,6 @@ extern struct	udpstat udpstat;
 #if defined(INET6) && !defined(TCP6)
 void	udp6_ctlinput(int, struct sockaddr *, void *);
 int	udp6_input(struct mbuf **, int *, int);
-int	udp6_usrreq(struct socket *,
-	    int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 #endif /* INET6 && !TCP6 */
 void	 *udp_ctlinput(int, struct sockaddr *, void *);
 void	 udp_init(void);
@@ -116,6 +114,6 @@ int	 udp6_output(struct inpcb *, struct mbuf *, struct mbuf *,
 int	 udp_output(struct mbuf *, ...);
 int	 udp_sysctl(int *, u_int, void *, size_t *, void *, size_t);
 int	 udp_usrreq(struct socket *,
-	    int, struct mbuf *, struct mbuf *, struct mbuf *);
+	    int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 #endif /* _KERNEL */
 #endif /* _NETINET_UDP_VAR_H_ */

@@ -199,6 +199,7 @@ vga_pci_attach(struct device *parent, struct device *self, void *aux)
 	 */
 	if (agp_pchb_pa_set) {
 		aba.apa_pci_args = agp_pchb_pa;
+		memcpy(&aba.apa_vga_args, pa, sizeof(struct pci_attach_args));
 		config_found_sm(self, &aba, agpbus_print, agpsubmatch);
 
 	}
@@ -255,7 +256,7 @@ int
 vga_drm_print(void *aux, const char *pnp)
 {
        if (pnp)
-               printf("direct rendering for %s", pnp);
+               printf("drm at %s", pnp);
        return (UNSUPP);
 }
 #endif
@@ -402,8 +403,13 @@ vga_pci_bar_init(struct vga_pci_softc *dev, struct pci_attach_args *pa)
 			dev->bars[i] = NULL;
 		}
 
-		addr+=4;
-		++i;
+		if (type == PCI_MAPREG_MEM_TYPE_64BIT) {
+			addr += 8;
+			i += 2;
+		} else {
+			addr+=4;
+			++i;
+		}
 	}
 }
 
@@ -446,14 +452,9 @@ vga_pci_bar_map(struct vga_pci_softc *dev, int addr, bus_size_t size,
 	}
 
 	if (bar->mapped == 0) {
-		switch (bar->maptype) {
-		case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT:
-		case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT:
-			if (pci_mapreg_map(&dev->pa, bar->addr, bar->maptype,
-			    bar->flags | busflags, &bar->bst, &bar->bsh, NULL,
-			    &bar->size, size) == 0)
-				break;
-		default:
+		if (pci_mapreg_map(&dev->pa, bar->addr, bar->maptype,
+		    bar->flags | busflags, &bar->bst, &bar->bsh, NULL,
+		    &bar->size, size)) {
 			printf("vga_pci_bar_map: can't map bar 0x%x\n", addr);
 			return (NULL);
 		}

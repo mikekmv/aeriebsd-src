@@ -26,6 +26,7 @@
 #include <pwd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "cvs.h"
@@ -139,11 +140,10 @@ client_get_supported_responses(void)
 			continue;
 
 		if (first != 0)
-			cvs_buf_append(bp, " ", 1);
+			cvs_buf_putc(bp, ' ');
 		else
 			first++;
-		cvs_buf_append(bp, cvs_responses[i].name,
-		    strlen(cvs_responses[i].name));
+		cvs_buf_puts(bp, cvs_responses[i].name);
 	}
 
 	cvs_buf_putc(bp, '\0');
@@ -188,7 +188,6 @@ client_check_directory(char *data, char *repository)
 
 	entlist = cvs_ent_open(parent);
 	cvs_ent_add(entlist, entry);
-	cvs_ent_close(entlist, ENT_SYNC);
 
 	xfree(entry);
 }
@@ -456,7 +455,7 @@ void
 cvs_client_sendfile(struct cvs_file *cf)
 {
 	size_t len;
-	struct tm *datetm;
+	struct tm datetm;
 	char rev[CVS_REV_BUFSZ], timebuf[CVS_TIME_BUFSZ], sticky[CVS_REV_BUFSZ];
 
 	if (cf->file_type != CVS_FILE)
@@ -503,9 +502,9 @@ cvs_client_sendfile(struct cvs_file *cf)
 			(void)xsnprintf(sticky, sizeof(sticky), "T%s",
 			    cf->file_ent->ce_tag);
 		} else if (cf->file_ent->ce_date != -1) {
-			datetm = gmtime(&(cf->file_ent->ce_date));
+			gmtime_r(&(cf->file_ent->ce_date), &datetm);
 			(void)strftime(sticky, sizeof(sticky),
-			    "D"CVS_DATE_FMT, datetm);
+			    "D"CVS_DATE_FMT, &datetm);
 		}
 
 		cvs_client_send_request("Entry /%s/%s%s/%s/%s/%s",
@@ -613,7 +612,7 @@ cvs_client_checkedin(char *data)
 	CVSENTRIES *entlist;
 	struct cvs_ent *ent, *newent;
 	size_t len;
-	struct tm *datetm;
+	struct tm datetm;
 	char *dir, *e, *entry, rev[CVS_REV_BUFSZ];
 	char sticky[CVS_ENT_MAXLINELEN], timebuf[CVS_TIME_BUFSZ];
 
@@ -652,9 +651,9 @@ cvs_client_checkedin(char *data)
 			(void)xsnprintf(sticky, sizeof(sticky), "T%s",
 			    newent->ce_tag);
 		} else if (newent->ce_date != -1) {
-			datetm = gmtime(&(newent->ce_date));
+			gmtime_r(&(newent->ce_date), &datetm);
 			(void)strftime(sticky, sizeof(sticky),
-			    "D"CVS_DATE_FMT, datetm);
+			    "D"CVS_DATE_FMT, &datetm);
 		}
 
 		cvs_ent_free(ent);
@@ -668,7 +667,6 @@ cvs_client_checkedin(char *data)
 
 	cvs_ent_free(newent);
 	cvs_ent_add(entlist, entry);
-	cvs_ent_close(entlist, ENT_SYNC);
 
 	xfree(entry);
 }
@@ -683,7 +681,7 @@ cvs_client_updated(char *data)
 	CVSENTRIES *ent;
 	struct cvs_ent *e;
 	const char *errstr;
-	struct tm *datetm;
+	struct tm datetm;
 	struct timeval tv[2];
 	char repo[MAXPATHLEN], *entry;
 	char timebuf[CVS_TIME_BUFSZ], revbuf[CVS_REV_BUFSZ];
@@ -719,7 +717,8 @@ cvs_client_updated(char *data)
 	fmode &= ~cvs_umask;
 
 	time(&now);
-	asctime_r(gmtime(&now), timebuf);
+	gmtime_r(&now, &datetm);
+	asctime_r(&datetm, timebuf);
 	timebuf[strcspn(timebuf, "\n")] = '\0';
 
 	e = cvs_ent_parse(en);
@@ -729,9 +728,9 @@ cvs_client_updated(char *data)
 	if (e->ce_tag != NULL) {
 		(void)xsnprintf(sticky, sizeof(sticky), "T%s", e->ce_tag);
 	} else if (e->ce_date != -1) {
-		datetm = gmtime(&(e->ce_date));
+		gmtime_r(&(e->ce_date), &datetm);
 		(void)strftime(sticky, sizeof(sticky),
-		    "D"CVS_DATE_FMT, datetm);
+		    "D"CVS_DATE_FMT, &datetm);
 	}
 
 	rcsnum_tostr(e->ce_rev, revbuf, sizeof(revbuf));
@@ -746,7 +745,6 @@ cvs_client_updated(char *data)
 	if (cvs_cmdop != CVS_OP_EXPORT) {
 		ent = cvs_ent_open(data);
 		cvs_ent_add(ent, entry);
-		cvs_ent_close(ent, ENT_SYNC);
 	}
 
 	xfree(entry);
@@ -783,6 +781,7 @@ cvs_client_merged(char *data)
 	CVSENTRIES *ent;
 	const char *errstr;
 	struct timeval tv[2];
+	struct tm datetm;
 	char timebuf[CVS_TIME_BUFSZ], *repo, *rpath, *entry, *mode;
 	char *len, *fpath, *wdir;
 
@@ -819,12 +818,12 @@ cvs_client_merged(char *data)
 	fmode &= ~cvs_umask;
 
 	time(&now);
-	asctime_r(gmtime(&now), timebuf);
+	gmtime_r(&now, &datetm);
+	asctime_r(&datetm, timebuf);
 	timebuf[strcspn(timebuf, "\n")] = '\0';
 
 	ent = cvs_ent_open(wdir);
 	cvs_ent_add(ent, entry);
-	cvs_ent_close(ent, ENT_SYNC);
 	xfree(entry);
 
 	(void)unlink(fpath);
@@ -865,7 +864,6 @@ cvs_client_removed(char *data)
 
 	entlist = cvs_ent_open(data);
 	cvs_ent_remove(entlist, filename);
-	cvs_ent_close(entlist, ENT_SYNC);
 
 	(void)xsnprintf(fpath, MAXPATHLEN, "%s/%s", data, filename);
 	(void)unlink(fpath);
@@ -889,7 +887,6 @@ cvs_client_remove_entry(char *data)
 
 	entlist = cvs_ent_open(data);
 	cvs_ent_remove(entlist, filename);
-	cvs_ent_close(entlist, ENT_SYNC);
 
 	xfree(rpath);
 }
@@ -1015,7 +1012,7 @@ cvs_client_initlog(void)
 {
 	u_int i;
 	char *env, *envdup, buf[MAXPATHLEN], fpath[MAXPATHLEN];
-	char rpath[MAXPATHLEN], *s;
+	char rpath[MAXPATHLEN], timebuf[CVS_TIME_BUFSZ], *s;
 	struct stat st;
 	time_t now;
 	struct passwd *pwd;
@@ -1050,7 +1047,9 @@ cvs_client_initlog(void)
 			break;
 		case 'd':
 			time(&now);
-			if (strlcpy(fpath, ctime(&now), sizeof(fpath)) >=
+			ctime_r(&now, timebuf);
+			timebuf[strcspn(timebuf, "\n")] = '\0';
+			if (strlcpy(fpath, timebuf, sizeof(fpath)) >=
 			    sizeof(fpath))
 				fatal("cvs_client_initlog: truncation");
 			break;

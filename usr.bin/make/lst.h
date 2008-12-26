@@ -1,8 +1,3 @@
-#ifndef _LST_H_
-#define _LST_H_
-
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 1988, 1989, 1990 The Regents of the University of California.
  * Copyright (c) 1988, 1989 by Adam de Boor
@@ -43,6 +38,9 @@
  * lst.h --
  *	Header for using the list library
  */
+
+#ifndef _LST_H_
+#define _LST_H_
 
 /* These data structures are PRIVATE !!!
  * Here for efficiency, so that some functions can be recoded as inlines,

@@ -29,21 +29,19 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: isinf.c,v 1.1.1.1 2008/08/26 14:38:25 root Exp $";
 #endif
 
 /* ARGSUSED */
 int
-isnan(d)
-	double d;
+__isinf(double d)
 {
 	return(0);
 }
 
 /* ARGSUSED */
 int
-isinf(d)
-	double d;
+isinff(float f)
 {
 	return(0);
 }

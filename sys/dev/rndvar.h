@@ -30,7 +30,7 @@
 #ifndef __RNDVAR_H__
 #define __RNDVAR_H__
 
-#define POOLWORDS 1024	/* Power of 2 - note that this is 32-bit words */
+#define POOLWORDS 2048	/* Power of 2 - note that this is 32-bit words */
 
 #define	RND_RND		0	/* real randomness like nuclear chips */
 #define	RND_SRND	1	/* strong random source */
@@ -84,7 +84,7 @@ extern struct rndstats rndstats;
 
 void enqueue_randomness(int, int);
 void get_random_bytes(void *, size_t);
-void arc4random_bytes(void *, size_t);
+void arc4random_buf(void *, size_t);
 u_int32_t arc4random(void);
 u_int32_t arc4random_uniform(u_int32_t);
 

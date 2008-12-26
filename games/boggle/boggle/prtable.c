@@ -106,7 +106,14 @@ prtable(char **base, int num, int d_cols, int width,
 			attron(A_REVERSE);
 			printw("--More--");
 			attroff(A_REVERSE);
-			while (inputch() != ' ');
+			do {
+			    j = inputch();
+			} while (j != ' ' && j != 'q' && j != 'Q');
+			if (j == 'q' || j == 'Q') {
+				move(row + 1, 0);
+				wclrtoeol(stdscr);
+				break;
+			}
 			move(LIST_LINE, LIST_COL);
 			wclrtobot(stdscr);
 		}

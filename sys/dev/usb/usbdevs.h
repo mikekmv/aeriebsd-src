@@ -23,13 +23,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -145,6 +138,7 @@
 #define	USB_VENDOR_DIGI2	0x04d0		/* Digi */
 #define	USB_VENDOR_ITTCANON	0x04d1		/* ITT Canon */
 #define	USB_VENDOR_ALTEC	0x04d2		/* Altec Lansing */
+#define	USB_VENDOR_ITUNER	0x04d8		/* Ituner */
 #define	USB_VENDOR_PANASONIC	0x04da		/* Panasonic (Matsushita) */
 #define	USB_VENDOR_SHARP	0x04dd		/* Sharp */
 #define	USB_VENDOR_IIYAMA	0x04e1		/* Iiyama */
@@ -387,6 +381,7 @@
 #define	USB_VENDOR_BROADCOM	0x0a5c		/* Broadcom */
 #define	USB_VENDOR_GREENHOUSE	0x0a6b		/* GREENHOUSE */
 #define	USB_VENDOR_GEOCAST	0x0a79		/* Geocast Network Systems */
+#define	USB_VENDOR_DREAMCHEEKY	0x0a81		/* Dream Cheeky */
 #define	USB_VENDOR_IDQUANTIQUE	0x0aba		/* id Quantique */
 #define	USB_VENDOR_IDTECH	0x0acd		/* ID TECH */
 #define	USB_VENDOR_ZYDAS	0x0ace		/* ZyDAS Technology */
@@ -429,6 +424,7 @@
 #define	USB_VENDOR_SITECOMEU	0x0df6		/* Sitecom Europe */
 #define	USB_VENDOR_MOBILEACTION	0x0df7		/* Mobile Action */
 #define	USB_VENDOR_SPEEDDRAGON	0x0e55		/* Speed Dragon Multimedia */
+#define	USB_VENDOR_CTC	0x0e5e		/* CONWISE Technology */
 #define	USB_VENDOR_HAWKING	0x0e66		/* Hawking */
 #define	USB_VENDOR_FOSSIL	0x0e67		/* Fossil */
 #define	USB_VENDOR_GMATE	0x0e7e		/* G.Mate */
@@ -524,6 +520,7 @@
 #define	USB_VENDOR_LINKSYS3	0x1915		/* Linksys */
 #define	USB_VENDOR_MEINBERG	0x1938		/* Meinberg Funkuhren */
 #define	USB_VENDOR_QUALCOMM3	0x19d2		/* Qualcomm Inc. */
+#define	USB_VENDOR_WCH2	0x1a86		/* QinHeng Electronics */
 #define	USB_VENDOR_DLINK	0x2001		/* D-Link */
 #define	USB_VENDOR_PLANEX2	0x2019		/* Planex Communications */
 #define	USB_VENDOR_DLINK3	0x2101		/* D-Link */
@@ -547,6 +544,7 @@
 #define	USB_VENDOR_SWEEX	0x5173		/* Sweex */
 #define	USB_VENDOR_PROLIFIC2	0x5372		/* Prolific Technology */
 #define	USB_VENDOR_ONSPEC2	0x55aa		/* OnSpec */
+#define	USB_VENDOR_ACERLABS2	0x5986		/* Acer */
 #define	USB_VENDOR_ZINWELL	0x5a57		/* Zinwell */
 #define	USB_VENDOR_SITECOM	0x6189		/* Sitecom */
 #define	USB_VENDOR_3COM2	0x6891		/* 3Com */
@@ -750,6 +748,7 @@
 #define	USB_PRODUCT_ANCHOR_EZLINK	0x2720		/* EZLINK */
 
 /* Anydata products */
+#define	USB_PRODUCT_ANYDATA_A2502	0x6202		/* NTT DoCoMo A2502 */
 #define	USB_PRODUCT_ANYDATA_ADU_E100H	0x6501		/* ADU-E100H */
 #define	USB_PRODUCT_ANYDATA_ADU_500A	0x6502		/* ADU-500A */
 
@@ -895,6 +894,7 @@
 #define	USB_PRODUCT_BELKIN_F5D7050A	0x705a		/* F5D705A 54g USB Network Adapter */
 #define	USB_PRODUCT_BELKIN_F5D7050C	0x705c		/* F5D705C 54g USB Network Adapter */
 #define	USB_PRODUCT_BELKIN_RT2870	0x8053		/* RT2870 */
+#define	USB_PRODUCT_BELKIN_F5D9050C	0x905c		/* F5D9050C */
 #define	USB_PRODUCT_BELKIN_F5D9050V3	0x905b		/* F5D9050 ver 3 */
 
 /* Billionton products */
@@ -984,8 +984,8 @@
 #define	USB_PRODUCT_COMPAQ_PJB100	0x504a		/* Personal Jukebox PJB100 */
 #define	USB_PRODUCT_COMPAQ_IPAQLINUX	0x505a		/* iPAQ Linux */
 
-/* Billionton products */
-#define	USB_PRODUCT_BILLIONTON_SNAPPORT	0x90ff		/* SnapPort Ethernet */
+/* CONWISE Technology products */
+#define	USB_PRODUCT_CTC_CW6622	0x6622		/* CW6622 */
 
 /* CMOTECH CDMA Technologies products */
 #define	USB_PRODUCT_CMOTECH_CM5100P	0x5523		/* CM-5100P EVDO */
@@ -1121,6 +1121,7 @@
 #define	USB_PRODUCT_DLINK2_DWLG122C1	0x3c03		/* DWL-G122 rev C1 */
 #define	USB_PRODUCT_DLINK2_WUA1340	0x3c04		/* WUA-1340 */
 #define	USB_PRODUCT_DLINK_DUBE100B1	0x3c05		/* DUB-E100 rev B1 */
+#define	USB_PRODUCT_DLINK2_DWA111	0x3c06		/* DWA-111 */
 #define	USB_PRODUCT_DLINK2_RT2870	0x3c09		/* RT2870 */
 #define	USB_PRODUCT_DLINK_DSB650C	0x4000		/* 10Mbps ethernet */
 #define	USB_PRODUCT_DLINK_DSB650TX1	0x4001		/* 10/100 ethernet */
@@ -1283,6 +1284,15 @@
 #define	USB_PRODUCT_FTDI_ATK16HR	0xdf30		/* ATK-16HR Camera */
 #define	USB_PRODUCT_FTDI_ATK16HRC	0xdf30		/* ATK-16HRC Camera */
 #define	USB_PRODUCT_FTDI_YEI_SC31	0xe050		/* ServoCenter3.1 */
+#define	USB_PRODUCT_FTDI_ELV_FHZ1300PC	0xe0e8		/* FHZ 1300 PC */
+#define	USB_PRODUCT_FTDI_ELV_WS500	0xe0e9		/* WS 500 */
+#define	USB_PRODUCT_FTDI_ELV_EM1010PC	0xe0ef		/* EM 1010 PC */
+#define	USB_PRODUCT_FTDI_ELV_CSI8	0xe0f0		/* CSI 8 */
+#define	USB_PRODUCT_FTDI_ELV_EM1000DL	0xe0f1		/* EM 1000 DL */
+#define	USB_PRODUCT_FTDI_ELV_PCK100	0xe0f2		/* PCK 100 */
+#define	USB_PRODUCT_FTDI_ELV_RFP500	0xe0f3		/* RFP 500 */
+#define	USB_PRODUCT_FTDI_ELV_FS20SIG	0xe0f4		/* FS 20 SIG */
+#define	USB_PRODUCT_FTDI_ELV_WS300PC	0xe0f6		/* WS 300 PC */
 #define	USB_PRODUCT_FTDI_ECO_PRO	0xe520		/* EVER Eco Pro UPS */
 #define	USB_PRODUCT_FTDI_ACTROBOTS	0xe548		/* Active Robots comms */
 #define	USB_PRODUCT_FTDI_PYRAMID	0xe6c8		/* Pyramid Display */
@@ -1315,6 +1325,12 @@
 #define	USB_PRODUCT_FTDI_MHAM_DB9	0xeeed		/* DB9 */
 #define	USB_PRODUCT_FTDI_MHAM_RS232	0xeeee		/* RS232 */
 #define	USB_PRODUCT_FTDI_MHAM_Y9	0xeeef		/* Y9 */
+#define	USB_PRODUCT_FTDI_ELV_UAD8	0xf068		/* UAD 8 */
+#define	USB_PRODUCT_FTDI_ELV_UAD7	0xf069		/* UAD 7 */
+#define	USB_PRODUCT_FTDI_ELV_USI2	0xf06a		/* USI 2 */
+#define	USB_PRODUCT_FTDI_ELV_T1100	0xf06b		/* T 1100 */
+#define	USB_PRODUCT_FTDI_ELV_PCD200	0xf06c		/* PCD 200 */
+#define	USB_PRODUCT_FTDI_ELV_ULA200	0xf06d		/* ULA 200 */
 #define	USB_PRODUCT_FTDI_ELV_ALC8500	0xf06e		/* ALC 8500 Expert */
 #define	USB_PRODUCT_FTDI_ELV_FHZ1000PC	0xf06f		/* FHZ 1000 PC */
 #define	USB_PRODUCT_FTDI_PERLE_UP	0xf0c0		/* UltraPort */
@@ -1343,8 +1359,13 @@
 #define	USB_PRODUCT_FTDI_ACCESSO	0xfad0		/* Accesso reader */
 #define	USB_PRODUCT_FTDI_THORLABS	0xfaf0		/* Serial */
 #define	USB_PRODUCT_FTDI_ELV_UR100	0xfb58		/* UR 100 */
+#define	USB_PRODUCT_FTDI_ELV_CLI7000	0xfb59		/* CLI 7000 */
 #define	USB_PRODUCT_FTDI_ELV_UM100	0xfb5a		/* UM 100 */
 #define	USB_PRODUCT_FTDI_ELV_UO100	0xfb5b		/* UO 100 */
+#define	USB_PRODUCT_FTDI_ELV_PPS7330	0xfb5c		/* PPS 7330 */
+#define	USB_PRODUCT_FTDI_ELV_TFM100	0xfb5d		/* TFM 100 */
+#define	USB_PRODUCT_FTDI_ELV_UDF77	0xfb5e		/* UDF 77 */
+#define	USB_PRODUCT_FTDI_ELV_UIO88	0xfb5f		/* UIO 88 */
 #define	USB_PRODUCT_FTDI_LCD_CFA_632	0xfc08		/* Crystalfontz CFA-632 LCD */
 #define	USB_PRODUCT_FTDI_LCD_CFA_634	0xfc09		/* Crystalfontz CFA-634 LCD */
 #define	USB_PRODUCT_FTDI_LCD_CFA_547	0xfc0a		/* Crystalfontz CFA-547 LCD */
@@ -1615,6 +1636,8 @@
 #define	USB_PRODUCT_IODATA_USBETTXS	0x0913		/* USB ETTX */
 #define	USB_PRODUCT_IODATA_USBWNB11A	0x0919		/* USB WN-B11 */
 #define	USB_PRODUCT_IODATA_USBWNB11	0x0922		/* USB Airport WN-B11 */
+#define	USB_PRODUCT_IODATA_USBWNG54US	0x0928		/* USB WN-G54/US */
+#define	USB_PRODUCT_IODATA_USBWNG54US_NF	0x0929		/* USB WN-G54/US */
 #define	USB_PRODUCT_IODATA_ETGUS2	0x0930		/* ETG-US2 */
 #define	USB_PRODUCT_IODATA_FT232R	0x093c		/* FT232R */
 #define	USB_PRODUCT_IODATA_USBRSAQ	0x0a03		/* RSAQ1 Serial */
@@ -1634,6 +1657,9 @@
 
 /* iTegno products */
 #define	USB_PRODUCT_ITEGNO_WM1080A	0x1080		/* WM1080A */
+
+/* Ituner (mini-box.com) products */
+#define	USB_PRODUCT_ITUNER_USBLCD20x2	0x0002		/* USB-LCD-20x2 */
 
 /* Jablotron products */
 #define	USB_PRODUCT_JABLOTRON_PC60B	0x0001		/* PC-60B */
@@ -1772,12 +1798,28 @@
 #define	USB_PRODUCT_LOGITECH_QUICKCAMPRO	0x0810		/* QuickCam Pro */
 #define	USB_PRODUCT_LOGITECH_QUICKCAMEXP	0x0840		/* QuickCam Express */
 #define	USB_PRODUCT_LOGITECH_QUICKCAM	0x0850		/* QuickCam */
-#define	USB_PRODUCT_LOGITECH_QUICKCAMDLXNB	0x08a9		/* QuickCam Notebook Deluxe */
-#define	USB_PRODUCT_LOGITECH_QUICKCAMPRO3k	0x08b0		/* QuickCam Pro 3000 */
-#define	USB_PRODUCT_LOGITECH_QUICKCAMPRONB	0x08b1		/* QuickCam Notebook Pro */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMNBDLX	0x08a9		/* QuickCam Notebook Deluxe */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMPRO3K	0x08b0		/* QuickCam Pro 3000 */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMNBPRO_1	0x08b1		/* QuickCam Notebook Pro */
 #define	USB_PRODUCT_LOGITECH_QUICKCAMPRO4K	0x08b2		/* QuickCam Pro 4000 */
-#define	USB_PRODUCT_LOGITECH_QUICKCAMFUSION	0x08ca		/* QuickCam Fusion */
-#define	USB_PRODUCT_LOGITECH_QUICKCAMPRO5K	0x08ce		/* QuickCam Pro 5000 */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMFUSION_1	0x08c1		/* QuickCam Fusion */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMORBITMP_1	0x08c2		/* QuickCam Orbit MP */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMNBPRO	0x08c3		/* QuickCam Notebook Pro */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMPRO5K_1	0x08c5		/* QuickCam Pro 5000 */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMOEM_1	0x08c6		/* QuickCam OEM */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMOEM_2	0x08c7		/* QuickCam OEM */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMULTVIS	0x08c9		/* QuickCam Ultra Vision */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMFUSION_2	0x08ca		/* QuickCam Fusion */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMNBPRO_2	0x08cb		/* QuickCam Notebook Pro */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMORBITMP_2	0x08cc		/* QuickCam Orbit MP */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMPRO5K_2	0x08ce		/* QuickCam Pro 5000 */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMPRO9K	0x0990		/* QuickCam Pro 9000 */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMPRONB	0x0991		/* QuickCam Pro Notebook */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMCOMMDLX	0x0992		/* QuickCam Communicate Deluxe */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMORBITAF	0x0994		/* QuickCam Orbit AF */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMCOMMMP	0x09a1		/* QuickCam Communicate MP */
+#define	USB_PRODUCT_LOGITECH_QUICKCAME3500P	0x09a4		/* QuickCam E 3500 Plus */
+#define	USB_PRODUCT_LOGITECH_QUICKCAMDLXNB	0x09c1		/* QuickCam Deluxe Notebook */
 #define	USB_PRODUCT_LOGITECH_N43	0xc000		/* N43 */
 #define	USB_PRODUCT_LOGITECH_N48	0xc001		/* N48 mouse */
 #define	USB_PRODUCT_LOGITECH_MBA47	0xc002		/* M-BA47 mouse */
@@ -1831,6 +1873,9 @@
 #define	USB_PRODUCT_MELCO_KG54YB	0x005e		/* WLI-U2-KG54-YB WLAN */
 #define	USB_PRODUCT_MELCO_KG54	0x0066		/* WLI-U2-KG54 WLAN */
 #define	USB_PRODUCT_MELCO_KG54AI	0x0067		/* WLI-U2-KG54-AI WLAN */
+#define	USB_PRODUCT_MELCO_LUAU2GT	0x006e		/* LUA-U2-GT Ethernet */
+#define	USB_PRODUCT_MELCO_WLIU2KAMG54	0x0091		/* WLI-U2-KAMG54 */
+#define	USB_PRODUCT_MELCO_WLIU2KAMG54_NF	0x0092		/* WLI-U2-KAMG54 */
 #define	USB_PRODUCT_MELCO_PCOPRS1	0x00b3		/* PC-OP-RS1 RemoteStation */
 #define	USB_PRODUCT_MELCO_SG54HP	0x00d8		/* WLI-U2-SG54HP */
 #define	USB_PRODUCT_MELCO_G54HP	0x00d9		/* WLI-U2-G54HP */
@@ -1857,6 +1902,7 @@
 #define	USB_PRODUCT_MSI_RT2573_3	0xa861		/* RT2573 */
 #define	USB_PRODUCT_MSI_RT2573_4	0xa874		/* RT2573 */
 #define	USB_PRODUCT_MSI_BLUETOOTH_2	0xa970		/* Bluetooth */
+#define	USB_PRODUCT_MSI_BLUETOOTH_3	0xa97a		/* Bluetooth */
 
 /* Micronet Communications products */
 #define	USB_PRODUCT_MICRONET_SP128AR	0x0003		/* SP128AR EtherFast */
@@ -2433,6 +2479,7 @@
 #define	USB_PRODUCT_SIERRA_MC5720	0x0018		/* MC5720 */
 #define	USB_PRODUCT_SIERRA_AIRCARD_595	0x0019		/* AirCard 595 */
 #define	USB_PRODUCT_SIERRA_MC5725	0x0020		/* MC5725 */
+#define	USB_PRODUCT_SIERRA_MC5725_2	0x0220		/* MC5725 */
 #define	USB_PRODUCT_SIERRA_AIRCARD_580	0x0112		/* Aircard 580 EVDO */
 #define	USB_PRODUCT_SIERRA_MC8755_2	0x6802		/* MC8755 */
 #define	USB_PRODUCT_SIERRA_MC8765	0x6803		/* MC8765 */
@@ -2646,6 +2693,9 @@
 /* Ten X Technology, Inc. */
 #define	USB_PRODUCT_TENX_MISSILE	0x0202		/* Missile Launcher */
 
+/* Dream Cheeky */
+#define	USB_PRODUCT_DREAMCHEEKY_ROCKETBABY	0x0701		/* Missile Launcher */
+
 /* Integrated System Solution Corp. */
 #define	USB_PRODUCT_ISSC_KYBT100	0x1001		/* KY-BT100 Bluetooth */
 
@@ -2779,9 +2829,13 @@
 #define	USB_PRODUCT_OPTION_GT3GFUSION	0x6000		/* GlobeTrotter 3G FUSION */
 #define	USB_PRODUCT_OPTION_GT3GQUAD	0x6300		/* GlobeTrotter 3G QUAD */
 #define	USB_PRODUCT_OPTION_GT3GQUADPLUS	0x6600		/* GlobeTrotter 3G QUAD PLUS */
+#define	USB_PRODUCT_OPTION_GT3GPLUS	0x6721		/* GlobeTrotter 3G PLUS */
+#define	USB_PRODUCT_OPTION_GSICON72	0x6911		/* GlobeSurfer Icon 7.2 */
+#define	USB_PRODUCT_OPTION_GTHSDPA225	0x6971		/* GlobeTrotter HSDPA Icon 225 */
 
 /* WCH/QinHeng Electronics */
 #define	USB_PRODUCT_WCH_CH341	0x5523		/* CH341 serial/parallel */
+#define	USB_PRODUCT_WCH2_CH341	0x7523		/* CH341 serial/parallel */
 
 /* Wacom products */
 #define	USB_PRODUCT_WACOM_CT0405U	0x0000		/* CT-0405-U Tablet */

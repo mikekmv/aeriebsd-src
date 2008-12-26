@@ -123,8 +123,7 @@ mld6_init()
 }
 
 void
-mld6_start_listening(in6m)
-	struct in6_multi *in6m;
+mld6_start_listening(struct in6_multi *in6m)
 {
 	int s = splsoftnet();
 
@@ -153,8 +152,7 @@ mld6_start_listening(in6m)
 }
 
 void
-mld6_stop_listening(in6m)
-	struct in6_multi *in6m;
+mld6_stop_listening(struct in6_multi *in6m)
 {
 	mld_all_nodes_linklocal.s6_addr16[1] =
 	    htons(in6m->in6m_ifp->if_index); /* XXX */
@@ -169,9 +167,7 @@ mld6_stop_listening(in6m)
 }
 
 void
-mld6_input(m, off)
-	struct mbuf *m;
-	int off;
+mld6_input(struct mbuf *m, int off)
 {
 	struct ip6_hdr *ip6 = mtod(m, struct ip6_hdr *);
 	struct mld_hdr *mldh;
@@ -361,10 +357,7 @@ mld6_fasttimeo()
 }
 
 static void
-mld6_sendpkt(in6m, type, dst)
-	struct in6_multi *in6m;
-	int type;
-	const struct in6_addr *dst;
+mld6_sendpkt(struct in6_multi *in6m, int type, const struct in6_addr *dst)
 {
 	struct mbuf *mh, *md;
 	struct mld_hdr *mldh;

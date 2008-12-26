@@ -98,7 +98,7 @@ sys_getpriority(struct proc *curp, void *v, register_t *retval)
 	case PRIO_USER:
 		if (SCARG(uap, who) == 0)
 			SCARG(uap, who) = curp->p_ucred->cr_uid;
-		for (p = LIST_FIRST(&allproc); p; p = LIST_NEXT(p, p_list))
+		LIST_FOREACH(p, &allproc, p_list)
 			if (p->p_ucred->cr_uid == SCARG(uap, who) &&
 			    p->p_nice < low)
 				low = p->p_nice;
@@ -155,7 +155,7 @@ sys_setpriority(struct proc *curp, void *v, register_t *retval)
 	case PRIO_USER:
 		if (SCARG(uap, who) == 0)
 			SCARG(uap, who) = curp->p_ucred->cr_uid;
-		for (p = LIST_FIRST(&allproc); p; p = LIST_NEXT(p, p_list))
+		LIST_FOREACH(p, &allproc, p_list)
 			if (p->p_ucred->cr_uid == SCARG(uap, who)) {
 				error = donice(curp, p, SCARG(uap, prio));
 				found++;

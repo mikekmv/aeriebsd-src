@@ -55,7 +55,7 @@ int batchmode = 0;
 size_t copy_buffer_len = 32768;
 
 /* Number of concurrent outstanding requests */
-size_t num_requests = 16;
+size_t num_requests = 64;
 
 /* PID of ssh transport process */
 static pid_t sshpid = -1;
@@ -342,7 +342,7 @@ infer_path(const char *p, char **ifp)
 static int
 parse_getput_flags(const char *cmd, char **argv, int argc, int *pflag)
 {
-	extern int optind, optreset, opterr;
+	extern int opterr, optind, optopt, optreset;
 	int ch;
 
 	optind = optreset = 1;
@@ -356,7 +356,7 @@ parse_getput_flags(const char *cmd, char **argv, int argc, int *pflag)
 			*pflag = 1;
 			break;
 		default:
-			error("%s: Invalid flag -%c", cmd, ch);
+			error("%s: Invalid flag -%c", cmd, optopt);
 			return -1;
 		}
 	}
@@ -367,7 +367,7 @@ parse_getput_flags(const char *cmd, char **argv, int argc, int *pflag)
 static int
 parse_ls_flags(char **argv, int argc, int *lflag)
 {
-	extern int optind, optreset, opterr;
+	extern int opterr, optind, optopt, optreset;
 	int ch;
 
 	optind = optreset = 1;
@@ -406,7 +406,7 @@ parse_ls_flags(char **argv, int argc, int *lflag)
 			*lflag |= LS_TIME_SORT;
 			break;
 		default:
-			error("ls: Invalid flag -%c", ch);
+			error("ls: Invalid flag -%c", optopt);
 			return -1;
 		}
 	}
@@ -417,7 +417,7 @@ parse_ls_flags(char **argv, int argc, int *lflag)
 static int
 parse_df_flags(const char *cmd, char **argv, int argc, int *hflag, int *iflag)
 {
-	extern int optind, optreset, opterr;
+	extern int opterr, optind, optopt, optreset;
 	int ch;
 
 	optind = optreset = 1;
@@ -433,7 +433,7 @@ parse_df_flags(const char *cmd, char **argv, int argc, int *hflag, int *iflag)
 			*iflag = 1;
 			break;
 		default:
-			error("%s: Invalid flag -%c", cmd, ch);
+			error("%s: Invalid flag -%c", cmd, optopt);
 			return -1;
 		}
 	}
@@ -820,7 +820,7 @@ do_globbed_ls(struct sftp_conn *conn, char *path, char *strip_path,
 static int
 do_df(struct sftp_conn *conn, char *path, int hflag, int iflag)
 {
-	struct statvfs st;
+	struct sftp_statvfs st;
 	char s_used[FMT_SCALED_STRSIZE];
 	char s_avail[FMT_SCALED_STRSIZE];
 	char s_root[FMT_SCALED_STRSIZE];

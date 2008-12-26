@@ -123,19 +123,6 @@ struct	inpcbtable tcbtable;
 
 int tcp_ident(void *, size_t *, void *, size_t, int);
 
-#ifdef INET6
-int
-tcp6_usrreq(so, req, m, nam, control, p)
-	struct socket *so;
-	int req;
-	struct mbuf *m, *nam, *control;
-	struct proc *p;
-{
-
-	return tcp_usrreq(so, req, m, nam, control);
-}
-#endif
-
 /*
  * Process a TCP user request for TCP tb.  If this is a send request
  * then m is the mbuf chain of send data.  If this is a timer expiration
@@ -143,10 +130,11 @@ tcp6_usrreq(so, req, m, nam, control, p)
  */
 /*ARGSUSED*/
 int
-tcp_usrreq(so, req, m, nam, control)
+tcp_usrreq(so, req, m, nam, control, p)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *control;
+	struct proc *p;
 {
 	struct sockaddr_in *sin;
 	struct inpcb *inp;
@@ -237,10 +225,10 @@ tcp_usrreq(so, req, m, nam, control)
 	case PRU_BIND:
 #ifdef INET6
 		if (inp->inp_flags & INP_IPV6)
-			error = in6_pcbbind(inp, nam);
+			error = in6_pcbbind(inp, nam, p);
 		else
 #endif
-			error = in_pcbbind(inp, nam);
+			error = in_pcbbind(inp, nam, p);
 		if (error)
 			break;
 		break;
@@ -252,10 +240,10 @@ tcp_usrreq(so, req, m, nam, control)
 		if (inp->inp_lport == 0) {
 #ifdef INET6
 			if (inp->inp_flags & INP_IPV6)
-				error = in6_pcbbind(inp, NULL);
+				error = in6_pcbbind(inp, NULL, p);
 			else
 #endif
-				error = in_pcbbind(inp, NULL);
+				error = in_pcbbind(inp, NULL, p);
 		}
 		/* If the in_pcbbind() above is called, the tp->pf
 		   should still be whatever it was before. */
@@ -289,7 +277,7 @@ tcp_usrreq(so, req, m, nam, control)
 			}
 
 			if (inp->inp_lport == 0) {
-				error = in6_pcbbind(inp, NULL);
+				error = in6_pcbbind(inp, NULL, p);
 				if (error)
 					break;
 			}
@@ -305,7 +293,7 @@ tcp_usrreq(so, req, m, nam, control)
 			}
 
 			if (inp->inp_lport == 0) {
-				error = in_pcbbind(inp, NULL);
+				error = in_pcbbind(inp, NULL, p);
 				if (error)
 					break;
 			}
@@ -860,12 +848,12 @@ tcp_ident(oldp, oldlenp, newp, newlen, dodrop)
 #ifdef INET6
 		case AF_INET6:
 			inp = in6_pcblookup_listen(&tcbtable,
-			    &l6, lin6->sin6_port, 0);
+			    &l6, lin6->sin6_port, 0, NULL);
 			break;
 #endif
 		case AF_INET:
 			inp = in_pcblookup_listen(&tcbtable, 
-			    lin->sin_addr, lin->sin_port, 0);
+			    lin->sin_addr, lin->sin_port, 0, NULL);
 			break;
 		}
 	}

@@ -1,7 +1,3 @@
-#ifndef COMPAT_H
-#define COMPAT_H
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -34,6 +30,9 @@
  *	    - different shells.
  *	    - friendly variable substitution.
  */
+
+#ifndef COMPAT_H
+#define COMPAT_H
 
 /* Compat_Run(to_create);
  *	Run the actual make engine, to create targets that need to.  */

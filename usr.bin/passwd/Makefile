@@ -9,6 +9,7 @@ DPADD+= ${LIBRPCSVC} ${LIBUTIL}
 LDADD+= -lrpcsvc -lutil
 CFLAGS+= -I${.CURDIR}
 
+CFLAGS+=-I${.CURDIR}/../../lib/libc/include
 .if (${YP:L} == "yes")
 CFLAGS+=-DYP -I${.CURDIR}/../../lib/libc/yp
 .endif

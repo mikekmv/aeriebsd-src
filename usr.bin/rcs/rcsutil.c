@@ -229,6 +229,7 @@ rcs_choosefile(const char *filename, char *out, size_t len)
 				if (strlcpy(out, rcspath, len) >= len)
 					errx(1, "rcs_choosefile; truncation");
 
+				xfree(suffixes);
 				return (fd);
 			}
 
@@ -253,6 +254,7 @@ rcs_choosefile(const char *filename, char *out, size_t len)
 		if (strlcpy(out, fpath, len) >= len)
 			errx(1, "rcs_choosefile: truncation");
 
+		xfree(suffixes);
 		return (fd);
 	}
 

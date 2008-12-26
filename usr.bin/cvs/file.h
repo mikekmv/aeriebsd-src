@@ -110,6 +110,7 @@ int	cvs_file_cmpname(const char *, const char *);
 int	cvs_file_cmp(const char *, const char *);
 int	cvs_file_copy(const char *, const char *);
 
-struct cvs_file *cvs_file_get_cf(const char *, const char *, int, int, int);
+struct cvs_file *cvs_file_get_cf(const char *, const char *, const char *,
+	int, int, int);
 
 #endif	/* FILE_H */

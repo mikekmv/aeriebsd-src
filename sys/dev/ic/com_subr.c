@@ -67,11 +67,7 @@
 #include <sys/tty.h>
 
 #include "com.h"
-#ifdef i386
-#include "pccom.h"
-#else
 #define	NPCCOM	0
-#endif
 
 #include <machine/bus.h>
 #if !defined(__sparc__) || defined(__sparc64__)
@@ -89,9 +85,6 @@
 
 #if NCOM > 0
 #include <dev/ic/comvar.h>
-#endif
-#if NPCCOM > 0
-#include <i386/isa/pccomvar.h>
 #endif
 
 #ifdef COM_PXA2X0

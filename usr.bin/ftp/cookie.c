@@ -224,4 +224,4 @@ cookie_get(const char *domain, const char *path, int secure, char **pstr)
 	*pstr = str;
 }
 
-#endif /* ! SMALL */
+#endif /* !SMALL */

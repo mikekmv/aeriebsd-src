@@ -51,6 +51,7 @@ SCP=scp
 # Interop testing
 PLINK=/usr/local/bin/plink
 PUTTYGEN=/usr/local/bin/puttygen
+CONCH=/usr/local/bin/conch
 
 if [ "x$TEST_SSH_SSH" != "x" ]; then
 	SSH="${TEST_SSH_SSH}"
@@ -84,6 +85,9 @@ if [ "x$TEST_SSH_PLINK" != "x" ]; then
 fi
 if [ "x$TEST_SSH_PUTTYGEN" != "x" ]; then
 	PUTTYGEN="${TEST_SSH_PUTTYGEN}"
+fi
+if [ "x$TEST_SSH_CONCH" != "x" ]; then
+	CONCH="${TEST_SSH_CONCH}"
 fi
 
 # Path to sshd must be absolute for rexec
@@ -231,9 +235,24 @@ for t in rsa rsa1; do
 done
 chmod 644 $OBJ/authorized_keys_$USER
 
-# If PuTTY is present, prepare keys and configuration
+# Activate Twisted Conch tests if the binary is present
+REGRESS_INTEROP_CONCH=no
+if test -x "$CONCH" ; then
+	REGRESS_INTEROP_CONCH=yes
+fi
+
+# If PuTTY is present and we are running a PuTTY test, prepare keys and
+# configuration
 REGRESS_INTEROP_PUTTY=no
-if test -x $PUTTYGEN -a -x $PLINK ; then
+if test -x "$PUTTYGEN" -a -x "$PLINK" ; then
+	REGRESS_INTEROP_PUTTY=yes
+fi
+case "$SCRIPT" in
+*putty*)	;;
+*)		REGRESS_INTEROP_PUTTY=no ;;
+esac
+
+if test "$REGRESS_INTEROP_PUTTY" = "yes" ; then
 	mkdir -p ${OBJ}/.putty
 
 	# Add a PuTTY key to authorized_keys

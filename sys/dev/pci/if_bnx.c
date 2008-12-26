@@ -37,13 +37,15 @@ __FBSDID("$FreeBSD: src/sys/dev/bce/if_bce.c,v 1.3 2006/04/13 14:12:26 ru Exp $"
 /*
  * The following controllers are supported by this driver:
  *   BCM5706C A2, A3
+ *   BCM5706S A2, A3
  *   BCM5708C B1, B2
+ *   BCM5708S B1, B2
  *
  * The following controllers are not supported by this driver:
  *   BCM5706C A0, A1
- *   BCM5706S A0, A1, A2, A3
+ *   BCM5706S A0, A1
  *   BCM5708C A0, B0
- *   BCM5708S A0, B0, B1, B2
+ *   BCM5708S A0, B0
  */
 
 #include <dev/pci/if_bnxreg.h>
@@ -143,7 +145,8 @@ void	nswaph(u_int32_t *p, int wcount);
 /****************************************************************************/
 /* BNX Driver Version                                                       */
 /****************************************************************************/
-char bnx_driver_version[] = "v0.9.6";
+
+#define BNX_DRIVER_VERSION	"v0.9.6"
 
 /****************************************************************************/
 /* BNX Debug Options                                                        */
@@ -370,6 +373,7 @@ int	bnx_get_buf(struct bnx_softc *, struct mbuf *, u_int16_t *,
 	    u_int16_t *, u_int32_t *);
 
 int	bnx_init_tx_chain(struct bnx_softc *);
+void	bnx_fill_rx_chain(struct bnx_softc *);
 int	bnx_init_rx_chain(struct bnx_softc *);
 void	bnx_free_rx_chain(struct bnx_softc *);
 void	bnx_free_tx_chain(struct bnx_softc *);
@@ -626,14 +630,8 @@ bnx_attach(struct device *parent, struct device *self, void *aux)
 	 * Map control/status registers.
 	*/
 	memtype = pci_mapreg_type(pa->pa_pc, pa->pa_tag, BNX_PCI_BAR0);  
-	switch (memtype) {
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT:
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT:
-		if (pci_mapreg_map(pa, BNX_PCI_BAR0,
-		    memtype, 0, &sc->bnx_btag, &sc->bnx_bhandle,
-		    NULL, &sc->bnx_size, 0) == 0)
-			break;
-	default:
+	if (pci_mapreg_map(pa, BNX_PCI_BAR0, memtype, 0, &sc->bnx_btag,
+	    &sc->bnx_bhandle, NULL, &sc->bnx_size, 0)) {
 		printf(": can't find mem space\n");
 		return;
 	}
@@ -822,10 +820,21 @@ bnx_attachhook(void *xsc)
 			sc->bnx_phy_addr = 2;
 			val = REG_RD_IND(sc, sc->bnx_shmem_base +
 					 BNX_SHARED_HW_CFG_CONFIG);
-			if (val & BNX_SHARED_HW_CFG_PHY_2_5G)
+			if (val & BNX_SHARED_HW_CFG_PHY_2_5G) {
 				sc->bnx_phy_flags |= BNX_PHY_2_5G_CAPABLE_FLAG;
+				DBPRINT(sc, BNX_WARN, "Found 2.5Gb capable adapter\n");
+			}
 		}
 	}
+
+	/*
+	 * Store config data needed by the PHY driver for
+	 * backplane applications
+	 */
+	sc->bnx_shared_hw_cfg = REG_RD_IND(sc, sc->bnx_shmem_base +
+		BNX_SHARED_HW_CFG_CONFIG);
+	sc->bnx_port_hw_cfg = REG_RD_IND(sc, sc->bnx_shmem_base +
+		BNX_PORT_HW_CFG_CONFIG);
 
 	/* Allocate DMA memory resources. */
 	sc->bnx_dmatag = pa->pa_dmat;
@@ -1133,7 +1142,7 @@ bnx_miibus_write_reg(struct device *dev, int phy, int reg, int val)
 
 	/* Make sure we are accessing the correct PHY address. */
 	if (phy != sc->bnx_phy_addr) {
-		DBPRINT(sc, BNX_WARN, "Invalid PHY address %d for PHY write!\n",
+		DBPRINT(sc, BNX_VERBOSE, "Invalid PHY address %d for PHY write!\n",
 		    phy);
 		return;
 	}
@@ -2308,10 +2317,8 @@ bnx_dma_alloc(struct bnx_softc *sc)
 	 */
 	for (i = 0; i < TOTAL_TX_BD; i++) {
 		if (bus_dmamap_create(sc->bnx_dmatag,
-		    MCLBYTES * BNX_MAX_SEGMENTS,
-		    USABLE_TX_BD - BNX_TX_SLACK_SPACE,
-		    MCLBYTES, 0, BUS_DMA_NOWAIT,
-		    &sc->tx_mbuf_map[i])) {
+		    MCLBYTES * BNX_MAX_SEGMENTS, USABLE_TX_BD,
+		    MCLBYTES, 0, BUS_DMA_NOWAIT, &sc->tx_mbuf_map[i])) {
 			printf(": Could not create Tx mbuf %d DMA map!\n", i);
 			rc = ENOMEM;
 			goto bnx_dma_alloc_exit;
@@ -2922,7 +2929,7 @@ bnx_stop(struct bnx_softc *sc)
 	/* Tell firmware that the driver is going away. */
 	bnx_reset(sc, BNX_DRV_MSG_CODE_SUSPEND_NO_WOL);
 
-	/* Free the RX lists. */
+	/* Free RX buffers. */
 	bnx_free_rx_chain(sc);
 
 	/* Free TX buffers. */
@@ -3268,11 +3275,12 @@ bnx_get_buf(struct bnx_softc *sc, struct mbuf *m, u_int16_t *prod,
 	    "0x%04X, prod_bseq = 0x%08X\n", __FUNCTION__, *prod, *chain_prod,
 	    *prod_bseq);
 
+	/* Check whether this is a new mbuf allocation. */
 	if (m == NULL) {
+		/* Simulate an mbuf allocation failure. */
 		DBRUNIF(DB_RANDOMTRUE(bnx_debug_mbuf_allocation_failure),
-		    BNX_PRINTF(sc, "Simulating mbuf allocation failure.\n");
-
 			sc->mbuf_alloc_failed++;
+			sc->mbuf_sim_alloc_failed++;
 			rc = ENOBUFS;
 			goto bnx_get_buf_exit);
 
@@ -3283,13 +3291,24 @@ bnx_get_buf(struct bnx_softc *sc, struct mbuf *m, u_int16_t *prod,
 			    "%s(%d): RX mbuf header allocation failed!\n", 
 			    __FILE__, __LINE__);
 
-			DBRUNIF(1, sc->mbuf_alloc_failed++);
+			sc->mbuf_alloc_failed++;
 
 			rc = ENOBUFS;
 			goto bnx_get_buf_exit;
 		}
 
 		DBRUNIF(1, sc->rx_mbuf_alloc++);
+
+		/* Simulate an mbuf cluster allocation failure. */
+		DBRUNIF(DB_RANDOMTRUE(bnx_debug_mbuf_allocation_failure),
+			m_freem(m_new);
+			sc->rx_mbuf_alloc--;
+			sc->mbuf_alloc_failed++; 
+			sc->mbuf_sim_alloc_failed++;
+			rc = ENOBUFS;
+			goto bnx_get_buf_exit);
+
+		/* Attach a cluster to the mbuf. */
 		MCLGET(m_new, M_DONTWAIT);
 		if (!(m_new->m_flags & M_EXT)) {
 			DBPRINT(sc, BNX_WARN,
@@ -3297,16 +3316,17 @@ bnx_get_buf(struct bnx_softc *sc, struct mbuf *m, u_int16_t *prod,
 			    __FILE__, __LINE__);
 			
 			m_freem(m_new);
-
 			DBRUNIF(1, sc->rx_mbuf_alloc--);
-			DBRUNIF(1, sc->mbuf_alloc_failed++);
 
+			sc->mbuf_alloc_failed++;
 			rc = ENOBUFS;
 			goto bnx_get_buf_exit;
 		}
 			
+		/* Initialize the mbuf cluster. */
 		m_new->m_len = m_new->m_pkthdr.len = sc->mbuf_alloc_size;
 	} else {
+		/* Reuse an existing mbuf. */
 		m_new = m;
 		m_new->m_len = m_new->m_pkthdr.len = sc->mbuf_alloc_size;
 		m_new->m_data = m_new->m_ext.ext_buf;
@@ -3320,20 +3340,32 @@ bnx_get_buf(struct bnx_softc *sc, struct mbuf *m, u_int16_t *prod,
 		    __FILE__, __LINE__);
 
 		m_freem(m_new);
-
 		DBRUNIF(1, sc->rx_mbuf_alloc--);
 
 		rc = ENOBUFS;
 		goto bnx_get_buf_exit;
 	}
 
-	/* Watch for overflow. */
-	DBRUNIF((sc->free_rx_bd > USABLE_RX_BD),
-	    printf("%s: Too many free rx_bd (0x%04X > 0x%04X)!\n", 
-	    sc->free_rx_bd, (u_int16_t) USABLE_RX_BD));
+	/* Make sure there is room in the receive chain. */
+	if (map->dm_nsegs > sc->free_rx_bd) {
+		bus_dmamap_unload(sc->bnx_dmatag, map);
 
+		m_freem(m_new);
+		DBRUNIF(1, sc->rx_mbuf_alloc--);
+
+		rc = EFBIG;
+		goto bnx_get_buf_exit;
+	}
+
+#ifdef BNX_DEBUG
+	/* Track the distribution of buffer segments. */
+	sc->rx_mbuf_segs[map->dm_nsegs]++;
+#endif
+
+	/* Update some debug statistics counters */
 	DBRUNIF((sc->free_rx_bd < sc->rx_low_watermark), 
 	    sc->rx_low_watermark = sc->free_rx_bd);
+	DBRUNIF((sc->free_rx_bd == sc->max_rx_bd), sc->rx_empty_count++);
 
 	/* Setup the rx_bd for the first segment. */
 	rxbd = &sc->rx_bd_chain[RX_PAGE(*chain_prod)][RX_IDX(*chain_prod)];
@@ -3408,7 +3440,9 @@ bnx_init_tx_chain(struct bnx_softc *sc)
 	sc->tx_cons = 0;
 	sc->tx_prod_bseq = 0;
 	sc->used_tx_bd = 0;
+	sc->max_tx_bd =	USABLE_TX_BD;
 	DBRUNIF(1, sc->tx_hi_watermark = USABLE_TX_BD);
+	DBRUNIF(1, sc->tx_full_count = 0);
 
 	/*
 	 * The NetXtreme II supports a linked-list structure called
@@ -3492,12 +3526,68 @@ bnx_free_tx_chain(struct bnx_softc *sc)
 	for (i = 0; i < TX_PAGES; i++)
 		bzero((char *)sc->tx_bd_chain[i], BNX_TX_CHAIN_PAGE_SZ);
 
+	sc->used_tx_bd = 0;
+
 	/* Check if we lost any mbufs in the process. */
 	DBRUNIF((sc->tx_mbuf_alloc),
 	    printf("%s: Memory leak! Lost %d mbufs from tx chain!\n",
 	    sc->tx_mbuf_alloc));
 
 	DBPRINT(sc, BNX_VERBOSE_RESET, "Exiting %s()\n", __FUNCTION__);
+}
+
+/****************************************************************************/
+/* Add mbufs to the RX chain until its full or an mbuf allocation error     */
+/* occurs.                                                                  */
+/*                                                                          */
+/* Returns:                                                                 */
+/*   Nothing                                                                */
+/****************************************************************************/
+void
+bnx_fill_rx_chain(struct bnx_softc *sc)
+{
+	u_int16_t		prod, chain_prod;
+	u_int32_t		prod_bseq;
+#ifdef BNX_DEBUG
+	int rx_mbuf_alloc_before, free_rx_bd_before;
+#endif
+
+	DBPRINT(sc, BNX_EXCESSIVE_RECV, "Entering %s()\n", __FUNCTION__);
+
+	prod = sc->rx_prod;
+	prod_bseq = sc->rx_prod_bseq;
+
+#ifdef BNX_DEBUG
+	rx_mbuf_alloc_before = sc->rx_mbuf_alloc;
+	free_rx_bd_before = sc->free_rx_bd;
+#endif
+
+	/* Keep filling the RX chain until it's full. */
+	while (sc->free_rx_bd > 0) {
+		chain_prod = RX_CHAIN_IDX(prod);
+		if (bnx_get_buf(sc, NULL, &prod, &chain_prod, &prod_bseq)) {
+			/* Bail out if we can't add an mbuf to the chain. */
+			break;
+		}
+		prod = NEXT_RX_BD(prod);
+	}
+
+#if 0
+	DBRUNIF((sc->rx_mbuf_alloc - rx_mbuf_alloc_before),
+		BNX_PRINTF(sc, "%s(): Installed %d mbufs in %d rx_bd entries.\n",
+		__FUNCTION__, (sc->rx_mbuf_alloc - rx_mbuf_alloc_before), 
+		(free_rx_bd_before - sc->free_rx_bd)));
+#endif
+
+	/* Save the RX chain producer index. */
+	sc->rx_prod = prod;
+	sc->rx_prod_bseq = prod_bseq;
+
+	/* Tell the chip about the waiting rx_bd's. */
+	REG_WR16(sc, MB_RX_CID_ADDR + BNX_L2CTX_HOST_BDIDX, sc->rx_prod);
+	REG_WR(sc, MB_RX_CID_ADDR + BNX_L2CTX_HOST_BSEQ, sc->rx_prod_bseq);
+
+	DBPRINT(sc, BNX_EXCESSIVE_RECV, "Exiting %s()\n", __FUNCTION__);
 }
 
 /****************************************************************************/
@@ -3511,8 +3601,7 @@ bnx_init_rx_chain(struct bnx_softc *sc)
 {
 	struct rx_bd		*rxbd;
 	int			i, rc = 0;
-	u_int16_t		prod, chain_prod;
-	u_int32_t		prod_bseq, val, addr;
+	u_int32_t		val, addr;
 
 	DBPRINT(sc, BNX_VERBOSE_RESET, "Entering %s()\n", __FUNCTION__);
 
@@ -3520,8 +3609,10 @@ bnx_init_rx_chain(struct bnx_softc *sc)
 	sc->rx_prod = 0;
 	sc->rx_cons = 0;
 	sc->rx_prod_bseq = 0;
-	sc->free_rx_bd = BNX_RX_SLACK_SPACE;
+	sc->free_rx_bd = USABLE_RX_BD;
+	sc->max_rx_bd = USABLE_RX_BD;
 	DBRUNIF(1, sc->rx_low_watermark = USABLE_RX_BD);
+	DBRUNIF(1, sc->rx_empty_count = 0);
 
 	/* Initialize the RX next pointer chain entries. */
 	for (i = 0; i < RX_PAGES; i++) {
@@ -3554,31 +3645,13 @@ bnx_init_rx_chain(struct bnx_softc *sc)
 	val = (u_int32_t)(sc->rx_bd_chain_paddr[0]);
 	CTX_WR(sc, GET_CID_ADDR(RX_CID), BNX_L2CTX_NX_BDHADDR_LO, val);
 
-	/* Allocate mbuf clusters for the rx_bd chain. */
-	prod = prod_bseq = 0;
-	while (prod < BNX_RX_SLACK_SPACE) {
-		chain_prod = RX_CHAIN_IDX(prod);
-		if (bnx_get_buf(sc, NULL, &prod, &chain_prod, &prod_bseq)) {
-			BNX_PRINTF(sc, "Error filling RX chain: rx_bd[0x%04X]!\n",
-				chain_prod);
-			rc = ENOBUFS;
-			break;
-		}
-		prod = NEXT_RX_BD(prod);
-	}
-
-	/* Save the RX chain producer index. */
-	sc->rx_prod = prod;
-	sc->rx_prod_bseq = prod_bseq;
+	/* Fill up the RX chain. */
+	bnx_fill_rx_chain(sc);
 
 	for (i = 0; i < RX_PAGES; i++)
 		bus_dmamap_sync(sc->bnx_dmatag, sc->rx_bd_chain_map[i], 0,
 		    sc->rx_bd_chain_map[i]->dm_mapsize,
 		    BUS_DMASYNC_PREREAD | BUS_DMASYNC_PREWRITE);
-
-	/* Tell the chip about the waiting rx_bd's. */
-	REG_WR16(sc, MB_RX_CID_ADDR + BNX_L2CTX_HOST_BDIDX, sc->rx_prod);
-	REG_WR(sc, MB_RX_CID_ADDR + BNX_L2CTX_HOST_BSEQ, sc->rx_prod_bseq);
 
 	DBRUN(BNX_VERBOSE_RECV, bnx_dump_rx_chain(sc, 0, TOTAL_RX_BD));
 
@@ -3597,8 +3670,15 @@ void
 bnx_free_rx_chain(struct bnx_softc *sc)
 {
 	int			i;
+#ifdef BNX_DEBUG
+	int			rx_mbuf_alloc_before;
+#endif
 
 	DBPRINT(sc, BNX_VERBOSE_RESET, "Entering %s()\n", __FUNCTION__);
+
+#ifdef BNX_DEBUG
+	rx_mbuf_alloc_before = sc->rx_mbuf_alloc;
+#endif
 
 	/* Free any mbufs still in the RX mbuf chain. */
 	for (i = 0; i < TOTAL_RX_BD; i++) {
@@ -3614,9 +3694,15 @@ bnx_free_rx_chain(struct bnx_softc *sc)
 		}
 	}
 
+	DBRUNIF((rx_mbuf_alloc_before - sc->rx_mbuf_alloc),
+		BNX_PRINTF(sc, "%s(): Released %d mbufs.\n",
+		__FUNCTION__, (rx_mbuf_alloc_before - sc->rx_mbuf_alloc)));
+
 	/* Clear each RX chain page. */
 	for (i = 0; i < RX_PAGES; i++)
 		bzero((char *)sc->rx_bd_chain[i], BNX_RX_CHAIN_PAGE_SZ);
+
+	sc->free_rx_bd = sc->max_rx_bd;
 
 	/* Check if we lost any mbufs in the process. */
 	DBRUNIF((sc->rx_mbuf_alloc),
@@ -3763,8 +3849,10 @@ bnx_rx_intr(struct bnx_softc *sc)
 	bus_space_barrier(sc->bnx_btag, sc->bnx_bhandle, 0, 0,
 	    BUS_SPACE_BARRIER_READ);
 
+	/* Update some debug statistics counters */
 	DBRUNIF((sc->free_rx_bd < sc->rx_low_watermark),
 	    sc->rx_low_watermark = sc->free_rx_bd);
+	DBRUNIF((sc->free_rx_bd == USABLE_RX_BD), sc->rx_empty_count++);
 
 	/* 
 	 * Scan through the receive chain as long 
@@ -3775,6 +3863,9 @@ bnx_rx_intr(struct bnx_softc *sc)
 		struct rx_bd *rxbd;
 		unsigned int len;
 		u_int32_t status;
+
+		/* Clear the mbuf pointer. */
+		m = NULL;
 
 		/* Convert the producer/consumer indices to an actual
 		 * rx_bd index.
@@ -3811,7 +3902,7 @@ bnx_rx_intr(struct bnx_softc *sc)
 			bus_dmamap_unload(sc->bnx_dmatag,
 			    sc->rx_mbuf_map[sw_chain_cons]);
 
-			/* Remove the mbuf from the driver's chain. */
+			/* Remove the mbuf from RX chain. */
 			m = sc->rx_mbuf_ptr[sw_chain_cons];
 			sc->rx_mbuf_ptr[sw_chain_cons] = NULL;
 
@@ -3851,39 +3942,12 @@ bnx_rx_intr(struct bnx_softc *sc)
 			    L2_FHDR_ERRORS_ALIGNMENT | 
 			    L2_FHDR_ERRORS_TOO_SHORT |
 			    L2_FHDR_ERRORS_GIANT_FRAME)) {
+				/* Log the error and release the mbuf. */
 				ifp->if_ierrors++;
 				DBRUNIF(1, sc->l2fhdr_status_errors++);
 
-				/* Reuse the mbuf for a new frame. */
-				if (bnx_get_buf(sc, m, &sw_prod,
-				    &sw_chain_prod, &sw_prod_bseq)) {
-					DBRUNIF(1, bnx_breakpoint(sc));
-					panic("%s: Can't reuse RX mbuf!\n",
-					    sc->bnx_dev.dv_xname);
-				}
-				goto bnx_rx_int_next_rx;
-			}
-
-			/* 
-			 * Get a new mbuf for the rx_bd.   If no new
-			 * mbufs are available then reuse the current mbuf,
-			 * log an ierror on the interface, and generate
-			 * an error in the system log.
-			 */
-			if (bnx_get_buf(sc, NULL, &sw_prod, &sw_chain_prod,
-			    &sw_prod_bseq)) {
-				DBRUN(BNX_WARN, BNX_PRINTF(sc, "Failed to allocate "
-					"new mbuf, incoming frame dropped!\n"));
-
-				ifp->if_ierrors++;
-
-				/* Try and reuse the exisitng mbuf. */
-				if (bnx_get_buf(sc, m, &sw_prod,
-				    &sw_chain_prod, &sw_prod_bseq)) {
-					DBRUNIF(1, bnx_breakpoint(sc));
-					panic("%s: Double mbuf allocation "
-					    "failure!", sc->bnx_dev.dv_xname);
-				}
+				m_freem(m);
+				m = NULL;
 				goto bnx_rx_int_next_rx;
 			}
 
@@ -3975,6 +4039,19 @@ bnx_rx_intr(struct bnx_softc *sc)
 #endif			
 			}
 
+			/* Pass the mbuf off to the upper layers. */
+			ifp->if_ipackets++;
+
+bnx_rx_int_next_rx:
+			sw_prod = NEXT_RX_BD(sw_prod);
+		}
+
+		sw_cons = NEXT_RX_BD(sw_cons);
+
+		/* If we have a packet, pass it up the stack */
+		if (m) {
+			sc->rx_cons = sw_cons;
+
 #if NBPFILTER > 0
 			/*
 			 * Handle BPF listeners. Let the BPF
@@ -3984,18 +4061,13 @@ bnx_rx_intr(struct bnx_softc *sc)
 				bpf_mtap(ifp->if_bpf, m, BPF_DIRECTION_IN);
 #endif
 
-			/* Pass the mbuf off to the upper layers. */
-			ifp->if_ipackets++;
 			DBPRINT(sc, BNX_VERBOSE_RECV,
 			    "%s(): Passing received frame up.\n", __FUNCTION__);
 			ether_input_mbuf(ifp, m);
 			DBRUNIF(1, sc->rx_mbuf_alloc--);
 
-bnx_rx_int_next_rx:
-			sw_prod = NEXT_RX_BD(sw_prod);
+			sw_cons = sc->rx_cons;
 		}
-
-		sw_cons = NEXT_RX_BD(sw_cons);
 
 		/* Refresh hw_cons to see if there's new work */
 		if (sw_cons == hw_cons) {
@@ -4013,18 +4085,15 @@ bnx_rx_int_next_rx:
 		    BUS_SPACE_BARRIER_READ);
 	}
 
+	/* No new packets to process.  Refill the RX chain and exit. */
+	sc->rx_cons = sw_cons;
+	bnx_fill_rx_chain(sc);
+
 	for (i = 0; i < RX_PAGES; i++)
 		bus_dmamap_sync(sc->bnx_dmatag,
 		    sc->rx_bd_chain_map[i], 0,
 		    sc->rx_bd_chain_map[i]->dm_mapsize,
 		    BUS_DMASYNC_PREWRITE);
-
-	sc->rx_cons = sw_cons;
-	sc->rx_prod = sw_prod;
-	sc->rx_prod_bseq = sw_prod_bseq;
-
-	REG_WR16(sc, MB_RX_CID_ADDR + BNX_L2CTX_HOST_BDIDX, sc->rx_prod);
-	REG_WR(sc, MB_RX_CID_ADDR + BNX_L2CTX_HOST_BSEQ, sc->rx_prod_bseq);
 
 	DBPRINT(sc, BNX_INFO_RECV, "%s(exit): rx_prod = 0x%04X, "
 	    "rx_cons = 0x%04X, rx_prod_bseq = 0x%08X\n",
@@ -4136,10 +4205,11 @@ bnx_tx_intr(struct bnx_softc *sc)
 	ifp->if_timer = 0;
 
 	/* Clear the tx hardware queue full flag. */
-	if ((sc->used_tx_bd + BNX_TX_SLACK_SPACE) < USABLE_TX_BD) {
+	if (sc->used_tx_bd < sc->max_tx_bd) {
 		DBRUNIF((ifp->if_flags & IFF_OACTIVE),
-		    printf("%s: TX chain is open for business! Used "
-		    "tx_bd = %d\n", sc->used_tx_bd));
+		    printf("%s: Open TX chain! %d/%d (used/total)\n",
+			sc->bnx_dev.dv_xname, sc->used_tx_bd,
+			sc->max_tx_bd));
 		ifp->if_flags &= ~IFF_OACTIVE;
 	}
 
@@ -4349,16 +4419,12 @@ bnx_tx_encap(struct bnx_softc *sc, struct mbuf **m_head)
 		    sc->bnx_dev.dv_xname);
 		m_freem(m0);
 		*m_head = NULL;
+		sc->tx_dma_map_failures++;
 		return (error);
 	}
 
-	/*
-	 * The chip seems to require that at least 16 descriptors be kept
-	 * empty at all times.  Make sure we honor that.
-	 * XXX Would it be faster to assume worst case scenario for
-	 * map->dm_nsegs and do this calculation higher up?
-	 */
-	if (map->dm_nsegs > (USABLE_TX_BD - sc->used_tx_bd - BNX_TX_SLACK_SPACE)) {
+	/* Make sure there's room in the chain */
+	if (map->dm_nsegs > (sc->max_tx_bd - sc->used_tx_bd)) {
 		bus_dmamap_unload(sc->bnx_dmatag, map);
 		return (ENOBUFS);
 	}
@@ -4372,7 +4438,7 @@ bnx_tx_encap(struct bnx_softc *sc, struct mbuf **m_head)
 	DBPRINT(sc, BNX_INFO_SEND,
 		"%s(): Start: prod = 0x%04X, chain_prod = %04X, "
 		"prod_bseq = 0x%08X\n",
-		__FUNCTION__, *prod, chain_prod, prod_bseq);
+		__FUNCTION__, prod, chain_prod, prod_bseq);
 
 	/*
 	 * Cycle through each mbuf segment that makes up
@@ -4400,7 +4466,8 @@ bnx_tx_encap(struct bnx_softc *sc, struct mbuf **m_head)
 	/* Set the END flag on the last TX buffer descriptor. */
 	txbd->tx_bd_flags |= htole16(TX_BD_FLAGS_END);
 
-	DBRUN(BNX_INFO_SEND, bnx_dump_tx_chain(sc, debug_prod, nseg));
+	DBRUN(BNX_INFO_SEND, bnx_dump_tx_chain(sc, debug_prod,
+	    map->dm_nsegs));
 
 	DBPRINT(sc, BNX_INFO_SEND,
 		"%s(): End: prod = 0x%04X, chain_prod = %04X, "
@@ -4419,13 +4486,14 @@ bnx_tx_encap(struct bnx_softc *sc, struct mbuf **m_head)
 	sc->tx_mbuf_ptr[chain_prod] = m0;
 	sc->used_tx_bd += map->dm_nsegs;
 
+	/* Update some debug statistics counters */
 	DBRUNIF((sc->used_tx_bd > sc->tx_hi_watermark),
 	    sc->tx_hi_watermark = sc->used_tx_bd);
-
+	DBRUNIF(sc->used_tx_bd == sc->max_tx_bd, sc->tx_full_count++);
 	DBRUNIF(1, sc->tx_mbuf_alloc++);
 
 	DBRUN(BNX_VERBOSE_SEND, bnx_dump_tx_mbuf_chain(sc, chain_prod, 
-	    map_arg.maxsegs));
+	    map->dm_nsegs));
 
 	/* prod points to the next free tx_bd at this point. */
 	sc->tx_prod = prod;
@@ -4464,10 +4532,9 @@ bnx_start(struct ifnet *ifp)
 	    __FUNCTION__, tx_prod, tx_chain_prod, sc->tx_prod_bseq);
 
 	/*
-	 * Keep adding entries while there is space in the ring.  We keep
-	 * BNX_TX_SLACK_SPACE entries unused at all times.
+	 * Keep adding entries while there is space in the ring.
 	 */
-	while (sc->used_tx_bd < USABLE_TX_BD - BNX_TX_SLACK_SPACE) {
+	while (sc->used_tx_bd < sc->max_tx_bd) {
 		/* Check for any frames to send. */
 		IFQ_POLL(&ifp->if_snd, m_head);
 		if (m_head == NULL)
@@ -4622,6 +4689,13 @@ bnx_watchdog(struct ifnet *ifp)
 
 	DBRUN(BNX_WARN_SEND, bnx_dump_driver_state(sc);
 	    bnx_dump_status_block(sc));
+
+	/*
+	 * If we are in this routine because of pause frames, then
+	 * don't reset the hardware.
+	 */
+	if (REG_RD(sc, BNX_EMAC_TX_STATUS) & BNX_EMAC_TX_STATUS_XOFFED)	
+		return;
 
 	printf("%s: Watchdog timeout occurred, resetting!\n",
 	    ifp->if_xname);
@@ -5703,6 +5777,18 @@ bnx_dump_driver_state(struct bnx_softc *sc)
 	    "         0x%08X - (sc->tx_prod_bseq) tx producer bseq index\n",
 	    sc->tx_prod_bseq);
 
+	BNX_PRINTF(sc,
+	    "         0x%08X - (sc->tx_mbuf_alloc) tx mbufs allocated\n",
+	    sc->tx_mbuf_alloc);
+
+	BNX_PRINTF(sc,
+	    "         0x%08X - (sc->used_tx_bd) used tx_bd's\n",
+	    sc->used_tx_bd);
+
+	BNX_PRINTF(sc,
+	    "         0x%08X/%08X - (sc->tx_hi_watermark) tx hi watermark\n",
+	    sc->tx_hi_watermark, sc->max_tx_bd);
+
 	BNX_PRINTF(sc, "         0x%08X - (sc->rx_prod) rx producer index\n",
 	    sc->rx_prod);
 
@@ -5722,25 +5808,17 @@ bnx_dump_driver_state(struct bnx_softc *sc)
 
 	BNX_PRINTF(sc,
 	    "0x%08X/%08X - (sc->rx_low_watermark) rx low watermark\n",
-	    sc->rx_low_watermark, (u_int32_t) USABLE_RX_BD);
+	    sc->rx_low_watermark, sc->max_rx_bd);
 
 	BNX_PRINTF(sc,
-	    "         0x%08X - (sc->txmbuf_alloc) tx mbufs allocated\n",
-	    sc->tx_mbuf_alloc);
-
-	BNX_PRINTF(sc,
-	    "         0x%08X - (sc->rx_mbuf_alloc) rx mbufs allocated\n",
-	    sc->rx_mbuf_alloc);
-
-	BNX_PRINTF(sc, "         0x%08X - (sc->used_tx_bd) used tx_bd's\n",
-	    sc->used_tx_bd);
-
-	BNX_PRINTF(sc, "0x%08X/%08X - (sc->tx_hi_watermark) tx hi watermark\n",
-	    sc->tx_hi_watermark, (u_int32_t) USABLE_TX_BD);
-
-	BNX_PRINTF(sc,
-	    "         0x%08X - (sc->mbuf_alloc_failed) failed mbuf alloc\n",
+	    "         0x%08X - (sc->mbuf_alloc_failed) "
+	    "mbuf alloc failures\n",
 	    sc->mbuf_alloc_failed);
+
+	BNX_PRINTF(sc,
+	    "         0x%0X - (sc->mbuf_sim_allocated_failed) "
+	    "simulated mbuf alloc failures\n",
+	    sc->mbuf_sim_alloc_failed);
 
 	BNX_PRINTF(sc, "-------------------------------------------"
 	    "-----------------------------\n");
@@ -5816,10 +5894,10 @@ bnx_breakpoint(struct bnx_softc *sc)
    		bnx_dump_txbd(sc, 0, NULL);
 		bnx_dump_rxbd(sc, 0, NULL);
 		bnx_dump_tx_mbuf_chain(sc, 0, USABLE_TX_BD);
-		bnx_dump_rx_mbuf_chain(sc, 0, USABLE_RX_BD);
+		bnx_dump_rx_mbuf_chain(sc, 0, sc->max_rx_bd);
 		bnx_dump_l2fhdr(sc, 0, NULL);
 		bnx_dump_tx_chain(sc, 0, USABLE_TX_BD);
-		bnx_dump_rx_chain(sc, 0, USABLE_RX_BD);
+		bnx_dump_rx_chain(sc, 0, sc->max_rx_bd);
 		bnx_dump_status_block(sc);
 		bnx_dump_stats_block(sc);
 		bnx_dump_driver_state(sc);

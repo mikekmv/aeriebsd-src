@@ -83,9 +83,7 @@ int	ip6_forward_rtableid;
  */
 
 void
-ip6_forward(m, srcrt)
-	struct mbuf *m;
-	int srcrt;
+ip6_forward(struct mbuf *m, int srcrt)
 {
 	struct ip6_hdr *ip6 = mtod(m, struct ip6_hdr *);
 	struct sockaddr_in6 *dst;

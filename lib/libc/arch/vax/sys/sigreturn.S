@@ -29,7 +29,7 @@
 
 #if defined(LIBC_SCCS)
 	.rodata
-	.asciz "$ABSD$"
+	.asciz "$ABSD: sigreturn.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 #include "SYS.h"
@@ -39,9 +39,11 @@
  */
 #ifdef PROF
 #undef ENTRY
-#define	ENTRY(x, y) \
-	.globl _ ## x; .align 2; _ ## x ## : .word 0; pushr $0x3f; \
-	.data; 1:; .long 0; .text; moval 1b,r0; jsb mcount; popr $0x3f;
+#define	ENTRY(x, y)							\
+	_ENTRY(_C_LABEL(x), 0);						\
+	pushr $0x3f;							\
+	_PROF_PROLOGUE;							\
+	popr $0x3f
 #endif /* PROF */
 
 SYSCALL(sigreturn)

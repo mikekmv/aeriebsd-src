@@ -482,6 +482,7 @@ void	maestro_close(void *);
 int	maestro_query_encoding(void *, struct audio_encoding *);
 int	maestro_set_params(void *, int, int, struct audio_params *, 
 			    struct audio_params *);
+void	maestro_get_default_params(void *, int, struct audio_params *);
 int	maestro_round_blocksize(void *, int);
 int	maestro_halt_output(void *);
 int	maestro_halt_input(void *);
@@ -571,7 +572,7 @@ struct audio_hw_if maestro_hw_if = {
 	maestro_get_props,
 	maestro_trigger_output,
 	maestro_trigger_input,
-	NULL
+	maestro_get_default_params
 };
 
 struct audio_device maestro_audev = {
@@ -997,6 +998,12 @@ maestro_query_encoding(hdl, fp)
 		return (EINVAL);
 	*fp = maestro_tab[fp->index];
 	return (0);
+}
+
+void
+maestro_get_default_params(void *addr, int mode, struct audio_params *params)
+{
+	ac97_get_default_params(params);
 }
 
 #define UNUSED __attribute__((unused))

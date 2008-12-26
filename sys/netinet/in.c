@@ -809,7 +809,7 @@ in_addprefix(target, flags)
 #endif
 		/*
 		 * if we got a matching prefix route inserted by other
-		 * interface adderss, we don't need to bother
+		 * interface address, we don't need to bother
 		 */
 		return 0;
 	}

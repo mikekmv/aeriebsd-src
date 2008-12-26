@@ -507,7 +507,7 @@ cachectl(struct proc *p, struct trapframe *tf)
 		va = (vaddr_t)tf->tf_r4;
 		len = (vsize_t)tf->tf_r5;
 
-		if (/* va < VM_MIN_ADDRESS || */ va >= VM_MAXUSER_ADDRESS ||
+		if (va < VM_MIN_ADDRESS || va >= VM_MAXUSER_ADDRESS ||
 		    va + len <= va || va + len >= VM_MAXUSER_ADDRESS)
 			len = 0;
 

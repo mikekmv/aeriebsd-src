@@ -29,7 +29,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: isakmpd.c,v 1.1.1.1 2008/08/26 14:40:24 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -233,6 +233,9 @@ parse_args(int argc, char *argv[])
 	}
 	argc -= optind;
 	argv += optind;
+
+	if (argc > 0)	
+		usage();
 
 	if (do_packetlog && !pcap_file)
 		pcap_file = PCAP_FILE_DEFAULT;

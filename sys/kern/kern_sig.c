@@ -125,24 +125,16 @@ cansignal(struct proc *p, struct pcred *pc, struct proc *q, int signum)
 		case SIGUSR1:
 		case SIGUSR2:
 			if (pc->p_ruid == q->p_cred->p_ruid ||
-			    pc->pc_ucred->cr_uid == q->p_cred->p_ruid ||
-			    pc->p_ruid == q->p_ucred->cr_uid ||
-			    pc->pc_ucred->cr_uid == q->p_ucred->cr_uid)
+			    pc->pc_ucred->cr_uid == q->p_cred->p_ruid)
 				return (1);
 		}
 		return (0);
 	}
 
-	/* XXX
-	 * because the P_SUGID test exists, this has extra tests which
-	 * could be removed.
-	 */
 	if (pc->p_ruid == q->p_cred->p_ruid ||
 	    pc->p_ruid == q->p_cred->p_svuid ||
 	    pc->pc_ucred->cr_uid == q->p_cred->p_ruid ||
-	    pc->pc_ucred->cr_uid == q->p_cred->p_svuid ||
-	    pc->p_ruid == q->p_ucred->cr_uid ||
-	    pc->pc_ucred->cr_uid == q->p_ucred->cr_uid)
+	    pc->pc_ucred->cr_uid == q->p_cred->p_svuid)
 		return (1);
 	return (0);
 }
@@ -619,7 +611,7 @@ killpg1(struct proc *cp, int signum, int pgid, int all)
 		/* 
 		 * broadcast
 		 */
-		for (p = LIST_FIRST(&allproc); p; p = LIST_NEXT(p, p_list)) {
+		LIST_FOREACH(p, &allproc, p_list) {
 			if (p->p_pid <= 1 || p->p_flag & P_SYSTEM || 
 			    p == cp || !cansignal(cp, pc, p, signum))
 				continue;

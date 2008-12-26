@@ -31,22 +31,22 @@
 #if 0
 static char sccsid[] = "@(#)pow.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_pow.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
-/* POW(X,Y)  
- * RETURN X**Y 
+/* POW(X,Y)
+ * RETURN X**Y
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
- * CODED IN C BY K.C. NG, 1/8/85; 
+ * CODED IN C BY K.C. NG, 1/8/85;
  * REVISED BY K.C. NG on 7/10/85.
  * KERNEL pow_P() REPLACED BY P. McILROY 7/22/92.
  * Required system supported functions:
- *      scalbn(x,n)      
- *      logb(x)         
- *	copysign(x,y)	
- *	finite(x)	
- *	drem(x,y)
+ *      scalbn(x,n)
+ *      logb(x)
+ *	copysign(x,y)
+ *	finite(x)
+ *	remainder(x,y)
  *
  * Required kernel functions:
  *	exp__D(a,c)			exp(a + c) for |a| << |c|
@@ -56,7 +56,7 @@ static const char rcsid[] = "$ABSD$";
  *	1. Compute and return log(x) in three pieces:
  *		log(x) = n*ln2 + hi + lo,
  *	   where n is an integer.
- *	2. Perform y*log(x) by simulating muti-precision arithmetic and 
+ *	2. Perform y*log(x) by simulating muti-precision arithmetic and
  *	   return the answer in three pieces:
  *		y*log(x) = m*ln2 + hi + lo,
  *	   where m is an integer.
@@ -94,7 +94,7 @@ static const char rcsid[] = "$ABSD$";
  *			pow(integer,integer)
  *	always returns the correct integer provided it is representable.
  *	In a test run with 100,000 random arguments with 0 < x, y < 20.0
- *	on a VAX, the maximum observed error was 1.79 ulps (units in the 
+ *	on a VAX, the maximum observed error was 1.79 ulps (units in the
  *	last place).
  *
  * Constants :
@@ -109,7 +109,7 @@ static const char rcsid[] = "$ABSD$";
 
 #include "mathimpl.h"
 
-#if (defined(__vax__) || defined(tahoe))
+#if defined(__vax__)
 #define TRUNC(x)	x = (double) (float) x
 #define _IEEE		0
 #else
@@ -117,21 +117,21 @@ static const char rcsid[] = "$ABSD$";
 #define endian		(((*(int *) &one)) ? 1 : 0)
 #define TRUNC(x) 	*(((int *) &x)+endian) &= 0xf8000000
 #define infnan(x)	0.0
-#endif		/* vax or tahoe */
+#endif		/* defined(__vax__) */
 
 const static double zero=0.0, one=1.0, two=2.0, negone= -1.0;
 
 static double pow_P(double, double);
 
-double pow(x,y)  	
-double x,y;
+double
+pow(double x, double y)
 {
 	double t;
 	if (y==zero)
 		return (one);
-	else if (y==one || (_IEEE && x != x))
+	else if (y==one || isnan(x))
 		return (x);		/* if x is NaN or y=1 */
-	else if (_IEEE && y!=y)		/* if y is NaN */
+	else if (isnan(y))		/* if y is NaN */
 		return (y);
 	else if (!finite(y))		/* if y is INF */
 		if ((t=fabs(x))==one)	/* +-1 ** +-INF is NaN */
@@ -150,7 +150,7 @@ double x,y;
 
     /* sign(x)= -1 */
 	/* if y is an even integer */
-	else if ( (t=drem(y,two)) == zero)
+	else if ( (t=remainder(y,two)) == zero)
 		return (pow_P(-x, y));
 
 	/* if y is an odd integer */
@@ -167,14 +167,10 @@ double x,y;
 }
 /* kernel function for x >= 0 */
 static double
-#ifdef _ANSI_SOURCE
 pow_P(double x, double y)
-#else
-pow_P(x, y) double x, y;
-#endif
 {
-	struct Double s, t, __log__D();
-	double  __exp__D(), huge = 1e300, tiny = 1e-300;
+	struct Double s, t;
+	double  huge = 1e300, tiny = 1e-300;
 
 	if (x == zero)
 		if (y > zero)

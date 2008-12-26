@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -937,7 +930,7 @@ bus_space_barrier(bus_space_tag_t tag, bus_space_handle_t bsh,
 #define	BUS_DMA_COHERENT	0x004	/* hint: map memory DMA coherent */
 #define	BUS_DMA_BUS1		0x010	/* placeholders for bus functions... */
 #define	BUS_DMA_BUS2		0x020
-#define	BUS_DMA_BUS3		0x040
+#define	BUS_DMA_32BIT		0x040
 #define	BUS_DMA_24BIT		0x080	/* isadma map */
 #define	BUS_DMA_STREAMING	0x100	/* hint: sequential, unidirectional */
 #define	BUS_DMA_READ		0x200	/* mapping is device -> memory only */

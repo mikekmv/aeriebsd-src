@@ -39,10 +39,10 @@
 #include "drmP.h"
 
 int
-drm_dma_setup(drm_device_t *dev)
+drm_dma_setup(struct drm_device *dev)
 {
 
-	dev->dma = malloc(sizeof(*dev->dma), M_DRM, M_NOWAIT | M_ZERO);
+	dev->dma = drm_calloc(1, sizeof(*dev->dma), DRM_MEM_DRIVER);
 	if (dev->dma == NULL)
 		return ENOMEM;
 
@@ -52,7 +52,7 @@ drm_dma_setup(drm_device_t *dev)
 }
 
 void
-drm_dma_takedown(drm_device_t *dev)
+drm_dma_takedown(struct drm_device *dev)
 {
 	drm_device_dma_t *dma = dev->dma;
 	int i, j;
@@ -72,32 +72,38 @@ drm_dma_takedown(drm_device_t *dev)
 				drm_pci_free(dev, dma->bufs[i].seglist[j]);
 			}
 			if (dma->bufs[i].seglist)
-				free(dma->bufs[i].seglist, M_DRM);
+				drm_free(dma->bufs[i].seglist,
+				    dma->bufs[i].seg_count *
+				    sizeof(*dma->bufs[i].seglist),
+				    DRM_MEM_BUFS);
 		}
 
 	   	if (dma->bufs[i].buf_count) {
 		   	for (j = 0; j < dma->bufs[i].buf_count; j++) {
-				free(dma->bufs[i].buflist[j].dev_private,
-				    M_DRM);
+				drm_free(dma->bufs[i].buflist[j].dev_private,
+				    dma->bufs[i].buflist[j].dev_priv_size,
+				    DRM_MEM_BUFS);
 			}
 			if (dma->bufs[i].buflist)
-		   		free(dma->bufs[i].buflist, M_DRM);
+		   		drm_free(dma->bufs[i].buflist,
+				    dma->bufs[i].buf_count *
+				    sizeof(*dma->bufs[i].buflist),
+				    DRM_MEM_BUFS);
 		}
 	}
 
-	if (dma->buflist)
-		free(dma->buflist, M_DRM);
-	if (dma->pagelist)
-		free(dma->pagelist, M_DRM);
-	if (dev->dma)
-		free(dev->dma, M_DRM);
+	drm_free(dma->buflist, dma->buf_count * sizeof(*dma->buflist),
+	    DRM_MEM_BUFS);
+	drm_free(dma->pagelist, dma->page_count * sizeof(*dma->pagelist),
+	    DRM_MEM_BUFS);
+	drm_free(dev->dma, sizeof(*dev->dma), DRM_MEM_DMA);
 	dev->dma = NULL;
 	DRM_SPINUNINIT(&dev->dma_lock);
 }
 
 
 void
-drm_free_buffer(drm_device_t *dev, drm_buf_t *buf)
+drm_free_buffer(struct drm_device *dev, drm_buf_t *buf)
 {
 	if (!buf) return;
 
@@ -107,7 +113,7 @@ drm_free_buffer(drm_device_t *dev, drm_buf_t *buf)
 }
 
 void
-drm_reclaim_buffers(drm_device_t *dev, struct drm_file *file_priv)
+drm_reclaim_buffers(struct drm_device *dev, struct drm_file *file_priv)
 {
 	drm_device_dma_t *dma = dev->dma;
 	int i;
@@ -132,7 +138,7 @@ drm_reclaim_buffers(drm_device_t *dev, struct drm_file *file_priv)
 
 /* Call into the driver-specific DMA handler */
 int
-drm_dma(drm_device_t *dev, void *data, struct drm_file *file_priv)
+drm_dma(struct drm_device *dev, void *data, struct drm_file *file_priv)
 {
 
 	if (dev->driver.dma_ioctl) {

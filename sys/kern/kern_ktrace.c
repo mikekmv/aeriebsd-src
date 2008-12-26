@@ -320,7 +320,7 @@ sys_ktrace(struct proc *curp, void *v, register_t *retval)
 	 * Clear all uses of the tracefile
 	 */
 	if (ops == KTROP_CLEARFILE) {
-		for (p = LIST_FIRST(&allproc); p; p = LIST_NEXT(p, p_list)) {
+		LIST_FOREACH(p, &allproc, p_list) {
 			if (p->p_tracep == vp) {
 				if (ktrcanset(curp, p)) {
 					p->p_traceflag = 0;
@@ -474,7 +474,7 @@ ktrwrite(struct proc *p, struct ktr_header *kth)
 	 */
 	log(LOG_NOTICE, "ktrace write failed, errno %d, tracing stopped\n",
 	    error);
-	for (p = LIST_FIRST(&allproc); p != NULL; p = LIST_NEXT(p, p_list)) {
+	LIST_FOREACH(p, &allproc, p_list) {
 		if (p->p_tracep == vp) {
 			p->p_traceflag = 0;
 			ktrsettracevnode(p, NULL);

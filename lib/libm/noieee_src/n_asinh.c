@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)asinh.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_asinh.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
@@ -49,16 +49,16 @@ static const char rcsid[] = "$ABSD$";
  *	log1p(x) 		...return log(1+x)
  *
  * Method :
- *	Based on 
+ *	Based on
  *		asinh(x) = sign(x) * log [ |x| + sqrt(x*x+1) ]
  *	we have
  *	asinh(x) := x  if  1+x*x=1,
  *		 := sign(x)*(log1p(x)+ln2))	 if sqrt(1+x*x)=x, else
- *		 := sign(x)*log1p(|x| + |x|/(1/|x| + sqrt(1+(1/|x|)^2)) )  
+ *		 := sign(x)*log1p(|x| + |x|/(1/|x| + sqrt(1+(1/|x|)^2)) )
  *
  * Accuracy:
  *	asinh(x) returns the exact inverse hyperbolic sine of x nearly rounded.
- *	In a test run with 52,000 random arguments on a VAX, the maximum 
+ *	In a test run with 52,000 random arguments on a VAX, the maximum
  *	observed error was 1.58 ulps (units in the last place).
  *
  * Constants:
@@ -67,6 +67,8 @@ static const char rcsid[] = "$ABSD$";
  * from decimal to binary accurately enough to produce the hexadecimal values
  * shown.
  */
+
+#include "math.h"
 #include "mathimpl.h"
 
 vc(ln2hi, 6.9314718055829871446E-1  ,7217,4031,0000,f7d0,   0, .B17217F7D00000)
@@ -80,18 +82,18 @@ ic(ln2lo, 1.9082149292705877000E-10, -33, 1.A39EF35793C76)
 #define    ln2lo    vccast(ln2lo)
 #endif
 
-double asinh(x)
-double x;
-{	
+double
+asinh(double x)
+{
 	double t,s;
 	const static double	small=1.0E-10,	/* fl(1+small*small) == 1 */
 				big  =1.0E20,	/* fl(1+big) == big */
-				one  =1.0   ;	
+				one  =1.0   ;
 
-#if !defined(__vax__)&&!defined(tahoe)
-	if(x!=x) return(x);	/* x is NaN */
-#endif	/* !defined(__vax__)&&!defined(tahoe) */
-	if((t=copysign(x,one))>small) 
+	if (isnan(x))
+		return (x);
+
+	if((t=copysign(x,one))>small)
 	    if(t<big) {
 	     	s=one/t; return(copysign(log1p(t+t/(s+sqrt(one+s*s))),x)); }
 	    else	/* if |x| > big */

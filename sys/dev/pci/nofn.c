@@ -280,8 +280,7 @@ nofn_rng_disable(sc)
 
 	switch (sc->sc_revid) {
 	case REVID_7814_7854_1:
-		if (timeout_pending(&sc->sc_rngto))
-			timeout_del(&sc->sc_rngto);
+		timeout_del(&sc->sc_rngto);
 		break;
 	case REVID_8154_1:
 	case REVID_8065_1:

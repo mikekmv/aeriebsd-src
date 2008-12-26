@@ -31,28 +31,28 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: n_support.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
 #endif /* LIBM_SCCS */
+
+#include <machine/asm.h>
+#include <sys/errno.h>
 
 /*
  * copysign(x,y),
  * logb(x),
  * scalbn(x,N),
  * finite(x),
- * drem(x,y),
+ * reminder(x,y),
  * Coded in vax assembly language by K.C. Ng,  3/14/85.
  * Revised by K.C. Ng on 4/9/85.
  */
 
 /*
- * double copysign(x,y)
- * double x,y;
+ * double
+ * copysign(double x, double y)
  */
-	.globl	_copysign
-	.text
-	.align	1
-_copysign:
-	.word	0x4
+
+ENTRY(copysign, R2)
 	movq	4(ap),r0		# load x into r0
 	bicw3	$0x807f,r0,r2		# mask off the exponent of x
 	beql	Lz			# if zero or reserved op then return x
@@ -62,14 +62,11 @@ _copysign:
 Lz:	ret
 
 /*
- * double logb(x)
- * double x;
+ * double
+ * logb(double x)
  */
-	.globl	_logb
-	.text
-	.align	1
-_logb:
-	.word	0x0
+
+ENTRY(logb, 0)
 	bicl3	$0xffff807f,4(ap),r0	# mask off the exponent of x
 	beql    Ln
 	ashl	$-7,r0,r0		# get the bias exponent
@@ -82,14 +79,11 @@ Ln:	movq	4(ap),r0		# r0:1 = x (zero or reserved op)
 1:	ret
 
 /*
- * long finite(x)
- * double x;
+ * long
+ * finite(double x)
  */
-	.globl	_finite
-	.text
-	.align	1
-_finite:
-	.word	0x0000
+
+ENTRY(finite, 0)
 	bicw3	$0x7f,4(ap),r0		# mask off the mantissa
 	cmpw	r0,$0x8000		# to see if x is the reserved op
 	beql	1f			# if so, return FALSE (0)
@@ -99,15 +93,11 @@ _finite:
 	ret
 
 /*
- * double scalbn(x,N)
- * double x; int N;
+ * double
+ * scalbn(double x, int N)
  */
-	.globl	_scalbn
-	.set	ERANGE,34
-	.text
-	.align	1
-_scalbn:
-	.word	0xc
+
+ENTRY(scalbn, R2|R3)
 	movq	4(ap),r0
 	bicl3	$0xffff807f,r0,r3
 	beql	ret1			# 0 or reserved operand
@@ -124,7 +114,7 @@ _scalbn:
 	addl2	r2,r0
 	ret
 ovfl:	pushl	$ERANGE
-	calls	$1,_infnan		# if it returns
+	calls	$1,_C_LABEL(infnan)	# if it returns
 	bicw3	$0x7fff,4(ap),r2	# get the sign of input arg
 	bisw2	r2,r0			# re-attach the sign to r0/1
 	ret
@@ -132,17 +122,14 @@ unfl:	movq	$0,r0
 ret1:	ret
 
 /*
- * DREM(X,Y)
+ * REMAINDER(X,Y)
  * RETURN X REM Y =X-N*Y, N=[X/Y] ROUNDED (ROUNDED TO EVEN IN THE HALF WAY CASE)
  * DOUBLE PRECISION (VAX D format 56 bits)
  * CODED IN VAX ASSEMBLY LANGUAGE BY K.C. NG, 4/8/85.
  */
-	.globl	_drem
-	.set	EDOM,33
-	.text
-	.align	1
-_drem:
-	.word	0xffc
+
+ALTENTRY(drem)
+ENTRY(remainder, R2|R3|R4|R5|R6|R7|R8|R9|R10|R11)
 	subl2	$12,sp	
 	movq	4(ap),r0		#r0=x
 	movq	12(ap),r2		#r2=y
@@ -218,27 +205,8 @@ C5:
 	ret
 Rop:					#Reserved operand
 	pushl	$EDOM
-	calls	$1,_infnan		#generate reserved op fault
+	calls	$1,_C_LABEL(infnan)	#generate reserved op fault
 	ret
 Ret:
 	movq	$0x8000,r0		#propagate reserved op
 	ret
-
-/*
- * signbit(x), signbitl(x), signbitf(x) -- returns zero if x is
- *    non-negative.
- */
-        .globl ___signbitf
-        .type ___signbitf, @function
-        .globl ___signbit
-        .type ___signbit, @function
-        .globl ___signbitl
-        .type ___signbitl, @function
-___signbitf:
-___signbit:
-___signbitl:
-        .word 0x0
-        movw 4(ap), r0
-        bicl2 $-32769,r0
-        ret
-

@@ -475,6 +475,7 @@ int		 back1page(int, int);
 int		 pagenext(int, int);
 void		 isetmark(void);
 int		 setmark(int, int);
+int		 clearmark(int, int);
 int		 swapmark(int, int);
 int		 gotoline(int, int);
 
@@ -487,6 +488,9 @@ int		 newline(int, int);
 int		 deblank(int, int);
 int		 justone(int, int);
 int		 delwhite(int, int);
+int		 delleadwhite(int, int);
+int		 deltrailwhite(int, int);
+int		 lfindent(int, int);
 int		 indent(int, int);
 int		 forwdel(int, int);
 int		 backdel(int, int);
@@ -615,10 +619,18 @@ int		 add_autoexec(const char *, const char *);
 
 /* mail.c X */
 void		 mail_init(void);
+/* cmode.c X */
+int		 cmode(int, int);
+int		 cc_brace(int, int);
+int		 cc_char(int, int);
+int		 cc_tab(int, int);
+int		 cc_indent(int, int);
+int		 cc_lfindent(int, int);
 
 /* grep.c X */
 int		 next_error(int, int);
 int		 globalwdtoggle(int, int);
+int		 compile(int, int);
 
 /*
  * Externals.
@@ -656,3 +668,4 @@ extern char		 prompt[];
 int		 tceeol;
 int		 tcinsl;
 int		 tcdell;
+int		 rptcount;	/* successive invocation count */

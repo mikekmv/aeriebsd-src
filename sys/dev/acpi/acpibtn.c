@@ -83,7 +83,7 @@ acpibtn_attach(struct device *parent, struct device *self, void *aux)
 	struct acpi_attach_args *aa = aux;
 
 	sc->sc_acpi = (struct acpi_softc *)parent;
-	sc->sc_devnode = aa->aaa_node->child;
+	sc->sc_devnode = aa->aaa_node;
 
 	if (!strcmp(aa->aaa_dev, ACPI_DEV_LD))
 		sc->sc_btn_type = ACPIBTN_LID;
@@ -96,9 +96,9 @@ acpibtn_attach(struct device *parent, struct device *self, void *aux)
 
 	acpibtn_getsta(sc);
 
-	printf(": %s\n", sc->sc_devnode->parent->name);
+	printf(": %s\n", sc->sc_devnode->name);
 
-	aml_register_notify(sc->sc_devnode->parent, aa->aaa_dev, acpibtn_notify,
+	aml_register_notify(sc->sc_devnode, aa->aaa_dev, acpibtn_notify,
 	    sc, ACPIDEV_NOPOLL);
 }
 
@@ -119,7 +119,7 @@ acpibtn_notify(struct aml_node *node, int notify_type, void *arg)
 	struct acpibtn_softc	*sc = arg;
 
 	dnprintf(10, "acpibtn_notify: %.2x %s\n", notify_type,
-	    sc->sc_devnode->parent->name);
+	    sc->sc_devnode->name);
 
 	switch (sc->sc_btn_type) {
 	case ACPIBTN_LID:

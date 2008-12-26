@@ -62,8 +62,13 @@ const struct pci_matchid ciss_pci_devices[] = {
 	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAE200I_2 },
 	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAE200I_3 },
 	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAE500 },
+	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAP212 },
+	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAP410 },
+	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAP410I },
+	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAP411 },
 	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAP600 },
 	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAP800 },
+	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAP812 },
 	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSAV100 },
 	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSA_1 },
 	{ PCI_VENDOR_HP,	PCI_PRODUCT_HP_HPSA_2 },
@@ -100,14 +105,9 @@ ciss_pci_attach(struct device *parent, struct device *self, void *aux)
 	pcireg_t reg;
 
 	memtype = pci_mapreg_type(pa->pa_pc, pa->pa_tag, CISS_BAR);
-	if (memtype != (PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT) &&
-	    memtype != (PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT)) {
-		printf(": wrong BAR type\n");
-		return;
-	}
 	if (pci_mapreg_map(pa, CISS_BAR, memtype, 0,
 	    &sc->iot, &sc->ioh, NULL, &size, 0)) {
-		printf(": can't map controller i/o space\n");
+		printf(": can't map controller mem space\n");
 		return;
 	}
 	sc->dmat = pa->pa_dmat;

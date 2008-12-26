@@ -1,7 +1,9 @@
 #	from: @(#)Makefile	5.5 (Berkeley) 5/21/91
 
 CFLAGS+=	-DLIBC_SCCS -fno-omit-frame-pointer
-OBJS=		crt0.o gcrt0.o crtbegin.o crtend.o crtbeginS.o crtendS.o
+OBJS=		crt0.o gcrt0.o
+OBJS+=		crtbegin.o crtend.o
+OBJS+=		crtbeginS.o crtendS.o
 SRCS=		crt0.c crtbegin.c crtbeginS.c crtend.c crtendS.c
 
 ELFDIR=		${.CURDIR}/../common_elf

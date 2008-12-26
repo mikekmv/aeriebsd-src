@@ -114,7 +114,7 @@ main(int argc, char **argv)
 			break;
 		default:
 			fprintf(stderr,
-			   "usage: %sinit [-f%ssv] [-m mode] user [...]\n",
+			   "usage: %sinit [-f%ssv] [-m mode] user ...\n",
 			    tt->name, (tt->options & TOKEN_HEXINIT) ? "h" : "");
 			exit(1);
 		}

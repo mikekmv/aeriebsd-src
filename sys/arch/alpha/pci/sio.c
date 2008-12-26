@@ -43,6 +43,7 @@
 
 #include <alpha/pci/siovar.h>
 
+#include "eisa.h"
 #include "isadma.h"
 
 struct sio_softc {
@@ -88,7 +89,6 @@ void	sio_isa_attach_hook(struct device *, struct device *,
 	    struct isabus_attach_args *);
 void	sio_eisa_attach_hook(struct device *, struct device *,
 	    struct eisabus_attach_args *);
-int	sio_eisa_maxslots(void *);
 int	sio_eisa_intr_map(void *, u_int, eisa_intr_handle_t *);
 void	sio_bridge_callback(struct device *);
 
@@ -166,8 +166,8 @@ sio_bridge_callback(self)
 
 	if (sc->sc_haseisa) {
 		ec.ec_v = NULL;
+		ec.ec_maxslots = 0;	/* will be filled by attach_hook */
 		ec.ec_attach_hook = sio_eisa_attach_hook;
-		ec.ec_maxslots = sio_eisa_maxslots;
 		ec.ec_intr_map = sio_eisa_intr_map;
 		ec.ec_intr_string = sio_intr_string;
 		ec.ec_intr_establish = sio_intr_establish;
@@ -176,6 +176,8 @@ sio_bridge_callback(self)
 		sa.sa_eba.eba_busname = "eisa";
 		sa.sa_eba.eba_iot = sc->sc_iot;
 		sa.sa_eba.eba_memt = sc->sc_memt;
+		sa.sa_eba.eba_dmat =
+		    alphabus_dma_get_tag(sc->sc_dmat, ALPHA_BUS_EISA);
 		sa.sa_eba.eba_ec = &ec;
 		config_found(&sc->sc_dv, &sa.sa_eba, sioprint);
 	}
@@ -222,16 +224,9 @@ sio_eisa_attach_hook(parent, self, eba)
 	struct device *parent, *self;
 	struct eisabus_attach_args *eba;
 {
-
-	/* Nothing to do. */
-}
-
-int
-sio_eisa_maxslots(v)
-	void *v;
-{
-
-	return 16;		/* as good a number as any.  only 8, maybe? */
+#if NEISA > 0
+	eisa_init(eba->eba_ec);
+#endif
 }
 
 int

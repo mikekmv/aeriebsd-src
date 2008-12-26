@@ -14,7 +14,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: April 17 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Os
 .Dt RUM 4
 .Sh NAME
@@ -74,16 +74,20 @@ capture packets from networks which it wouldn't normally have access to,
 or to scan for access points.
 .El
 .Pp
+The
 .Nm
-supports software WEP.
-Wired Equivalent Privacy (WEP) is the de facto encryption standard
-for wireless networks.
-It can be typically configured in one of three modes:
-no encryption; 40-bit encryption; or 104-bit encryption.
-Unfortunately, due to serious weaknesses in WEP protocol
-it is strongly recommended that it not be used as the
-sole mechanism to secure wireless communication.
-WEP is not enabled by default.
+driver can be configured to use
+Wireless Equivalent Privacy (WEP) or
+Wi-Fi Protected Access (WPA-PSK and WPA2-PSK).
+WPA is the de facto encryption standard for wireless networks.
+It is strongly recommended that WEP
+not be used as the sole mechanism
+to secure wireless communication,
+due to serious weaknesses in it.
+The
+.Nm
+driver relies on the software 802.11 stack for both encryption and decryption
+of data frames.
 .Pp
 The
 .Nm
@@ -108,6 +112,7 @@ The following adapters should work:
 .It Atlantis Land A02-UP1-W54
 .It Belkin F5D7050 ver 3
 .It Belkin F5D9050 ver 3
+.It Belkin F5D9050C
 .It Buffalo WLI-U2-SG54HP
 .It Buffalo WLI-U2-G54HP
 .It CNet CWD-854 ver F
@@ -115,6 +120,7 @@ The following adapters should work:
 .It Corega CG-WLUSB2GL
 .It Corega CG-WLUSB2GO
 .It Corega CG-WLUSB2GPX
+.It D-Link DWA-111
 .It "D-Link DWL-G122 rev C1"
 .It D-Link WUA-1340
 .It Digitus DN-7003GR
@@ -156,16 +162,19 @@ inet 192.168.1.1 255.255.255.0 NONE media autoselect \e
 	mediaopt hostap nwid my_net chan 11
 .Ed
 .Pp
-Configure rum0 for WEP, using hex key
-.Dq 0x1deadbeef1 :
+Configure rum0 to join network
+.Dq my_net
+using WPA-PSK with passphrase
+.Dq my_passphrase :
 .Bd -literal -offset indent
-# ifconfig rum0 nwkey 0x1deadbeef1
+# ifconfig rum0 nwid my_net wpa wpapsk \e
+	$(wpa-psk my_net my_passphrase)
 .Ed
 .Pp
 Return rum0 to its default settings:
 .Bd -literal -offset indent
 # ifconfig rum0 -bssid -chan media autoselect \e
-	nwid "" -nwkey
+	nwid "" -nwkey -wpa -wpapsk
 .Ed
 .Pp
 Join an existing BSS network,
@@ -195,7 +204,8 @@ This should not happen.
 .Xr usb 4 ,
 .Xr hostname.if 5 ,
 .Xr hostapd 8 ,
-.Xr ifconfig 8
+.Xr ifconfig 8 ,
+.Xr wpa-psk 8
 .Pp
 Ralink Technology:
 .Pa http://www.ralinktech.com/

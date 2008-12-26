@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -481,9 +474,30 @@ linux_elf_probe(p, epp, itp, pos, os)
 	int error;
 	size_t len;
 
+	if (!(emul_linux_elf.e_flags & EMUL_ENABLED))
+		return (ENOEXEC);
+
+	/*
+	 * Modern Linux binaries carry an identification note.
+	 */
+	if (ELFNAME(os_pt_note)(p, epp, epp->ep_hdr, "GNU", 4, 0x10) == 0) {
+		goto recognized;
+	}
+
 	brand = elf32_check_brand(eh);
-	if (brand && strcmp(brand, "Linux"))
+	if (brand != NULL && strcmp(brand, "Linux") != 0)
 		return (EINVAL);
+
+	/*
+	 * If this is a static binary, do not allow it to run, as it
+	 * has not been identified. We'll give non-static binaries a
+	 * chance to run, as the Linux ld.so name is usually unique
+	 * enough to clear any amibiguity.
+	 */
+	if (itp == NULL)
+		return (EINVAL);
+
+recognized:
 	if (itp) {
 		if ((error = emul_find(p, NULL, linux_emul_path, itp, &bp, 0)))
 			return (error);

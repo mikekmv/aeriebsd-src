@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: pfctl_altq.c,v 1.1.1.1 2008/08/26 14:40:28 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -877,7 +877,6 @@ print_hfsc_opts(const struct pf_altq *a, const struct node_queue_opt *qopts)
 /*
  * admission control using generalized service curve
  */
-#define	INFINITY	HUGE_VAL  /* positive infinity defined in <math.h> */
 
 /* add a new service curve to a generalized service curve */
 static void

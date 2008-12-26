@@ -30,6 +30,7 @@ typedef struct Session Session;
 struct Session {
 	int	used;
 	int	self;
+	int	next_unused;
 	struct passwd *pw;
 	Authctxt *authctxt;
 	pid_t	pid;
@@ -64,6 +65,7 @@ void	 do_authenticated(Authctxt *);
 void	 do_cleanup(Authctxt *);
 
 int	 session_open(Authctxt *, int);
+void	 session_unused(int);
 int	 session_input_channel_req(Channel *, const char *);
 void	 session_close_by_pid(pid_t, int);
 void	 session_close_by_channel(int, void *);

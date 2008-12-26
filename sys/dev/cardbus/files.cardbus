@@ -15,7 +15,7 @@ file	dev/cardbus/rbus.c			cardbus
 
 # Com ports
 attach	com at cardbus with com_cardbus
-file	dev/cardbus/com_cardbus.c		com_cardbus | pccom_cardbus
+file	dev/cardbus/com_cardbus.c		com_cardbus
 
 # PCI "universal" communication device driver, for com, lpt, etc. ports
 attach	puc at cardbus with puc_cardbus

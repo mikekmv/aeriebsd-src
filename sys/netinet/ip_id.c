@@ -66,7 +66,7 @@ ip_randomid(void)
 	}
 
 	do {
-		arc4random_bytes(&si, sizeof(si));
+		arc4random_buf(&si, sizeof(si));
 		i = isindex & 0xFFFF;
 		i2 = (isindex - (si & 0x7FFF)) & 0xFFFF;
 		r = ip_shuffle[i];

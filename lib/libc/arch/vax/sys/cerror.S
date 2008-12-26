@@ -29,14 +29,14 @@
 
 #if defined(LIBC_SCCS)
 	.rodata
-	.asciz "$ABSD$"
+	.asciz "$ABSD: cerror.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 #include "SYS.h"
 
-	.globl	_errno
-__cerror:
-	movl	r0,_errno
+	.globl	_C_LABEL(errno)
+_C_LABEL(_cerror):
+	movl	r0,_C_LABEL(errno)
 	mnegl	$1,r0
 	mnegl	$1,r1
 	ret

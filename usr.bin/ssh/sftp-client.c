@@ -235,7 +235,8 @@ get_decode_stat(int fd, u_int expected_id, int quiet)
 }
 
 static int
-get_decode_statvfs(int fd, struct statvfs *st, u_int expected_id, int quiet)
+get_decode_statvfs(int fd, struct sftp_statvfs *st, u_int expected_id,
+    int quiet)
 {
 	Buffer msg;
 	u_int type, id, flag;
@@ -264,17 +265,17 @@ get_decode_statvfs(int fd, struct statvfs *st, u_int expected_id, int quiet)
 	}
 
 	bzero(st, sizeof(*st));
-	st->f_bsize = buffer_get_int(&msg);
-	st->f_frsize = buffer_get_int(&msg);
+	st->f_bsize = buffer_get_int64(&msg);
+	st->f_frsize = buffer_get_int64(&msg);
 	st->f_blocks = buffer_get_int64(&msg);
 	st->f_bfree = buffer_get_int64(&msg);
 	st->f_bavail = buffer_get_int64(&msg);
 	st->f_files = buffer_get_int64(&msg);
 	st->f_ffree = buffer_get_int64(&msg);
 	st->f_favail = buffer_get_int64(&msg);
-	st->f_fsid = buffer_get_int(&msg);
-	flag = buffer_get_int(&msg);
-	st->f_namemax = buffer_get_int(&msg);
+	st->f_fsid = buffer_get_int64(&msg);
+	flag = buffer_get_int64(&msg);
+	st->f_namemax = buffer_get_int64(&msg);
 
 	st->f_flag = (flag & SSH2_FXE_STATVFS_ST_RDONLY) ? ST_RDONLY : 0;
 	st->f_flag |= (flag & SSH2_FXE_STATVFS_ST_NOSUID) ? ST_NOSUID : 0;
@@ -316,17 +317,27 @@ do_init(int fd_in, int fd_out, u_int transfer_buflen, u_int num_requests)
 	while (buffer_len(&msg) > 0) {
 		char *name = buffer_get_string(&msg, NULL);
 		char *value = buffer_get_string(&msg, NULL);
+		int known = 0;
 
-		debug2("Init extension: \"%s\"", name);
 		if (strcmp(name, "posix-rename@openssh.com") == 0 &&
-		    strcmp(value, "1") == 0)
+		    strcmp(value, "1") == 0) {
 			exts |= SFTP_EXT_POSIX_RENAME;
-		if (strcmp(name, "statvfs@openssh.com") == 0 &&
-		    strcmp(value, "1") == 0)
+			known = 1;
+		} else if (strcmp(name, "statvfs@openssh.com") == 0 &&
+		    strcmp(value, "2") == 0) {
 			exts |= SFTP_EXT_STATVFS;
-		if (strcmp(name, "fstatvfs@openssh.com") == 0 &&
-		    strcmp(value, "1") == 0)
+			known = 1;
+		} if (strcmp(name, "fstatvfs@openssh.com") == 0 &&
+		    strcmp(value, "2") == 0) {
 			exts |= SFTP_EXT_FSTATVFS;
+			known = 1;
+		}
+		if (known) {
+			debug2("Server supports extension \"%s\" revision %s",
+			    name, value);
+		} else {
+			debug2("Unrecognised server extension \"%s\"", name);
+		}
 		xfree(name);
 		xfree(value);
 	}
@@ -803,7 +814,7 @@ do_readlink(struct sftp_conn *conn, char *path)
 #endif
 
 int
-do_statvfs(struct sftp_conn *conn, const char *path, struct statvfs *st,
+do_statvfs(struct sftp_conn *conn, const char *path, struct sftp_statvfs *st,
     int quiet)
 {
 	Buffer msg;
@@ -831,7 +842,7 @@ do_statvfs(struct sftp_conn *conn, const char *path, struct statvfs *st,
 #ifdef notyet
 int
 do_fstatvfs(struct sftp_conn *conn, const char *handle, u_int handle_len,
-    struct statvfs *st, int quiet)
+    struct sftp_statvfs *st, int quiet)
 {
 	Buffer msg;
 	u_int id;
@@ -900,7 +911,7 @@ do_download(struct sftp_conn *conn, char *remote_path, char *local_path,
 	if (a == NULL)
 		return(-1);
 
-	/* XXX: should we preserve set[ug]id? */
+	/* Do not preserve set[ug]id here, as we do not preserve ownership */
 	if (a->flags & SSH2_FILEXFER_ATTR_PERMISSIONS)
 		mode = a->perm & 0777;
 	else

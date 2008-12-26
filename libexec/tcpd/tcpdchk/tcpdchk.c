@@ -19,7 +19,7 @@
 #if 0
 static char sccsid[] = "@(#) tcpdchk.c 1.8 97/02/12 02:13:25";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: tcpdchk.c,v 1.1.1.1 2008/08/26 14:39:40 root Exp $";
 #endif
 #endif
 
@@ -187,7 +187,7 @@ int     main(int argc, char *argv[])
 
 static void usage()
 {
-    fprintf(stderr, "usage: %s [-a] [-d] [-i inet_conf] [-v]\n", myname);
+    fprintf(stderr, "usage: %s [-adv] [-i inet_conf]\n", myname);
     fprintf(stderr, "	-a: report rules with implicit \"ALLOW\" at end\n");
     fprintf(stderr, "	-d: use allow/deny files in current directory\n");
     fprintf(stderr, "	-i: location of inetd.conf file\n");

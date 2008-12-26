@@ -37,7 +37,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)wall.c	5.14 (Berkeley) 3/2/91";*/
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: rwall.c,v 1.1.1.1 2008/08/26 14:43:11 root Exp $";
 #endif /* not lint */
 
 /*
@@ -74,7 +74,7 @@ main(int argc, char *argv[])
 	CLIENT *cl;
 
 	if ((argc < 2) || (argc > 3)) {
-		fprintf(stderr, "usage: %s hostname [file]\n", __progname);
+		fprintf(stderr, "usage: %s host [file]\n", __progname);
 		exit(1);
 	}
 

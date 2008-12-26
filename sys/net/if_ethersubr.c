@@ -332,15 +332,17 @@ ether_output(ifp0, m0, dst, rt0)
 #ifdef MPLS
        case AF_MPLS:
 		if (rt)
-			dst = (struct sockaddr *)rt->rt_gateway;
+			dst = rt_key(rt);
 		else
 			senderr(EHOSTUNREACH);
 
 		switch (dst->sa_family) {
 			case AF_LINK:
-				if (satosdl(dst)->sdl_alen < sizeof(edst))
+				if (((struct sockaddr_dl *)dst)->sdl_alen <
+				    sizeof(edst))
 					senderr(EHOSTUNREACH);
-				bcopy(LLADDR(satosdl(dst)), edst, sizeof(edst));
+				bcopy(LLADDR(((struct sockaddr_dl *)dst)), edst,
+				    sizeof(edst));
 				break;
 			case AF_INET:
 				if (!arpresolve(ac, rt, m, dst, edst))
@@ -456,10 +458,10 @@ ether_output(ifp0, m0, dst, rt0)
 		splx(s);
 		return (error);
 	}
-	ifp->if_obytes += len + ETHER_HDR_LEN;
+	ifp->if_obytes += len;
 #if NCARP > 0
 	if (ifp != ifp0)
-		ifp0->if_obytes += len + ETHER_HDR_LEN;
+		ifp0->if_obytes += len;
 #endif /* NCARP > 0 */
 	if (mflags & M_MCAST)
 		ifp->if_omcasts++;
@@ -505,12 +507,12 @@ ether_input(ifp0, eh, m)
 #if NTRUNK > 0
 	/* Handle input from a trunk port */
 	while (ifp->if_type == IFT_IEEE8023ADLAG) {
-		if (++i > TRUNK_MAX_STACKING ||
-		    trunk_input(ifp, eh, m) != 0) {
-			if (m)
-				m_freem(m);
+		if (++i > TRUNK_MAX_STACKING) {
+			m_freem(m);
 			return;
 		}
+		if (trunk_input(ifp, eh, m) != 0)
+			return;
 
 		/* Has been set to the trunk interface */
 		ifp = m->m_pkthdr.rcvif;

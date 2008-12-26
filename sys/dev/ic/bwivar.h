@@ -524,12 +524,6 @@ struct bwi_softc {
 	uint16_t		 sc_pwron_delay;
 	int			 sc_locale;
 
-	int			 sc_irq_rid;
-	struct resource		*sc_irq_res;
-	void			*sc_irq_handle;
-
-	int			 sc_mem_rid;
-	struct resource		*sc_mem_res;
 	bus_dma_tag_t		 sc_dmat;
 	bus_space_tag_t		 sc_mem_bt;
 	bus_space_handle_t	 sc_mem_bh;

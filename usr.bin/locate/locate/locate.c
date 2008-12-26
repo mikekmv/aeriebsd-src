@@ -44,7 +44,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)locate.c    8.1 (Berkeley) 6/6/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: locate.c,v 1.1.1.1 2008/08/26 14:43:00 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -80,6 +80,7 @@ static char rcsid[] = "$ABSD$";
 #include <ctype.h>
 #include <err.h>
 #include <fnmatch.h>
+#include <libgen.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -114,6 +115,7 @@ int f_stdin;            /* read database from stdin */
 int f_statistic;        /* print statistic */
 int f_silent;           /* suppress output, show only count of matches */
 int f_limit;            /* limit number of output lines, 0 == infinite */
+int f_basename;		/* match only on the basename */
 u_int counter;          /* counter for matches [-c] */
 
 
@@ -149,8 +151,11 @@ main(int argc, char *argv[])
 #endif
 	(void) setlocale(LC_ALL, "");
 
-	while ((ch = getopt(argc, argv, "Scd:il:ms")) != -1)
+	while ((ch = getopt(argc, argv, "bScd:il:ms")) != -1)
 		switch (ch) {
+		case 'b':
+			f_basename = 1;
+			break;
 		case 'S':	/* statistic lines */
 			f_statistic = 1;
 			break;
@@ -330,7 +335,7 @@ cputime(void)
 void
 usage(void)
 {
-	(void)fprintf(stderr, "usage: locate [-cimSs] [-d database] ");
+	(void)fprintf(stderr, "usage: locate [-bcimSs] [-d database] ");
 	(void)fprintf(stderr, "[-l limit] pattern ...\n");
 	(void)fprintf(stderr, "default database: `%s' or $LOCATE_PATH\n",
 	    _PATH_FCODES);

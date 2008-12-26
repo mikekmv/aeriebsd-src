@@ -64,6 +64,7 @@
 #include <sys/extent.h>
 
 #include <uvm/uvm_extern.h>
+#include <uvm/uvm_swap.h>
 
 #include <dev/rndvar.h>
 
@@ -799,6 +800,10 @@ dumpsys()
 		return;
 	printf("\ndumping to dev(%d,%d), at offset %ld blocks\n",
 	    major(dumpdev), minor(dumpdev), dumplo);
+
+#ifdef UVM_SWAP_ENCRYPT
+	uvm_swap_finicrypt_all();
+#endif
 
 	psize = (*bdevsw[major(dumpdev)].d_psize)(dumpdev);
 	printf("dump ");

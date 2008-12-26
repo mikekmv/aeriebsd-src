@@ -57,6 +57,7 @@ struct mbuf;
 struct sockaddr;
 struct socket;
 struct domain;
+struct proc;
 
 struct protosw {
 	short	pr_type;		/* socket type used for */
@@ -77,7 +78,7 @@ struct protosw {
 /* user-protocol hook */
 					/* user request: see list below */
 	int	(*pr_usrreq)(struct socket *, int, struct mbuf *,
-		    struct mbuf *, struct mbuf *);
+		    struct mbuf *, struct mbuf *, struct proc *);
 
 /* utility hooks */
 	void	(*pr_init)(void);	/* initialization hook */

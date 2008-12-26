@@ -170,9 +170,6 @@ rio_alloc(int weight, struct redparams *params, int flags, int pkttime)
 	int	 npkts_per_sec;
 
 	rp = malloc(sizeof(rio_t), M_DEVBUF, M_WAITOK|M_ZERO);
-	if (rp == NULL)
-		return (NULL);
-
 	rp->rio_flags = flags;
 	if (pkttime == 0)
 		/* default packet time: 1000 bytes / 10Mbps * 8 * 1000000 */

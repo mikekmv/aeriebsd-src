@@ -25,6 +25,7 @@ LTESTS= 	connect \
 		agent-ptrace \
 		keyscan \
 		keygen-change \
+		key-options \
 		scp \
 		sftp \
 		sftp-cmds \
@@ -38,10 +39,11 @@ LTESTS= 	connect \
 		reexec \
 		brokenkeys \
 		cfgmatch \
+		addrmatch \
 		localcommand \
 		forcecommand
 
-INTEROP_TESTS=	putty-transfer putty-ciphers putty-kex
+INTEROP_TESTS=	putty-transfer putty-ciphers putty-kex conch-ciphers
 #INTEROP_TESTS+=ssh-com ssh-com-client ssh-com-keygen ssh-com-sftp
 
 

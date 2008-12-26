@@ -92,6 +92,7 @@ static void	devread(int, void *, daddr_t, size_t, char *);
 static void	sym_set_value(struct sym_data *, char *, u_int32_t);
 static void	pbr_set_symbols(char *, char *, struct sym_data *);
 static void	usage(void);
+static long	findopenbsd(int, struct disklabel *, off_t, int *);
 
 static void
 usage(void)
@@ -114,9 +115,9 @@ main(int argc, char *argv[])
 	long	protosize;
 	struct	stat sb;
 	struct	disklabel dl;
-	struct	dos_mbr mbr;
-	struct	dos_partition *dp;
 	off_t	startoff = 0;
+	long	start = 0;
+	int	n = 8;
 
 	while ((c = getopt(argc, argv, "vn")) != -1) {
 		switch (c) {
@@ -194,29 +195,11 @@ main(int argc, char *argv[])
 
 	if (dl.d_type != 0 && dl.d_type != DTYPE_FLOPPY &&
 	    dl.d_type != DTYPE_VND) {
-		if (lseek(devfd, (off_t)DOSBBSECTOR, SEEK_SET) < 0 ||
-		    read(devfd, &mbr, sizeof(mbr)) != sizeof(mbr))
-			err(4, "can't read master boot record");
-
-		if (mbr.dmbr_sign != DOSMBR_SIGNATURE)
-			errx(1, "broken MBR");
-
 		/* Find OpenBSD partition. */
-		for (dp = mbr.dmbr_parts; dp < &mbr.dmbr_parts[NDOSPART];
-		    dp++) {
-			if (dp->dp_size && dp->dp_typ == DOSPTYP_OPENBSD) {
-				startoff = (off_t)dp->dp_start * dl.d_secsize;
-				fprintf(stderr, "using MBR partition %ld: "
-				    "type %d (0x%02x) offset %d (0x%x)\n",
-				    (long)(dp - mbr.dmbr_parts),
-				    dp->dp_typ, dp->dp_typ,
-				    dp->dp_start, dp->dp_start);
-				break;
-			}
-		}
-		/* Don't check for old part number, that is ;-p */
-		if (dp >= &mbr.dmbr_parts[NDOSPART])
-			errx(1, "no OpenBSD partition");
+		start = findopenbsd(devfd, &dl, (off_t)DOSBBSECTOR, &n);
+		if (start == -1)
+ 			errx(1, "no OpenBSD partition");
+		startoff = (off_t)start * dl.d_secsize;
 	}
 
 	if (!nowrite) {
@@ -228,6 +211,53 @@ main(int argc, char *argv[])
 	(void)close(devfd);
 
 	return 0;
+}
+
+long
+findopenbsd(int devfd, struct disklabel *dl, off_t mbroff, int *n)
+{
+	struct		dos_mbr mbr;
+	struct		dos_partition *dp;
+	off_t		startoff;
+	long		start;
+
+	/* Limit the number of recursions */
+	if (!(*n)--)
+		return (-1);
+
+	if (lseek(devfd, mbroff * dl->d_secsize, SEEK_SET) < 0 ||
+	    read(devfd, &mbr, sizeof(mbr)) != sizeof(mbr))
+		err(4, "can't read master boot record");
+
+	if (mbr.dmbr_sign != DOSMBR_SIGNATURE)
+		errx(1, "broken MBR");
+
+	for (dp = mbr.dmbr_parts; dp < &mbr.dmbr_parts[NDOSPART];
+	    dp++) {
+		if (!dp->dp_size)
+			continue;
+		if (dp->dp_typ == DOSPTYP_OPENBSD) {
+			fprintf(stderr, "using MBR partition %ld: "
+			    "type %d (0x%02x) offset %d (0x%x)\n",
+			    (long)(dp - mbr.dmbr_parts),
+			    dp->dp_typ, dp->dp_typ,
+			    dp->dp_start, dp->dp_start);
+			return (dp->dp_start + mbroff);
+		} else if (dp->dp_typ == DOSPTYP_EXTEND ||
+		    dp->dp_typ == DOSPTYP_EXTENDL) {
+			fprintf(stderr, "extended partition %ld: "
+			    "type %d (0x%02x) offset %d (0x%x)\n",
+			    (long)(dp - mbr.dmbr_parts),
+			    dp->dp_typ, dp->dp_typ,
+			    dp->dp_start, dp->dp_start);
+			startoff = (off_t)dp->dp_start + mbroff;
+			start = findopenbsd(devfd, dl, startoff, n);
+			if (start != -1)
+				return (start);
+		}
+	}
+
+	return (-1);
 }
 
 /*

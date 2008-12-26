@@ -223,6 +223,11 @@ db_stack_trace_print(addr, have_addr, count, modif, pr)
 	extern char k_general[];
 	struct trap_frame *regs = &ddb_regs;
 
+	if (have_addr) {
+		(*pr)("mips trace requires a trap frame... giving up\n");
+		return;
+	}
+
 	/* get initial values from the exception frame */
 	sp = (vaddr_t)regs->sp;
 	pc = (vaddr_t)regs->pc;

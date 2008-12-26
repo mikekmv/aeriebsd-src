@@ -159,6 +159,7 @@ extern struct cpu_info *cpu_info_list;
  * or after the current trap/syscall if in system mode.
  */
 extern void need_resched(struct cpu_info *);
+#define clear_resched(ci) (ci)->ci_want_resched = 0
 
 #if defined(MULTIPROCESSOR)
 
@@ -273,10 +274,10 @@ void	x86_64_proc0_tss_ldt_init(void);
 void	x86_64_bufinit(void);
 void	x86_64_init_pcb_tss_ldt(struct cpu_info *);
 void	cpu_proc_fork(struct proc *, struct proc *);
+int	amd64_pa_used(paddr_t);
 
 struct region_descriptor;
 void	lgdt(struct region_descriptor *);
-void	fillw(short, void *, size_t);
 
 struct pcb;
 void	savectx(struct pcb *);
@@ -337,8 +338,7 @@ void mp_setperf_init(void);
 #define CPU_APMWARN		9	/* APM battery warning percentage */
 #define CPU_KBDRESET		10	/* keyboard reset under pcvt */
 #define CPU_APMHALT		11	/* halt -p hack */
-#define CPU_USERLDT		12
-#define CPU_MAXID		13	/* number of valid machdep ids */
+#define CPU_MAXID		12	/* number of valid machdep ids */
 
 #define	CTL_MACHDEP_NAMES { \
 	{ 0, 0 }, \
@@ -353,7 +353,6 @@ void mp_setperf_init(void);
 	{ "apmwarn", CTLTYPE_INT }, \
 	{ "kbdreset", CTLTYPE_INT }, \
 	{ "apmhalt", CTLTYPE_INT }, \
-	{ "userldt", CTLTYPE_INT }, \
 }
 
 /*

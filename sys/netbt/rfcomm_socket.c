@@ -99,7 +99,7 @@ int rfcomm_recvspace = 4096;
  */
 int
 rfcomm_usrreq(struct socket *up, int req, struct mbuf *m,
-		struct mbuf *nam, struct mbuf *ctl)
+    struct mbuf *nam, struct mbuf *ctl, struct proc *p)
 {
 	struct rfcomm_dlc *pcb = up->so_pcb;
 	struct sockaddr_bt *sa;

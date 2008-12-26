@@ -35,7 +35,7 @@ static char RCSid[] __attribute__((__unused__)) =
 "$From: server.c,v 1.10 1999/08/04 15:57:33 christos Exp $";
 #else
 static char RCSid[] __attribute__((__unused__)) =
-"$ABSD$";
+"$ABSD: server.c,v 1.1.1.1 2008/08/26 14:43:10 root Exp $";
 #endif
 
 static char sccsid[] __attribute__((__unused__)) =
@@ -795,11 +795,10 @@ recvfile(char *new, opt_t opts, int mode, char *owner, char *group,
 	/*
 	 * Create temporary file
 	 */
-	if ((f = open(new, O_CREAT|O_EXCL|O_WRONLY, mode)) < 0) {
+	if ((f = mkstemp(new)) < 0) {
 		if (errno != ENOENT || chkparent(new, opts) < 0 ||
-		    (f = open(new, O_CREAT|O_EXCL|O_WRONLY, mode)) < 0) {
+		    (f = mkstemp(new)) < 0) {
 			error("%s: create failed: %s", new, SYSERR);
-			(void) unlink(new);
 			return;
 		}
 	}
@@ -1204,11 +1203,10 @@ recvlink(char *new, opt_t opts, int mode, off_t size)
 	/*
 	 * Make new symlink using a temporary name
 	 */
-	if (symlink(buf, new) < 0) {
+	if (mktemp(new) == NULL || symlink(buf, new) < 0) {
 		if (errno != ENOENT || chkparent(new, opts) < 0 ||
-		    symlink(buf, new) < 0) {
-			error("%s -> %s: symlink failed: %s", new, buf,SYSERR);
-			(void) unlink(new);
+		    mktemp(new) == NULL || symlink(buf, new) < 0) {
+			error("%s -> %s: symlink failed: %s", new, buf, SYSERR);
 			return;
 		}
 	}
@@ -1527,7 +1525,6 @@ recvit(char *cmd, int type)
 					tempname);
 			*file = '/';
 		}
-		(void) mktemp(new);
 	}
 
 	/*

@@ -52,8 +52,8 @@ ipcperm(struct ucred *cred, struct ipc_perm *perm, int mode)
 		return (EPERM);
 	}
 
-	if (vaccess(perm->mode, perm->uid, perm->gid, mode, cred) == 0 ||
-	    vaccess(perm->mode, perm->cuid, perm->cgid, mode, cred) == 0)
+	if (vaccess(VNON, perm->mode, perm->uid, perm->gid, mode, cred) == 0 ||
+	    vaccess(VNON, perm->mode, perm->cuid, perm->cgid, mode, cred) == 0)
 		return (0);
 	return (EACCES);
 }

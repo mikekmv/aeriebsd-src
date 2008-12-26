@@ -419,6 +419,11 @@ main(int argc, char *argv[])
 		}
 	}
 
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+		hostapd_usage();
+
 	if (config == NULL)
 		ret = strlcpy(cfg->c_config, HOSTAPD_CONFIG, sizeof(cfg->c_config));
 	else

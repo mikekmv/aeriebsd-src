@@ -228,8 +228,8 @@ msdosfs_access(v)
 		dosmode |= (dosmode & S_IROTH) ? S_IXOTH : 0;
 	}
 
-	return (vaccess(dosmode, pmp->pm_uid, pmp->pm_gid, ap->a_mode,
-	    ap->a_cred));
+	return (vaccess(ap->a_vp->v_type, dosmode, pmp->pm_uid, pmp->pm_gid,
+	    ap->a_mode, ap->a_cred));
 }
 
 int
@@ -1842,7 +1842,7 @@ fileidhash(uint64_t fileid)
 /* Global vfs data structures for msdosfs */
 int (**msdosfs_vnodeop_p)(void *);
 struct vnodeopv_entry_desc msdosfs_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
+	{ &vop_default_desc, eopnotsupp },
 	{ &vop_lookup_desc, msdosfs_lookup },		/* lookup */
 	{ &vop_create_desc, msdosfs_create },		/* create */
 	{ &vop_mknod_desc, msdosfs_mknod },		/* mknod */

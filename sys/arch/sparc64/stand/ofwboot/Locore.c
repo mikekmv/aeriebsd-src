@@ -375,6 +375,7 @@ OF_chain(virt, size, entry, arg, len)
 	u_int len;
 {
 	extern int64_t romp;
+#ifdef __notyet
 	extern int debug;
 	struct {
 		cell_t name;
@@ -403,6 +404,7 @@ OF_chain(virt, size, entry, arg, len)
 		printf("Calling entry(0, %p, %x, %lx, %lx)\n", arg, len,
 			(unsigned long)romp, (unsigned long)romp);
 	}
+#endif
 	entry(0, arg, len, (unsigned long)romp, (unsigned long)romp);
 	panic("OF_chain: kernel returned!");
 	__asm("ta 2" : :);

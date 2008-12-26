@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)pass3.c	8.1 (Berkeley) 6/5/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: pass3.c,v 1.1.1.1 2008/08/26 14:40:22 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -65,14 +65,14 @@ pass3(void)
 		info_pos++;
 		inp = *inpp;
 		if (inp->i_number == ROOTINO ||
-		    (inp->i_parent != 0 && statemap[inp->i_number] != DSTATE))
+		    (inp->i_parent != 0 && GET_ISTATE(inp->i_number) != DSTATE))
 			continue;
-		if (statemap[inp->i_number] == DCLEAR)
+		if (GET_ISTATE(inp->i_number) == DCLEAR)
 			continue;
 		for (loopcnt = 0; ; loopcnt++) {
 			orphan = inp->i_number;
 			if (inp->i_parent == 0 ||
-			    statemap[inp->i_parent] != DSTATE ||
+			    GET_ISTATE(inp->i_parent) != DSTATE ||
 			    loopcnt > numdirs)
 				break;
 			inp = getinoinfo(inp->i_parent);
@@ -84,7 +84,7 @@ pass3(void)
 			inp->i_parentp = pinp;
 			inp->i_sibling = pinp->i_child;
 			pinp->i_child = inp;
-			statemap[orphan] = statemap[inp->i_parent];
+			SET_ISTATE(orphan, GET_ISTATE(inp->i_parent));
 		}
 		propagate(orphan);
 	}

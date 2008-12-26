@@ -772,8 +772,7 @@ crget(void)
 {
 	struct ucred *cr;
 
-	cr = pool_get(&ucred_pool, PR_WAITOK);
-	bzero((caddr_t)cr, sizeof(*cr));
+	cr = pool_get(&ucred_pool, PR_WAITOK|PR_ZERO);
 	cr->cr_ref = 1;
 	return (cr);
 }

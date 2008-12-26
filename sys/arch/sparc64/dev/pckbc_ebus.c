@@ -94,6 +94,7 @@ pckbc_ebus_attach(parent, self, aux)
 	struct ebus_attach_args *ea = aux;
 	struct pckbc_internal *t = NULL;
 	int console;
+	int flags = 0;
 
 	sc->sc_node = ea->ea_node;
 	console = pckbc_ebus_is_console(sc);
@@ -115,10 +116,23 @@ pckbc_ebus_attach(parent, self, aux)
 		return;
 	}
 
+	/*
+	 * The 8042 controller found on the Tadpole SPARCLE doesn't
+	 * implement XT scan code translation.
+	 * XXX I have not checked the value of the model property on
+	 * XXX UltraAXe boards...
+	 */
+	{
+		char model[128];
+		OF_getprop(ea->ea_node, "model", &model, sizeof model);
+		if (strcmp(model, "INTC,80c42") == 0)
+			flags = PCKBC_CANT_TRANSLATE | PCKBC_NEED_AUXWRITE;
+	}
+
 	if (console) {
 		if (pckbc_cnattach(sc->sc_iot,
 		    EBUS_PADDR_FROM_REG(&ea->ea_regs[0]), KBCMDP,
-		    PCKBC_KBD_SLOT) == 0) {
+		    PCKBC_KBD_SLOT, flags) == 0) {
 			t = &pckbc_consdata;
 			pckbc_console_attached = 1;
 			sc->sc_ioh_c = t->t_ioh_c;
@@ -140,6 +154,7 @@ pckbc_ebus_attach(parent, self, aux)
 		}
 
 		t = malloc(sizeof(*t), M_DEVBUF, M_NOWAIT | M_ZERO);
+		t->t_flags = flags;
 	}
 
 	psc->intr_establish = pckbc_ebus_intr_establish;
@@ -163,11 +178,11 @@ pckbc_ebus_attach(parent, self, aux)
 	t->t_ioh_d = sc->sc_ioh_d;
 	t->t_cmdbyte = KC8_CPU;
 	t->t_sc = psc;
+
 	psc->id = t;
 
 	printf("\n");
 	pckbc_attach(psc);
-
 }
 
 int

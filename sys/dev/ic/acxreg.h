@@ -473,6 +473,7 @@ struct bss_join_hdr {
 /*
  * non-data frame tx rate
  */
+#define ACX_NDATA_TXRATE_1		10	/* 1Mbits/s */
 #define ACX_NDATA_TXRATE_2		20	/* 2Mbits/s */
 
 /*

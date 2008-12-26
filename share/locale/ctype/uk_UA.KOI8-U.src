@@ -1,9 +1,7 @@
-/*	$NetBSD: uk_UA.KOI8-U.src,v 1.4 2004/06/24 03:28:50 itojun Exp $	*/
 
 /*
  * LOCALE_CTYPE for Ukrainian koi8-u character set (RFC2319)
  *
- * $FreeBSD: src/share/mklocale/uk_UA.KOI8-U.src,v 1.1 1999/10/18 21:49:02 ache Exp $
  */
 ENCODING	"NONE"
 VARIABLE        Ukrainian CODESET=KOI8-U character set

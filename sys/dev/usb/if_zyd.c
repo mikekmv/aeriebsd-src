@@ -118,6 +118,7 @@ static const struct zyd_type {
 	ZYD_ZD1211_DEV(ZYXEL,		AG225H),
 	ZYD_ZD1211_DEV(ZYXEL,		ZYAIRG220),
 	ZYD_ZD1211_DEV(ZYXEL,		G200V2),
+	ZYD_ZD1211_DEV(ZYXEL,		G202),
 
 	ZYD_ZD1211B_DEV(ACCTON,		SMCWUSBG),
 	ZYD_ZD1211B_DEV(ACCTON,		ZD1211B),
@@ -1897,6 +1898,7 @@ zyd_rx_data(struct zyd_softc *sc, const uint8_t *buf, uint16_t len)
 	struct ifnet *ifp = &ic->ic_if;
 	struct ieee80211_node *ni;
 	struct ieee80211_frame *wh;
+	struct ieee80211_rxinfo rxi;
 	const struct zyd_plcphdr *plcp;
 	const struct zyd_rx_stat *stat;
 	struct mbuf *m;
@@ -1975,7 +1977,10 @@ zyd_rx_data(struct zyd_softc *sc, const uint8_t *buf, uint16_t len)
 	s = splnet();
 	wh = mtod(m, struct ieee80211_frame *);
 	ni = ieee80211_find_rxnode(ic, wh);
-	ieee80211_input(ifp, m, ni, stat->rssi, 0);
+	rxi.rxi_flags = 0;
+	rxi.rxi_rssi = stat->rssi;
+	rxi.rxi_tstamp = 0;	/* unused */
+	ieee80211_input(ifp, m, ni, &rxi);
 
 	/* node is no longer needed */
 	ieee80211_release_node(ic, ni);

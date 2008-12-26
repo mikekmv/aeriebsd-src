@@ -257,6 +257,7 @@ prebind_newfile(int infd, char *name, struct stat *st, off_t orig_size)
 		}
 	}
 	free(buf);
+	close (infd);
 
 	/* now back track, and delete the header */
 	if (prebind_remove_load_section(outfd, newname) == -1)

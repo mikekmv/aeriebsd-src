@@ -46,10 +46,12 @@
 static int ip6_rthdr0(struct mbuf *, struct ip6_hdr *, struct ip6_rthdr0 *);
 #endif
 
+/*
+ * proto is unused
+ */
+
 int
-route6_input(mp, offp, proto)
-	struct mbuf **mp;
-	int *offp, proto;	/* proto is unused */
+route6_input(struct mbuf **mp, int *offp, int proto)
 {
 	struct ip6_hdr *ip6;
 	struct mbuf *m = *mp;
@@ -125,10 +127,7 @@ route6_input(mp, offp, proto)
  * as it was dropped between RFC1883 and RFC2460.
  */
 static int
-ip6_rthdr0(m, ip6, rh0)
-	struct mbuf *m;
-	struct ip6_hdr *ip6;
-	struct ip6_rthdr0 *rh0;
+ip6_rthdr0(struct mbuf *m, struct ip6_hdr *ip6, struct ip6_rthdr0 *rh0)
 {
 	int addrs, index;
 	struct in6_addr *nextaddr, tmpaddr;

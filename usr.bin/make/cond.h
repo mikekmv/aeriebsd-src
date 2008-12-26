@@ -1,7 +1,3 @@
-#ifndef COND_H
-#define COND_H
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -30,6 +26,9 @@
 /* cond
  *	Parse Makefile conditionals.
  */
+
+#ifndef COND_H
+#define COND_H
 
 /* Values returned by Cond_Eval.  */
 #define COND_PARSE	0	/* Parse the next lines */

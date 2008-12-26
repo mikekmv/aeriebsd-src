@@ -102,7 +102,7 @@
 
 struct ieee_single {
 	u_int	sng_frac:23;
-	u_int	sng_exponent:8;
+	u_int	sng_exp:8;
 	u_int	sng_sign:1;
 };
 

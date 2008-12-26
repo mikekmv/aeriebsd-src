@@ -34,7 +34,7 @@
 
 #if defined(LIBC_SCCS)
 	.rodata
-	.asciz "$ABSD$"
+	.asciz "$ABSD: syscall.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 #include "SYS.h"
@@ -46,4 +46,4 @@ SYSENTRY(syscall)
 	jcs	1f
 	ret
 1:
-	jmp	__cerror
+	jmp	_C_LABEL(_cerror)

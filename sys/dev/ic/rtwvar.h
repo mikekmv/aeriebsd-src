@@ -298,7 +298,7 @@ struct rtw_mtbl {
 					enum ieee80211_state, int);
 	void			(*mt_recv_mgmt)(struct ieee80211com *,
 				    struct mbuf *, struct ieee80211_node *,
-				    int, int, u_int32_t);
+				    struct ieee80211_rxinfo *, int);
 	struct ieee80211_node	*(*mt_node_alloc)(struct ieee80211com *);
 	void			(*mt_node_free)(struct ieee80211com *,
 					struct ieee80211_node *);

@@ -305,7 +305,8 @@ dopanic:
 			printf("trap during panic!\n");
 #ifdef DEBUG
 			/* XXX should be a machine-dependent hook */
-			printf("(press a key)\n"); (void)cngetc();
+			printf("(press a key)\n");
+			cnpollc(1); (void)cngetc(); cnpollc(0);
 #endif
 		}
 		regdump(&(frame.F_t), 128);

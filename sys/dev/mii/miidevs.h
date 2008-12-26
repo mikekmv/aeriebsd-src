@@ -23,13 +23,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -66,6 +59,7 @@
 #define	MII_OUI_ICS	0x00a0be	/* Integrated Circuit Systems */
 #define	MII_OUI_INTEL	0x00aa00	/* Intel */
 #define	MII_OUI_JATO	0x00e083	/* Jato Technologies */
+#define	MII_OUI_JMICRON	0x001b8c	/* JMicron Technologies */
 #define	MII_OUI_LEVEL1	0x00207b	/* Level 1 */
 #define	MII_OUI_MYSON	0x00c0b4	/* Myson Technology */
 #define	MII_OUI_NATSEMI	0x080017	/* National Semiconductor */
@@ -169,7 +163,7 @@
 #define	MII_MODEL_xxBROADCOM_BCM5714	0x0034
 #define	MII_STR_xxBROADCOM_BCM5714	"BCM5714 10/100/1000baseT PHY"
 #define	MII_MODEL_xxBROADCOM_BCM5780	0x0035
-#define	MII_STR_xxBROADCOM_BCM5780	"BCM5780 10/100/1000baseT PHY"
+#define	MII_STR_xxBROADCOM_BCM5780	"BCM5780 10/100/1000baseT/SX PHY"
 #define	MII_MODEL_xxBROADCOM_BCM5708C	0x0036
 #define	MII_STR_xxBROADCOM_BCM5708C	"BCM5708C 10/100/1000baseT PHY"
 #define	MII_MODEL_xxBROADCOM2_BCM5755	0x000c
@@ -314,6 +308,12 @@
 /* Jato Technologies PHYs */
 #define	MII_MODEL_JATO_BASEX	0x0000
 #define	MII_STR_JATO_BASEX	"Jato 1000baseX PHY"
+
+/* JMicron Technologies PHYs */
+#define	MII_MODEL_JMICRON_JMP211	0x0021
+#define	MII_STR_JMICRON_JMP211	"JMP211 10/100/1000 PHY"
+#define	MII_MODEL_JMICRON_JMP202	0x0022
+#define	MII_STR_JMICRON_JMP202	"JMP202 10/100 PHY"
 
 /* Level 1 PHYs */
 #define	MII_MODEL_xxLEVEL1_LXT970	0x0000

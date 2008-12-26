@@ -233,9 +233,9 @@ struct oid {
 	(((_oid)->o_flags & OID_IFSET) &&				\
 	((_oid)->o_data == NULL) && ((_oid)->o_val == 0))
 
-#define OID(_mib...)		{ { _mib } }
-#define MIBDECL(_mib...)	{ { MIB_##_mib } }, #_mib
-#define MIB(_mib...)		{ { MIB_##_mib } }, NULL
+#define OID(...)		{ { __VA_ARGS__ } }
+#define MIBDECL(...)		{ { MIB_##__VA_ARGS__ } }, #__VA_ARGS__
+#define MIB(...)		{ { MIB_##__VA_ARGS__ } }, NULL
 #define MIBEND			{ { 0 } }, NULL
 
 /*
@@ -352,7 +352,7 @@ void		 log_info(const char *, ...);
 void		 log_debug(const char *, ...);
 __dead void	 fatal(const char *);
 __dead void	 fatalx(const char *);
-const char	*log_host(struct sockaddr_storage *, char *, size_t);
+const char	*print_host(struct sockaddr_storage *, char *, size_t);
 
 /* buffer.c */
 struct buf	*buf_open(size_t);

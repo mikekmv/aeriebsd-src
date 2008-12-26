@@ -58,7 +58,7 @@ struct alpha_pci_chipset {
 	void		(*pc_conf_write)(void *, pcitag_t, int, pcireg_t);
 
 	void		*pc_intr_v;
-	int		(*pc_intr_map)(void *, pcitag_t, int, int,
+	int		(*pc_intr_map)(struct pci_attach_args *,
 			    pci_intr_handle_t *);
 	const char	*(*pc_intr_string)(void *, pci_intr_handle_t);
 	int		(*pc_intr_line)(void *, pci_intr_handle_t);
@@ -99,8 +99,7 @@ int alpha_sysctl_chipset(int *, u_int, char *, size_t *);
 #define	pci_conf_write(c, t, r, v)					\
     (*(c)->pc_conf_write)((c)->pc_conf_v, (t), (r), (v))
 #define	pci_intr_map(pa, ihp)						\
-    (*((pa)->pa_pc)->pc_intr_map)((pa)->pa_pc->pc_intr_v, 		\
-	(pa)->pa_intrtag, (pa)->pa_intrpin, (pa)->pa_intrline, (ihp))
+    (*((pa)->pa_pc)->pc_intr_map)((pa), (ihp))
 #define	pci_intr_string(c, ih)						\
     (*(c)->pc_intr_string)((c)->pc_intr_v, (ih))
 #define	pci_intr_line(c, ih)						\

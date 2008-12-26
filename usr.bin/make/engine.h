@@ -1,6 +1,3 @@
-#ifndef ENGINE_H
-#define ENGINE_H
-
 /*
  * Copyright (c) 1988, 1989, 1990 The Regents of the University of California.
  * Copyright (c) 1988, 1989 by Adam de Boor
@@ -37,10 +34,14 @@
  *	from: @(#)job.h 8.1 (Berkeley) 6/6/93
  */
 
+#ifndef ENGINE_H
+#define ENGINE_H
+
 /* ok = Job_CheckCommands(node, abort);
  *	verify the integrity of a node's commands, pulling stuff off
  * 	.DEFAULT and other places if necessary.
  */
+
 extern bool Job_CheckCommands(GNode *, void (*abortProc)(char *, ...));
 /* Job_Touch(node);
  *	touch the path corresponding to a node or update the corresponding

@@ -184,6 +184,7 @@ struct ipsec_rule {
 	struct ipsec_key  *enckey;
 
 	char		*tag;		/* pf tag for SAs */
+	char		*p1name;	/* Phase 1 Name */
 	char		*p2name;	/* Phase 2 Name (IPsec-XX) */
 	char		*p2lid;		/* Phase 2 source ID */
 	char		*p2rid;		/* Phase 2 destination ID */

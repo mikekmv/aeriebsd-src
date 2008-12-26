@@ -14,7 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 /*
- * Open hashing support. 
+ * Open hashing support.
+ *
  * Open hashing was chosen because it is much lighter than other hash
  * techniques, and more efficient in most cases.
  */

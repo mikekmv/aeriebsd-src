@@ -1192,10 +1192,8 @@ vge_tick(void *xsc)
 			sc->vge_link = 1;
 			if (mii->mii_media_status & IFM_FDX)
 				ifp->if_link_state = LINK_STATE_FULL_DUPLEX;
-			else if (mii->mii_media_status & IFM_HDX)
-				ifp->if_link_state = LINK_STATE_HALF_DUPLEX;
 			else
-				ifp->if_link_state = LINK_STATE_UP;
+				ifp->if_link_state = LINK_STATE_HALF_DUPLEX;
 			if_link_state_change(ifp);
 			if (!IFQ_IS_EMPTY(&ifp->if_snd))
 				vge_start(ifp);
@@ -1811,8 +1809,8 @@ vge_stop(struct vge_softc *sc)
 
 	ifp = &sc->arpcom.ac_if;
 	ifp->if_timer = 0;
-	if (timeout_pending(&sc->timer_handle))
-		timeout_del(&sc->timer_handle);
+
+	timeout_del(&sc->timer_handle);
 
 	ifp->if_flags &= ~(IFF_RUNNING | IFF_OACTIVE);
 

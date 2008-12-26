@@ -109,7 +109,7 @@ struct rt_msghdr *rtmsg_3to4(struct mbuf *, int *);
 
 int
 route_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam,
-    struct mbuf *control)
+    struct mbuf *control, struct proc *p)
 {
 	int		 error = 0;
 	struct rawcb	*rp = sotorawcb(so);
@@ -139,7 +139,7 @@ route_usrreq(struct socket *so, int req, struct mbuf *m, struct mbuf *nam,
 		else
 			error = raw_attach(so, (int)(long)nam);
 	} else
-		error = raw_usrreq(so, req, m, nam, control);
+		error = raw_usrreq(so, req, m, nam, control, p);
 
 	rp = sotorawcb(so);
 	if (req == PRU_ATTACH && rp) {
@@ -190,6 +190,7 @@ route_output(struct mbuf *m, ...)
 	so = va_arg(ap, struct socket *);
 	va_end(ap);
 
+	dst = NULL;	/* for error handling (goto flush) */
 	if (m == 0 || ((m->m_len < sizeof(int32_t)) &&
 	    (m = m_pullup(m, sizeof(int32_t))) == 0))
 		return (ENOBUFS);
@@ -198,20 +199,17 @@ route_output(struct mbuf *m, ...)
 	len = m->m_pkthdr.len;
 	if (len < offsetof(struct rt_msghdr, rtm_type) + 1 ||
 	    len != mtod(m, struct rt_msghdr *)->rtm_msglen) {
-		dst = 0;
 		error = EINVAL;
 		goto flush;
 	}
 	switch (mtod(m, struct rt_msghdr *)->rtm_version) {
 	case RTM_VERSION:
 		if (len < sizeof(struct rt_msghdr)) {
-			dst = 0;
 			error = EINVAL;
 			goto flush;
 		}
 		R_Malloc(rtm, struct rt_msghdr *, len);
 		if (rtm == 0) {
-			dst = 0;
 			error = ENOBUFS;
 			goto flush;
 		}
@@ -220,20 +218,17 @@ route_output(struct mbuf *m, ...)
 #ifndef SMALL_KERNEL
 	case RTM_OVERSION:
 		if (len < sizeof(struct rt_omsghdr)) {
-			dst = 0;
 			error = EINVAL;
 			goto flush;
 		}
 		rtm = rtmsg_3to4(m, &len);
 		if (rtm == 0) {
-			dst = 0;
 			error = ENOBUFS;
 			goto flush;
 		}
 		break;
 #endif
 	default:
-		dst = 0;
 		error = EPROTONOSUPPORT;
 		goto flush;
 	}
@@ -241,7 +236,6 @@ route_output(struct mbuf *m, ...)
 	if (rtm->rtm_hdrlen == 0)	/* old client */
 		rtm->rtm_hdrlen = sizeof(struct rt_msghdr);
 	if (len < rtm->rtm_hdrlen) {
-		dst = 0;
 		error = EINVAL;
 		goto flush;
 	}
@@ -250,12 +244,10 @@ route_output(struct mbuf *m, ...)
 	if (!rtable_exists(tableid)) {
 		if (rtm->rtm_type == RTM_ADD) {
 			if (rtable_add(tableid)) {
-				dst = 0;
 				error = EINVAL;
 				goto flush;
 			}
 		} else {
-			dst = 0;
 			error = EINVAL;
 			goto flush;
 		}
@@ -263,17 +255,19 @@ route_output(struct mbuf *m, ...)
 
 	if (rtm->rtm_priority != 0) {
 		if (rtm->rtm_priority > RTP_MAX) {
-			dst = 0;
 			error = EINVAL;
 			goto flush;
 		}
 		prio = rtm->rtm_priority;
-	} else if (rtm->rtm_type == RTM_DELETE)
+	} else if (rtm->rtm_type != RTM_ADD)
 		prio = RTP_ANY;
 	else if (rtm->rtm_flags & RTF_STATIC)
 		prio = RTP_STATIC;
 	else
 		prio = RTP_DEFAULT;
+
+	/* XXX hack for 4.4-release */
+	prio = RTP_DEFAULT;
 
 	bzero(&info, sizeof(info));
 	info.rti_addrs = rtm->rtm_addrs;
@@ -353,15 +347,39 @@ route_output(struct mbuf *m, ...)
 		 * if gate == NULL the first match is returned.
 		 * (no need to call rt_mpath_matchgate if gate == NULL)
 		 */
-		if (rn_mpath_capable(rnh) &&
-		    (rtm->rtm_type != RTM_GET || gate ||
-		    rtm->rtm_priority != 0)) {
-			rt = rt_mpath_matchgate(rt, gate, prio);
-			rn = (struct radix_node *)rt;
+		if (rn_mpath_capable(rnh)) {
+			/* first find correct priority bucket */
+			rn = rn_mpath_prio(rn, prio);
+			rt = (struct rtentry *)rn;
+			if (prio != RTP_ANY && rt->rt_priority != prio) {
+				error = ESRCH;
+				goto flush;
+			}
+
+			/* if multipath routes */
+			if (rn_mpath_next(rn)) {
+				if (gate)
+					rt = rt_mpath_matchgate(rt, gate, prio);
+				else if (rtm->rtm_type != RTM_GET)
+					/*
+					 * only RTM_GET may use an empty gate
+					 * on multipath ...
+					 */
+					rt = NULL;
+			} else if (gate && (rtm->rtm_type == RTM_GET ||
+			    rtm->rtm_type == RTM_LOCK))
+				/*
+				 * ... but if a gate is specified RTM_GET
+				 * and RTM_LOCK must match the gate no matter
+				 * what.
+				 */
+				rt = rt_mpath_matchgate(rt, gate, prio);
+
 			if (!rt) {
 				error = ESRCH;
 				goto flush;
 			}
+			rn = (struct radix_node *)rt;
 		}
 #endif
 		rt->rt_refcnt++;
@@ -696,6 +714,8 @@ again:
 		}
 		len += dlen;
 	}
+	/* align message length to the next natural boundary */
+	len = ALIGN(len);
 	if (cp == 0 && w != NULL && !second_time) {
 		struct walkarg *rw = w;
 

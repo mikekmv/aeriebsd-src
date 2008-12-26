@@ -35,7 +35,7 @@
 #if 0
 static char sccsid[] = "@(#)read.c	8.1 (Berkeley) 6/6/93";
 #endif
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: read.c,v 1.1.1.1 2008/08/26 14:43:18 root Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -197,6 +197,7 @@ lines(FILE *fp, off_t off)
 	if (cnt) {
 		lines[recno].l = sp;
 		lines[recno].len = cnt;
+		sp = NULL;
 		if (++recno == off) {
 			wrap = 1;
 			recno = 0;

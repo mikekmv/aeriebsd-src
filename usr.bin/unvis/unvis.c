@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)unvis.c	8.1 (Berkeley) 6/6/93";
 #endif
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: unvis.c,v 1.1.1.1 2008/08/26 14:43:23 root Exp $";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -58,7 +58,7 @@ main(int argc, char *argv[])
 		switch((char)ch) {
 		case '?':
 		default:
-			(void) fprintf(stderr, "usage: unvis [file...]\n");
+			(void) fprintf(stderr, "usage: unvis [file ...]\n");
 			exit(1);
 		}
 	argc -= optind;

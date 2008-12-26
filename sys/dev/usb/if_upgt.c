@@ -1770,6 +1770,7 @@ upgt_rx(struct upgt_softc *sc, uint8_t *data, int pkglen)
 	struct ifnet *ifp = &ic->ic_if;
 	struct upgt_lmac_rx_desc *rxdesc;
 	struct ieee80211_frame *wh;
+	struct ieee80211_rxinfo rxi;
 	struct ieee80211_node *ni;
 	struct mbuf *m;
 	int s;
@@ -1816,7 +1817,10 @@ upgt_rx(struct upgt_softc *sc, uint8_t *data, int pkglen)
 	ni = ieee80211_find_rxnode(ic, wh);
 
 	/* push the frame up to the 802.11 stack */
-	ieee80211_input(ifp, m, ni, rxdesc->rssi, 0);
+	rxi.rxi_flags = 0;
+	rxi.rxi_rssi = rxdesc->rssi;
+	rxi.rxi_tstamp = 0;	/* unused */
+	ieee80211_input(ifp, m, ni, &rxi);
 
 	/* node is no longer needed */
 	ieee80211_release_node(ic, ni);

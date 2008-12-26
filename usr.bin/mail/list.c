@@ -32,7 +32,7 @@
 #if 0
 static const char sccsid[] = "@(#)list.c	8.4 (Berkeley) 5/1/95";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: list.c,v 1.1.1.1 2008/08/26 14:43:01 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -648,21 +648,12 @@ first(int f, int m)
 int
 matchsender(char *str, int mesg)
 {
-	char *cp, *cp2, *backup;
+	char *cp;
 
 	if (!*str)	/* null string matches nothing instead of everything */
 		return(0);
-	backup = cp2 = nameof(&message[mesg - 1], 0);
-	cp = str;
-	while (*cp2) {
-		if (*cp == 0)
-			return(1);
-		if (chraise(*cp++) != chraise(*cp2++)) {
-			cp2 = ++backup;
-			cp = str;
-		}
-	}
-	return(*cp == 0);
+	cp = nameof(&message[mesg - 1], 0);
+	return (strcasestr(cp, str) != NULL);
 }
 
 /*
@@ -675,7 +666,7 @@ int
 matchto(char *str, int mesg)
 {
 	struct message *mp;
-	char *cp, *cp2, *backup, **to;
+	char *cp, **to;
 
 	str++;
 
@@ -685,21 +676,9 @@ matchto(char *str, int mesg)
 	mp = &message[mesg-1];
 
 	for (to = to_fields; *to; to++) {
-		cp = str;
-		cp2 = hfield(*to, mp);
-		if (cp2 != NULL) {
-			backup = cp2;
-			while (*cp2) {
-				if (*cp == 0)
-					return(1);
-				if (chraise(*cp++) != chraise(*cp2++)) {
-					cp2 = ++backup;
-					cp = str;
-				}
-			}
-			if (*cp == 0)
-				return(1);
-		}
+		cp = hfield(*to, mp);
+		if (cp != NULL && strcasestr(cp, str) != NULL)
+			return(1);
 	}
 	return(0);
 }
@@ -717,7 +696,7 @@ int
 matchsubj(char *str, int mesg)
 {
 	struct message *mp;
-	char *cp, *cp2, *backup;
+	char *cp, *cp2;
 
 	str++;
 	if (*str == '\0')
@@ -731,29 +710,20 @@ matchsubj(char *str, int mesg)
 	 */
 	if (value("searchheaders") && (cp = strchr(str, ':'))) {
 		/* Check for special case "/To:" */
-		if (chraise(str[0]) == 'T' && chraise(str[1]) == 'O' &&
-		    str[2] == ':')
+		if (strncasecmp(str, "to:", 3) == 0)
 			return(matchto(cp, mesg));
 		*cp++ = '\0';
 		cp2 = hfield(*str ? str : "subject", mp);
 		cp[-1] = ':';
 		str = cp;
+		cp = cp2;
 	} else {
-		cp = str;
-		cp2 = hfield("subject", mp);
+		cp = hfield("subject", mp);
 	}
-	if (cp2 == NULL)
+	if (cp == NULL)
 		return(0);
-	backup = cp2;
-	while (*cp2) {
-		if (*cp == 0)
-			return(1);
-		if (chraise(*cp++) != chraise(*cp2++)) {
-			cp2 = ++backup;
-			cp = str;
-		}
-	}
-	return(*cp == 0);
+
+	return (strcasestr(cp, str) != NULL);
 }
 
 /*

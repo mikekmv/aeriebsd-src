@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)pass5.c	8.6 (Berkeley) 11/30/94";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: pass5.c,v 1.1.1.1 2008/08/26 14:40:22 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -237,7 +237,7 @@ pass5(void)
 			ocg->cg_magic = CG_MAGIC;
 		j = fs->fs_ipg * c;
 		for (i = 0; i < cginosused[c]; j++, i++) {
-			switch (statemap[j]) {
+			switch (GET_ISTATE(j)) {
 
 			case USTATE:
 				break;
@@ -258,7 +258,7 @@ pass5(void)
 				if (j < ROOTINO)
 					break;
 				errexit("BAD STATE %d FOR INODE I=%ld\n",
-				    statemap[j], j);
+				    GET_ISTATE(j), j);
 			}
 		}
 		if (c == 0)

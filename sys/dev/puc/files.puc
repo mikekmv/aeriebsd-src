@@ -3,6 +3,6 @@
 # Requires PCI to be defined first.
 
 attach	com at puc with com_puc
-file	dev/puc/com_puc.c		com_puc | pccom_puc
+file	dev/puc/com_puc.c		com_puc
 attach	lpt at puc with lpt_puc
 file	dev/puc/lpt_puc.c		lpt_puc

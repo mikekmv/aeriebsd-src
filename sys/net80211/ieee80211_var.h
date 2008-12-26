@@ -130,7 +130,7 @@ struct ieee80211_channel {
 #define	IEEE80211_FH_CHANPAT(chan)	((chan)%IEEE80211_FH_CHANMOD)
 
 /*
- * 802.11e EDCA AC parameters.
+ * EDCA AC parameters.
  */
 struct ieee80211_edca_ac_params {
 	u_int8_t	ac_ecwmin;	/* CWmin = 2^ECWmin - 1 */
@@ -155,9 +155,12 @@ struct ieee80211_rsnparams {
 	u_int16_t		rsn_caps;
 };
 
-#define	IEEE80211_PS_SLEEP	0x1	/* STA is in power saving mode */
-
-#define	IEEE80211_PS_MAX_QUEUE	50	/* maximum saved packets */
+struct ieee80211_rxinfo {
+	u_int32_t		rxi_flags;
+	u_int32_t		rxi_tstamp;
+	int			rxi_rssi;
+};
+#define IEEE80211_RXI_HWDEC	0x00000001
 
 #define	IEEE80211_SCAN_UNLOCKED	0x0
 #define	IEEE80211_SCAN_LOCKED	0x1
@@ -169,7 +172,7 @@ struct ieee80211com {
 	LIST_ENTRY(ieee80211com) ic_list;	/* chain of all ieee80211com */
 	void			(*ic_recv_mgmt)(struct ieee80211com *,
 				    struct mbuf *, struct ieee80211_node *,
-				    int, int, u_int32_t);
+				    struct ieee80211_rxinfo *, int);
 	int			(*ic_send_mgmt)(struct ieee80211com *,
 				    struct ieee80211_node *, int, int);
 	void			(*ic_recv_eapol)(struct ieee80211com *,
@@ -237,6 +240,7 @@ struct ieee80211com {
 	u_int16_t		ic_nonerpsta;	/* # non-ERP stations */
 	u_int16_t		ic_longslotsta;	/* # long slot time stations */
 	u_int16_t		ic_rsnsta;	/* # RSN stations */
+	u_int16_t		ic_pssta;	/* # ps mode stations */
 	int			ic_mgt_timer;	/* mgmt timeout */
 	int			ic_inact_timer;	/* inactivity timer wait */
 	int			ic_des_esslen;
@@ -346,15 +350,6 @@ int	ieee80211_setmode(struct ieee80211com *, enum ieee80211_phymode);
 enum ieee80211_phymode ieee80211_next_mode(struct ifnet *);
 enum ieee80211_phymode ieee80211_chan2mode(struct ieee80211com *,
 		const struct ieee80211_channel *);
-
-#ifdef IEEE80211_DEBUG
-extern	int ieee80211_debug;
-#define	IEEE80211_DPRINTF(X)	do { if (ieee80211_debug) printf X; } while(0)
-#define	IEEE80211_DPRINTF2(X)	do { if (ieee80211_debug>1) printf X; } while(0)
-#else
-#define	IEEE80211_DPRINTF(X)
-#define	IEEE80211_DPRINTF2(X)
-#endif
 
 extern	int ieee80211_cache_size;
 

@@ -38,13 +38,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -154,6 +147,8 @@ pchbattach(struct device *parent, struct device *self, void *aux)
 		printf("\n");
 		switch (PCI_PRODUCT(pa->pa_id)) {
 		case PCI_PRODUCT_AMD_AMD64_0F_HT:
+		case PCI_PRODUCT_AMD_AMD64_10_HT:
+		case PCI_PRODUCT_AMD_AMD64_11_HT:
 			for (i = 0; i < AMD64HT_NUM_LDT; i++)
 				pchb_amd64ht_attach(self, pa, i);
 			break;
@@ -174,10 +169,12 @@ pchbattach(struct device *parent, struct device *self, void *aux)
 		/* AGP only */
 		case PCI_PRODUCT_INTEL_82915GM_HB:
 		case PCI_PRODUCT_INTEL_82945GM_HB:
+		case PCI_PRODUCT_INTEL_82945GME_HB:
 		case PCI_PRODUCT_INTEL_82G965_HB:
 		case PCI_PRODUCT_INTEL_82Q965_HB:
 		case PCI_PRODUCT_INTEL_82GM965_HB:
 		case PCI_PRODUCT_INTEL_82G33_HB:
+		case PCI_PRODUCT_INTEL_82G35_HB:
 			has_agp = 1;
 			break;
 

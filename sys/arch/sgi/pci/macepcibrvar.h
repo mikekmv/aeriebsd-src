@@ -56,6 +56,19 @@ void mace_pcib_write_4(bus_space_tag_t, bus_space_handle_t, bus_size_t,
 void mace_pcib_write_8(bus_space_tag_t, bus_space_handle_t, bus_size_t,
 	u_int64_t);
 
+void mace_pcib_read_raw_2(bus_space_tag_t, bus_space_handle_t,
+	    bus_addr_t, u_int8_t *, bus_size_t);
+void mace_pcib_write_raw_2(bus_space_tag_t, bus_space_handle_t,
+	    bus_addr_t, const u_int8_t *, bus_size_t);
+void mace_pcib_read_raw_4(bus_space_tag_t, bus_space_handle_t,
+	    bus_addr_t, u_int8_t *, bus_size_t);
+void mace_pcib_write_raw_4(bus_space_tag_t, bus_space_handle_t,
+	    bus_addr_t, const u_int8_t *, bus_size_t);
+void mace_pcib_read_raw_8(bus_space_tag_t, bus_space_handle_t,
+	    bus_addr_t, u_int8_t *, bus_size_t);
+void mace_pcib_write_raw_8(bus_space_tag_t, bus_space_handle_t,
+	    bus_addr_t, const u_int8_t *, bus_size_t);
+
 int mace_pcib_space_map(bus_space_tag_t, bus_addr_t, bus_size_t, int,
 	bus_space_handle_t *);
 void mace_pcib_space_unmap(bus_space_tag_t, bus_space_handle_t, bus_size_t);

@@ -102,6 +102,9 @@ urlphy*		at mii?		# Realtek RTL8150L internal PHY
 rgephy*		at mii?		# Realtek 8169S/8110S PHY
 ukphy*		at mii?		# "unknown" PHYs
 
+#### Wireless
+wi*		at pci?
+
 #### Audio
 audio*		at mavb?
 emu*		at pci?

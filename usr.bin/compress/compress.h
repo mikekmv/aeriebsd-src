@@ -42,6 +42,12 @@ struct z_info {
  */
 #define Z_BUFSIZE 16384
 
+enum program_mode {
+    MODE_COMP,
+    MODE_DECOMP,
+    MODE_CAT
+} pmode;
+
 /*
  * exit codes for compress
  */

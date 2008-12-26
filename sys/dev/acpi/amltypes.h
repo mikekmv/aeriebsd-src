@@ -180,7 +180,9 @@ enum aml_objecttype {
 
 	AML_OBJTYPE_NAMEREF = 0x100,
 	AML_OBJTYPE_OBJREF,
-	AML_OBJTYPE_STATICINT=AML_OBJTYPE_INTEGER|AML_STATIC,
+	AML_OBJTYPE_SCOPE,
+	AML_OBJTYPE_NOTARGET,
+	AML_OBJTYPE_STATICINT = AML_OBJTYPE_INTEGER|AML_STATIC,
 };
 
 /* AML Opcode Arguments */
@@ -210,6 +212,17 @@ enum aml_objecttype {
 #define AML_ARG_TERMOBJLIST	'T'
 #define AML_ARG_TERMOBJ		't'
 
+#define AML_ARG_IFELSE          'I'
+#define AML_ARG_WHILE           'W'
+#define AML_ARG_BUFFER          'B'
+#define AML_ARG_SEARCHNAME      'n'
+#define AML_ARG_CREATENAME      'N'
+#define AML_ARG_STKARG          'A'
+#define AML_ARG_STKLOCAL        'L'
+#define AML_ARG_DEBUG           'D'
+#define AML_ARG_CONST           'c'
+#define AML_ARG_TARGET          'r'
+
 #define AML_METHOD_ARGCOUNT(v)	 (((v) >> 0) & 0x7)
 #define AML_METHOD_SERIALIZED(v) (((v) >> 3) & 0x1)
 #define AML_METHOD_SYNCLEVEL(v)	 (((v) >> 4) & 0xF)
@@ -238,6 +251,12 @@ enum aml_objecttype {
 struct aml_scope;
 struct aml_node;
 
+struct aml_waitq {
+	struct aml_scope          *scope;
+	SIMPLEQ_ENTRY(aml_waitq)   link;
+};
+SIMPLEQ_HEAD(aml_waitq_head, aml_waitq);
+
 /* AML Object Value */
 struct aml_value {
 	int	type;
@@ -254,12 +273,14 @@ struct aml_value {
 			u_int8_t	iospace;
 			u_int64_t	iobase;
 			u_int32_t	iolen;
+			int		flag;
 		} vopregion;
 		struct {
 			int		flags;
 			u_int8_t	*start;
 			u_int8_t	*end;
 			struct aml_value *(*fneval)(struct aml_scope *, struct aml_value *);
+			u_int8_t        *base;
 		} vmethod;
 		struct {
 			u_int16_t	 type;
@@ -276,6 +297,7 @@ struct aml_value {
 			u_int8_t	proc_len;
 		} vprocessor;
 		struct {
+			int		type;
 			int		index;
 			struct aml_value *ref;
 		} vobjref;
@@ -284,6 +306,22 @@ struct aml_value {
 			u_int16_t	pwr_order;
 		} vpowerrsrc;
 		struct acpi_mutex	*vmutex;
+		struct {
+			u_int8_t         *name;
+			struct aml_node  *node;
+		} vnameref;
+		struct {
+			int               synclvl;
+			int               savelvl;
+			int               count;
+		  	char              ownername[5];
+			struct aml_scope *owner;
+			struct aml_waitq_head    waiters;
+		} Vmutex;
+		struct {
+			int               state;
+			struct aml_waitq_head    waiters;
+		} Vevent;
 	} _;
 };
 
@@ -299,6 +337,8 @@ struct aml_value {
 #define v_processor		_.vprocessor
 #define v_powerrsrc		_.vpowerrsrc
 #define v_mutex			_.vmutex
+#define v_mtx                   _.Vmutex
+#define v_evt                   _.Vevent
 
 #define xaml_intval(v)		((v)->v_integer)
 #define aml_strlen(v)		((v)->length)
@@ -324,9 +364,6 @@ struct aml_node {
 
 	int		depth;
 };
-
-#define AML_FALSE		(0)
-#define AML_TRUE		(1)
 
 #define aml_bitmask(n)		(1L << ((n) & 0x7))
 #define aml_bitpos(n)		((n)&0x7)

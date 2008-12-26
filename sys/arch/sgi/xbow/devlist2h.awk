@@ -32,7 +32,7 @@ BEGIN {
 	nproducts = nvendor_dup = nvendors = 0
 	dfile="xbowdevs_data.h"
 	hfile="xbowdevs.h"
-	version="$ABSD$"
+	version="$ABSD: devlist2h.awk,v 1.1.1.1 2008/08/26 14:41:29 root Exp $"
 }
 NR == 1 {
 	VERSION = $0
@@ -73,7 +73,7 @@ $1 == "vendor" {
 	vendorindex[$2] = nvendors;		# record index for this name, for later.
 	vendors[nvendors, 1] = $2;		# name
 	vendors[nvendors, 2] = $3;		# id
-	printf("#define\tPCI_VENDOR_%s\t%s\n", vendors[nvendors, 1],
+	printf("#define\tXBOW_VENDOR_%s\t%s\n", vendors[nvendors, 1],
 	    vendors[nvendors, 2]) > hfile
 
 	next
@@ -84,7 +84,7 @@ $1 == "product" {
 	products[nproducts, 1] = $2;		# vendor name
 	products[nproducts, 2] = $3;		# product id
 	products[nproducts, 3] = $4;		# id
-	printf("#define\tPCI_PRODUCT_%s_%s\t%s\t", products[nproducts, 1],
+	printf("#define\tXBOW_PRODUCT_%s_%s\t%s\t", products[nproducts, 1],
 	    products[nproducts, 2], products[nproducts, 3]) > hfile
 
 	i=4; f = 5;
@@ -151,7 +151,7 @@ END {
 	    > dfile
 	for (i = 1; i <= nproducts; i++) {
 		printf("\t{\n") > dfile
-		printf("\t    PCI_VENDOR_%s, PCI_PRODUCT_%s_%s,\n",
+		printf("\t    XBOW_VENDOR_%s, XBOW_PRODUCT_%s_%s,\n",
 		    products[i, 1], products[i, 1], products[i, 2]) \
 		    > dfile
 

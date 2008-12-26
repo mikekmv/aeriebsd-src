@@ -3,7 +3,7 @@ PROG=	eventtest
 LDADD=	-levent
 DPADD=	${LIBEVENT}
 
-CFLAGS+= -I${.CURDIR}/../../../../lib/libevent
+CFLAGS+= -I${.CURDIR}/../../../lib/libevent
 
 REGRESS_TARGETS=	eventtest-select eventtest-kqueue eventtest-poll
 .PHONY: ${REGRESS_TARGETS}

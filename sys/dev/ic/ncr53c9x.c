@@ -217,8 +217,8 @@ ncr53c9x_attach(sc, adapter, dev)
 		return;
 	}
 
-	printf(": %s, %dMHz, SCSI ID %d\n",
-	    ncr53c9x_variant_names[sc->sc_rev], sc->sc_freq, sc->sc_id);
+	printf(": %s, %dMHz\n", ncr53c9x_variant_names[sc->sc_rev],
+	    sc->sc_freq);
 
 	sc->sc_ccf = FREQTOCCF(sc->sc_freq);
 

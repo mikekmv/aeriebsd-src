@@ -196,7 +196,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #define EM_TX_OP_THRESHOLD		(sc->num_tx_desc / 32)
 
 /*
- * This parameter controls whether or not autonegotation is enabled.
+ * This parameter controls whether or not autonegotiation is enabled.
  *              0 - Disable autonegotiation
  *              1 - Enable  autonegotiation
  */

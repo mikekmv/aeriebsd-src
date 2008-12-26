@@ -43,27 +43,23 @@
  */
 
 #include <sys/param.h>
-#include <sys/device.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/device.h>
 #include <sys/socket.h>
-#include <sys/timeout.h>
 #include <sys/errno.h>
 
+#include <machine/bus.h>
+
 #include <net/if.h>
-#include <net/if_dl.h>
-#include <net/if_types.h>
 #include <net/if_media.h>
+
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
 
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
 #include <dev/mii/miidevs.h>
-
-#include <machine/bus.h>
-
-#include <dev/pci/pcivar.h>
 
 #include <dev/ic/dcreg.h>
 
@@ -285,7 +281,7 @@ dcphy_service(struct mii_softc *sc, struct mii_data *mii, int cmd)
 		 * since real Intel 21143 chips don't show valid link
 		 * status until autonegotiation is switched off, and
 		 * that only happens in dcphy_status().  Without this,
-		 * successful autonegotation is never recognised on
+		 * successful autonegotiation is never recognised on
 		 * these chips.
 		 */
 		if (++sc->mii_ticks <= sc->mii_anegticks)
@@ -336,7 +332,7 @@ dcphy_status(struct mii_softc *sc)
 		if (tstat & DC_TSTAT_LP_CAN_NWAY) {
 			anlpar = tstat >> 16;
 			if (anlpar & ANLPAR_T4 &&
-			    sc->mii_capabilities & BMSR_100TXHDX)
+			    sc->mii_capabilities & BMSR_100T4)
 				mii->mii_media_active |= IFM_100_T4|IFM_HDX;
 			else if (anlpar & ANLPAR_TX_FD &&
 			    sc->mii_capabilities & BMSR_100TXFDX)

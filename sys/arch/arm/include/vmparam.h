@@ -89,7 +89,7 @@
 /*
  * Mach derived constants
  */
-#define	VM_MIN_ADDRESS		((vaddr_t) 0x00001000)
+#define	VM_MIN_ADDRESS		((vaddr_t) PAGE_SIZE)
 #define	VM_MAXUSER_ADDRESS	((vaddr_t) ARM_KERNEL_BASE)
 #define	VM_MAX_ADDRESS		VM_MAXUSER_ADDRESS
 

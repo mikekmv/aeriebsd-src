@@ -513,10 +513,10 @@ pmap_kremove(vaddr_t sva, vsize_t len)
  * => kva_start is the first free virtual address in kernel space
  */
 
-void
-pmap_bootstrap(vaddr_t kva_start, paddr_t max_pa)
+paddr_t
+pmap_bootstrap(paddr_t first_avail, paddr_t max_pa)
 {
-	vaddr_t kva, kva_end;
+	vaddr_t kva, kva_end, kva_start = VM_MIN_KERNEL_ADDRESS;
 	struct pmap *kpm;
 	int i;
 	unsigned long p1i;
@@ -609,7 +609,7 @@ pmap_bootstrap(vaddr_t kva_start, paddr_t max_pa)
 
 	dmpdp = kpm->pm_pdir[PDIR_SLOT_DIRECT] & PG_FRAME;
 
-	dmpd = avail_start; avail_start += ndmpdp * PAGE_SIZE;
+	dmpd = first_avail; first_avail += ndmpdp * PAGE_SIZE;
 
 	for (i = NDML2_ENTRIES; i < NPDPG * ndmpdp; i++) {
 		paddr_t pdp;
@@ -644,8 +644,8 @@ pmap_bootstrap(vaddr_t kva_start, paddr_t max_pa)
 	if (ndmpdp < NDML2_ENTRIES)
 		ndmpdp = NDML2_ENTRIES;		/* At least 4GB */
 
-	dmpdp = avail_start;	avail_start += PAGE_SIZE;
-	dmpd = avail_start;	avail_start += ndmpdp * PAGE_SIZE;
+	dmpdp = first_avail;	first_avail += PAGE_SIZE;
+	dmpd = first_avail;	first_avail += ndmpdp * PAGE_SIZE;
 
 	for (i = 0; i < NPDPG * ndmpdp; i++) {
 		paddr_t pdp;
@@ -680,8 +680,8 @@ pmap_bootstrap(vaddr_t kva_start, paddr_t max_pa)
 
 	idt_vaddr = virtual_avail;
 	virtual_avail += 2 * PAGE_SIZE;
-	idt_paddr = avail_start;			/* steal a page */
-	avail_start += 2 * PAGE_SIZE;
+	idt_paddr = first_avail;			/* steal a page */
+	first_avail += 2 * PAGE_SIZE;
 
 #ifdef _LP64
 	/*
@@ -690,8 +690,8 @@ pmap_bootstrap(vaddr_t kva_start, paddr_t max_pa)
 	 */
 	lo32_vaddr = virtual_avail;
 	virtual_avail += PAGE_SIZE;
-	lo32_paddr = avail_start;
-	avail_start += PAGE_SIZE;
+	lo32_paddr = first_avail;
+	first_avail += PAGE_SIZE;
 #endif
 
 	/*
@@ -729,14 +729,16 @@ pmap_bootstrap(vaddr_t kva_start, paddr_t max_pa)
 	 */
 
 	tlbflush();
+
+	return first_avail;
 }
 
 /*
  * Pre-allocate PTPs for low memory, so that 1:1 mappings for various
  * trampoline code can be entered.
  */
-void
-pmap_prealloc_lowmem_ptps(void)
+paddr_t
+pmap_prealloc_lowmem_ptps(paddr_t first_avail)
 {
 	pd_entry_t *pdes;
 	int level;
@@ -745,8 +747,7 @@ pmap_prealloc_lowmem_ptps(void)
 	pdes = pmap_kernel()->pm_pdir;
 	level = PTP_LEVELS;
 	for (;;) {
-		newp = avail_start;
-		avail_start += PAGE_SIZE;
+		newp = first_avail; first_avail += PAGE_SIZE;
 		memset((void *)PMAP_DIRECT_MAP(newp), 0, PAGE_SIZE);
 		pdes[pl_i(0, level)] = (newp & PG_FRAME) | PG_V | PG_RW;
 		level--;
@@ -754,6 +755,8 @@ pmap_prealloc_lowmem_ptps(void)
 			break;
 		pdes = normal_pdes[level - 2];
 	}
+
+	return first_avail;
 }
 
 /*
@@ -1134,21 +1137,6 @@ pmap_destroy(struct pmap *pmap)
 	/* XXX: need to flush it out of other processor's APTE space? */
 	pool_put(&pmap_pdp_pool, pmap->pm_pdir);
 
-#ifdef USER_LDT
-	if (pmap->pm_flags & PMF_USER_LDT) {
-		/*
-		 * no need to switch the LDT; this address space is gone,
-		 * nothing is using it.
-		 *
-		 * No need to lock the pmap for ldt_free (or anything else),
-		 * we're the last one to use it.
-		 */
-		ldt_free(pmap);
-		uvm_km_free(kernel_map, (vaddr_t)pmap->pm_ldt,
-			    pmap->pm_ldt_len);
-	}
-#endif
-
 	pool_put(&pmap_pmap_pool, pmap);
 }
 
@@ -1161,65 +1149,6 @@ pmap_reference(struct pmap *pmap)
 {
 	pmap->pm_obj[0].uo_refs++;
 }
-
-#if defined(PMAP_FORK)
-/*
- * pmap_fork: perform any necessary data structure manipulation when
- * a VM space is forked.
- */
-
-void
-pmap_fork(struct pmap *pmap1, struct pmap *pmap2)
-{
-#ifdef USER_LDT
-	/* Copy the LDT, if necessary. */
-	if (pmap1->pm_flags & PMF_USER_LDT) {
-		char *new_ldt;
-		size_t len;
-
-		len = pmap1->pm_ldt_len;
-		new_ldt = (char *)uvm_km_alloc(kernel_map, len);
-		memcpy(new_ldt, pmap1->pm_ldt, len);
-		pmap2->pm_ldt = new_ldt;
-		pmap2->pm_ldt_len = pmap1->pm_ldt_len;
-		pmap2->pm_flags |= PMF_USER_LDT;
-		ldt_alloc(pmap2, new_ldt, len);
-	}
-#endif /* USER_LDT */
-}
-#endif /* PMAP_FORK */
-
-#ifdef USER_LDT
-/*
- * pmap_ldt_cleanup: if the pmap has a local LDT, deallocate it, and
- * restore the default.
- */
-
-void
-pmap_ldt_cleanup(struct proc *p)
-{
-	struct pcb *pcb = &p->p_addr->u_pcb;
-	pmap_t pmap = p->->p_vmspace->vm_map.pmap;
-	char *old_ldt = NULL;
-	size_t len = 0;
-
-	if (pmap->pm_flags & PMF_USER_LDT) {
-		ldt_free(pmap);
-		pmap->pm_ldt_sel = GSYSSEL(GLDT_SEL, SEL_KPL);
-		pcb->pcb_ldt_sel = pmap->pm_ldt_sel;
-		if (pcb == curpcb)
-			lldt(pcb->pcb_ldt_sel);
-		old_ldt = pmap->pm_ldt;
-		len = pmap->pm_ldt_len;
-		pmap->pm_ldt = NULL;
-		pmap->pm_ldt_len = 0;
-		pmap->pm_flags &= ~PMF_USER_LDT;
-	}
-
-	if (old_ldt != NULL)
-		uvm_km_free(kernel_map, (vaddr_t)old_ldt, len);
-}
-#endif /* USER_LDT */
 
 /*
  * pmap_activate: activate a process' pmap (fill in %cr3 and LDT info)

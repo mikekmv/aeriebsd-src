@@ -29,17 +29,17 @@
 
 #if defined(LIBC_SCCS)
 	.rodata
-	.asciz "$ABSD$"
+	.asciz "$ABSD: brk.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 #include "SYS.h"
 
 	.globl	__curbrk
-	.globl	minbrk
+	.globl	_C_LABEL(minbrk)
 ENTRY(brk, 0)
-	cmpl	minbrk,4(ap)
+	cmpl	_C_LABEL(minbrk),4(ap)
 	blequ	ok
-	movl	minbrk,4(ap)
+	movl	_C_LABEL(minbrk),4(ap)
 ok:
 	chmk	$ SYS_break
 	jcs	err
@@ -47,4 +47,4 @@ ok:
 	clrl	r0
 	ret
 err:
-	jmp	__cerror
+	jmp	_C_LABEL(_cerror)

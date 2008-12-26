@@ -149,6 +149,11 @@ void	_rthread_debug(int, const char *, ...)
 void	_rthread_debug_init(void);
 void	_rthread_add_to_reaper(pid_t, struct stack *);
 void 	_rthread_reaper(void);
+int	_rthread_open_kqueue(void);
+#if defined(__ELF__) && defined(PIC)
+void	_rthread_dl_lock(int what);
+void	_rthread_bind_lock(int);
+#endif
 
 
 void	_thread_dump_info(void);

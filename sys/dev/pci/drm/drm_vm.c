@@ -28,38 +28,25 @@
 #include "drmP.h"
 #include "drm.h"
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500102
-int
-drm_mmap(struct cdev *kdev, vm_offset_t offset, vm_paddr_t *paddr,
-    int prot)
-#elif defined(__FreeBSD__)
-int
-drm_mmap(dev_t kdev, vm_offset_t offset, int prot)
-#elif defined(__NetBSD__) || defined(__OpenBSD__)
 paddr_t
-drm_mmap(dev_t kdev, off_t offset, int prot)
-#endif
+drmmmap(dev_t kdev, off_t offset, int prot)
 {
-	drm_device_t *dev = drm_get_device_from_kdev(kdev);
+	struct drm_device *dev = drm_get_device_from_kdev(kdev);
 	drm_local_map_t *map;
-	drm_file_t *priv;
+	struct drm_file *priv;
 	drm_map_type_t type;
-#ifdef __FreeBSD__
-	vm_paddr_t phys;
-#else
 	paddr_t phys;
-#endif
 
 	DRM_LOCK();
-	priv = drm_find_file_by_proc(dev, DRM_CURPROC);
+	priv = drm_find_file_by_minor(dev, minor(kdev));
 	DRM_UNLOCK();
 	if (priv == NULL) {
 		DRM_ERROR("can't find authenticator\n");
-		return EINVAL;
+		return (EINVAL);
 	}
 
 	if (!priv->authenticated)
-		return EACCES;
+		return (EACCES);
 
 	if (dev->dma && offset >= 0 && offset < ptoa(dev->dma->page_count)) {
 		drm_device_dma_t *dma = dev->dma;
@@ -70,17 +57,11 @@ drm_mmap(dev_t kdev, off_t offset, int prot)
 			unsigned long page = offset >> PAGE_SHIFT;
 			unsigned long phys = dma->pagelist[page];
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500102
-			*paddr = phys;
 			DRM_SPINUNLOCK(&dev->dma_lock);
-			return 0;
-#else
-			DRM_SPINUNLOCK(&dev->dma_lock);
-			return atop(phys);
-#endif
+			return (atop(phys));
 		} else {
 			DRM_SPINUNLOCK(&dev->dma_lock);
-			return -1;
+			return (-1);
 		}
 	}
 
@@ -95,19 +76,22 @@ drm_mmap(dev_t kdev, off_t offset, int prot)
 	 */
 	DRM_LOCK();
 	TAILQ_FOREACH(map, &dev->maplist, link) {
-		if (offset >= map->offset && offset < map->offset + map->size)
+		if (offset >= map->mm->start &&
+		    offset < map->mm->start + map->size) {
+			offset -= map->mm->start;
 			break;
+		}
 	}
 
 	if (map == NULL) {
 		DRM_UNLOCK();
 		DRM_DEBUG("can't find map\n");
-		return -1;
+		return (-1);
 	}
-	if (((map->flags&_DRM_RESTRICTED) && !DRM_SUSER(DRM_CURPROC))) {
+	if (((map->flags & _DRM_RESTRICTED) && priv->master == 0)) {
 		DRM_UNLOCK();
 		DRM_DEBUG("restricted map\n");
-		return -1;
+		return (-1);
 	}
 	type = map->type;
 	DRM_UNLOCK();
@@ -116,37 +100,22 @@ drm_mmap(dev_t kdev, off_t offset, int prot)
 	case _DRM_FRAME_BUFFER:
 	case _DRM_REGISTERS:
 	case _DRM_AGP:
-		phys = offset;
+		phys = offset + map->offset;
 		break;
-#ifdef __FreeBSD__
-	case _DRM_CONSISTENT:
-		phys = vtophys((char *)map->handle + (offset - map->offset));
-		break;
-	case _DRM_SCATTER_GATHER:
-	case _DRM_SHM:
-		phys = vtophys(offset);
-		break;
-#else
 	/* XXX unify all the bus_dmamem_mmap bits */
 	case _DRM_SCATTER_GATHER:
-		return bus_dmamem_mmap(dev->pa.pa_dmat, dev->sg->mem->sg_segs,
-		    dev->sg->mem->sg_nsegs, offset - dev->sg->handle, prot,
-		    BUS_DMA_NOWAIT);
+		return (bus_dmamem_mmap(dev->pa.pa_dmat, dev->sg->mem->sg_segs,
+		    dev->sg->mem->sg_nsegs, map->offset - dev->sg->handle +
+		    offset, prot, BUS_DMA_NOWAIT));
 	case _DRM_SHM:
 	case _DRM_CONSISTENT:
-		return bus_dmamem_mmap(dev->pa.pa_dmat, &map->dmah->seg, 1,
-		    offset - map->offset, prot, BUS_DMA_NOWAIT);
-#endif
+		return (bus_dmamem_mmap(dev->pa.pa_dmat, &map->dmah->seg, 1,
+		    offset, prot, BUS_DMA_NOWAIT));
 	default:
 		DRM_ERROR("bad map type %d\n", type);
-		return -1;	/* This should never happen. */
+		return (-1);	/* This should never happen. */
 	}
 
-#if defined(__FreeBSD__) && __FreeBSD_version >= 500102
-	*paddr = phys;
-	return 0;
-#else
-	return atop(phys);
-#endif
+	return (atop(phys));
 }
 

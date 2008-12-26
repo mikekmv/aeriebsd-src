@@ -31,21 +31,21 @@
 #if 0
 static char sccsid[] = "@(#)sincos.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_sincos.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
+#include "math.h"
 #include "mathimpl.h"
-#include "trig.h"
+
 double
-sin(x)
-double x;
+sin(double x)
 {
 	double a,c,z;
 
         if(!finite(x))		/* sin(NaN) and sin(INF) must be NaN */
 		return x-x;
-	x=drem(x,PI2);		/* reduce x into [-PI,PI] */
+	x=remainder(x,PI2);	/* reduce x into [-PI,PI] */
 	a=copysign(x,one);
 	if (a >= PIo4) {
 		if(a >= PI3o4)		/* ... in [3PI/4,PI] */
@@ -68,14 +68,13 @@ double x;
 }
 
 double
-cos(x) 
-double x;
+cos(double x)
 {
 	double a,c,z,s = 1.0;
 
 	if(!finite(x))		/* cos(NaN) and cos(INF) must be NaN */
 		return x-x;
-	x=drem(x,PI2);		/* reduce x into [-PI,PI] */
+	x=remainder(x,PI2);	/* reduce x into [-PI,PI] */
 	a=copysign(x,one);
 	if (a >= PIo4) {
 		if (a >= PI3o4) {	/* ... in [3PI/4,PI] */
@@ -84,7 +83,7 @@ double x;
 		}
 		else {			/* ... in [PI/4,3PI/4] */
 			a = PIo2-a;
-			return a+a*sin__S(a*a);	/* rtn. S(PI/2-|x|) */ 
+			return a+a*sin__S(a*a);	/* rtn. S(PI/2-|x|) */
 		}
 	}
 	if (a < small) {

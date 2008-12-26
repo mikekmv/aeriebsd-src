@@ -215,7 +215,7 @@ hook_disestablish(struct hook_desc_head *head, void *vhook)
                 if (hdp == vhook)
 			break;
 	if (hdp == NULL)
-		panic("hook_disestablish: hook not established");
+		return;
 #endif
 	hdp = vhook;
 	TAILQ_REMOVE(head, hdp, hd_list);

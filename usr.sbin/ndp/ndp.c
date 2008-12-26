@@ -829,7 +829,7 @@ usage(void)
 #ifdef SIOCSDEFIFACE_IN6
 	printf("[-I [interface | delete]] ");
 #endif
-	printf("[-i interface [flags...]]\n");
+	printf("[-i interface [flag ...]]\n");
 	printf("\t[-s nodename etheraddr [temp] [proxy]] [hostname]\n");
 	exit(1);
 }
@@ -873,7 +873,7 @@ rtmsg(int cmd)
 	}
 #define NEXTADDR(w, s) \
 	if (rtm->rtm_addrs & (w)) { \
-		bcopy((char *)&s, cp, sizeof(s)); cp += sizeof(s);}
+		bcopy((char *)&s, cp, sizeof(s)); cp += ROUNDUP(sizeof(s));}
 
 	NEXTADDR(RTA_DST, sin_m);
 	NEXTADDR(RTA_GATEWAY, sdl_m);

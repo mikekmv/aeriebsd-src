@@ -89,7 +89,7 @@ pcfiic_ebus_attach(struct device *parent, struct device *self, void *aux)
 	struct ebus_attach_args		*ea = aux;
 	char				compat[32];
 	u_int64_t			addr;
-	u_int8_t			clock = PCF_CLOCK_12;
+	u_int8_t			clock = PCF_CLOCK_12 | PCF_FREQ_90;
 	int				swapregs = 0;
 
 	if (ea->ea_nregs < 1 || ea->ea_nregs > 2) {
@@ -107,9 +107,9 @@ pcfiic_ebus_attach(struct device *parent, struct device *self, void *aux)
 		int clk = getpropint(findroot(), "clock-frequency", 0);
 
 		if (clk < 105000000)
-			clock = PCF_CLOCK_3;
+			clock = PCF_CLOCK_3 | PCF_FREQ_90;
 		else if (clk < 160000000)
-			clock = PCF_CLOCK_4_43;
+			clock = PCF_CLOCK_4_43 | PCF_FREQ_90;
 		swapregs = 1;
 	}
 

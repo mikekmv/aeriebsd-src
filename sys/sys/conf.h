@@ -448,12 +448,12 @@ void	randomattach(void);
 	(dev_type_stop((*))) enodev, 0, (dev_type_poll((*))) enodev, \
 	(dev_type_mmap((*))) enodev }
 
-/* open, close, ioctl */
+/* open, close, ioctl, read, mmap */
 #define cdev_video_init(c,n) { \
-	dev_init(c,n,open), dev_init(c,n,close), (dev_type_read((*))) enodev, \
+	dev_init(c,n,open), dev_init(c,n,close), dev_init(c,n,read), \
 	(dev_type_write((*))) enodev, dev_init(c,n,ioctl), \
 	(dev_type_stop((*))) enodev, 0, (dev_type_poll((*))) enodev, \
-	(dev_type_mmap((*))) enodev }
+	dev_init(c,n,mmap) }
 
 /* open, close, write, ioctl */
 #define cdev_spkr_init(c,n) { \
@@ -514,7 +514,14 @@ void	randomattach(void);
 	dev_init(c,n,open), dev_init(c,n,close), dev_init(c,n,read), \
 	(dev_type_write((*))) enodev, dev_init(c,n,ioctl), \
 	(dev_type_stop((*))) enodev, 0, dev_init(c,n,poll), \
-	dev_init(c,n,mmap), D_TTY }
+	dev_init(c,n,mmap), 0, D_CLONE }
+
+/* open, close, ioctl */
+#define cdev_amdmsr_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), (dev_type_read((*))) enodev, \
+	(dev_type_write((*))) enodev, dev_init(c,n,ioctl), \
+	(dev_type_stop((*))) enodev, 0, (dev_type_poll((*))) enodev, \
+	(dev_type_mmap((*))) enodev }
 
 #endif
 
@@ -672,6 +679,7 @@ cdev_decl(urio);
 
 cdev_decl(hotplug);
 cdev_decl(gpio);
+cdev_decl(amdmsr);
 
 #endif
 

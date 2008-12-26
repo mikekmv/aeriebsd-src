@@ -33,6 +33,10 @@ struct aml_scope {
 	struct aml_value	*locals;
 	struct aml_value	*args;
 	int			nargs;
+	int			flags;
+	struct aml_value	*retv;
+	uint8_t			*start;
+	int			type;
 };
 
 
@@ -40,8 +44,6 @@ struct aml_opcode {
 	u_int32_t		opcode;
 	const char		*mnem;
 	const char		*args;
-	struct aml_value	*(*handler)(struct aml_scope *, int,
-				    struct aml_value*);
 };
 
 const char		*aml_eisaid(u_int32_t);
@@ -49,9 +51,9 @@ const char		*aml_args(int);
 const char		*aml_mnem(int, uint8_t *);
 int64_t			aml_val2int(struct aml_value *);
 struct aml_node		*aml_searchname(struct aml_node *, const void *);
-struct aml_node		*aml_createname(struct aml_node *, const void *,
-			    struct aml_value *);
+struct aml_node		*aml_searchrel(struct aml_node *, const void *);
 
+struct aml_value 	*aml_getstack(struct aml_scope *, int);
 struct aml_value	*aml_allocint(uint64_t);
 struct aml_value	*aml_allocstr(const char *);
 struct aml_value	*aml_allocvalue(int, int64_t, const void *);
@@ -59,6 +61,8 @@ void			aml_freevalue(struct aml_value *);
 void			aml_notify(struct aml_node *, int);
 void			aml_notify_dev(const char *, int);
 void			aml_showvalue(struct aml_value *, int);
+void			aml_walkroot(void);
+void			aml_walktree(struct aml_node *);
 
 int			aml_find_node(struct aml_node *, const char *,
 			    int (*)(struct aml_node *, void *), void *);
@@ -243,5 +247,16 @@ void	aml_foreachpkg(struct aml_value *, int,
 	    void (*fn)(struct aml_value *, void *), void *);
 
 const char *aml_val_to_string(const struct aml_value *);
+
+int valid_acpihdr(void *, int, const char *);
+void aml_disasm(struct aml_scope *scope, int lvl, 
+        void (*dbprintf)(void *, const char *, ...), 
+    	void *arg);
+int aml_xgetpci(struct aml_node *, int64_t *);
+
+#define aml_get8(p)    *(uint8_t *)(p)
+#define aml_get16(p)   *(uint16_t *)(p)
+#define aml_get32(p)   *(uint32_t *)(p)
+#define aml_get64(p)   *(uint64_t *)(p)
 
 #endif /* __DEV_ACPI_DSDT_H__ */

@@ -377,7 +377,7 @@ sshd_exchange_identification(int sock_in, int sock_out)
 	int mismatch;
 	int remote_major, remote_minor;
 	int major, minor;
-	char *s;
+	char *s, *newline = "\n";
 	char buf[256];			/* Must not be larger than remote_version. */
 	char remote_version[256];	/* Must be at least as big as buf. */
 
@@ -388,11 +388,13 @@ sshd_exchange_identification(int sock_in, int sock_out)
 	} else if (options.protocol & SSH_PROTO_2) {
 		major = PROTOCOL_MAJOR_2;
 		minor = PROTOCOL_MINOR_2;
+		newline = "\r\n";
 	} else {
 		major = PROTOCOL_MAJOR_1;
 		minor = PROTOCOL_MINOR_1;
 	}
-	snprintf(buf, sizeof buf, "SSH-%d.%d-%.100s\n", major, minor, SSH_VERSION);
+	snprintf(buf, sizeof buf, "SSH-%d.%d-%.100s%s", major, minor,
+	    SSH_VERSION, newline);
 	server_version_string = xstrdup(buf);
 
 	/* Send our protocol version identification. */
@@ -656,7 +658,7 @@ privsep_postauth(Authctxt *authctxt)
 	if (pmonitor->m_pid == -1)
 		fatal("fork of unprivileged child failed");
 	else if (pmonitor->m_pid != 0) {
-		debug2("User child is on pid %ld", (long)pmonitor->m_pid);
+		verbose("User child is on pid %ld", (long)pmonitor->m_pid);
 		close(pmonitor->m_recvfd);
 		buffer_clear(&loginmsg);
 		monitor_child_postauth(pmonitor);
@@ -785,8 +787,9 @@ usage(void)
 	fprintf(stderr, "%s, %s\n",
 	    SSH_VERSION, SSLeay_version(SSLEAY_VERSION));
 	fprintf(stderr,
-"usage: sshd [-46Ddeiqt] [-b bits] [-f config_file] [-g login_grace_time]\n"
-"            [-h host_key_file] [-k key_gen_time] [-o option] [-p port] [-u len]\n"
+"usage: sshd [-46DdeiqTt] [-b bits] [-C connection_spec] [-f config_file]\n"
+"            [-g login_grace_time] [-h host_key_file] [-k key_gen_time]\n"
+"            [-o option] [-p port] [-u len]\n"
 	);
 	exit(1);
 }
@@ -1198,9 +1201,12 @@ main(int ac, char **av)
 	int opt, i, on = 1;
 	int sock_in = -1, sock_out = -1, newsock = -1;
 	const char *remote_ip;
+	char *test_user = NULL, *test_host = NULL, *test_addr = NULL;
 	int remote_port;
-	char *line;
+	char *line, *p, *cp;
 	int config_s[2] = { -1 , -1 };
+	u_int64_t ibytes, obytes;
+	mode_t new_umask;
 	Key *key;
 	Authctxt *authctxt;
 
@@ -1215,7 +1221,7 @@ main(int ac, char **av)
 	initialize_server_options(&options);
 
 	/* Parse command-line arguments. */
-	while ((opt = getopt(ac, av, "f:p:b:k:h:g:u:o:dDeiqrtQR46")) != -1) {
+	while ((opt = getopt(ac, av, "f:p:b:k:h:g:u:o:C:dDeiqrtQRT46")) != -1) {
 		switch (opt) {
 		case '4':
 			options.address_family = AF_INET;
@@ -1293,6 +1299,25 @@ main(int ac, char **av)
 		case 't':
 			test_flag = 1;
 			break;
+		case 'T':
+			test_flag = 2;
+			break;
+		case 'C':
+			cp = optarg;
+			while ((p = strsep(&cp, ",")) && *p != '\0') {
+				if (strncmp(p, "addr=", 5) == 0)
+					test_addr = xstrdup(p + 5);
+				else if (strncmp(p, "host=", 5) == 0)
+					test_host = xstrdup(p + 5);
+				else if (strncmp(p, "user=", 5) == 0)
+					test_user = xstrdup(p + 5);
+				else {
+					fprintf(stderr, "Invalid test "
+					    "mode specification %s\n", p);
+					exit(1);
+				}
+			}
+			break;
 		case 'u':
 			utmp_len = (u_int)strtonum(optarg, 0, MAXHOSTNAMELEN+1, NULL);
 			if (utmp_len > MAXHOSTNAMELEN) {
@@ -1339,6 +1364,21 @@ main(int ac, char **av)
 	sensitive_data.ssh1_host_key = NULL;
 	sensitive_data.have_ssh1_key = 0;
 	sensitive_data.have_ssh2_key = 0;
+
+	/*
+	 * If we're doing an extended config test, make sure we have all of
+	 * the parameters we need.  If we're not doing an extended test,
+	 * do not silently ignore connection test params.
+	 */
+	if (test_flag >= 2 &&
+	   (test_user != NULL || test_host != NULL || test_addr != NULL)
+	    && (test_user == NULL || test_host == NULL || test_addr == NULL))
+		fatal("user, host and addr are all required when testing "
+		   "Match configs");
+	if (test_flag < 2 && (test_user != NULL || test_host != NULL ||
+	    test_addr != NULL))
+		fatal("Config test connection parameter (-C) provided without "
+		   "test mode (-T)");
 
 	/* Fetch our configuration */
 	buffer_init(&cfg);
@@ -1449,6 +1489,13 @@ main(int ac, char **av)
 			    "world-writable.", _PATH_PRIVSEP_CHROOT_DIR);
 	}
 
+	if (test_flag > 1) {
+		if (test_user != NULL && test_addr != NULL && test_host != NULL)
+			parse_server_match_config(&options, test_user,
+			    test_host, test_addr);
+		dump_config(&options);
+	}
+
 	/* Configuration looks good, so exit if in test mode. */
 	if (test_flag)
 		exit(0);
@@ -1462,6 +1509,10 @@ main(int ac, char **av)
 		rexec_argv[rexec_argc] = "-R";
 		rexec_argv[rexec_argc + 1] = NULL;
 	}
+
+	/* Ensure that umask disallows at least group and world write */
+	new_umask = umask(0077) | 0022;
+	(void) umask(new_umask);
 
 	/* Initialize the log (it is reinitialized below in case we forked). */
 	if (debug_flag && (!inetd_flag || rexeced_flag))
@@ -1721,11 +1772,18 @@ main(int ac, char **av)
 			destroy_sensitive_data();
 	}
 
+	packet_set_timeout(options.client_alive_interval,
+	    options.client_alive_count_max);
+
 	/* Start session. */
 	do_authenticated(authctxt);
 
 	/* The connection has been terminated. */
-	verbose("Closing connection to %.100s", remote_ip);
+	packet_get_state(MODE_IN, NULL, NULL, NULL, &ibytes);
+	packet_get_state(MODE_OUT, NULL, NULL, NULL, &obytes);
+	verbose("Transferred: sent %llu, received %llu bytes", obytes, ibytes);
+
+	verbose("Closing connection to %.500s port %d", remote_ip, remote_port);
 	packet_close();
 
 	if (use_privsep)

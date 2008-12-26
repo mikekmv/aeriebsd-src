@@ -6,6 +6,7 @@ LINK	instbin					sbin/rtsol
 LINK	instbin					sbin/mount_udf
 
 LINK	instbin					sbin/dhclient
+LINK	instbin					sbin/bioctl
 
 COPY	${DESTDIR}/etc/firmware/kue		etc/firmware/kue
 COPY	${DESTDIR}/etc/firmware/bnx		etc/firmware/bnx

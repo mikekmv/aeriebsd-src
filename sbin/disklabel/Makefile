@@ -46,7 +46,7 @@ CFLAGS+= -DNUMBOOT=1 -DDOSLABEL
 CFLAGS+= -DSEEALSO="\"fdisk(8)\""
 .endif
 
-.if (${MACHINE} == "macppc")
+.if (${MACHINE} == "macppc" || ${MACHINE} == "socppc")
 CFLAGS+= -DDOSLABEL
 CFLAGS+= -DSEEALSO="\"fdisk(8)\""
 .endif

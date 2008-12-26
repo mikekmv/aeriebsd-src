@@ -24,6 +24,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -107,7 +108,7 @@ sensor_add(int sensordev, char *dxname)
 		if (!strcmp(s->device, dxname))
 			return;
 
-	/* check wether it is requested in the config file */
+	/* check whether it is requested in the config file */
 	for (cs = TAILQ_FIRST(&conf->ntp_conf_sensors); cs != NULL &&
 	    strcmp(cs->device, dxname) && strcmp(cs->device, "*");
 	    cs = TAILQ_NEXT(cs, entry))
@@ -125,10 +126,18 @@ sensor_add(int sensordev, char *dxname)
 		fatal("sensor_add strdup");
 	s->sensordevid = sensordev;
 
+	if (cs->refstr == NULL)
+		memcpy(&s->refid, "HARD", sizeof(s->refid));
+	else {
+		s->refid = 0;
+		strncpy((char *)&s->refid, cs->refstr, sizeof(s->refid));
+	}
+
 	TAILQ_INSERT_TAIL(&conf->ntp_sensors, s, entry);
 
-	log_debug("sensor %s added (weight %d, correction %.6f)",
-	    s->device, s->weight, s->correction / 1e6);
+	log_debug("sensor %s added (weight %d, correction %.6f, refstr %-4s)",
+	    s->device, s->weight, s->correction / 1e6, &s->refid);
+	s->refid = htonl(s->refid);
 }
 
 void
@@ -144,7 +153,6 @@ sensor_query(struct ntp_sensor *s)
 {
 	char		 dxname[MAXDEVNAMLEN];
 	struct sensor	 sensor;
-	u_int32_t	 refid;
 
 	s->next = getmonotime() + SENSOR_QUERY_INTERVAL;
 
@@ -170,7 +178,6 @@ sensor_query(struct ntp_sensor *s)
 		return;
 
 	s->last = sensor.tv.tv_sec;
-	memcpy(&refid, "HARD", sizeof(refid));
 	/*
 	 * TD = device time
 	 * TS = system time
@@ -182,8 +189,7 @@ sensor_query(struct ntp_sensor *s)
 	s->offsets[s->shift].rcvd = sensor.tv.tv_sec;
 	s->offsets[s->shift].good = 1;
 
-	s->offsets[s->shift].status.refid = htonl(refid);
-	s->offsets[s->shift].status.refid4 = htonl(refid);
+	s->offsets[s->shift].status.refid = s->refid;
 	s->offsets[s->shift].status.stratum = 0;	/* increased when sent out */
 	s->offsets[s->shift].status.rootdelay = 0;
 	s->offsets[s->shift].status.rootdispersion = 0;

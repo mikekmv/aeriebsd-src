@@ -1355,7 +1355,7 @@ safe_newsession(u_int32_t *sidp, struct cryptoini *cri)
 
 	if (encini) {
 		/* get an IV */
-		arc4random_bytes(ses->ses_iv, sizeof(ses->ses_iv));
+		arc4random_buf(ses->ses_iv, sizeof(ses->ses_iv));
 
 		ses->ses_klen = encini->cri_klen;
 		bcopy(encini->cri_key, ses->ses_key, ses->ses_klen / 8);

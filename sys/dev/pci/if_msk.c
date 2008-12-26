@@ -202,6 +202,7 @@ const struct pci_matchid mskc_devices[] = {
 	{ PCI_VENDOR_MARVELL,		PCI_PRODUCT_MARVELL_YUKON_8038 },
 	{ PCI_VENDOR_MARVELL,		PCI_PRODUCT_MARVELL_YUKON_8039 },
 	{ PCI_VENDOR_MARVELL,		PCI_PRODUCT_MARVELL_YUKON_8040 },
+	{ PCI_VENDOR_MARVELL,		PCI_PRODUCT_MARVELL_YUKON_8040T },
 	{ PCI_VENDOR_MARVELL,		PCI_PRODUCT_MARVELL_YUKON_8042 },
 	{ PCI_VENDOR_MARVELL,		PCI_PRODUCT_MARVELL_YUKON_8048 },
 	{ PCI_VENDOR_MARVELL,		PCI_PRODUCT_MARVELL_YUKON_8050 },
@@ -1233,15 +1234,9 @@ mskc_attach(struct device *parent, struct device *self, void *aux)
 	/*
 	 * Map control/status registers.
 	 */
-
 	memtype = pci_mapreg_type(pc, pa->pa_tag, SK_PCI_LOMEM);
-	switch (memtype) {
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT:
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT:
-		if (pci_mapreg_map(pa, SK_PCI_LOMEM, memtype, 0, &sc->sk_btag,
-		    &sc->sk_bhandle, NULL, &sc->sk_bsize, 0) == 0)
-			break;
-	default:
+	if (pci_mapreg_map(pa, SK_PCI_LOMEM, memtype, 0, &sc->sk_btag,
+	    &sc->sk_bhandle, NULL, &sc->sk_bsize, 0)) {
 		printf(": can't map mem space\n");
 		return;
 	}

@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)getgid.2	8.1 (Berkeley) 6/4/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt GETGID 2
 .Os
 .Sh NAME
@@ -66,11 +66,11 @@ and
 functions are always successful, and no return value is reserved to
 indicate an error.
 .Sh SEE ALSO
+.Xr getgroups 2 ,
+.Xr getresgid 2 ,
 .Xr getuid 2 ,
 .Xr setgid 2 ,
-.Xr setgroups 2 ,
-.Xr setregid 2 ,
-.Xr setreuid 2
+.Xr setregid 2
 .Sh STANDARDS
 The
 .Fn getgid

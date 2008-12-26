@@ -724,6 +724,8 @@ uvm_map_p(struct vm_map *map, vaddr_t *startp, vsize_t size,
 
 	if ((map->flags & VM_MAP_INTRSAFE) == 0)
 		splassert(IPL_NONE);
+	else
+		splassert(IPL_VM);
 
 	/*
 	 * step 0: sanity check of protection code
@@ -895,6 +897,8 @@ step3:
 		if ((flags & UVM_FLAG_OVERLAY) == 0)
 			new_entry->etype |= UVM_ET_NEEDSCOPY;
 	}
+	if (flags & UVM_FLAG_HOLE)
+		new_entry->etype |= UVM_ET_HOLE;
 
 	new_entry->protection = prot;
 	new_entry->max_protection = maxprot;
@@ -1093,6 +1097,45 @@ uvm_map_spacefits(struct vm_map *map, vaddr_t *phint, vsize_t length,
 		return (FALSE);
 	
 	return (TRUE);
+}
+
+/*
+ * uvm_map_pie: return a random load address for a PIE executable
+ * properly aligned.
+ */
+
+#ifndef VM_PIE_MAX_ADDR
+#define VM_PIE_MAX_ADDR (VM_MAXUSER_ADDRESS / 4)
+#endif
+
+#ifndef VM_PIE_MIN_ADDR
+#define VM_PIE_MIN_ADDR VM_MIN_ADDRESS
+#endif
+
+#ifndef VM_PIE_MIN_ALIGN
+#define VM_PIE_MIN_ALIGN PAGE_SIZE
+#endif
+
+vaddr_t
+uvm_map_pie(vaddr_t align)
+{
+	vaddr_t addr, space, min;
+
+	align = MAX(align, VM_PIE_MIN_ALIGN);
+
+	/* round up to next alignment */
+	min = (VM_PIE_MIN_ADDR + align - 1) & ~(align - 1);
+
+	if (align >= VM_PIE_MAX_ADDR || min >= VM_PIE_MAX_ADDR)
+		return (align);
+
+	space = (VM_PIE_MAX_ADDR - min) / align;
+	space = MIN(space, (u_int32_t)-1);
+
+	addr = (vaddr_t)arc4random_uniform((u_int32_t)space) * align;
+	addr += min;
+
+	return (addr);
 }
 
 /*
@@ -1383,6 +1426,8 @@ uvm_unmap_remove(struct vm_map *map, vaddr_t start, vaddr_t end,
 
 	if ((map->flags & VM_MAP_INTRSAFE) == 0)
 		splassert(IPL_NONE);
+	else
+		splassert(IPL_VM);
 
 	/*
 	 * find first entry
@@ -1449,7 +1494,9 @@ uvm_unmap_remove(struct vm_map *map, vaddr_t start, vaddr_t end,
 		 * special case: handle mappings to anonymous kernel objects.
 		 * we want to free these pages right away...
 		 */
-		if (map->flags & VM_MAP_INTRSAFE) {
+		if (UVM_ET_ISHOLE(entry)) {
+			/* nothing to do! */
+		} else if (map->flags & VM_MAP_INTRSAFE) {
 			uvm_km_pgremove_intrsafe(entry->start, entry->end);
 			pmap_kremove(entry->start, len);
 		} else if (UVM_ET_ISOBJ(entry) &&
@@ -3695,9 +3742,8 @@ uvm_object_printit(uobj, full, pr)
 
 static const char page_flagbits[] =
 	"\20\1BUSY\2WANTED\3TABLED\4CLEAN\5CLEANCHK\6RELEASED\7FAKE\10RDONLY"
-	"\11ZERO\15PAGER1";
-static const char page_pqflagbits[] =
-	"\20\1FREE\2INACTIVE\3ACTIVE\4LAUNDRY\5ANON\6AOBJ";
+	"\11ZERO\15PAGER1\20FREE\21INACTIVE\22ACTIVE\24ENCRYPT\30PMAP0"
+	"\31PMAP1\32PMAP2\33PMAP3";
 
 void
 uvm_page_printit(pg, full, pr)
@@ -3708,14 +3754,10 @@ uvm_page_printit(pg, full, pr)
 	struct vm_page *tpg;
 	struct uvm_object *uobj;
 	struct pglist *pgl;
-	char pgbuf[128];
-	char pqbuf[128];
 
 	(*pr)("PAGE %p:\n", pg);
-	snprintf(pgbuf, sizeof(pgbuf), "%b", pg->pg_flags, page_flagbits);
-	snprintf(pqbuf, sizeof(pqbuf), "%b", pg->pg_flags, page_pqflagbits);
-	(*pr)("  flags=%s, pg_flags=%s, vers=%d, wire_count=%d, pa=0x%llx\n",
-	    pgbuf, pqbuf, pg->pg_version, pg->wire_count,
+	(*pr)("  flags=%b, vers=%d, wire_count=%d, pa=0x%llx\n",
+	    pg->pg_flags, page_flagbits, pg->pg_version, pg->wire_count,
 	    (long long)pg->phys_addr);
 	(*pr)("  uobject=%p, uanon=%p, offset=0x%llx loan_count=%d\n",
 	    pg->uobject, pg->uanon, (long long)pg->offset, pg->loan_count);

@@ -55,17 +55,9 @@
 #include <dev/pcmcia/pcmciareg.h>
 
 #include "com.h"
-#ifdef i386
-#include "pccom.h"
-#endif
 
 #include <dev/ic/comreg.h>
-#if NPCCOM > 0
-#include <i386/isa/pccomvar.h>
-#endif
-#if NCOM > 0
 #include <dev/ic/comvar.h>
-#endif
 #include <dev/ic/ns16550reg.h>
 
 #define	com_lcr		com_cfcr
@@ -98,17 +90,10 @@ struct csdev *com_cardbus_find_csdev(struct cardbus_attach_args *);
 int	com_cardbus_gofigure(struct cardbus_attach_args *,
     struct com_cardbus_softc *);
 
-#if NCOM_CARDBUS
 struct cfattach com_cardbus_ca = {
 	sizeof(struct com_cardbus_softc), com_cardbus_match,
 	com_cardbus_attach, com_cardbus_detach, com_activate
 };
-#elif NPCCOM_CARDBUS
-struct cfattach pccom_cardbus_ca = {
-	sizeof(struct com_cardbus_softc), com_cardbus_match,
-	com_cardbus_attach, com_cardbus_detach, com_activate
-};
-#endif
 
 #define BUG_BROADCOM	0x01
 

@@ -105,6 +105,9 @@ dbupdate(DB *db, char *ip, int add, int type)
 			case SPAMTRAP:
 				gd.expire = 0;
 				gd.pcount = -2;
+				/* ensure address is of the form user@host */
+				if (strchr(ip, '@') == NULL)
+					errx(-1, "not an email address: %s", ip);
 				/* ensure address is lower case*/
 				for (i = 0; ip[i] != '\0'; i++)
 					if (isupper(ip[i]))

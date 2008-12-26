@@ -303,6 +303,7 @@ int auich_trigger_input(void *, void *, void *, int, void (*)(void *),
 int auich_alloc_cdata(struct auich_softc *);
 int auich_allocmem(struct auich_softc *, size_t, size_t, struct auich_dma *);
 int auich_freemem(struct auich_softc *, struct auich_dma *);
+void auich_get_default_params(void *, int, struct audio_params *);
 
 void auich_powerhook(int, void *);
 
@@ -333,7 +334,7 @@ struct audio_hw_if auich_hw_if = {
 	auich_get_props,
 	auich_trigger_output,
 	auich_trigger_input,
-	NULL
+	auich_get_default_params
 };
 
 int  auich_attach_codec(void *, struct ac97_codec_if *);
@@ -632,6 +633,12 @@ void
 auich_close(v)
 	void *v;
 {
+}
+
+void
+auich_get_default_params(void *addr, int mode, struct audio_params *params)
+{
+	ac97_get_default_params(params);
 }
 
 int

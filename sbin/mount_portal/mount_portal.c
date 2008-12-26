@@ -40,7 +40,7 @@ char copyright[] =
 #if 0
 static char sccsid[] = "@(#)mount_portal.c	8.6 (Berkeley) 4/26/95";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: mount_portal.c,v 1.1.1.1 2008/08/26 14:40:26 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -292,6 +292,6 @@ static void
 usage(void)
 {
 	(void)fprintf(stderr,
-		"usage: %s [-o options] config mount-point\n", __progname);
+		"usage: %s [-o options] config mount_point\n", __progname);
 	exit(1);
 }

@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)log__L.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n_log__L.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
 #endif
 #endif
 
@@ -39,14 +39,14 @@ static const char rcsid[] = "$ABSD$";
  *		LOG(1+X) - 2S			       X
  * RETURN      ---------------  WHERE Z = S*S,  S = ------- , 0 <= Z <= .0294...
  *		      S				     2 + X
- *		     
+ *
  * DOUBLE PRECISION (VAX D FORMAT 56 bits or IEEE DOUBLE 53 BITS)
  * KERNEL FUNCTION FOR LOG; TO BE USED IN LOG1P, LOG, AND POW FUNCTIONS
- * CODED IN C BY K.C. NG, 1/19/85; 
+ * CODED IN C BY K.C. NG, 1/19/85;
  * REVISED BY K.C. Ng, 2/3/85, 4/16/85.
  *
  * Method :
- *	1. Polynomial approximation: let s = x/(2+x). 
+ *	1. Polynomial approximation: let s = x/(2+x).
  *	   Based on log(1+x) = log(1+s) - log(1-s)
  *		 = 2s + 2/3 s**3 + 2/5 s**5 + .....,
  *
@@ -54,11 +54,11 @@ static const char rcsid[] = "$ABSD$";
  *
  *	       z*(L1 + z*(L2 + z*(... (L7 + z*L8)...)))
  *
- *	   where z=s*s. (See the listing below for Lk's values.) The 
- *	   coefficients are obtained by a special Remez algorithm. 
+ *	   where z=s*s. (See the listing below for Lk's values.) The
+ *	   coefficients are obtained by a special Remes algorithm.
  *
  * Accuracy:
- *	Assuming no rounding error, the maximum magnitude of the approximation 
+ *	Assuming no rounding error, the maximum magnitude of the approximation
  *	error (absolute) is 2**(-58.49) for IEEE double, and 2**(-63.63)
  *	for VAX D format.
  *
@@ -69,6 +69,7 @@ static const char rcsid[] = "$ABSD$";
  * shown.
  */
 
+#include "math.h"
 #include "mathimpl.h"
 
 vc(L1, 6.6666666666666703212E-1 ,aaaa,402a,aac5,aaaa,  0, .AAAAAAAAAAAAC5)
@@ -99,12 +100,12 @@ ic(L7, 1.4795612545334174692E-1, -3, 1.2F039F0085122)
 #define	L8	vccast(L8)
 #endif
 
-double __log__L(z)
-double z;
+double
+__log__L(double z)
 {
-#if defined(__vax__)||defined(tahoe)
+#if defined(__vax__)
     return(z*(L1+z*(L2+z*(L3+z*(L4+z*(L5+z*(L6+z*(L7+z*L8))))))));
-#else	/* defined(__vax__)||defined(tahoe) */
+#else	/* defined(__vax__) */
     return(z*(L1+z*(L2+z*(L3+z*(L4+z*(L5+z*(L6+z*L7)))))));
-#endif	/* defined(__vax__)||defined(tahoe) */
+#endif	/* defined(__vax__) */
 }

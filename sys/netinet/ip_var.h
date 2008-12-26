@@ -190,6 +190,6 @@ void	 rip_init(void);
 void	 rip_input(struct mbuf *, ...);
 int	 rip_output(struct mbuf *, ...);
 int	 rip_usrreq(struct socket *,
-	    int, struct mbuf *, struct mbuf *, struct mbuf *);
+	    int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 #endif /* _KERNEL */
 #endif /* _NETINET_IP_VAR_H_ */

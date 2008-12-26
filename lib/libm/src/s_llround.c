@@ -9,4 +9,4 @@
 #define RESTYPE_MIN LLONG_MIN
 #define RESTYPE_MAX LLONG_MAX
 
-#include "lround.c"
+#include "s_lround.c"

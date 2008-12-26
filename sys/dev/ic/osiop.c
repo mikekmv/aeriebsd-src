@@ -322,8 +322,8 @@ osiop_attach(sc)
 		TAILQ_INSERT_TAIL(&sc->free_list, acb, chain);
 	}
 
-	printf(": NCR53C710 rev %d, %dMHz, SCSI ID %d\n",
-	    osiop_read_1(sc, OSIOP_CTEST8) >> 4, sc->sc_clock_freq, sc->sc_id);
+	printf(": NCR53C710 rev %d, %dMHz\n",
+	    osiop_read_1(sc, OSIOP_CTEST8) >> 4, sc->sc_clock_freq);
 
 	/*
 	 * Initialize all

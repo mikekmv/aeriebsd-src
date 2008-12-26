@@ -28,7 +28,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: rup.c,v 1.1.1.1 2008/08/26 14:43:10 root Exp $";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -339,6 +339,6 @@ main(int argc, char *argv[])
 void
 usage(void)
 {
-	fprintf(stderr, "Usage: rup [-dhlt] [hosts ...]\n");
+	fprintf(stderr, "usage: rup [-dhlt] [host ...]\n");
 	exit(1);
 }

@@ -18,7 +18,7 @@
  */
 
 /*
- * AMD CS5536 series LPC bridge also containing timer, watchdog and GPIO.
+ * AMD CS5536 series LPC bridge also containing timer, watchdog, and GPIO.
  */
 
 #include <sys/param.h>
@@ -280,7 +280,7 @@ glxpcib_wdogctl_cb(void *v, int period)
 		wrmsr(AMD5536_MFGPT_NR,
 		    rdmsr(AMD5536_MFGPT_NR) & ~AMD5536_MFGPT0_C2_RSTEN);
 
-	return (period);
+	return period;
 }
 
 int
@@ -288,13 +288,21 @@ glxpcib_gpio_pin_read(void *arg, int pin)
 {
 	struct glxpcib_softc *sc = arg;
 	u_int32_t data;
-	int reg;
+	int reg, off = 0;
 
-	reg = AMD5536_GPIO_OUT_VAL;
+	reg = AMD5536_GPIO_IN_EN;
 	if (pin > 15) {
 		pin &= 0x0f;
-		reg += AMD5536_GPIOH_OFFSET;
+		off = AMD5536_GPIOH_OFFSET;
 	}
+	reg += off;
+	data = bus_space_read_4(sc->sc_gpio_iot, sc->sc_gpio_ioh, reg);
+
+	if (data & (1 << pin))
+		reg = AMD5536_GPIO_READ_BACK + off;
+	else
+		reg = AMD5536_GPIO_OUT_VAL + off;
+
 	data = bus_space_read_4(sc->sc_gpio_iot, sc->sc_gpio_ioh, reg);
 
 	return data & 1 << pin ? GPIO_PIN_HIGH : GPIO_PIN_LOW;

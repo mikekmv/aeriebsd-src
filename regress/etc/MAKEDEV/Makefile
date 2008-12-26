@@ -1,9 +1,7 @@
 
 
-MAKEDEVARCHS+=alpha amd64 armish aviion hp300 hppa hppa64 i386 landisk
-MAKEDEVARCHS+=luna88k mac68k macppc mvme68k
-#MAKEDEVARCHS+=mvmeppc
-MAKEDEVARCHS+=mvme88k sgi sparc sparc64 vax zaurus
+MAKEDEVARCHS+=alpha amd64 armish hp300 hppa hppa64 i386 landisk
+MAKEDEVARCHS+=mac68k macppc sgi sparc sparc64 vax zaurus
 
 MAKEDEVTARGS?=all ramdisk
 

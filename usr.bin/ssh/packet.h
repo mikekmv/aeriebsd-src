@@ -20,6 +20,7 @@
 #include <openssl/bn.h>
 
 void     packet_set_connection(int, int);
+void     packet_set_timeout(int, int);
 void     packet_set_nonblocking(void);
 int      packet_get_connection_in(void);
 int      packet_get_connection_out(void);
@@ -66,8 +67,8 @@ int	 packet_get_keyiv_len(int);
 void	 packet_get_keyiv(int, u_char *, u_int);
 int	 packet_get_keycontext(int, u_char *);
 void	 packet_set_keycontext(int, u_char *);
-void	 packet_get_state(int, u_int32_t *, u_int64_t *, u_int32_t *);
-void	 packet_set_state(int, u_int32_t, u_int64_t, u_int32_t);
+void	 packet_get_state(int, u_int32_t *, u_int64_t *, u_int32_t *, u_int64_t *);
+void	 packet_set_state(int, u_int32_t, u_int64_t, u_int32_t, u_int64_t);
 int	 packet_get_ssh1_cipher(void);
 void	 packet_set_iv(int, u_char *);
 

@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "cvs.h"
@@ -42,7 +43,7 @@ static int	edit_aflags = 0;
 
 struct cvs_cmd cvs_cmd_edit = {
 	CVS_OP_EDIT, CVS_USE_WDIR, "edit",
-	{ },
+	{ { 0 }, { 0 } },
 	"Get ready to edit a watched file",
 	"[-lR] [-a action] [file ...]",
 	"a:lR",
@@ -52,7 +53,7 @@ struct cvs_cmd cvs_cmd_edit = {
 
 struct cvs_cmd cvs_cmd_editors = {
 	CVS_OP_EDITORS, CVS_USE_WDIR, "editors",
-	{ },
+	{ { 0 }, { 0 } },
 	"See who is editing a watched file",
 	"[-lR] [file ...]",
 	"lR",
@@ -62,7 +63,7 @@ struct cvs_cmd cvs_cmd_editors = {
 
 struct cvs_cmd cvs_cmd_unedit = {
 	CVS_OP_UNEDIT, CVS_USE_WDIR, "unedit",
-	{ },
+	{ { 0 }, { 0 } },
 	"Undo an edit command",
 	"[-lR] [file ...]",
 	"lR",
@@ -256,7 +257,7 @@ static void
 cvs_edit_local(struct cvs_file *cf)
 {
 	FILE *fp;
-	struct tm *t;
+	struct tm t;
 	time_t now;
 	char timebuf[CVS_TIME_BUFSZ], thishost[MAXHOSTNAMELEN];
 	char bfpath[MAXPATHLEN], wdir[MAXPATHLEN];
@@ -273,10 +274,8 @@ cvs_edit_local(struct cvs_file *cf)
 		    CVS_PATH_NOTIFY, strerror(errno));
 
 	(void)time(&now);
-	if ((t = gmtime(&now)) == NULL)
-		fatal("gmtime failed");
-
-	asctime_r(t, timebuf);
+	gmtime_r(&now, &t);
+	asctime_r(&t, timebuf);
 	timebuf[strcspn(timebuf, "\n")] = '\0';
 
 	if (gethostname(thishost, sizeof(thishost)) == -1)
@@ -325,7 +324,7 @@ cvs_unedit_local(struct cvs_file *cf)
 {
 	FILE *fp;
 	struct stat st;
-	struct tm *t;
+	struct tm t;
 	time_t now;
 	char bfpath[MAXPATHLEN], timebuf[64], thishost[MAXHOSTNAMELEN];
 	char wdir[MAXPATHLEN], sticky[CVS_ENT_MAXLINELEN];
@@ -359,10 +358,8 @@ cvs_unedit_local(struct cvs_file *cf)
 		    CVS_PATH_NOTIFY, strerror(errno));
 
 	(void)time(&now);
-	if ((t = gmtime(&now)) == NULL)
-		fatal("gmtime failed");
-
-	asctime_r(t, timebuf);
+	gmtime_r(&now, &t);
+	asctime_r(&t, timebuf);
 	timebuf[strcspn(timebuf, "\n")] = '\0';
 
 	if (gethostname(thishost, sizeof(thishost)) == -1)
@@ -404,13 +401,12 @@ cvs_unedit_local(struct cvs_file *cf)
 			    cf->file_ent->ce_tag);
 
 		(void)xasprintf(&entry, "/%s/%s/%s/%s/%s",
-		    cf->file_name, rbuf, timebuf, cf->file_ent->ce_opts ? : "",
-		    sticky);
+		    cf->file_name, rbuf, timebuf, cf->file_ent->ce_opts ? 
+		    cf->file_ent->ce_opts : "", sticky);
 
 		cvs_ent_add(entlist, entry);
 
 		cvs_ent_free(ent);
-		cvs_ent_close(entlist, ENT_SYNC);
 
 		xfree(entry);
 	}

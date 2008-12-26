@@ -1,7 +1,3 @@
-#ifndef CMD_EXEC_H
-#define CMD_EXEC_H
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -26,6 +22,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef CMD_EXEC_H
+#define CMD_EXEC_H
 
 /* output = Cmd_Exec(cmd, &err);
  *	execute the command in cmd, return the output of that command as

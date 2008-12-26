@@ -593,12 +593,8 @@ void	 tcp_trace(short, short, struct tcpcb *, caddr_t, int, int);
 struct tcpcb *
 	 tcp_usrclosed(struct tcpcb *);
 int	 tcp_sysctl(int *, u_int, void *, size_t *, void *, size_t);
-#if defined(INET6) && !defined(TCP6)
-int	 tcp6_usrreq(struct socket *,
-	    int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
-#endif
 int	 tcp_usrreq(struct socket *,
-	    int, struct mbuf *, struct mbuf *, struct mbuf *);
+	    int, struct mbuf *, struct mbuf *, struct mbuf *, struct proc *);
 void	 tcp_xmit_timer(struct tcpcb *, int);
 void	 tcpdropoldhalfopen(struct tcpcb *, u_int16_t);
 #ifdef TCP_SACK

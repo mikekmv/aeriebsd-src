@@ -54,7 +54,7 @@ extern int	misccall();
  * have 0 arguments to our system call.
  */
 static struct sysent newent = {
-	0, 0,	misccall		/* # of args, args size, fn pointer*/
+	0, 0, 0, misccall	/* # of args, args size, flags, fn pointer*/
 };
 
 /*

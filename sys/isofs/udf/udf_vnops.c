@@ -57,7 +57,7 @@ int udf_bmap_internal(struct unode *, off_t, daddr64_t *, uint32_t *);
 
 int (**udf_vnodeop_p)(void *);
 struct vnodeopv_entry_desc udf_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
+	{ &vop_default_desc, eopnotsupp },
 	{ &vop_access_desc, udf_access },		/* access */
 	{ &vop_bmap_desc, udf_bmap },			/* bmap */
 	{ &vop_lookup_desc, udf_lookup },		/* lookup */
@@ -220,8 +220,8 @@ udf_access(void *v)
 
 	mode = udf_permtomode(up);
 
-	return (vaccess(mode, up->u_fentry->uid, up->u_fentry->gid, a_mode,
-	    ap->a_cred));
+	return (vaccess(vp->v_type, mode, up->u_fentry->uid, up->u_fentry->gid,
+	    a_mode, ap->a_cred));
 }
 
 static int mon_lens[2][12] = {
@@ -548,8 +548,7 @@ udf_opendir(struct unode *up, int offset, int fsize, struct umount *ump)
 {
 	struct udf_dirstream *ds;
 
-	ds = pool_get(&udf_ds_pool, PR_WAITOK);
-	bzero(ds, sizeof(struct udf_dirstream));
+	ds = pool_get(&udf_ds_pool, PR_WAITOK | PR_ZERO);
 
 	ds->node = up;
 	ds->offset = offset;

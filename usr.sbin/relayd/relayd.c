@@ -55,6 +55,7 @@ int		 send_all(struct relayd *, enum imsg_type,
 		    void *, u_int16_t);
 void		 reconfigure(void);
 void		 purge_tree(struct proto_tree *);
+int		 bindany(struct ctl_bindany *);
 
 int		 pipe_parent2pfe[2];
 int		 pipe_parent2hce[2];
@@ -113,7 +114,8 @@ usage(void)
 {
 	extern char	*__progname;
 
-	fprintf(stderr, "%s [-dnv] [-D macro=value] [-f file]\n", __progname);
+	fprintf(stderr, "usage: %s [-dnv] [-D macro=value] [-f file]\n",
+	    __progname);
 	exit(1);
 }
 
@@ -161,6 +163,11 @@ main(int argc, char *argv[])
 			usage();
 		}
 	}
+
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+		usage();
 
 	if ((env = parse_config(conffile, opts)) == NULL)
 		exit(1);
@@ -697,9 +704,12 @@ main_dispatch_hce(int fd, short event, void * ptr)
 void
 main_dispatch_relay(int fd, short event, void * ptr)
 {
+	struct relayd		*env = relayd_env;
 	struct imsgbuf		*ibuf;
 	struct imsg		 imsg;
 	ssize_t			 n;
+	struct ctl_bindany	 bnd;
+	int			 s;
 
 	ibuf = ptr;
 	switch (event) {
@@ -729,6 +739,26 @@ main_dispatch_relay(int fd, short event, void * ptr)
 			break;
 
 		switch (imsg.hdr.type) {
+		case IMSG_BINDANY:
+			if (imsg.hdr.len != IMSG_HEADER_SIZE + sizeof(bnd))
+				fatalx("invalid imsg header len");
+			bcopy(imsg.data, &bnd, sizeof(bnd));
+			if (bnd.bnd_proc > env->sc_prefork_relay)
+				fatalx("pfe_dispatch_relay: "
+				    "invalid relay proc");
+			switch (bnd.bnd_proto) {
+			case IPPROTO_TCP:
+			case IPPROTO_UDP:
+				break;
+			default:
+				fatalx("pfe_dispatch_relay: requested socket "
+				    "for invalid protocol");
+				/* NOTREACHED */
+			}
+			s = bindany(&bnd);
+			imsg_compose(&ibuf_relay[bnd.bnd_proc], IMSG_BINDANY,
+			    0, 0, s, &bnd.bnd_id, sizeof(bnd.bnd_id));
+			break;
 		default:
 			log_debug("main_dispatch_relay: unexpected imsg %d",
 			    imsg.hdr.type);
@@ -1136,6 +1166,86 @@ protonode_add(enum direction dir, struct protocol *proto,
 			break;
 		}
 	}
+
+	return (0);
+}
+
+int
+bindany(struct ctl_bindany *bnd)
+{
+	int	s, v;
+
+	s = -1;
+	v = 1;
+
+	if (relay_socket_af(&bnd->bnd_ss, bnd->bnd_port) == -1)
+		goto fail;
+	if ((s = socket(bnd->bnd_ss.ss_family,
+	    bnd->bnd_proto == IPPROTO_TCP ? SOCK_STREAM : SOCK_DGRAM,
+	    bnd->bnd_proto)) == -1)
+		goto fail;
+	if (setsockopt(s, SOL_SOCKET, SO_BINDANY,
+	    &v, sizeof(v)) == -1)
+		goto fail;
+	if (bind(s, (struct sockaddr *)&bnd->bnd_ss,
+	    bnd->bnd_ss.ss_len) == -1)
+		goto fail;
+
+	return (s);
+
+ fail:
+	if (s != -1)
+		close(s);
+	return (-1);
+}
+
+int
+map6to4(struct sockaddr_storage *in6)
+{
+	struct sockaddr_storage	 out4;
+	struct sockaddr_in	*sin4 = (struct sockaddr_in *)&out4;
+	struct sockaddr_in6	*sin6 = (struct sockaddr_in6 *)in6;
+
+	bzero(sin4, sizeof(*sin4));
+	sin4->sin_len = sizeof(*sin4);
+	sin4->sin_family = AF_INET;
+	sin4->sin_port = sin6->sin6_port;
+
+	bcopy(&sin6->sin6_addr.s6_addr[12], &sin4->sin_addr.s_addr,
+	    sizeof(sin4->sin_addr));
+
+	if (sin4->sin_addr.s_addr == INADDR_ANY ||
+	    sin4->sin_addr.s_addr == INADDR_BROADCAST ||
+	    IN_MULTICAST(ntohl(sin4->sin_addr.s_addr)))
+		return (-1);
+
+	bcopy(&out4, in6, sizeof(*in6));
+
+	return (0);
+}
+
+int
+map4to6(struct sockaddr_storage *in4, struct sockaddr_storage *map)
+{
+	struct sockaddr_storage	 out6;
+	struct sockaddr_in	*sin4 = (struct sockaddr_in *)in4;
+	struct sockaddr_in6	*sin6 = (struct sockaddr_in6 *)&out6;
+	struct sockaddr_in6	*map6 = (struct sockaddr_in6 *)map;
+
+	if (sin4->sin_addr.s_addr == INADDR_ANY ||
+	    sin4->sin_addr.s_addr == INADDR_BROADCAST ||
+	    IN_MULTICAST(ntohl(sin4->sin_addr.s_addr)))
+		return (-1);
+
+	bcopy(map6, sin6, sizeof(*sin6));
+	sin6->sin6_len = sizeof(*sin6);
+	sin6->sin6_family = AF_INET6;
+	sin6->sin6_port = sin4->sin_port;
+
+	bcopy(&sin4->sin_addr.s_addr, &sin6->sin6_addr.s6_addr[12],
+	    sizeof(sin4->sin_addr));
+
+	bcopy(&out6, in4, sizeof(*in4));
 
 	return (0);
 }

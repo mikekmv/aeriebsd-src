@@ -42,6 +42,7 @@ u_char		 cvs_buf_getc(BUF *, size_t);
 void		 cvs_buf_empty(BUF *);
 void		 cvs_buf_append(BUF *, const void *, size_t);
 void		 cvs_buf_putc(BUF *, int);
+void		 cvs_buf_puts(BUF *, const char *);
 size_t		 cvs_buf_len(BUF *);
 int		 cvs_buf_write_fd(BUF *, int);
 int		 cvs_buf_write(BUF *, const char *, mode_t);

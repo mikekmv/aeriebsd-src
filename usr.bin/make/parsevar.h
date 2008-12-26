@@ -1,6 +1,3 @@
-#ifndef PARSEVAR_H
-#define PARSEVAR_H
-/*	$OpenPackages$ */
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -29,6 +26,9 @@
 /* parsevar
  *	Functions to parse variable assignments
  */
+
+#ifndef PARSEVAR_H
+#define PARSEVAR_H
 
 /* wasvar = Parse_As_Var_Assignment(str);
  *	Parses variable assignment str.

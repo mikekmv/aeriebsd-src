@@ -156,9 +156,6 @@ _ENTRY(_C_LABEL(cpu_switchto_asm))
  * r5 - cpuinfo
  */
 	GET_CPUINFO(%r5)
-	li	%r31,0
-	/* just did this resched thing, clear resched */
-	stw	%r31,CI_WANT_RESCHED(%r5)
 
 	li	%r31,SONPROC
 	stb	%r31,P_STAT(%r4)
@@ -721,7 +718,7 @@ nop32_7e:
 	mfcr	%r29			/* save CR */
 	GET_CPUINFO(%r30)
 	lwz	%r30,CI_INTSTK(%r30)	/* get interrupt stack */
-	addi	%r1,%r30,8192	 /* 7k for ddb */
+	addi	%r1,%r30,(SPILLSTK+DDBSTK)
 	bla	ddbtrap
 _C_LABEL(ddbsize) =	.-_C_LABEL(ddblow)
 #endif  /* DDB */
@@ -950,7 +947,7 @@ s_dsitrap:
 	bc	4,1,disitrap		/* branch if table miss is false */
 	GET_CPUINFO(%r30)
 	lwz	%r30,CI_INTSTK(%r30)	/* get interrupt stack */
-	addi	%r1,%r30,1024
+	addi	%r1,%r30,SPILLSTK
 	stwu	%r1,-52(%r1)
 	stw	%r0,48(%r1)		/* save non-volatile registers */
 	stw	%r3,44(%r1)
@@ -1012,7 +1009,7 @@ s_isitrap:
 	bc	4,%r1,disitrap		/* branch if table miss is false */
 	GET_CPUINFO(%r30)
 	lwz	%r30,CI_INTSTK(%r30)	/* get interrupt stack */
-	addi	%r1,%r30,1024
+	addi	%r1,%r30,SPILLSTK
 	stwu	%r1,-52(%r1)
 	stw	%r0,48(%r1)		/* save non-volatile registers */
 	stw	%r3,44(%r1)

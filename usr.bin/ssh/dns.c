@@ -141,11 +141,20 @@ is_numeric_hostname(const char *hostname)
 {
 	struct addrinfo hints, *ai;
 
+	/*
+	 * We shouldn't ever get a null host but if we do then log an error
+	 * and return -1 which stops DNS key fingerprint processing.
+	 */
+	if (hostname == NULL) {
+		error("is_numeric_hostname called with NULL hostname");
+		return -1;
+	}
+
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_NUMERICHOST;
 
-	if (getaddrinfo(hostname, "0", &hints, &ai) == 0) {
+	if (getaddrinfo(hostname, NULL, &hints, &ai) == 0) {
 		freeaddrinfo(ai);
 		return -1;
 	}

@@ -14,13 +14,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -48,9 +41,7 @@
 #include <unistd.h>
 
 #include <machine/eeprom.h>
-#ifdef __sparc__
 #include <machine/openpromio.h>
-#endif /* __sparc__ */
 
 #include "defs.h"
 
@@ -169,7 +160,6 @@ ee_num16(struct keytabent *ktent, char *arg)
 	printf("%s=%d\n", ktent->kt_keyword, num16);
 }
 
-#ifndef __sparc64__
 static	struct strvaltabent scrsizetab[] = {
 	{ "640x480",		EED_SCR_640X480 },
 	{ "1152x900",		EED_SCR_1152X900 },
@@ -211,7 +201,6 @@ ee_screensize(struct keytabent *ktent, char *arg)
 	}
 	printf("%s=%s\n", ktent->kt_keyword, svp->sv_str);
 }
-#endif
 
 static	struct strvaltabent truthtab[] = {
 	{ "true",		EE_TRUE },
@@ -345,7 +334,6 @@ ee_kbdtype(struct keytabent *ktent, char *arg)
 	printf("%s=%d (%s)\n", ktent->kt_keyword, kbd, kbd ? "other" : "Sun");
 }
 
-#ifndef __sparc64__
 static	struct strvaltabent constab[] = {
 	{ "b&w",		EED_CONS_BW },
 	{ "ttya",		EED_CONS_TTYA },
@@ -387,7 +375,6 @@ ee_constype(struct keytabent *ktent, char *arg)
 	printf("%s=%s\n", ktent->kt_keyword, svp->sv_str);
 
 }
-#endif
 
 void
 ee_diagpath(struct keytabent *ktent, char *arg)

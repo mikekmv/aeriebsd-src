@@ -14,13 +14,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the NetBSD
- *	Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -86,6 +79,7 @@ void	fms_close(void *);
 int	fms_query_encoding(void *, struct audio_encoding *);
 int	fms_set_params(void *, int, int, struct audio_params *, 
 			    struct audio_params *);
+void	fms_get_default_params(void *, int, struct audio_params *);
 int	fms_round_blocksize(void *, int);
 int	fms_halt_output(void *);
 int	fms_halt_input(void *);
@@ -144,7 +138,7 @@ struct audio_hw_if fms_hw_if = {
 	fms_get_props,
 	fms_trigger_output,
 	fms_trigger_input,
-	NULL
+	fms_get_default_params
 };
 
 int	fms_attach_codec(void *, struct ac97_codec_if *);
@@ -513,6 +507,12 @@ fms_query_encoding(addr, fp)
 	default:
 		return EINVAL;
 	}
+}
+
+void
+fms_get_default_params(void *addr, int mode, struct audio_params *params)
+{
+	ac97_get_default_params(params);
 }
 
 /*

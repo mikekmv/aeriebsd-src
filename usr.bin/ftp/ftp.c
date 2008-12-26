@@ -58,7 +58,7 @@
  */
 
 #if !defined(lint) && !defined(SMALL)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ftp.c,v 1.1.1.1 2008/08/26 14:42:48 root Exp $";
 #endif /* not lint and not SMALL */
 
 #include <sys/types.h>
@@ -147,7 +147,7 @@ hookup(char *host, char *port)
 #ifndef SMALL
 		else if (strcmp(port, "https") == 0)
 			snprintf(pbuf, sizeof(pbuf), "%d", HTTPS_PORT);
-#endif
+#endif /* !SMALL */
 		if (pbuf[0])
 			error = getaddrinfo(host, pbuf, &hints, &res0);
 	}
@@ -177,7 +177,8 @@ hookup(char *host, char *port)
 			if (getnameinfo(res->ai_addr, res->ai_addrlen,
 			    hbuf, sizeof(hbuf), NULL, 0, NI_NUMERICHOST) != 0)
 				strlcpy(hbuf, "unknown", sizeof(hbuf));
-			fprintf(ttyout, "Trying %s...\n", hbuf);
+			if (verbose)
+				fprintf(ttyout, "Trying %s...\n", hbuf);
 		}
 		s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 		if (s < 0) {
@@ -254,12 +255,13 @@ hookup(char *host, char *port)
 	}
 #ifdef SO_OOBINLINE
 	{
-	int on = 1;
+	int ret, on = 1;
 
-	if (setsockopt(s, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on))
-		< 0 && debug) {
-			warn("setsockopt");
-		}
+	ret = setsockopt(s, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on));
+#ifndef SMALL
+	if (ret < 0 && debug)
+		warn("setsockopt");
+#endif /* !SMALL */
 	}
 #endif /* SO_OOBINLINE */
 
@@ -291,6 +293,7 @@ command(const char *fmt, ...)
 	sig_t oldintr;
 
 	abrtflag = 0;
+#ifndef SMALL
 	if (debug) {
 		fputs("---> ", ttyout);
 		va_start(ap, fmt);
@@ -304,6 +307,7 @@ command(const char *fmt, ...)
 		putc('\n', ttyout);
 		(void)fflush(ttyout);
 	}
+#endif /* !SMALL */
 	if (cout == NULL) {
 		warnx("No control connection for command.");
 		code = -1;
@@ -335,8 +339,10 @@ static int current_nop_pos = 0;		/* 0 -> no noop started */
 void 
 send_noop_char()
 {
+#ifndef SMALL
 	if (debug)
 		fprintf(ttyout, "---> %c\n", noop[current_nop_pos]);
+#endif /* !SMALL */
 	fputc(noop[current_nop_pos++], cout);
 	(void)fflush(cout);
 	if (current_nop_pos >= NOOP_LENGTH) {
@@ -360,8 +366,10 @@ may_receive_noop_ack()
 	/* finish sending last incomplete noop */
 	if (current_nop_pos != 0) {
 		fputs(&(noop[current_nop_pos]), cout);
+#ifndef SMALL
 		if (debug)
 			fprintf(ttyout, "---> %s\n", &(noop[current_nop_pos]));
+#endif /* !SMALL */
 		(void)fflush(cout);
 		current_nop_pos = 0;
 		full_noops_sent++;
@@ -445,9 +453,9 @@ getreply(int expecteof)
 				return (4);
 			}
 			if (c != '\r' && (verbose > 0 ||
-			    ((verbose > -1 && n == '5' && dig > 4)) &&
+			    ((verbose > -1 && n == '5' && dig > 4) &&
 			    (((!n && c < '5') || (n && n < '5'))
-			     || !retry_connect))) {
+			     || !retry_connect)))) {
 				if (proxflag &&
 				   (dig == 1 || (dig == 5 && verbose == 0)))
 					fprintf(ttyout, "%s:", hostname);
@@ -653,7 +661,6 @@ sendrequest(const char *cmd, const char *local, const char *remote,
 		}
 		if (rc == -1) {
 			warn("local: %s", local);
-			restart_point = 0;
 			progress = oprogress;
 			if (closefunc != NULL)
 				(*closefunc)(fin);
@@ -661,13 +668,11 @@ sendrequest(const char *cmd, const char *local, const char *remote,
 		}
 		if (command("REST %lld", (long long) restart_point)
 			!= CONTINUE) {
-			restart_point = 0;
 			progress = oprogress;
 			if (closefunc != NULL)
 				(*closefunc)(fin);
 			return;
 		}
-		restart_point = 0;
 		lmode = "r+w";
 	}
 	if (remote) {
@@ -1245,10 +1250,12 @@ reinit:
 			warn("socket");
 			return (1);
 		}
+#ifndef SMALL
 		if ((options & SO_DEBUG) &&
 		    setsockopt(data, SOL_SOCKET, SO_DEBUG, (char *)&on,
 			       sizeof(on)) < 0)
 			warn("setsockopt (ignored)");
+#endif /* !SMALL */
 		switch (data_addr.su_family) {
 		case AF_INET:
 			if (epsv4 && !epsv4bad) {
@@ -1270,11 +1277,13 @@ reinit:
 				}
 				if (result != COMPLETE) {
 					epsv4bad = 1;
+#ifndef SMALL
 					if (debug) {
 						fputs(
 "disabling epsv4 for this connection\n",
 						    ttyout);
 					}
+#endif /* !SMALL */
 				}
 			}
 			if (result != COMPLETE)
@@ -1513,10 +1522,12 @@ noport:
 		warn("bind");
 		goto bad;
 	}
+#ifndef SMALL
 	if (options & SO_DEBUG &&
 	    setsockopt(data, SOL_SOCKET, SO_DEBUG, (char *)&on,
 			sizeof(on)) < 0)
 		warn("setsockopt (ignored)");
+#endif /* !SMALL */
 	namelen = sizeof(data_addr);
 	if (getsockname(data, (struct sockaddr *)&data_addr, &namelen) < 0) {
 		warn("getsockname");
@@ -1553,11 +1564,13 @@ noport:
 				    af_tmp, hname, pbuf);
 				if (result != COMPLETE) {
 					epsv4bad = 1;
+#ifndef SMALL
 					if (debug) {
 						fputs(
 "disabling epsv4 for this connection\n",
 						    ttyout);
 					}
+#endif /* !SMALL */
 				}
 			}
 			break;

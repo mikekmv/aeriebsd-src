@@ -739,7 +739,7 @@ twupdate(char *dbname, char *what, char *ip, char *source, char *expires)
 			fprintf(stderr, "added %s %s\n",
 			    spamtrap ? "trap entry for" : "", ip);
 		syslog_r(LOG_DEBUG, &sdata,
-		    "New %s from %s for %s, expires %s", what, source, ip,
+		    "new %s from %s for %s, expires %s", what, source, ip,
 		    expires);
 	} else {
 		/* existing entry */
@@ -861,6 +861,9 @@ greyupdate(char *dbname, char *helo, char *ip, char *from, char *to, int sync,
 		if (debug)
 			fprintf(stderr, "added %s %s\n",
 			    spamtrap ? "greytrap entry for" : "", lookup);
+		syslog_r(LOG_DEBUG, &sdata,
+		    "new %sentry %s from %s to %s, helo %s",
+		    spamtrap ? "greytrap " : "", ip, from, to, helo);
 	} else {
 		/* existing entry */
 		if (dbd.size != sizeof(gd)) {
@@ -1189,6 +1192,7 @@ greywatcher(void)
 		close(pfdev);
 		setproctitle("(%s update)", PATH_SPAMD_DB);
 		greyreader();
+		syslog_r(LOG_ERR, &sdata, "greyreader failed (%m)");
 		/* NOTREACHED */
 		_exit(1);
 	}

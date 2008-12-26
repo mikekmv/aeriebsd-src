@@ -65,17 +65,7 @@ struct	nfsmount {
 	int	nm_wsize;		/* Max size of write rpc */
 	int	nm_readdirsize;		/* Size of a readdir rpc */
 	int	nm_readahead;		/* Num. of blocks to readahead */
-	uid_t	nm_authuid;		/* Uid for authenticator */
-	int	nm_authtype;		/* Authenticator type */
-	int	nm_authlen;		/* and length */
-	char	*nm_authstr;		/* Authenticator string */
-	char	*nm_verfstr;		/* and the verifier */
-	int	nm_verflen;
 	u_char	nm_verf[NFSX_V3WRITEVERF]; /* V3 write verifier */
-	NFSKERBKEY_T nm_key;		/* and the session key */
-	int	nm_numuids;		/* Number of nfsuid mappings */
-	TAILQ_HEAD(, nfsuid) nm_uidlruhead; /* Lists of nfsuid mappings */
-	LIST_HEAD(, nfsuid) nm_uidhashtbl[NFS_MUIDHASHSIZ];
 	u_short	nm_acregmin;		/* Attr cache file recently modified */
 	u_short	nm_acregmax;		/* ac file not recently modified */
 	u_short	nm_acdirmin;		/* ac for dir recently modified */

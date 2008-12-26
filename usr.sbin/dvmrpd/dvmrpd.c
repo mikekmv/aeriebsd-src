@@ -151,6 +151,11 @@ main(int argc, char *argv[])
 		}
 	}
 
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+		usage();
+
 	log_init(debug);
 
 	/* multicast IP forwarding must be enabled */

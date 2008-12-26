@@ -1,7 +1,3 @@
-#ifndef ERROR_H
-#define ERROR_H
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -26,6 +22,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#ifndef ERROR_H
+#define ERROR_H
+
 /*	Error			Print a tagged error message. The global
  *				MAKE variable must have been defined. This
  *				takes a format string and two optional

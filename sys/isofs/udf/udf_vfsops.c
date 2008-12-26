@@ -524,8 +524,7 @@ udf_vget(struct mount *mp, ino_t ino, struct vnode **vpp)
 	 * Allocate memory and check the tag id's before grabbing a new
 	 * vnode, since it's hard to roll back if there is a problem.
 	 */
-	up = pool_get(&unode_pool, PR_WAITOK);
-	bzero(up, sizeof(struct unode));
+	up = pool_get(&unode_pool, PR_WAITOK | PR_ZERO);
 
 	/*
 	 * Copy in the file entry.  Per the spec, the size can only be 1 block.

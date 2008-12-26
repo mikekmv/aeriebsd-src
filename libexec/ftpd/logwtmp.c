@@ -34,7 +34,7 @@
 static const char sccsid[] = "@(#)logwtmp.c	8.1 (Berkeley) 6/4/93";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: logwtmp.c,v 1.1.1.1 2008/08/26 14:39:36 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -49,6 +49,8 @@ static const char rcsid[] =
 #include <string.h>
 
 #include <netinet/in.h>
+
+#include "monitor.h"
 #include "extern.h"
 
 static int fd = -1;

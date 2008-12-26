@@ -13,7 +13,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: April 27 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt ACPI 4
 .Os
 .Sh NAME
@@ -21,19 +21,12 @@
 .Nd Advanced Configuration and Power Interface
 .Sh SYNOPSIS
 .Cd "acpi0 at bios?"
-.Pp
-.Cd "option ACPIVERBOSE"
 .Sh DESCRIPTION
 The
 .Nm
 driver provides basic support for ACPI including loading ACPI tables from
 the firmware, parsing and interpreting AML code, event handling,
 suspending and powering off, and attaching device drivers.
-.Pp
-If the configuration option
-.Dq Dv ACPIVERBOSE
-is set, information about all detected ACPI devices will be displayed
-on boot.
 Userland may access
 .Nm
 by using the
@@ -65,7 +58,7 @@ ACPI APIC configuration
 .It Xr acpiprt 4
 ACPI PCI routing table configuration
 .It Xr acpithinkpad 4
-IBM/Lenovo Thinkpad ACPI support
+IBM/Lenovo ThinkPad ACPI support
 .It Xr acpitimer 4
 ACPI power management timer
 .It Xr acpitz 4

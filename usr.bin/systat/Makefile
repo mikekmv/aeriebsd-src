@@ -5,8 +5,10 @@ PROG=	systat
 
 CFLAGS+=-DNOKVM
 CPPFLAGS+=-I${.CURDIR}/../../usr.bin/vmstat
-SRCS=	cmds.c cmdtab.c disks.c dkstats.c fetch.c if.c iostat.c keyboard.c \
-	main.c mbufs.c netcmds.c netstat.c pigs.c sensors.c swap.c vmstat.c
+CPPFLAGS+=-I${.CURDIR}/../../sbin/pfctl
+SRCS=	dkstats.c engine.c if.c iostat.c main.c mbufs.c netstat.c \
+	pigs.c sensors.c swap.c vmstat.c pftop.c cache.c pf.c
+
 DPADD=	${LIBCURSES} ${LIBM} ${LIBKVM}
 LDADD=	-lcurses -lm -lkvm
 BINGRP=	kmem

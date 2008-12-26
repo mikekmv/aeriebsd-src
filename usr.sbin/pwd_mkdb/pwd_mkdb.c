@@ -40,7 +40,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "from: @(#)pwd_mkdb.c	8.5 (Berkeley) 4/20/94";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: pwd_mkdb.c,v 1.1.1.1 2008/08/26 14:44:31 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -489,7 +489,7 @@ void
 db_store(FILE *fp, FILE *oldfp, DB *edp, DB *dp, struct passwd *pw,
 	 int keytype, char *username, uid_t olduid)
 {
-	char *p, *t, buf[LINE_MAX * 2], tbuf[1024];
+	char *p, *t, buf[LINE_MAX * 2], tbuf[_PW_BUF_LEN];
 	int flags = 0, dbmode, found = 0;
 	static int firsttime = 1;
 	DBT data, key;

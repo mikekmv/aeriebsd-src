@@ -183,6 +183,7 @@ int	neo_open(void *, int);
 void	neo_close(void *);
 int	neo_query_encoding(void *, struct audio_encoding *);
 int	neo_set_params(void *, int, int, struct audio_params *, struct audio_params *);
+void	neo_get_default_params(void *, int, struct audio_params *);
 int	neo_round_blocksize(void *, int);
 int	neo_trigger_output(void *, void *, void *, int, void (*)(void *),
 	    void *, struct audio_params *);
@@ -278,7 +279,7 @@ struct audio_hw_if neo_hw_if = {
 	neo_get_props,
 	neo_trigger_output,
 	neo_trigger_input,
-	NULL
+	neo_get_default_params
 
 };
 
@@ -825,6 +826,12 @@ neo_query_encoding(addr, fp)
 	default:
 		return (EINVAL);
 	}
+}
+
+void
+neo_get_default_params(void *addr, int mode, struct audio_params *params)
+{
+	ac97_get_default_params(params);
 }
 
 /* Todo: don't commit settings to card until we've verified all parameters */

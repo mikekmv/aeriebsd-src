@@ -104,7 +104,7 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 		if (crd->crd_flags & CRD_F_IV_EXPLICIT)
 			bcopy(crd->crd_iv, iv, ivlen);
 		else
-			arc4random_bytes(iv, ivlen);
+			arc4random_buf(iv, ivlen);
 
 		/* Do we need to write the IV */
 		if (!(crd->crd_flags & CRD_F_IV_PRESENT)) {
@@ -123,6 +123,10 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 
 	ivp = iv;
 
+	/*
+	 * xforms that provide a reinit method perform all IV
+	 * handling themselves.
+	 */
 	if (exf->reinit)
 		exf->reinit(sw->sw_kschedule, iv);
 
@@ -144,7 +148,13 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 
 				/* Actual encryption/decryption */
 				if (exf->reinit) {
-					exf->encrypt(sw->sw_kschedule, blk);
+					if (crd->crd_flags & CRD_F_ENCRYPT) {
+						exf->encrypt(sw->sw_kschedule,
+						    blk);
+					} else {
+						exf->decrypt(sw->sw_kschedule,
+						    blk);
+					}
 				} else if (crd->crd_flags & CRD_F_ENCRYPT) {
 					/* XOR with previous block */
 					for (j = 0; j < blks; j++)
@@ -216,7 +226,13 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 
 			while (m->m_len >= k + blks && i > 0) {
 				if (exf->reinit) {
-					exf->encrypt(sw->sw_kschedule, idat);
+					if (crd->crd_flags & CRD_F_ENCRYPT) {
+						exf->encrypt(sw->sw_kschedule,
+						    idat);
+					} else {
+						exf->decrypt(sw->sw_kschedule,
+						    idat);
+					}
 				} else if (crd->crd_flags & CRD_F_ENCRYPT) {
 					/* XOR with previous block/IV */
 					for (j = 0; j < blks; j++)
@@ -271,7 +287,13 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 
 				/* Actual encryption/decryption */
 				if (exf->reinit) {
-					exf->encrypt(sw->sw_kschedule, blk);
+					if (crd->crd_flags & CRD_F_ENCRYPT) {
+						exf->encrypt(sw->sw_kschedule,
+						    blk);
+					} else {
+						exf->decrypt(sw->sw_kschedule,
+						    blk);
+					}
 				} else if (crd->crd_flags & CRD_F_ENCRYPT) {
 					/* XOR with previous block */
 					for (j = 0; j < blks; j++)
@@ -334,7 +356,13 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 			while (uio->uio_iov[ind].iov_len >= k + blks &&
 			    i > 0) {
 				if (exf->reinit) {
-					exf->encrypt(sw->sw_kschedule, idat);
+					if (crd->crd_flags & CRD_F_ENCRYPT) {
+						exf->encrypt(sw->sw_kschedule,
+						    idat);
+					} else {
+						exf->decrypt(sw->sw_kschedule,
+						    idat);
+					}
 				} else if (crd->crd_flags & CRD_F_ENCRYPT) {
 					/* XOR with previous block/IV */
 					for (j = 0; j < blks; j++)
@@ -606,6 +634,9 @@ swcr_newsession(u_int32_t *sid, struct cryptoini *cri)
 		case CRYPTO_AES_CTR:
 			txf = &enc_xform_aes_ctr;
 			goto enccommon;
+		case CRYPTO_AES_XTS:
+			txf = &enc_xform_aes_xts;
+			goto enccommon;
 		case CRYPTO_NULL:
 			txf = &enc_xform_null;
 			goto enccommon;
@@ -768,6 +799,7 @@ swcr_freesession(u_int64_t tid)
 		case CRYPTO_SKIPJACK_CBC:
 		case CRYPTO_RIJNDAEL128_CBC:
 		case CRYPTO_AES_CTR:
+		case CRYPTO_AES_XTS:
 		case CRYPTO_NULL:
 			txf = swd->sw_exf;
 
@@ -885,6 +917,7 @@ swcr_process(struct cryptop *crp)
 		case CRYPTO_SKIPJACK_CBC:
 		case CRYPTO_RIJNDAEL128_CBC:
 		case CRYPTO_AES_CTR:
+		case CRYPTO_AES_XTS:
 			if ((crp->crp_etype = swcr_encdec(crd, sw,
 			    crp->crp_buf, type)) != 0)
 				goto done;
@@ -956,6 +989,7 @@ swcr_init(void)
 	algs[CRYPTO_SHA1] = CRYPTO_ALG_FLAG_SUPPORTED;
 	algs[CRYPTO_RIJNDAEL128_CBC] = CRYPTO_ALG_FLAG_SUPPORTED;
 	algs[CRYPTO_AES_CTR] = CRYPTO_ALG_FLAG_SUPPORTED;
+	algs[CRYPTO_AES_XTS] = CRYPTO_ALG_FLAG_SUPPORTED;
 	algs[CRYPTO_DEFLATE_COMP] = CRYPTO_ALG_FLAG_SUPPORTED;
 	algs[CRYPTO_NULL] = CRYPTO_ALG_FLAG_SUPPORTED;
 	algs[CRYPTO_SHA2_256_HMAC] = CRYPTO_ALG_FLAG_SUPPORTED;

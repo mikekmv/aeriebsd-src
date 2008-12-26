@@ -29,7 +29,7 @@
 .\"
 .\"	@(#)queue.3	8.1 (Berkeley) 12/13/93
 .\"
-.Dd $Mdocdate: March 31 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt QUEUE 3
 .Os
 .Sh NAME
@@ -219,7 +219,7 @@
 .Ft void
 .Fn TAILQ_REMOVE "TAILQ_HEAD *head" "struct TYPE *elm" "TAILQ_ENTRY NAME"
 .Ft void
-.Fn TAILQ_REPLACE "struct TYPE *elm" "struct TYPE *elm2" "TAILQ_ENTRY NAME"
+.Fn TAILQ_REPLACE "TAILQ_HEAD *head" "struct TYPE *elm" "struct TYPE *elm2" "TAILQ_ENTRY NAME"
 .Pp
 .Fn CIRCLEQ_ENTRY "TYPE"
 .Fn CIRCLEQ_HEAD "HEADNAME" "TYPE"
@@ -251,7 +251,7 @@
 .Ft void
 .Fn CIRCLEQ_REMOVE "CIRCLEQ_HEAD *head" "struct TYPE *elm" "CIRCLEQ_ENTRY NAME"
 .Ft void
-.Fn CIRCLEQ_REPLACE "struct TYPE *elm" "struct TYPE *elm2" "CIRCLEQ_ENTRY NAME"
+.Fn CIRCLEQ_REPLACE "CIRCLEQ_HEAD *head" "struct TYPE *elm" "struct TYPE *elm2" "CIRCLEQ_ENTRY NAME"
 .Sh DESCRIPTION
 These macros define and operate on five types of data structures:
 singly-linked lists, simple queues, lists, tail queues, and circular queues.

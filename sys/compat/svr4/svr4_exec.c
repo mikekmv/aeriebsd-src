@@ -124,6 +124,9 @@ svr4_elf_probe(p, epp, itp, pos, os)
 	int error;
 	size_t len;
 
+	if (!(emul_svr4.e_flags & EMUL_ENABLED))
+		return (ENOEXEC);
+
 	if (itp) {
 		if ((error = emul_find(p, NULL, svr4_emul_path, itp, &bp, 0)))
 			return (error);

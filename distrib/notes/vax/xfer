@@ -10,7 +10,9 @@ Installation is supported from several media types, including:
 OpenBSDXferPrelude
 
 
-OpenBSDXferBareTape(xbase xetc xfont xserv xshare)
+dnl Put back xserv when it is back
+dnl OpenBSDXferBareTape(xbase xetc xfont xserv xshare)
+OpenBSDXferBareTape(xbase xetc xfont xshare)
 
 OpenBSDXferNFS
 

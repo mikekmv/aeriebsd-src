@@ -1,8 +1,5 @@
 
-SUBDIR=		mbr xxboot
-.if ${MACHINE} == "landisk"
-SUBDIR+=	boot
-.endif
+SUBDIR=		mbr xxboot boot
 
 
 .include <bsd.subdir.mk>

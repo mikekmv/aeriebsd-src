@@ -192,7 +192,7 @@ viac3_crypto_newsession(u_int32_t *sidp, struct cryptoini *cri)
 			cw0 |= C3_CRYPT_CWLO_ALG_AES | C3_CRYPT_CWLO_KEYGEN_SW |
 			    C3_CRYPT_CWLO_NORMAL;
 
-			arc4random_bytes(ses->ses_iv, sizeof(ses->ses_iv));
+			arc4random_buf(ses->ses_iv, sizeof(ses->ses_iv));
 			ses->ses_klen = c->cri_klen;
 			ses->ses_cw0 = cw0;
 

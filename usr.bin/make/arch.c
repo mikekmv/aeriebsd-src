@@ -1,5 +1,3 @@
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 1999,2000 Marc Espie.
  *

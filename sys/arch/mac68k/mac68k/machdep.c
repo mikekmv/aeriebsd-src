@@ -111,6 +111,7 @@
 #include <machine/pmap.h>
 
 #include <uvm/uvm_extern.h>
+#include <uvm/uvm_swap.h>
 
 #include <sys/sysctl.h>
 
@@ -596,7 +597,9 @@ haltsys:
 		}
 		printf("\nThe operating system has halted.\n");
 		printf("Please press any key to reboot.\n\n");
+		cnpollc(1);
 		(void)cngetc();
+		cnpollc(0);
 	}
 
 	/* Map the last physical page VA = PA for doboot() */
@@ -756,6 +759,10 @@ dumpsys()
 
 	printf("\ndumping to dev %u,%u offset %ld\n", major(dumpdev),
 	    minor(dumpdev), dumplo);
+
+#ifdef UVM_SWAP_ENCRYPT
+	uvm_swap_finicrypt_all();
+#endif
 
 	printf("dump ");
 

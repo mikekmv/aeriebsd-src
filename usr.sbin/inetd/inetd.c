@@ -36,7 +36,7 @@ char copyright[] =
 
 #ifndef lint
 /*static const char sccsid[] = "from: @(#)inetd.c	5.30 (Berkeley) 6/3/91";*/
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: inetd.c,v 1.1.1.1 2008/08/26 14:44:22 root Exp $";
 #endif /* not lint */
 
 /*
@@ -299,7 +299,6 @@ int	dg_broadcast(struct in_addr *in);
 
 #define NUMINT	(sizeof(intab) / sizeof(struct inent))
 char	*CONFIG = _PATH_INETDCONF;
-char	*progname;
 
 void
 fd_grow(fd_set **fdsp, int *bytes, int fd)
@@ -331,10 +330,7 @@ main(int argc, char *argv[])
 	struct servtab *sep;
 	extern char *optarg;
 	extern int optind;
-
-	progname = strrchr(argv[0], '/');
-	progname = progname ? progname + 1 : argv[0];
-
+	
 	while ((ch = getopt(argc, argv, "dR:")) != -1)
 		switch (ch) {
 		case 'd':
@@ -358,8 +354,7 @@ main(int argc, char *argv[])
 		case '?':
 		default:
 			fprintf(stderr,
-			    "usage: %s [-d] [-R rate] [configuration file]\n",
-			    progname);
+			    "usage: inetd [-d] [-R rate] [configuration_file]\n");
 			exit(1);
 		}
 	argc -= optind;
@@ -371,13 +366,11 @@ main(int argc, char *argv[])
 	if (argc > 0)
 		CONFIG = argv[0];
 	if (CONFIG == NULL) {
-		fprintf(stderr, "%s: non-root must specify a config file\n",
-		    progname);
+		fprintf(stderr, "inetd: non-root must specify a config file\n");
 		exit(1);
 	}
 	if (argc > 1) {
-		fprintf(stderr, "%s: more than one argument specified\n",
-		    progname);
+		fprintf(stderr, "inetd: more than one argument specified\n");
 		exit(1);
 	}
 
@@ -395,7 +388,7 @@ main(int argc, char *argv[])
 		setgroups(1, &gid);
 	}
 
-	openlog(progname, LOG_PID | LOG_NOWAIT, LOG_DAEMON);
+	openlog("inetd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
 	logpid();
 
 	if (getrlimit(RLIMIT_NOFILE, &rlim_nofile) < 0) {
@@ -570,7 +563,7 @@ dg_badinput(struct sockaddr *sa)
 		if (IN6_IS_ADDR_MULTICAST(in6) || IN6_IS_ADDR_UNSPECIFIED(in6))
 			goto bad;
 		/*
-		 * OpenBSD does not support IPv4 mapped adderss (RFC2553
+		 * OpenBSD does not support IPv4 mapped address (RFC2553
 		 * inbound behavior) at all.  We should drop it.
 		 */
 		if (IN6_IS_ADDR_V4MAPPED(in6))

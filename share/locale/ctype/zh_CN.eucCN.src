@@ -1,4 +1,3 @@
-/*	$NetBSD: zh_CN.eucCN.src,v 1.2 2001/03/26 19:56:37 tshiozak Exp $	*/
 
 /*-
  * Copyright (c) 1998,	Luoqi Chen
@@ -25,7 +24,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: src/usr.bin/mklocale/data/zh_CN.EUC.src,v 1.2.2.1 1999/08/29 15:31:06 peter Exp $
  */
 
 ENCODING	"EUC"

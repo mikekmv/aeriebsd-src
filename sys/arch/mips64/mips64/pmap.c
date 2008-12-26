@@ -277,9 +277,8 @@ extern struct user *proc0paddr;
 	DPRINTF(PDB_FOLLOW|PDB_CREATE, ("pmap_create()\n"));
 
 	s = splvm();
-	pmap = pool_get(&pmap_pmap_pool, PR_WAITOK);
+	pmap = pool_get(&pmap_pmap_pool, PR_WAITOK | PR_ZERO);
 	splx(s);
-	bzero(pmap, sizeof(*pmap));
 
 	simple_lock_init(&pmap->pm_lock);
 	pmap->pm_count = 1;

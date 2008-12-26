@@ -32,7 +32,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: hash_page.c,v 1.1.1.1 2008/08/26 14:38:26 root Exp $";
 #endif
 
 /*
@@ -151,6 +151,14 @@ __delpair(HTAB *hashp, BUFHEAD *bufp, int ndx)
 				bp[i - 2] = bp[i] + pairlen;
 				bp[i - 1] = bp[i + 1] + pairlen;
 			}
+		}
+		if (ndx == hashp->cndx) {
+			/*
+			 * We just removed pair we were "pointing" to.
+			 * By moving back the cndx we ensure subsequent
+			 * hash_seq() calls won't skip over any entries.
+			 */
+			hashp->cndx -= 2;
 		}
 	}
 	/* Finally adjust the page data */

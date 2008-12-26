@@ -1,8 +1,3 @@
-#ifndef EXTERN_H
-#define EXTERN_H
-
-/*	$OpenPackages$ */
-
 /*-
  * Copyright (c) 1988, 1989, 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -38,6 +33,9 @@
  *
  *	from: @(#)nonints.h	8.3 (Berkeley) 3/19/94
  */
+
+#ifndef EXTERN_H
+#define EXTERN_H
 
 extern bool	compatMake;	/* True if we are make compatible */
 extern bool	ignoreErrors;	/* True if should ignore all errors */

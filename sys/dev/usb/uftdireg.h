@@ -249,10 +249,10 @@ enum {
 
 /*
  *   BmRequestType:   1100 0000b
- *   bRequest:        FTDI_SIO_GET_MODEM_STATUS
+ *   bRequest:        FTDI_SIO_GET_STATUS
  *   wValue:          zero
  *   wIndex:          Port
- *   wLength:         1
+ *   wLength:         1		(2 for newer devices like the FT232R)
  *   Data:            Status
  *
  * One byte of data is returned
@@ -270,7 +270,7 @@ enum {
  *         0 = inactive
  *         1 = active
  *
- * FTDI_SIO_GET_MODEM_STATUS
+ * FTDI_SIO_GET_STATUS
  * Retrieve the current value of the modem status register.
  */
 #define FTDI_SIO_CTS_MASK 0x10

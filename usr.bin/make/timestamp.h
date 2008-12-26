@@ -1,8 +1,3 @@
-#ifndef TIMESTAMP_H
-#define TIMESTAMP_H
-
-/*	$OpenPackages$ */
-
 /*
  * Copyright (c) 2001 Marc Espie.
  *
@@ -41,6 +36,9 @@
  * ts_set_from_time_t(d, t):	create timestamp from time_t.
  * ts_set_from_now(n):		grab current date.
  */
+
+#ifndef TIMESTAMP_H
+#define TIMESTAMP_H
 
 /* sysresult = set_times(name):	set modification times on a file.
  * 				system call results.

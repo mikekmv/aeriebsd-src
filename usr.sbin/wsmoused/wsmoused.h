@@ -56,25 +56,25 @@
 
 extern char *pidfile;
 
-#define debug(fmt,args...) \
-	if (debug&&nodaemon) printf(fmt, ##args)
+#define debug(fmt, ...) \
+	if (debug&&nodaemon) printf(fmt, __VA_ARGS__)
 
-#define logerr(e, fmt, args...) 				\
+#define logerr(e, ...) 				\
 	do {							\
 		unlink(pidfile);				\
 		if (background) {				\
-			syslog(LOG_ERR, fmt, ##args);		\
+			syslog(LOG_ERR, __VA_ARGS__);		\
 			exit(e);				\
 		} else						\
-			errx(e, fmt, ##args);			\
+			errx(e, __VA_ARGS__);			\
 	} while (0)
 
-#define logwarn(fmt, args...)					\
+#define logwarn(...)						\
 	do {							\
 		if (background)					\
-		    syslog(LOG_WARNING, fmt, ##args);		\
+		    syslog(LOG_WARNING, __VA_ARGS__);		\
 		else						\
-		    warnx(fmt, ##args);				\
+		    warnx(__VA_ARGS__);				\
 	} while (0)
 
 /* Daemon flags */

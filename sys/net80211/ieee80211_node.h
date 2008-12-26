@@ -62,6 +62,13 @@ enum ieee80211_node_state {
 		(__ni)->ni_state = (__state);	\
 	} while (0)
 
+enum ieee80211_node_psstate {
+	IEEE80211_PS_AWAKE,
+	IEEE80211_PS_DOZE
+};
+
+#define	IEEE80211_PS_MAX_QUEUE	50	/* maximum saved packets */
+
 /* Authenticator state machine: 4-Way Handshake (see 8.5.6.1.1) */
 enum {
 	RSNA_INITIALIZE,
@@ -171,7 +178,11 @@ struct ieee80211_node {
 	u_int8_t		ni_flags;	/* special-purpose state */
 #define IEEE80211_NODE_ERP	0x01
 #define IEEE80211_NODE_QOS	0x02
-#define IEEE80211_NODE_REKEY	0x04
+#define IEEE80211_NODE_REKEY	0x04	/* GTK rekeying in progress */
+#define IEEE80211_NODE_RXPROT	0x08	/* RX protection ON */
+#define IEEE80211_NODE_TXPROT	0x10	/* TX protection ON */
+#define IEEE80211_NODE_TXRXPROT	\
+	(IEEE80211_NODE_TXPROT | IEEE80211_NODE_RXPROT)
 };
 
 RB_HEAD(ieee80211_tree, ieee80211_node);

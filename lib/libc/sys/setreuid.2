@@ -28,7 +28,7 @@
 .\"
 .\"      @(#)setreuid.2	8.2 (Berkeley) 4/16/94
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt SETREUID 2
 .Os
 .Sh NAME
@@ -61,12 +61,11 @@ function was intended to allow swapping the real and
 effective user IDs in set-user-ID programs to temporarily relinquish
 the set-user-ID value.
 This purpose is now better served by the use of the
-.Fn seteuid
-function (see
-.Xr setuid 2 ) .
+.Xr seteuid 2
+function.
 .Pp
 When setting the real and effective user IDs to the same value, the
-.Fn setuid
+.Xr setuid 2
 function is preferred.
 .Sh RETURN VALUES
 Upon successful completion, a value of 0 is returned.
@@ -83,6 +82,7 @@ was specified.
 .Sh SEE ALSO
 .Xr getuid 2 ,
 .Xr seteuid 2 ,
+.Xr setregid 2 ,
 .Xr setresuid 2 ,
 .Xr setuid 2
 .Sh STANDARDS

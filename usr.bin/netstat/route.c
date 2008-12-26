@@ -67,7 +67,7 @@
 #define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
 
 struct radix_node_head ***rt_head;
-struct radix_node_head ***rnt;			/* provides enough space */
+struct radix_node_head ***rnt;
 struct radix_node_head *rt_tables[AF_MAX+1];	/* provides enough space */
 u_int8_t		  af2rtafidx[AF_MAX+1];
 
@@ -217,15 +217,20 @@ p_rtnode(void)
 	struct radix_mask *rm = rnode.rn_mklist;
 
 	if (rnode.rn_b < 0) {
+		snprintf(nbuf, sizeof nbuf, " => %p", rnode.rn_dupedkey);
+		printf("\t  (%p)%s", rnode.rn_p,
+		    rnode.rn_dupedkey ? nbuf : "");
 		if (rnode.rn_mask) {
-			printf("\t  mask ");
+			printf(" mask ");
 			p_sockaddr(kgetsa((struct sockaddr *)rnode.rn_mask),
 			    0, 0, -1);
-		} else if (rm == 0)
+		} else if (rm == 0) {
+			putchar('\n');
 			return;
+		}
 	} else {
 		snprintf(nbuf, sizeof nbuf, "(%d)", rnode.rn_b);
-		printf("%6.6s %16p : %16p", nbuf, rnode.rn_l,
+		printf("%6.6s (%p) %16p : %16p", nbuf, rnode.rn_p, rnode.rn_l,
 		    rnode.rn_r);
 	}
 
@@ -283,12 +288,13 @@ p_krtentry(struct rtentry *rt)
 	p_addr(sa, mask, rt->rt_flags);
 	p_gwaddr(kgetsa(rt->rt_gateway), sa->sa_family);
 	p_flags(rt->rt_flags, "%-6.6s ");
-	printf("%6d %8ld ", rt->rt_refcnt, rt->rt_use);
+	printf("%5u %8ld ", rt->rt_refcnt, rt->rt_use);
 	if (rt->rt_rmx.rmx_mtu)
-		printf("%6u ", rt->rt_rmx.rmx_mtu);
+		printf("%5u ", rt->rt_rmx.rmx_mtu);
 	else
-		printf("%6s ", "-");
+		printf("%5s ", "-");
 	putchar((rt->rt_rmx.rmx_locks & RTV_MTU) ? 'L' : ' ');
+	printf("  %2d", rt->rt_priority);
 
 	if (rt->rt_ifp) {
 		if (rt->rt_ifp != lastif) {

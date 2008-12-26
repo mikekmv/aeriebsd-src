@@ -112,14 +112,8 @@ bwi_pci_attach(struct device *parent, struct device *self, void *aux)
 
 	/* map control / status registers */
 	memtype = pci_mapreg_type(pa->pa_pc, pa->pa_tag, BWI_PCI_BAR0); 
-	switch (memtype) {
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_32BIT:
-	case PCI_MAPREG_TYPE_MEM | PCI_MAPREG_MEM_TYPE_64BIT:
-		if (pci_mapreg_map(pa, BWI_PCI_BAR0,
-		    memtype, 0, &sc->sc_mem_bt, &sc->sc_mem_bh,
-		    NULL, &psc->psc_mapsize, 0) == 0)
-			break;
-	default:
+	if (pci_mapreg_map(pa, BWI_PCI_BAR0, memtype, 0, &sc->sc_mem_bt,
+	    &sc->sc_mem_bh, NULL, &psc->psc_mapsize, 0)) {
 		printf(": could not map memory space\n");
 		return;
 	}

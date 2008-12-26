@@ -114,6 +114,8 @@ schizo_match(struct device *parent, void *match, void *aux)
 	str = getpropstring(ma->ma_node, "compatible");
 	if (strcmp(str, "pci108e,8001") == 0)
 		return (1);
+	if (strcmp(str, "pci108e,8002") == 0)		/* XMITS */
+		return (1);
 	if (strcmp(str, "pci108e,a801") == 0)		/* Tomatillo */
 		return (1);
 

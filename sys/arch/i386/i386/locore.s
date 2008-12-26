@@ -780,30 +780,6 @@ _C_LABEL(freebsd_esigcode):
  * The following primitives are used to fill and copy regions of memory.
  */
 
-/*
- * fillw(short pattern, caddr_t addr, size_t len);
- * Write len copies of pattern at addr.
- */
-ENTRY(fillw)
-	pushl	%edi
-	movl	8(%esp),%eax
-	movl	12(%esp),%edi
-	movw	%ax,%cx
-	rorl	$16,%eax
-	movw	%cx,%ax
-	cld
-	movl	16(%esp),%ecx
-	shrl	%ecx			# do longwords
-	rep
-	stosl
-	movl	16(%esp),%ecx
-	andl	$1,%ecx			# do remainder
-	rep
-	stosw
-	popl	%edi
-	ret
-
-
 /* Frame pointer reserve on stack. */
 #ifdef DDB
 #define FPADD 4
@@ -1324,11 +1300,8 @@ ENTRY(cpu_switchto)
 	movl	16(%esp), %esi
 	movl	20(%esp), %edi
 
-	xorl	%eax, %eax
-
-	movl	%eax, CPUVAR(RESCHED)
-
 #ifdef	DIAGNOSTIC
+	xorl	%eax, %eax
 	cmpl	%eax,P_WCHAN(%edi)	# Waiting for something?
 	jne	_C_LABEL(switch_error1)	# Yes; shouldn't be queued.
 	cmpb	$SRUN,P_STAT(%edi)	# In run state?

@@ -153,8 +153,8 @@ ext2fs_access(void *v)
 	if ((mode & VWRITE) && (ip->i_e2fs_flags & EXT2_IMMUTABLE))
 		return (EPERM);
 
-	return (vaccess(ip->i_e2fs_mode, ip->i_e2fs_uid, ip->i_e2fs_gid, mode,
-			ap->a_cred));
+	return (vaccess(vp->v_type, ip->i_e2fs_mode, ip->i_e2fs_uid,
+			ip->i_e2fs_gid, mode, ap->a_cred));
 }
 
 /* ARGSUSED */
@@ -1255,7 +1255,7 @@ ext2fs_reclaim(void *v)
 /* Global vfs data structures for ext2fs. */
 int (**ext2fs_vnodeop_p)(void *);
 struct vnodeopv_entry_desc ext2fs_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
+	{ &vop_default_desc, eopnotsupp },
 	{ &vop_lookup_desc, ext2fs_lookup },	/* lookup */
 	{ &vop_create_desc, ext2fs_create },	/* create */
 	{ &vop_mknod_desc, ext2fs_mknod },		/* mknod */

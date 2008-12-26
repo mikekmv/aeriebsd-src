@@ -46,6 +46,7 @@
 #include <sys/mbuf.h>
 #include <sys/malloc.h>
 #include <sys/socket.h>
+#include <sys/queue.h>
 
 #include <netinet/in.h>
 #include <nfs/rpcv2.h>
@@ -154,7 +155,6 @@ nfsrv_getcache(struct nfsrv_descript *nd, struct nfssvc_sock *slp,
 	struct nfsrvcache *rp;
 	struct mbuf *mb;
 	struct sockaddr_in *saddr;
-	caddr_t bpos;
 	int ret;
 
 	/*
@@ -178,8 +178,7 @@ nfsrv_getcache(struct nfsrv_descript *nd, struct nfssvc_sock *slp,
 			ret = RC_DROPIT;
 		} else if (rp->rc_flag & RC_REPSTATUS) {
 			nfsstats.srvcache_nonidemdonehits++;
-			nfs_rephead(0, nd, slp, rp->rc_status, repp, &mb,
-			    &bpos);
+			nfs_rephead(0, nd, slp, rp->rc_status, repp, &mb);
 			ret = RC_REPLY;
 		} else if (rp->rc_flag & RC_REPMBUF) {
 			nfsstats.srvcache_nonidemdonehits++;
@@ -216,7 +215,7 @@ nfsrv_getcache(struct nfsrv_descript *nd, struct nfssvc_sock *slp,
 		if (rp->rc_flag & RC_REPMBUF)
 			m_freem(rp->rc_reply);
 		if (rp->rc_flag & RC_NAM)
-			MFREE(rp->rc_nam, mb);
+			m_freem(rp->rc_nam);
 		rp->rc_flag &= (RC_LOCKED | RC_WANTED);
 	}
 	TAILQ_INSERT_TAIL(&nfsrvlruhead, rp, rc_lru);

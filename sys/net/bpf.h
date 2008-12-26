@@ -150,7 +150,7 @@ struct bpf_hdr {
 #ifdef _KERNEL
 #if defined(__arm32__) || defined(__i386__) || defined(__m68k__) || \
     defined(__mips__) || defined(__ns32k__) || defined(__sparc__) || \
-    defined(__vax__)
+    defined(__sparc64__) || defined(__vax__)
 #define SIZEOF_BPF_HDR 18
 #else
 #define SIZEOF_BPF_HDR sizeof(struct bpf_hdr)

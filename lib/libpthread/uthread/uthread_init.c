@@ -127,7 +127,6 @@ static void *references[] = {
 	&write,
 	&writev,
 	/* libc thread-safe helper functions */
-	&_thread_malloc_init,
 	&_thread_malloc_lock,
 	&_thread_malloc_unlock,
 	&_thread_atexit_lock,

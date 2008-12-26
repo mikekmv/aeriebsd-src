@@ -65,10 +65,7 @@ acpiac_attach(struct device *parent, struct device *self, void *aux)
 	struct acpi_attach_args *aa = aux;
 
 	sc->sc_acpi = (struct acpi_softc *)parent;
-	sc->sc_devnode = aa->aaa_node->child;
-
-	aml_register_notify(sc->sc_devnode->parent, aa->aaa_dev,
-	    acpiac_notify, sc, ACPIDEV_NOPOLL);
+	sc->sc_devnode = aa->aaa_node;
 
 	acpiac_getsta(sc);
 	printf(": AC unit ");
@@ -87,6 +84,9 @@ acpiac_attach(struct device *parent, struct device *self, void *aux)
 	sensor_attach(&sc->sc_sensdev, &sc->sc_sens[0]);
 	sensordev_install(&sc->sc_sensdev);
 	sc->sc_sens[0].value = sc->sc_ac_stat;
+
+	aml_register_notify(sc->sc_devnode, aa->aaa_dev,
+	    acpiac_notify, sc, ACPIDEV_NOPOLL);
 }
 
 void
@@ -124,7 +124,7 @@ acpiac_notify(struct aml_node *node, int notify_type, void *arg)
 	struct acpiac_softc *sc = arg;
 
 	dnprintf(10, "acpiac_notify: %.2x %s\n", notify_type,
-	    sc->sc_devnode->parent->name);
+	    sc->sc_devnode->name);
 
 	switch (notify_type) {
 	case 0x00:

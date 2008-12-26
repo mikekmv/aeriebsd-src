@@ -1,8 +1,3 @@
-#ifndef MEMORY_H
-#define MEMORY_H
-
-/* $OpenPackages$ */
-
 /*-
  * Copyright (c) 1988, 1989, 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -38,6 +33,10 @@
  *
  *	from: @(#)nonints.h	8.3 (Berkeley) 3/19/94
  */
+
+#ifndef MEMORY_H
+#define MEMORY_H
+
 extern void *emalloc(size_t);
 extern char *estrdup(const char *);
 extern void *erealloc(void *, size_t);

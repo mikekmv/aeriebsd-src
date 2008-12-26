@@ -939,8 +939,8 @@ swift_hotfix(sc)
 {
 	int pcr = lda(SRMMU_PCR, ASI_SRMMU);
 
-	/* Turn off branch prediction */
-	pcr &= ~SWIFT_PCR_BF;
+	/* Turn on branch prediction */
+	pcr |= SWIFT_PCR_BF;
 	sta(SRMMU_PCR, ASI_SRMMU, pcr);
 }
 

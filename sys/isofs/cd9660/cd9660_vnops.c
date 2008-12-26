@@ -213,8 +213,8 @@ cd9660_access(v)
 	struct vop_access_args *ap = v;
 	struct iso_node *ip = VTOI(ap->a_vp);
 
-	return (vaccess(ip->inode.iso_mode & ALLPERMS, ip->inode.iso_uid,
-	    ip->inode.iso_gid, ap->a_mode, ap->a_cred));
+	return (vaccess(ap->a_vp->v_type, ip->inode.iso_mode & ALLPERMS,
+	    ip->inode.iso_uid, ip->inode.iso_gid, ap->a_mode, ap->a_cred));
 }
 
 int
@@ -933,7 +933,7 @@ cd9660_pathconf(v)
  */
 int (**cd9660_vnodeop_p)(void *);
 struct vnodeopv_entry_desc cd9660_vnodeop_entries[] = {
-	{ &vop_default_desc, vn_default_error },
+	{ &vop_default_desc, eopnotsupp },
 	{ &vop_lookup_desc, cd9660_lookup },	/* lookup */
 	{ &vop_create_desc, cd9660_create },	/* create */
 	{ &vop_mknod_desc, cd9660_mknod },	/* mknod */

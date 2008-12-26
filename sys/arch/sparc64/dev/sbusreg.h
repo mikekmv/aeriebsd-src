@@ -93,9 +93,9 @@ struct sysioreg {
 
 	u_int64_t	pad3[117];
 
-	struct iommureg sys_iommu;							/* 1fe.0000.2400,2410 */
+	struct iommureg sys_iommu;							/* 1fe.0000.2400-25f8 */
 
-	u_int64_t	pad4[125];
+	u_int64_t	pad4[64];
 
 	struct iommu_strbuf	sys_strbuf;						/* 1fe.0000.2800-2810 */
 

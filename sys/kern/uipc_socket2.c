@@ -192,8 +192,8 @@ sonewconn(struct socket *head, int connstatus)
 
 	(void) soreserve(so, snd_sb_hiwat, rcv_sb_hiwat);
 	soqinsque(head, so, soqueue);
-	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH,
-	    (struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0)) {
+	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH, NULL, NULL, NULL,
+	    curproc)) {
 		(void) soqremque(so, soqueue);
 		pool_put(&socket_pool, so);
 		return ((struct socket *)0);

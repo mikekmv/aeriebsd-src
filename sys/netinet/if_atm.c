@@ -82,6 +82,7 @@ atm_rtrequest(req, rt, info)
 {
 	struct sockaddr *gate = rt->rt_gateway;
 	struct atm_pseudoioctl api;
+	struct rt_addrinfo rtinfo;
 #ifdef NATM
 	struct sockaddr_in *sin;
 	struct natmpcb *npcb = NULL;
@@ -172,8 +173,12 @@ failed:
 			rt->rt_flags &= ~RTF_LLINFO;
 		}
 #endif
-		rtrequest(RTM_DELETE, rt_key(rt), (struct sockaddr *)0,
-			rt_mask(rt), 0, (struct rtentry **) 0, 0);
+		bzero(&rtinfo, sizeof(rtinfo));
+		rtinfo.rti_flags = rt->rt_flags;
+		rtinfo.rti_info[RTAX_DST] = rt_key(rt);
+		rtinfo.rti_info[RTAX_NETMASK] = rt_mask(rt);
+
+		rtrequest1(RTM_DELETE, &rtinfo, rt->rt_priority, NULL, 0);
 		break;
 
 	case RTM_DELETE:

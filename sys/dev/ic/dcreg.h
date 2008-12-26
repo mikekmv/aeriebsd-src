@@ -720,8 +720,6 @@ struct dc_softc {
 	void			*dc_intrhand;
 	void			*sc_dhook;
 	void			*sc_pwrhook;
-	struct resource		*dc_irq;
-	struct resource		*dc_res;
 	u_int8_t		dc_type;
 	u_int8_t		dc_pmode;
 	u_int8_t		dc_link;

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint                                                              
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: mktemp.c,v 1.1.1.1 2008/08/26 14:43:03 root Exp $";
 #endif /* not lint */                                                        
 
 #include <paths.h>
@@ -128,6 +128,6 @@ usage(void)
 	extern char *__progname;
 
 	(void)fprintf(stderr,
-	    "Usage: %s [-dqtu] [-p prefix] [template]\n", __progname);
+	    "usage: %s [-dqtu] [-p directory] [template]\n", __progname);
 	exit(1);
 }

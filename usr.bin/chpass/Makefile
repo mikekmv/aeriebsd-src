@@ -8,6 +8,7 @@ BINMODE=4555
 .PATH:	${.CURDIR}/../../lib/libc/gen
 LINKS=	${BINDIR}/chpass ${BINDIR}/chfn ${BINDIR}/chpass ${BINDIR}/chsh
 MLINKS=	chpass.1 chfn.1 chpass.1 chsh.1
+CFLAGS+=-I${.CURDIR}/../../lib/libc/include
 .if (${YP:L} == "yes")
 CFLAGS+=-DYP -I${.CURDIR}/../../lib/libc/yp
 .endif

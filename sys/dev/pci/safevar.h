@@ -148,7 +148,6 @@ struct safe_pkq {
 
 struct safe_softc {
 	struct device		sc_dev;		/* device backpointer */
-	struct resource		*sc_irq;
 	void			*sc_ih;		/* interrupt handler cookie */
 	bus_space_handle_t	sc_sh;		/* memory handle */
 	bus_space_tag_t		sc_st;		/* memory tag */

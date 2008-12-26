@@ -1322,6 +1322,8 @@ rcs_delta_stats(struct rcs_delta *rdp, int *ladded, int *lremoved)
 				errx(1, "unknown RCS patch operation '%c'", op);
 	}
 
+	rcs_freelines(plines);
+
 	*ladded = added;
 	*lremoved = removed;
 }

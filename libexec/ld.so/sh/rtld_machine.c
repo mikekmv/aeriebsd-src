@@ -665,7 +665,7 @@ _dl_md_reloc(elf_object_t *object, int rel, int relasz)
 				value += loff;
 			} else {
 				this = NULL;
-#if 0
+#if 1
 				ooff = _dl_find_symbol_bysym(object,
 				    ELF_R_SYM(rels->r_info), &this,
 				    SYM_SEARCH_ALL|SYM_WARNNOTFOUND|
@@ -872,8 +872,8 @@ _dl_bind(elf_object_t *object, int relidx)
 	if (object->got_size != 0) {
 		_dl_mprotect((void*)object->got_start, object->got_size,
 		    PROT_READ);
-		_dl_sigprocmask(SIG_SETMASK, &omask, NULL);
 		_dl_thread_bind_lock(1);
+		_dl_sigprocmask(SIG_SETMASK, &omask, NULL);
 	}
 	return newval;
 }

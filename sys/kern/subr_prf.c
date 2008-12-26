@@ -68,9 +68,6 @@
 #include <ddb/db_output.h>	/* db_printf, db_putchar prototypes */
 #include <ddb/db_var.h>		/* db_log, db_radix */
 #endif
-#if defined(UVM_SWAP_ENCRYPT)
-extern int uvm_doswapencrypt;
-#endif
 
 
 /*
@@ -183,10 +180,6 @@ panic(const char *fmt, ...)
 	va_list ap;
 
 	bootopt = RB_AUTOBOOT | RB_DUMP;
-#if defined(UVM_SWAP_ENCRYPT)
-	if (uvm_doswapencrypt)
-		bootopt &= ~RB_DUMP;
-#endif
 	va_start(ap, fmt);
 	if (panicstr)
 		bootopt |= RB_NOSYNC;

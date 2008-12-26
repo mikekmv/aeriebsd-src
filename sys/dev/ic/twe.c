@@ -180,8 +180,6 @@ twe_attach(sc)
 	TAILQ_INIT(&sc->sc_free_ccb);
 	TAILQ_INIT(&sc->sc_done_ccb);
 
-	lockinit(&sc->sc_lock, PWAIT, "twelk", 0, 0);
-
 	pa = sc->sc_cmdmap->dm_segs[0].ds_addr +
 	    sizeof(struct twe_cmd) * (TWE_MAXCMDS - 1);
 	for (cmd = (struct twe_cmd *)sc->sc_cmds + TWE_MAXCMDS - 1;

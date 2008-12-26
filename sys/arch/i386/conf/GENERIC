@@ -20,7 +20,7 @@ option		USER_LDT	# user-settable LDT; see i386_set_ldt(2)
 option		APERTURE	# in-kernel aperture driver for XFree86
 
 #option		KGDB		# Remote debugger support; exclusive of DDB
-#option		"KGDB_DEVNAME=\"pccom\"",KGDBADDR=0x2f8,KGDBRATE=9600
+#option		"KGDB_DEVNAME=\"com\"",KGDBADDR=0x2f8,KGDBRATE=9600
 
 option		COMPAT_SVR4	# binary compatibility with SVR4
 option		COMPAT_IBCS2	# binary compatibility with SCO and ISC
@@ -41,10 +41,11 @@ cpu0	at mainbus?
 bios0	at mainbus0
 apm0	at bios0 flags 0x0000	# flags 0x0101 to force protocol version 1.1
 acpi0	at bios?
-#option	ACPIVERBOSE
 pcibios0 at bios0 flags 0x0000	# use 0x30 for a total verbose
 ipmi0	at mainbus? disable	# IPMI
+#vmt0	at mainbus?		# VMware Tools
 esm0	at mainbus? 		# Dell Embedded Server Management
+amdmsr0	at mainbus?		# MSR access for AMD Geode LX CPUs with GP
 
 acpitimer*	at acpi?
 acpihpet*	at acpi?
@@ -281,6 +282,10 @@ onewire* at uow?
 puc*	at pci?			# PCI "universal" communication device
 #puc*	at cardbus?
 
+# USB Video
+uvideo* at uhub?
+video*  at uvideo?
+
 sdhc*	at pci?			# SD Host Controller
 sdmmc*	at sdhc?		# SD/MMC bus
 scsibus* at sdmmc?		# SCSI emulation
@@ -322,34 +327,44 @@ wskbd*		at pckbd? mux 1
 wsmouse*	at pms? mux 0
 wsmouse*	at pmsi? mux 0
 
-agp*		at vga?			# AGP bridges
+agp*		at vga?		# AGP bridges
+#option		DRM_DEBUG
+inteldrm*	at vga? disable	# Intel i915, i945 DRM driver
+#machdrm*	at vga?		# mach64 (3D Rage Pro, Rage) DRM driver
+#mgadrm*	at vga?		# Matrox G[24]00, G[45]50 DRM driver
+#ragedrm*	at vga?		# ATI Rage 128 DRM driver
+radeondrm*	at vga? disable	# ATI Radeon DRM driver
+#savagedrm*	at vga?		# S3 Savage DRM driver
+#sisdrm*	at vga?		# SiS DRM driver
+#tdfxdrm*	at vga?		# 3dfx (voodoo) DRM driver
 
+#option		VESABIOSVERBOSE
+#option		VESAFB		# VESA bios framebuffer support for X11
 #vesabios0	at mainbus?
-# option	VESABIOSVERBOSE
 
-#option	VESAFB			# VESA bios framebuffer support for X11
 
 pcppi0		at isa?
 
-pccom0	at isa? port 0x3f8 irq 4	# standard PC serial ports
-pccom1	at isa? port 0x2f8 irq 3
-pccom2	at isa? port 0x3e8 irq 5
-#pccom3	at isa? port 0x2e8 irq 9	# (conflicts with some video cards)
+com0	at isa? port 0x3f8 irq 4	# standard PC serial ports
+com1	at isa? port 0x2f8 irq 3
+com2	at isa? port 0x3e8 irq 5
+#com3	at isa? port 0x2e8 irq 9	# (conflicts with some video cards)
+#com4	at isa? port 0x220 irq 4	# Fujitsu Stylistic Touchscreen 
 ast0	at isa? port 0x1a0 irq 5	# AST 4-port serial card
 #ast1	at isa? port 0x2a0 irq 6	# 2nd AST 4-port serial card
-pccom*	at ast?
+com*	at ast?
 #boca0	at isa? port 0x100 irq 5	# BOCA 8-port serial cards
-#pccom*	at boca?
+#com*	at boca?
 #addcom0	at isa? port 0x108 irq 5	# Addonics FlexPort
-#pccom*	at addcom?
+#com*	at addcom?
 #rtfps0	at isa? port 0x1230 irq 10	# RT 4-port serial cards
-#pccom*	at rtfps?
+#com*	at rtfps?
 #hsq0	at isa? port 0x140 irq 10	# Hostess 4-port serial card
-#pccom*	at hsq?
-pccom*	at pcmcia?			# PCMCIA modems/serial ports
-pccom*	at isapnp?
-pccom*	at puc?
-pccom*	at cardbus?
+#com*	at hsq?
+com*	at pcmcia?			# PCMCIA modems/serial ports
+com*	at isapnp?
+com*	at puc?
+com*	at cardbus?
 
 # option for using CD1400 handshaking for incoming data
 # requires a special cable that exchanges the RTS and DTR lines
@@ -547,6 +562,7 @@ mskc*	at pci?				# Marvell Yukon-2
 msk*	at mskc?			#  each port of above
 em*	at pci?				# Intel Pro/1000 ethernet
 ixgb*	at pci?				# Intel Pro/10Gb ethernet
+ix*	at pci?				# Intel 82598EB 10Gb ethernet
 txp*	at pci?				# 3com 3CR990
 nge*	at pci?				# NS DP83820/DP83821 GigE
 bge*	at pci?				# Broadcom BCM57xx (aka Tigon3)
@@ -580,7 +596,6 @@ bwi*	at pci?				# Broadcom AirForce (802.11b/g)
 bwi*	at cardbus?			# Broadcom AirForce (802.11b/g)
 wi*	at pci?				# WaveLAN IEEE 802.11DS
 wi*	at pcmcia?			# WaveLAN IEEE 802.11DS
-#awi*	at pcmcia?			# Bay Networks IEEE 802.11FH
 an*	at pci?				# Aironet IEEE 802.11DS
 an*	at isapnp?			# Aironet IEEE 802.11DS
 an*	at pcmcia?			# Aironet IEEE 802.11DS
@@ -638,6 +653,7 @@ eso*	at pci?				# ESS Solo-1 PCI AudioDrive
 sv*	at pci?				# S3 SonicVibes (S3 617)
 neo*	at pci?				# NeoMagic 256AV/ZX
 cmpci*	at pci?				# C-Media CMI8338/8738
+auglx*	at pci?				# AMD Geode CS5536 Audio
 auich*	at pci? flags 0x0000		# i82801 ICH AC'97 audio
 auixp*	at pci?				# ATI IXP AC'97 Audio
 autri*	at pci? flags 0x0000		# Trident 4D WAVE
@@ -708,6 +724,7 @@ audio*	at maestro?
 audio*	at esa?
 audio*	at yds?
 audio*	at emu?
+audio*	at auglx?
 
 bktr0	at pci?
 
@@ -771,14 +788,3 @@ pseudo-device	hotplug		1	# devices hot plugging
 # mouse & keyboard multiplexor pseudo-devices
 pseudo-device	wsmux		2
 pseudo-device	crypto		1
-
-# DRM: direct rendering modules
-#option        DRM_DEBUG
-#inteldrm*       at vga?    # Intel i915, i945 DRM driver
-#machdrm*     at vga?    # mach64 (3D Rage Pro, Rage) DRM driver
-#mgadrm*        at vga?    # Matrox G[24]00, G[45]50 DRM driver
-#ragedrm*       at vga?    # ATI Rage 128 DRM driver
-#radeondrm*     at vga?    # ATI Radeon DRM driver
-#savagedrm*     at vga?    # S3 Savage DRM driver
-#sisdrm*        at vga?    # SiS DRM driver
-#tdfxdrm*       at vga?    # 3dfx (voodoo) DRM driver

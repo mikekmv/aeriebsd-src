@@ -1040,7 +1040,8 @@ static int uhash_update(uhash_ctx_t ctx, u_char *input, long len)
  */
 {
     UWORD bytes_hashed, bytes_remaining;
-    UINT8 nh_result[STREAMS*sizeof(UINT64)];
+    UINT64 result_buf[STREAMS];
+    UINT8 *nh_result = (UINT8 *)&result_buf;
     
     if (ctx->msg_len + len <= L1_KEY_LEN) {
         nh_update(&ctx->hash, (UINT8 *)input, len);
@@ -1092,7 +1093,8 @@ static int uhash_update(uhash_ctx_t ctx, u_char *input, long len)
 static int uhash_final(uhash_ctx_t ctx, u_char *res)
 /* Incorporate any pending data, pad, and generate tag */
 {
-    UINT8 nh_result[STREAMS*sizeof(UINT64)];
+    UINT64 result_buf[STREAMS];
+    UINT8 *nh_result = (UINT8 *)&result_buf;
 
     if (ctx->msg_len > L1_KEY_LEN) {
         if (ctx->msg_len % L1_KEY_LEN) {

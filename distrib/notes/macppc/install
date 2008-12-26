@@ -110,7 +110,7 @@ OpenBSDInstallPart3
 
 OpenBSDInstallPart4({:- If you have DOS or Linux
 	partitions defined on the disk, these will usually show up as
-	partition 'h', 'i' and so on.
+	partition 'i', 'j' and so on.
 
 	OpenBSD/MACHINE can share a disk with Mac OS or Mac OS X by using
 	an HFS partitioned disk. For proper layout, the disk should be
@@ -148,5 +148,13 @@ OpenBSDDISKInstall(,,{:- or MS-DOS-:})
 OpenBSDCommonFS
 
 OpenBSDCommonURL
+
+OpenBSDInstallWrapup
+
+OpenBSDInstallAperture
+
+OpenBSDInstallConsole
+
+OpenBSDInstallWrapupPart2
 
 OpenBSDCongratulations

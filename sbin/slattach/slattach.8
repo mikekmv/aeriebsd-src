@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)slattach.8	8.2 (Berkeley) 4/1/94
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt SLATTACH 8
 .Os
 .Sh NAME
@@ -40,10 +40,18 @@
 .Op Fl s Ar baudrate
 .Ar ttyname
 .Sh DESCRIPTION
+The
+.Nm
+command is deprecated.
+Please use the
+.Xr ldattach 8
+command instead.
+.Pp
 .Nm
 is used to assign a tty line to a network interface,
 and will attach the named tty line to the first
 available slipdevice that is configured and up.
+.Pp
 The following operands are supported by
 .Nm slattach :
 .Bl -tag -width Ar
@@ -109,6 +117,7 @@ tried to alter an interface's configuration.
 .Xr netstat 1 ,
 .Xr netintro 4 ,
 .Xr ifconfig 8 ,
+.Xr ldattach 8 ,
 .Xr rc 8
 .Sh HISTORY
 The

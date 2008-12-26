@@ -71,6 +71,9 @@
 #ifndef	ETHERTYPE_AARP
 #define	ETHERTYPE_AARP		0x80f3
 #endif
+#ifndef ETHERTYPE_8021Q
+#define ETHERTYPE_8021Q		0x8100
+#endif
 #ifndef ETHERTYPE_IPV6
 #define ETHERTYPE_IPV6		0x80f3
 #endif

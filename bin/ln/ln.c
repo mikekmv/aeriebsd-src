@@ -38,7 +38,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)ln.c	8.2 (Berkeley) 3/31/94";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ln.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -175,12 +175,13 @@ linkit(char *target, char *source, int isdir)
 		}
 
 		if (tsb.st_dev == sb.st_dev && tsb.st_ino == sb.st_ino) {
-			warnx("%s and %s are identical (nothing done).",
-			    target, source);
 			if (fflag)
 				return (0);
-			else
+			else {
+				warnx("%s and %s are identical (nothing done).",
+				    target, source);
 				return (1);
+			}
 		}
 	}
 	/*

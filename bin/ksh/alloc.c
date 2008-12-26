@@ -30,7 +30,7 @@
 #include "sh.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: alloc.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 struct link {
@@ -105,12 +105,19 @@ aresize(void *ptr, size_t size, Area *ap)
 void
 afree(void *ptr, Area *ap)
 {
-	struct link *l;
+	struct link *l, *l2;
 
 	if (!ptr)
 		return;
 
 	l = P2L(ptr);
+
+	for (l2 = ap->freelist; l2 != NULL; l2 = l2->next) {
+		if (l == l2)
+			break;
+	}
+	if (l2 == NULL)
+		internal_errorf(1, "afree: %p not present in area %p", ptr, ap);
 
 	if (l->prev)
 		l->prev->next = l->next;

@@ -308,7 +308,7 @@ ipsec_common_input_cb(struct mbuf *m, struct tdb *tdbp, int skip, int protoff,
 
 #ifdef INET
 	/* Fix IPv4 header */
-	if (tdbp->tdb_dst.sa.sa_family == AF_INET) {
+	if (af == AF_INET) {
 		if ((m->m_len < skip) && ((m = m_pullup(m, skip)) == NULL)) {
 			DPRINTF(("ipsec_common_input_cb(): processing failed "
 			    "for SA %s/%08x\n", ipsp_address(tdbp->tdb_dst),
@@ -411,7 +411,7 @@ ipsec_common_input_cb(struct mbuf *m, struct tdb *tdbp, int skip, int protoff,
 
 #ifdef INET6
 	/* Fix IPv6 header */
-	if (af == INET6)
+	if (af == AF_INET6)
 	{
 		if (m->m_len < sizeof(struct ip6_hdr) &&
 		    (m = m_pullup(m, sizeof(struct ip6_hdr))) == NULL) {
@@ -426,8 +426,7 @@ ipsec_common_input_cb(struct mbuf *m, struct tdb *tdbp, int skip, int protoff,
 		}
 
 		ip6 = mtod(m, struct ip6_hdr *);
-		ip6->ip6_plen = htons(m->m_pkthdr.len -
-		    sizeof(struct ip6_hdr));
+		ip6->ip6_plen = htons(m->m_pkthdr.len - skip);
 
 		/* Save protocol */
 		m_copydata(m, protoff, 1, (unsigned char *) &prot);
@@ -563,6 +562,9 @@ ipsec_common_input_cb(struct mbuf *m, struct tdb *tdbp, int skip, int protoff,
 	/* Add pf tag if requested. */
 	if (pf_tag_packet(m, tdbp->tdb_tag, -1))
 		DPRINTF(("failed to tag ipsec packet\n"));
+
+	/* clear state key ptr to prevent incorrect linking */
+	m->m_pkthdr.pf.statekey = NULL;
 #endif
 
 	if (tdbp->tdb_flags & TDBF_TUNNELING)

@@ -41,26 +41,21 @@
 #include <sys/kernel.h>
 #include <sys/device.h>
 #include <sys/socket.h>
-#include <sys/timeout.h>
 #include <sys/errno.h>
+
+#include <machine/bus.h>
 
 #include <net/if.h>
 #include <net/if_media.h>
 
-#ifdef INET
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
-#endif
-
-#include <dev/pci/pcivar.h>
 
 #include <dev/mii/mii.h>
 #include <dev/mii/miivar.h>
 #include <dev/mii/miidevs.h>
 
 #include <dev/mii/rgephyreg.h>
-
-#include <machine/bus.h>
 
 #include <dev/ic/rtl81x9reg.h>
 
@@ -125,6 +120,8 @@ rgephyattach(struct device *parent, struct device *self, void *aux)
 	sc->mii_inst = mii->mii_instance;
 	sc->mii_phy = ma->mii_phyno;
 	sc->mii_funcs = &rgephy_funcs;
+	sc->mii_model = MII_MODEL(ma->mii_id2);
+	sc->mii_rev = MII_REV(ma->mii_id2);
 	sc->mii_pdata = mii;
 	sc->mii_flags = ma->mii_flags;
 	sc->mii_anegticks = MII_ANEGTICKS_GIGE;
@@ -147,7 +144,6 @@ rgephy_service(struct mii_softc *sc, struct mii_data *mii, int cmd)
 {
 	struct ifmedia_entry *ife = mii->mii_media.ifm_cur;
 	int anar, reg, speed, gig = 0;
-	uint16_t id2;
 
 	switch (cmd) {
 	case MII_POLLSTAT:
@@ -253,8 +249,7 @@ setit:
 		 * need to restart the autonegotiation process.  Read
 		 * the BMSR twice in case it's latched.
 		 */
-		id2 = PHY_READ(sc, MII_PHYIDR2);
-		if (MII_REV(id2) < 2) {
+		if (sc->mii_rev < 2) {
 			reg = PHY_READ(sc, RL_GMEDIASTAT);
 			if (reg & RL_GMEDIASTAT_LINK)
 				break;
@@ -299,14 +294,11 @@ rgephy_status(struct mii_softc *sc)
 {
 	struct mii_data *mii = sc->mii_pdata;
 	int bmsr, bmcr, gtsr;
-	uint16_t id2;
 
 	mii->mii_media_status = IFM_AVALID;
 	mii->mii_media_active = IFM_ETHER;
 
-	id2 = PHY_READ(sc, MII_PHYIDR2);
-
-	if (MII_REV(id2) < 2) {
+	if (sc->mii_rev < 2) {
 		bmsr = PHY_READ(sc, RL_GMEDIASTAT);
 
 		if (bmsr & RL_GMEDIASTAT_LINK)
@@ -332,7 +324,7 @@ rgephy_status(struct mii_softc *sc)
 		}
 	}
 
-	if (MII_REV(id2) < 2) {
+	if (sc->mii_rev < 2) {
 		bmsr = PHY_READ(sc, RL_GMEDIASTAT);
 		if (bmsr & RL_GMEDIASTAT_1000MBPS)
 			mii->mii_media_active |= IFM_1000_T;
@@ -352,7 +344,7 @@ rgephy_status(struct mii_softc *sc)
 			mii->mii_media_active |= IFM_1000_T;
 		else if (RGEPHY_SR_SPEED(bmsr) == RGEPHY_SR_SPEED_100MBPS)
 			mii->mii_media_active |= IFM_100_TX;
-		else if (bmsr & RL_GMEDIASTAT_10MBPS)
+		else if (RGEPHY_SR_SPEED(bmsr) == RGEPHY_SR_SPEED_10MBPS)
 			mii->mii_media_active |= IFM_10_T;
 
 		if (bmsr & RGEPHY_SR_FDX)
@@ -397,11 +389,9 @@ void
 rgephy_loop(struct mii_softc *sc)
 {
 	u_int32_t bmsr;
-	uint16_t id2;
 	int i;
 
-	id2 = PHY_READ(sc, MII_PHYIDR2);
-	if (MII_REV(id2) < 2) {
+	if (sc->mii_rev < 2) {
 		PHY_WRITE(sc, RGEPHY_MII_BMCR, RGEPHY_BMCR_PDOWN);
 		DELAY(1000);
 	}
@@ -430,10 +420,8 @@ void
 rgephy_load_dspcode(struct mii_softc *sc)
 {
 	int val;
-	u_int16_t id2;
 
-	id2 = PHY_READ(sc, MII_PHYIDR2);
-	if (MII_REV(id2) > 1)
+	if (sc->mii_rev > 1)
 		return;
 
 	PHY_WRITE(sc, 31, 0x0001);

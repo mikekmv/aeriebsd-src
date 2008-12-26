@@ -44,7 +44,7 @@ option		WSKBD_NO_INTL_LAYOUTS	# no international keyboard layouts
 
 option		BOOT_CONFIG
 
-config	bsd	swap generic
+config	bsd	root on rd0a swap on rd0b and wd0b and sd0b
 
 mainbus0 at root
 cpu*	at mainbus0

@@ -145,7 +145,6 @@ int	eopnotsupp(void *);
 int	lkmenodev(void);
 
 struct vnodeopv_desc;
-void vfs_opv_init(void);
 void vfs_opv_init_explicit(struct vnodeopv_desc *);
 void vfs_opv_init_default(struct vnodeopv_desc *);
 void vfs_op_init(void);

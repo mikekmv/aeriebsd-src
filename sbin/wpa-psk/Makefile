@@ -1,6 +1,9 @@
 
 PROG=	wpa-psk
+SRCS=	wpa-psk.c pbkdf2.c
+CFLAGS+=-Wall -I${.CURDIR}/../bioctl
 MAN=	wpa-psk.8
-SRCS=	wpa-psk.c
+
+.PATH: ${.CURDIR}/../bioctl
 
 .include <bsd.prog.mk>

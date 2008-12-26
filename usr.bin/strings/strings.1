@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)strings.1	8.1 (Berkeley) 6/6/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt STRINGS 1
 .Os
 .Sh NAME
@@ -37,8 +37,8 @@
 .Sh SYNOPSIS
 .Nm strings
 .Op Fl afo
-.Op Fl n Ar number
 .Op Fl m Ar number
+.Op Fl n Ar number
 .Op Fl t Ar radix
 .Op Ar file ...
 .Sh DESCRIPTION
@@ -62,14 +62,14 @@ to search the entire object file.
 .It Fl f
 Each string is preceded by the name of the file
 in which it was found.
-.It Fl n Ar number
-Specifies the minimum number of characters in a sequence to be
-.Ar number ,
-instead of four.
 .It Fl m Ar number
 Specifies the maximum number of characters in a sequence to be
 .Ar number ,
 instead of unlimited.
+.It Fl n Ar number
+Specifies the minimum number of characters in a sequence to be
+.Ar number ,
+instead of four.
 .It Fl o
 Each string is preceded by its octal offset in the file.
 .It Fl t Ar radix

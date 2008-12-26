@@ -175,6 +175,9 @@ isp_sbus_attach(struct device *parent, struct device *self, void *aux)
 	}
 	sbc->sbus_mdvec.dv_clock = freq;
 
+	DEFAULT_IID(isp) =
+	    getpropint(ca->ca_ra.ra_node, "scsi-initiator-id", 7);
+
 	if ((bp = ca->ca_ra.ra_bp) != NULL) {
 		if (bp->val[0] == ca->ca_slot &&
 		    bp->val[1] == ca->ca_offset) {

@@ -486,7 +486,7 @@ int
 remote_connect(const char *host, const char *port, struct addrinfo hints)
 {
 	struct addrinfo *res, *res0;
-	int s, error;
+	int s, error, on = 1;
 
 	if ((error = getaddrinfo(host, port, &hints, &res)))
 		errx(1, "getaddrinfo: %s", gai_strerror(error));
@@ -501,6 +501,8 @@ remote_connect(const char *host, const char *port, struct addrinfo hints)
 		if (sflag || pflag) {
 			struct addrinfo ahints, *ares;
 
+			/* try SO_BINDANY, but don't insist */
+			setsockopt(s, SOL_SOCKET, SO_BINDANY, &on, sizeof(on));
 			memset(&ahints, 0, sizeof(struct addrinfo));
 			ahints.ai_family = res0->ai_family;
 			ahints.ai_socktype = uflag ? SOCK_DGRAM : SOCK_STREAM;

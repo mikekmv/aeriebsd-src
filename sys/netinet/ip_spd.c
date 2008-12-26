@@ -188,7 +188,7 @@ ipsp_spd_lookup(struct mbuf *m, int af, int hlen, int *error, int direction,
 		    (caddr_t) &(ddst->sen_ip6_proto));
 
 		sdst.sin6.sin6_family = ssrc.sin6.sin6_family = AF_INET6;
-		sdst.sin6.sin6_len = ssrc.sin6.sin6_family =
+		sdst.sin6.sin6_len = ssrc.sin6.sin6_len =
 		    sizeof(struct sockaddr_in6);
 		in6_recoverscope(&ssrc.sin6, &ddst->sen_ip6_src, NULL);
 		in6_recoverscope(&sdst.sin6, &ddst->sen_ip6_dst, NULL);
@@ -564,6 +564,7 @@ ipsp_spd_lookup(struct mbuf *m, int af, int hlen, int *error, int direction,
 int
 ipsec_delete_policy(struct ipsec_policy *ipo)
 {
+	struct rt_addrinfo info;
 	struct ipsec_acquire *ipa;
 	int err = 0;
 
@@ -571,12 +572,14 @@ ipsec_delete_policy(struct ipsec_policy *ipo)
 		return 0;
 
 	/* Delete from SPD. */
-	if (!(ipo->ipo_flags & IPSP_POLICY_SOCKET))
-		err = rtrequest(RTM_DELETE, (struct sockaddr *) &ipo->ipo_addr,
-		    (struct sockaddr *) 0,
-		    (struct sockaddr *) &ipo->ipo_mask,
-		    0, (struct rtentry **) 0, 0);	/* XXX other tables? */
+	if (!(ipo->ipo_flags & IPSP_POLICY_SOCKET)) {
+		bzero(&info, sizeof(info));
+		info.rti_info[RTAX_DST] = (struct sockaddr *)&ipo->ipo_addr;
+		info.rti_info[RTAX_NETMASK] = (struct sockaddr *)&ipo->ipo_mask;
 
+		/* XXX other tables? */
+		err = rtrequest1(RTM_DELETE, &info, RTP_DEFAULT, NULL, 0);
+	}
 	if (ipo->ipo_tdb != NULL)
 		TAILQ_REMOVE(&ipo->ipo_tdb->tdb_policy_head, ipo,
 		    ipo_tdb_next);
@@ -617,7 +620,7 @@ ipsec_add_policy(struct inpcb *inp, int af, int direction)
 		    0, 0, 0, "ipsec policy", NULL);
 	}
 
-	ipon = pool_get(&ipsec_policy_pool, 0);
+	ipon = pool_get(&ipsec_policy_pool, PR_NOWAIT);
 	if (ipon == NULL)
 		return NULL;
 

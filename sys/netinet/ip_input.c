@@ -136,6 +136,7 @@ struct	in_ifaddrhead in_ifaddr;
 struct	ifqueue ipintrq;
 
 struct pool ipqent_pool;
+struct pool ipq_pool;
 
 struct ipstat ipstat;
 
@@ -183,6 +184,8 @@ ip_init()
 	const u_int16_t defbaddynamicports_udp[] = DEFBADDYNAMICPORTS_UDP;
 
 	pool_init(&ipqent_pool, sizeof(struct ipqent), 0, 0, 0, "ipqepl",
+	    NULL);
+	pool_init(&ipq_pool, sizeof(struct ipq), 0, 0, 0, "ipqpl",
 	    NULL);
 
 	pr = pffindproto(PF_INET, IPPROTO_RAW, SOCK_RAW);
@@ -385,6 +388,9 @@ ipv4_input(m)
 	 */
 	if ((ia = in_iawithaddr(ip->ip_dst, m)) != NULL &&
 	    (ia->ia_ifp->if_flags & IFF_UP))
+		goto ours;
+
+	if (m->m_pkthdr.pf.flags & PF_TAG_DIVERTED)
 		goto ours;
 
 	if (IN_MULTICAST(ip->ip_dst.s_addr)) {
@@ -721,8 +727,8 @@ ip_reass(ipqe, fp)
 	/*
 	 * If first fragment to arrive, create a reassembly queue.
 	 */
-	if (fp == 0) {
-		fp = malloc(sizeof (struct ipq), M_FTABLE, M_NOWAIT);
+	if (fp == NULL) {
+		fp = pool_get(&ipq_pool, PR_NOWAIT);
 		if (fp == NULL)
 			goto dropfrag;
 		LIST_INSERT_HEAD(&ipq, fp, ipq_q);
@@ -859,7 +865,7 @@ insert:
 	ip->ip_src = fp->ipq_src;
 	ip->ip_dst = fp->ipq_dst;
 	LIST_REMOVE(fp, ipq_q);
-	free(fp, M_FTABLE);
+	pool_put(&ipq_pool, fp);
 	m->m_len += (ip->ip_hl << 2);
 	m->m_data -= (ip->ip_hl << 2);
 	/* some debugging cruft by sklower, below, will go away soon */
@@ -898,7 +904,7 @@ ip_freef(fp)
 		ip_frags--;
 	}
 	LIST_REMOVE(fp, ipq_q);
-	free(fp, M_FTABLE);
+	pool_put(&ipq_pool, fp);
 }
 
 /*

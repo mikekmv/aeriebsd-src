@@ -34,6 +34,7 @@
 #define	PERMIT_YES		3
 
 #define DEFAULT_AUTH_FAIL_MAX	6	/* Default for MaxAuthTries */
+#define DEFAULT_SESSIONS_MAX	10	/* Default for MaxSessions */
 
 /* Magic name for internal sftp-server */
 #define INTERNAL_SFTP_NAME	"internal-sftp"
@@ -122,6 +123,7 @@ typedef struct {
 	int	max_startups_rate;
 	int	max_startups;
 	int	max_authtries;
+	int	max_sessions;
 	char   *banner;			/* SSH-2 banner message */
 	int	use_dns;
 	int	client_alive_interval;	/*
@@ -156,5 +158,6 @@ void	 parse_server_config(ServerOptions *, const char *, Buffer *,
 void	 parse_server_match_config(ServerOptions *, const char *, const char *,
 	     const char *);
 void	 copy_set_server_options(ServerOptions *, ServerOptions *, int);
+void	 dump_config(ServerOptions *);
 
 #endif				/* SERVCONF_H */

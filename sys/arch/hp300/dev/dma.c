@@ -219,11 +219,7 @@ dmareq(struct dmaqueue *dq)
 	struct dma_softc *sc = &dma_softc;
 	int i, chan, s;
 
-#if 1
-	s = splhigh();	/* XXXthorpej */
-#else
-	s = splbio();
-#endif
+	s = splvm();
 
 	chan = dq->dq_chan;
 	for (i = NDMACHAN - 1; i >= 0; i--) {
@@ -292,11 +288,7 @@ dmafree(struct dmaqueue *dq)
 	struct dmaqueue *dn;
 	int chan, s;
 
-#if 1
-	s = splhigh();	/* XXXthorpej */
-#else
-	s = splbio();
-#endif
+	s = splvm();
 
 #ifdef DEBUG
 	dmatimo[unit] = 0;
@@ -564,7 +556,7 @@ dmatimeout(void *arg)
 	struct dma_softc *sc = arg;
 
 	for (i = 0; i < NDMACHAN; i++) {
-		s = splbio();
+		s = splvm();
 		if (dmatimo[i]) {
 			if (dmatimo[i] > 1)
 				printf("dma channel %d timeout #%d\n",

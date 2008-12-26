@@ -179,8 +179,9 @@ rcsnum_cpy(const RCSNUM *nsrc, RCSNUM *ndst, u_int depth)
  * Compare the two numbers <n1> and <n2>. Returns -1 if <n1> is larger than
  * <n2>, 0 if they are both the same, and 1 if <n2> is larger than <n1>.
  * The <depth> argument specifies how many numbers deep should be checked for
- * the result.  A value of 0 means that the depth will be the minimum of the
- * two numbers.
+ * the result.  A value of 0 means that the depth will be the maximum of the
+ * two numbers, so that a longer number is considered greater than a shorter
+ * number if they are equal up to the minimum length.
  */
 int
 rcsnum_cmp(RCSNUM *n1, RCSNUM *n2, u_int depth)
@@ -204,7 +205,12 @@ rcsnum_cmp(RCSNUM *n1, RCSNUM *n2, u_int depth)
 			return (-1);
 	}
 
-	if (n1->rn_len > n2->rn_len)
+	/* If an explicit depth was specified, and we've
+	 * already checked up to depth, consider the
+	 * revision numbers equal. */
+	if (depth != 0 && slen == depth)
+		return (0);
+	else if (n1->rn_len > n2->rn_len)
 		return (-1);
 	else if (n2->rn_len > n1->rn_len)
 		return (1);

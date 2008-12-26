@@ -265,8 +265,8 @@ read_mac_label(char *dlbuf, struct disklabel *lp)
 	int i, num_parts, maxslot = RAW_PART;
 	struct partmapentry *pmap;
 
-	MALLOC(pmap, struct partmapentry *,
-	    NUM_PARTS_PROBED * sizeof(struct partmapentry), M_DEVBUF, M_NOWAIT);
+	pmap = (struct partmapentry *)malloc(NUM_PARTS_PROBED *
+	    sizeof(struct partmapentry), M_DEVBUF, M_NOWAIT);
 	if (pmap == NULL)
 		return ("out of memory");
 
@@ -315,7 +315,7 @@ read_mac_label(char *dlbuf, struct disklabel *lp)
 	lp->d_version = 1;
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
-	FREE(pmap, M_DEVBUF);
+	free(pmap, M_DEVBUF);
 	return NULL;
 }
 
@@ -347,7 +347,7 @@ readdisklabel(dev_t dev, void (*strat)(struct buf *),
 
 	bp->b_blkno = LABELSECTOR;
 	bp->b_bcount = size;
-	bp->b_flags = B_BUSY | B_READ;
+	bp->b_flags = B_BUSY | B_READ | B_RAW;
 	(*strat)(bp);
 	if (biowait(bp)) {
 		msg = "disk label I/O error";
@@ -364,7 +364,7 @@ readdisklabel(dev_t dev, void (*strat)(struct buf *),
 	/* Get a MI label */
 	bp->b_blkno = LABELSECTOR;
 	bp->b_bcount = lp->d_secsize;
-	bp->b_flags = B_BUSY | B_READ;
+	bp->b_flags = B_BUSY | B_READ | B_RAW;
 	(*strat)(bp);
 	if (biowait(bp)) {
 		msg = "disk label I/O error";
@@ -421,7 +421,7 @@ writedisklabel(dev_t dev, void (*strat)(struct buf *), struct disklabel *lp)
 
 	bp->b_blkno = LABELSECTOR;
 	bp->b_bcount = lp->d_secsize;
-	bp->b_flags = B_BUSY | B_READ;
+	bp->b_flags = B_BUSY | B_READ | B_RAW;
 	(*strat)(bp);
 	if ((error = biowait(bp)) != 0)
 		goto done;
@@ -435,7 +435,7 @@ writedisklabel(dev_t dev, void (*strat)(struct buf *), struct disklabel *lp)
 
 	dlp = (struct disklabel *)(bp->b_data + LABELOFFSET);
 	*dlp = *lp;
-	bp->b_flags = B_BUSY | B_WRITE;
+	bp->b_flags = B_BUSY | B_WRITE | B_RAW;
 	(*strat)(bp);
 	error = biowait(bp);
 

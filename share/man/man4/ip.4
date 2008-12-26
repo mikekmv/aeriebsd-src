@@ -29,7 +29,7 @@
 .\"
 .\"     @(#)ip.4	8.2 (Berkeley) 11/30/93
 .\"
-.Dd $Mdocdate: March 14 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt IP 4
 .Os
 .Sh NAME
@@ -135,6 +135,33 @@ fields have the following values:
 cmsg_len = CMSG_LEN(sizeof(struct in_addr))
 cmsg_level = IPPROTO_IP
 cmsg_type = IP_RECVDSTADDR
+.Ed
+.Pp
+If the
+.Dv IP_RECVDSTPORT
+option is enabled on a
+.Dv SOCK_DGRAM
+socket,
+the
+.Xr recvmsg 2
+call will return the destination
+port for a
+.Tn UDP
+datagram.
+The
+.Va msg_control
+field in the
+.Vt msghdr
+structure points to a buffer that contains a
+.Vt cmsghdr
+structure followed by the port in 16-bit network byte order.
+The
+.Vt cmsghdr
+fields have the following values:
+.Bd -literal -offset indent
+cmsg_len = CMSG_LEN(sizeof(u_int16_t))
+cmsg_level = IPPROTO_IP
+cmsg_type = IP_RECVDSTPORT
 .Ed
 .Pp
 If the

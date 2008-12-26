@@ -23,7 +23,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: kbd_wscons.c,v 1.1.1.1 2008/08/26 14:40:25 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -83,7 +83,9 @@ struct nlist nl[] = {
 };
 #endif /* NOKVM */
 
+#ifndef NOKVM
 int rebuild = 0;
+#endif
 
 struct nameint {
 	int value;
@@ -245,9 +247,9 @@ kbd_list(void)
 
 #ifndef NOKVM
 	kvm_close(kd);
-#endif
 	if (rebuild > 0)
 		printf("Unknown encoding or variant. kbd(8) needs to be rebuilt.\n");
+#endif
 }
 
 void

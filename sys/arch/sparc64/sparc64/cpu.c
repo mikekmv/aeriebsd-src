@@ -107,9 +107,11 @@ alloc_cpuinfo(struct mainbus_attach_args *ma)
 	struct cpu_info *cpi, *ci;
 	extern paddr_t cpu0paddr;
 
-	portid = getpropint(ma->ma_node, "portid", -1);
+	portid = getpropint(ma->ma_node, "upa-portid", -1);
 	if (portid == -1)
-		portid = getpropint(ma->ma_node, "upa-portid", -1);
+		portid = getpropint(ma->ma_node, "portid", -1);
+	if (portid == -1)
+		portid = getpropint(ma->ma_node, "cpuid", -1);
 	if (portid == -1 && ma->ma_nreg > 0)
 		portid = (ma->ma_reg[0].ur_paddr >> 32) & 0x0fffffff;
 	if (portid == -1)
@@ -205,6 +207,12 @@ cpu_match(parent, vcf, aux)
 
 	if (portid != cpus->ci_upaid)
 		return (0);
+#else
+	/* XXX Only attach the first thread of a core for now. */
+	if (OF_getprop(OF_parent(ma->ma_node), "device_type",
+	    buf, sizeof(buf)) >= 0 && strcmp(buf, "core") == 0 &&
+	    (getpropint(ma->ma_node, "cpuid", -1) % 2) == 1)
+		return (0);
 #endif
 
 	return (1);
@@ -222,7 +230,7 @@ cpu_attach(parent, dev, aux)
 	void *aux;
 {
 	int node;
-	long clk;
+	u_int clk;
 	int impl, vers;
 	struct mainbus_attach_args *ma = aux;
 	struct cpu_info *ci;
@@ -231,13 +239,16 @@ cpu_attach(parent, dev, aux)
 	u_int64_t ver = 0;
 	extern u_int64_t cpu_clockrate[];
 
-	if (CPU_ISSUN4U)
+	if (CPU_ISSUN4U || CPU_ISSUN4US)
 		ver = getver();
 	impl = IU_IMPL(ver);
 	vers = IU_VERS(ver);
 
 	/* tell them what we have */
-	node = ma->ma_node;
+	if (strncmp(parent->dv_xname, "core", 4) == 0)
+		node = OF_parent(ma->ma_node);
+	else
+		node = ma->ma_node;
 
 	/*
 	 * Allocate cpu_info structure if needed.
@@ -353,31 +364,13 @@ cpu_attach(parent, dev, aux)
 	}
 	printf("\n");
 	cache_enable();
-
-	if (impl >= IMPL_CHEETAH) {
-		extern vaddr_t ktext, dlflush_start;
-		extern paddr_t ktextp;
-		vaddr_t *pva;
-		paddr_t pa;
-		u_int32_t inst;
-
-		for (pva = &dlflush_start; *pva; pva++) {
-			inst = *(u_int32_t *)(*pva);
-			inst &= ~(ASI_DCACHE_TAG << 5);
-			inst |= (ASI_DCACHE_INVALIDATE << 5);
-			pa = (paddr_t) (ktextp - ktext + *pva);
-			stwa(pa, ASI_PHYS_CACHED, inst);
-			flush((void *)KERNBASE);
-		}
-
-		cacheinfo.c_dcache_flush_page = us3_dcache_flush_page;
-	}
 }
 
 int
 cpu_myid(void)
 {
 	char buf[32];
+	int impl;
 
 #ifdef SUN4V
 	if (CPU_ISSUN4V) {
@@ -391,8 +384,20 @@ cpu_myid(void)
 	if (OF_getprop(findroot(), "name", buf, sizeof(buf)) > 0 &&
 	    strcmp(buf, "SUNW,Ultra-Enterprise-10000") == 0)
 		return lduwa(0x1fff40000d0UL, ASI_PHYS_NON_CACHED);
-	else
+
+	impl = (getver() & VER_IMPL) >> VER_IMPL_SHIFT;
+	switch (impl) {
+	case IMPL_OLYMPUS_C:
+	case IMPL_JUPITER:
+		return CPU_JUPITERID;
+	case IMPL_CHEETAH:
+	case IMPL_CHEETAH_PLUS:
+	case IMPL_JAGUAR:
+	case IMPL_PANTHER:
+		return CPU_FIREPLANEID;
+	default:
 		return CPU_UPAID;
+	}
 }
 
 void
@@ -402,7 +407,7 @@ cpu_init(struct cpu_info *ci)
 	paddr_t pa = ci->ci_paddr;
 	int err;
 
-	if (CPU_ISSUN4U)
+	if (CPU_ISSUN4U || CPU_ISSUN4US)
 		return;
 
 #define MONDO_QUEUE_SIZE	32
@@ -508,4 +513,39 @@ need_resched(struct cpu_info *ci)
 	ci->ci_want_resched = 1;
 	if (ci->ci_curproc != NULL)
 		aston(ci->ci_curproc);
+}
+
+/*
+ * Idle loop.
+ *
+ * We disable and reenable the interrupts in every cycle of the idle loop.
+ * Since hv_cpu_yield doesn't actually reenable interrupts, it just wakes
+ * up if an interrupt would have happened, but it's our responsibility to
+ * unblock interrupts.
+ */
+
+void
+cpu_idle_enter(void)
+{
+	if (CPU_ISSUN4V) {
+		sparc_wrpr(pstate, sparc_rdpr(pstate) & ~PSTATE_IE, 0);
+	}
+}
+
+void
+cpu_idle_cycle(void)
+{
+	if (CPU_ISSUN4V) {
+		hv_cpu_yield();
+		sparc_wrpr(pstate, sparc_rdpr(pstate) | PSTATE_IE, 0);
+		sparc_wrpr(pstate, sparc_rdpr(pstate) & ~PSTATE_IE, 0);
+	}
+}
+
+void
+cpu_idle_leave()
+{
+	if (CPU_ISSUN4V) {
+		sparc_wrpr(pstate, sparc_rdpr(pstate) | PSTATE_IE, 0);
+	}
 }

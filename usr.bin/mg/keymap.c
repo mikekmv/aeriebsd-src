@@ -211,7 +211,8 @@ static PF metami[] = {
 	gotoeob			/* > */
 };
 
-static PF metabsl[] = {
+static PF metasqf[] = {
+	NULL,			/* [ */
 	delwhite,		/* \ */
 	rescan,			/* ] */
 	rescan,			/* ^ */
@@ -246,9 +247,24 @@ static PF metal[] = {
 	gotoeop			/* } */
 };
 
+static PF metasqlZ[] = {
+	rescan			/* Z */
+};
+
 static PF metatilde[] = {
 	notmodified,		/* ~ */
 	delbword		/* DEL */
+};
+
+struct KEYMAPE (1 + IMAPEXT) metasqlmap = {
+	1,
+	1 + IMAPEXT,
+	rescan,
+	{
+		{
+			'Z', 'Z', metasqlZ, NULL
+		}
+	}
 };
 
 struct KEYMAPE (8 + IMAPEXT) metamap = {
@@ -272,7 +288,7 @@ struct KEYMAPE (8 + IMAPEXT) metamap = {
 			'-', '>', metami, NULL
 		},
 		{
-			'\\', 'f', metabsl, NULL
+			'[', 'f', metasqf, (KEYMAP *) &metasqlmap
 		},
 		{
 			'l', '}', metal, NULL
@@ -301,7 +317,7 @@ static PF fund_at[] = {
 
 /* ^I is selfinsert */
 static PF fund_CJ[] = {
-	indent,			/* ^J */
+	lfindent,		/* ^J */
 	killline,		/* ^K */
 	reposition,		/* ^L */
 	newline,		/* ^M */
@@ -332,13 +348,17 @@ static PF fund_del[] = {
 	backdel			/* DEL */
 };
 
+static PF fund_cb[] = {
+	showmatch		/* )  */
+};
+
 #ifndef	FUND_XMAPS
 #define NFUND_XMAPS	0	/* extra map sections after normal ones */
 #endif
 
-static struct KEYMAPE (4 + NFUND_XMAPS + IMAPEXT) fundmap = {
-	4 + NFUND_XMAPS,
-	4 + NFUND_XMAPS + IMAPEXT,
+static struct KEYMAPE (5 + NFUND_XMAPS + IMAPEXT) fundmap = {
+	5 + NFUND_XMAPS,
+	5 + NFUND_XMAPS + IMAPEXT,
 	selfinsert,
 	{
 #ifndef NO_HELP
@@ -355,6 +375,9 @@ static struct KEYMAPE (4 + NFUND_XMAPS + IMAPEXT) fundmap = {
 		},
 		{
 			CCHR('['), CCHR('_'), fund_esc, (KEYMAP *) & metamap
+		},
+		{
+			')', ')', fund_cb, NULL
 		},
 		{
 			CCHR('?'), CCHR('?'), fund_del, NULL
@@ -374,9 +397,7 @@ static struct KEYMAPE (1 + IMAPEXT) fillmap = {
 	1 + IMAPEXT,
 	rescan,
 	{
-		{
-			' ', ' ', fill_sp, NULL
-		}
+		{ ' ', ' ', fill_sp, NULL }
 	}
 };
 
@@ -384,7 +405,7 @@ static PF indent_lf[] = {
 	newline,		/* ^J */
 	rescan,			/* ^K */
 	rescan,			/* ^L */
-	indent			/* ^M */
+	lfindent		/* ^M */
 };
 
 static struct KEYMAPE (1 + IMAPEXT) indntmap = {
@@ -394,21 +415,6 @@ static struct KEYMAPE (1 + IMAPEXT) indntmap = {
 	{
 		{
 			CCHR('J'), CCHR('M'), indent_lf, NULL
-		}
-	}
-};
-
-static PF blink_rp[] = {
-	showmatch		/* ) */
-};
-
-static struct KEYMAPE (1 + IMAPEXT) blinkmap = {
-	1,
-	1 + IMAPEXT,
-	rescan,
-	{
-		{
-			')', ')', blink_rp, NULL
 		}
 	}
 };
@@ -460,7 +466,6 @@ struct maps_s	fundamental_mode = { (KEYMAP *)&fundmap, "fundamental" };
 static struct maps_s map_table[] = {
 	{(KEYMAP *) &fillmap, "fill",},
 	{(KEYMAP *) &indntmap, "indent",},
-	{(KEYMAP *) &blinkmap, "blink",},
 #ifdef NOTAB
 	{(KEYMAP *) &notabmap, "notab",},
 #endif /* NOTAB */

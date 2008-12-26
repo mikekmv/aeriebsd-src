@@ -68,7 +68,7 @@ static const char copyright[] =
 static const char sccsid[] = "@(#)ftpd.c	8.4 (Berkeley) 4/16/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: ftpd.c,v 1.1.1.1 2008/08/26 14:39:36 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -120,8 +120,8 @@ static const char rcsid[] =
 #endif	/* TCPWRAPPERS */
 
 #include "pathnames.h"
-#include "extern.h"
 #include "monitor.h"
+#include "extern.h"
 
 extern	off_t restart_point;
 extern	char cbuf[];

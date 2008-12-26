@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)chpass.c	8.4 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: chpass.c,v 1.1.1.1 2008/08/26 14:42:40 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -80,12 +80,18 @@ main(int argc, char *argv[])
 {
 	struct passwd *pw = NULL, *opw = NULL, lpw;
 	int i, ch, pfd, tfd, dfd;
-	char *arg = NULL;
+	char *tz, *arg = NULL;
 	sigset_t fullset;
 
 #ifdef	YP
 	use_yp = _yp_check(NULL);
 #endif
+	/* We need to use the system timezone for date conversions. */
+	if ((tz = getenv("TZ")) != NULL) {
+	    unsetenv("TZ");
+	    tzset();
+	    setenv("TZ", tz, 1);
+	}
 
 	op = EDITENTRY;
 	while ((ch = getopt(argc, argv, "a:s:ly")) != -1)
@@ -288,10 +294,10 @@ usage(void)
 	    "usage: %s [-l%s] [-s newshell] [user]\n",
 	    __progname, use_yp ? "y" : "");
 	(void)fprintf(stderr,
-	    "usage: %s [-l] -a list\n", __progname);
+	    "       %s [-l] -a list\n", __progname);
 #else
 	(void)fprintf(stderr, "usage: %s [-s newshell] [user]\n", __progname);
-	(void)fprintf(stderr, "usage: %s -a list\n", __progname);
+	(void)fprintf(stderr, "       %s -a list\n", __progname);
 #endif
 	exit(1);
 }

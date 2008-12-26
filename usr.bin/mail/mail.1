@@ -28,7 +28,7 @@
 .\"
 .\"	@(#)mail.1	8.8 (Berkeley) 4/28/95
 .\"
-.Dd $Mdocdate: August 6 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt MAIL 1
 .Os
 .Sh NAME
@@ -39,7 +39,7 @@
 .Sh SYNOPSIS
 .Nm mail
 .Bk -words
-.Op Fl Iinv
+.Op Fl EIinv
 .Op Fl b Ar list
 .Op Fl c Ar list
 .Op Fl s Ar subject
@@ -47,11 +47,11 @@
 .Op Fl Ar sendmail-options ...
 .Ek
 .Nm mail
-.Op Fl IiNnv
+.Op Fl EIiNnv
 .Fl f
-.Op Ar name
+.Op Ar file
 .Nm mail
-.Op Fl IiNnv
+.Op Fl EIiNnv
 .Op Fl u Ar user
 .Sh DESCRIPTION
 .Nm mail
@@ -71,13 +71,16 @@ Send carbon copies to
 of users.
 .Ar list
 should be a comma separated list of names.
-.It Fl f Op Ar name
+.It Fl E
+Don't send messages with an empty body.
+.It Fl f Op Ar file
 Read in the contents of your mailbox
-(or the specified file
-.Ar name )
+(or the specified
+.Ar file )
 for processing; when you quit,
 .Nm mail
-writes undeleted messages back to this file.
+writes undeleted messages back to this
+.Ar file .
 .It Fl I
 Forces
 .Nm mail
@@ -952,6 +955,8 @@ can be used to limit the search for
 to just the
 .Dq To:
 field.
+.It Ar skipempty
+Don't send messages with an empty body.
 .It Ar verbose
 Setting the option
 .Ar verbose
@@ -1006,6 +1011,8 @@ command and the
 escape.
 A default shell is used if this option is
 not defined.
+.It Ev TMPDIR
+Directory in which temporary files are stored.
 .It Ev VISUAL
 Pathname of the text editor to use in the
 .Ic visual

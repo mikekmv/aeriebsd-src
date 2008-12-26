@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)setup.c	8.5 (Berkeley) 11/23/94";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: setup.c,v 1.1.1.1 2008/08/26 14:40:22 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -71,6 +71,8 @@ long numdirs, listmax, inplast;
  * Possible locations for the superblock.
  */
 static const int sbtry[] = SBLOCKSEARCH;
+/* locations the 1st alternate sb can be at */
+static const int altsbtry[] = { 32, 64, 128, 144, 160, 192, 256 };
 
 int
 setup(char *dev)
@@ -130,6 +132,14 @@ setup(char *dev)
 			return(0);
 		if (reply("LOOK FOR ALTERNATE SUPERBLOCKS") == 0)
 			return (0);
+		for (i = 0; i < sizeof(altsbtry) / sizeof(altsbtry[0]); i++) {
+			bflag = altsbtry[i];
+			/* proto partially setup by calcsb */
+			if (readsb(0) != 0 &&
+			    proto.fs_fsize == sblock.fs_fsize &&
+			    proto.fs_bsize == sblock.fs_bsize)
+				goto found;
+		}
 		for (cg = 0; cg < proto.fs_ncg; cg++) {
 			bflag = fsbtodb(&proto, cgsblock(&proto, cg));
 			if (readsb(0) != 0)
@@ -145,6 +155,7 @@ setup(char *dev)
 			    "INFORMATION; SEE fsck_ffs(8).");
 			return(0);
 		}
+found:
 		doskipclean = 0;
 		pwarn("USING ALTERNATE SUPERBLOCK AT %d\n", bflag);
 	}
@@ -406,22 +417,16 @@ setup(char *dev)
 		    (unsigned)bmapsize);
 		goto badsblabel;
 	}
-	statemap = calloc((unsigned)(maxino + 1), sizeof(char));
-	if (statemap == NULL) {
-		printf("cannot alloc %u bytes for statemap\n",
-		    (unsigned)(maxino + 1));
-		goto badsblabel;
-	}
-	typemap = calloc((unsigned)(maxino + 1), sizeof(char));
-	if (typemap == NULL) {
-		printf("cannot alloc %u bytes for typemap\n",
+	stmap = calloc((unsigned)(maxino + 1), sizeof(char));
+	if (stmap == NULL) {
+		printf("cannot alloc %u bytes for stmap\n",
 		    (unsigned)(maxino + 1));
 		goto badsblabel;
 	}
 	lncntp = calloc((unsigned)(maxino + 1), sizeof(int16_t));
 	if (lncntp == NULL) {
-		printf("cannot alloc %lu bytes for lncntp\n",
-		    (unsigned long)(maxino + 1) * sizeof(int16_t));
+		printf("cannot alloc %zu bytes for lncntp\n",
+		    (maxino + 1) * sizeof(int16_t));
 		goto badsblabel;
 	}
 	cginosused = calloc((unsigned)sblock.fs_ncg, sizeof(long));
@@ -434,10 +439,15 @@ setup(char *dev)
 	inplast = 0;
 	listmax = numdirs + 10;
 	inpsort = calloc((unsigned)listmax, sizeof(struct inoinfo *));
+	if (inpsort == NULL) {
+		printf("cannot alloc %zu bytes for inpsort\n",
+		    (unsigned)listmax * sizeof(struct inoinfo *));
+		goto badsblabel;
+	}
 	inphead = calloc((unsigned)numdirs, sizeof(struct inoinfo *));
-	if (inpsort == NULL || inphead == NULL) {
-		printf("cannot alloc %lu bytes for inphead\n",
-		    (unsigned long)numdirs * sizeof(struct inoinfo *));
+	if (inphead == NULL) {
+		printf("cannot alloc %zu bytes for inphead\n",
+		    (unsigned)numdirs * sizeof(struct inoinfo *));
 		goto badsblabel;
 	}
 	bufinit();
@@ -575,7 +585,7 @@ readsb(int listerr)
 			}
 		}
 		badsb(listerr,
-		    "VALUES IN SUPER BLOCK DISAGREE WITH THOSE IN FIRST ALTERNATE");
+		    "VALUES IN SUPER BLOCK DISAGREE WITH THOSE IN LAST ALTERNATE");
 		return (0);
 	}
 out:

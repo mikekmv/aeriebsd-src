@@ -15,13 +15,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *        This product includes software developed by the NetBSD
- *        Foundation, Inc. and its contributors.
- * 4. Neither the name of The NetBSD Foundation nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
@@ -97,13 +90,6 @@ uhci_pci_attach(struct device *parent, struct device *self, void *aux)
 	const char *vendor;
 	char *devname = sc->sc.sc_bus.bdev.dv_xname;
 	int s;
-
-#if defined(__NetBSD__)
-	char devinfo[256];
-
-	pci_devinfo(pa->pa_id, pa->pa_class, 0, devinfo);
-	printf(": %s (rev. 0x%02x)", devinfo, PCI_REVISION(pa->pa_class));
-#endif
 
 	/* Map I/O registers */
 	if (pci_mapreg_map(pa, PCI_CBIO, PCI_MAPREG_TYPE_IO, 0,

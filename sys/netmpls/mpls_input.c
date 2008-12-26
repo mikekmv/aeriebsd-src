@@ -15,6 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "mpe.h"
+
 #include <sys/param.h>
 #include <sys/mbuf.h>
 #include <sys/systm.h>
@@ -118,10 +120,12 @@ mpls_input(struct mbuf *m)
 		smpls->smpls_in_ifindex = ifp->if_index;
 		smpls->smpls_in_label = shim->shim_label & MPLS_LABEL_MASK;
 
+#ifdef MPLS_DEBUG
 		printf("smpls af %d len %d in_label %d in_ifindex %d\n",
 		    smpls->smpls_family, smpls->smpls_len,
 		    MPLS_LABEL_GET(smpls->smpls_in_label),
 		    smpls->smpls_in_ifindex);
+#endif
 
 		rt = rtalloc1(smplstosa(smpls),1, 0);
 
@@ -152,10 +156,12 @@ mpls_input(struct mbuf *m)
 			hasbos = MPLS_BOS_ISSET(shim->shim_label);
 			m = mpls_shim_pop(m);
 			if (hasbos) {
+#if NMPE > 0
 				if (rt->rt_ifp->if_type == IFT_MPLS) {
 					mpe_input(m, rt->rt_ifp, smpls, ttl);
 					goto done;
 				}
+#endif
 				/* last label but we have no clue so drop */
 				m_freem(m);
 				goto done;

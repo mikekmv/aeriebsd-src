@@ -2,9 +2,9 @@
 .\" THIS FILE AUTOMATICALLY GENERATED.  DO NOT EDIT.
 .\" generated from:
 .\"
-.\"	OpenBSD: etc.alpha/MAKEDEV.md,v 1.34 2007/06/20 18:28:55 miod Exp 
-.\"	OpenBSD: MAKEDEV.common,v 1.36 2007/07/23 23:21:25 todd Exp 
-.\"	OpenBSD: MAKEDEV.man,v 1.3 2004/03/12 18:12:12 miod Exp 
+.\"	OpenBSD: etc.alpha/MAKEDEV.md,v 1.39 2008/06/28 21:46:04 mglocker Exp 
+.\"	OpenBSD: MAKEDEV.common,v 1.39 2008/07/14 16:22:23 miod Exp 
+.\"	OpenBSD: MAKEDEV.man,v 1.4 2008/06/16 08:18:39 todd Exp 
 .\"	OpenBSD: MAKEDEV.mansub,v 1.2 2004/02/20 19:13:01 miod Exp 
 .\"
 .\" Copyright (c) 2004, Miodrag Vallat
@@ -22,7 +22,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd August  2, 2007
+.Dd July 14, 2008
 .Dt MAKEDEV 8 alpha
 .Os
 .Sh NAME
@@ -255,10 +255,13 @@ Network tunnel driver, see
 .Xr tun 4 .
 .It Ar tuner*
 Tuner devices, see
-.Xr tuner 4 .
+.Xr bktr 4 .
 .It Ar uk*
 Unknown SCSI devices, see
 .Xr uk 4 .
+.It Ar video*
+Video V4L devices, see
+.Xr video 4 .
 .It Ar xfs*
 XFS filesystem node, see
 .Xr mount_xfs 8 .

@@ -145,7 +145,7 @@ editor(gp, argc, argv)
 				break;
 			default:
 				v_estr(gp->progname, 0,
-				    "usage: -D requires s or w argument.");
+				    "-D requires s or w argument.");
 				return (1);
 			}
 			break;

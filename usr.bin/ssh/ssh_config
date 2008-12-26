@@ -42,3 +42,4 @@
 #   Tunnel no
 #   TunnelDevice any:any
 #   PermitLocalCommand no
+#   VisualHostKey no

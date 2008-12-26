@@ -31,7 +31,7 @@
 .\"
 .\"	@(#)cksum.1	8.2 (Berkeley) 4/28/95
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt CKSUM 1
 .Os
 .Sh NAME
@@ -49,6 +49,11 @@
 .Op Ar file ...
 .Ek
 .Nm sum
+.Op Fl bpqrtx
+.Op Fl a Ar algorithms
+.Op Fl c Op Ar checklist ...
+.Op Fl o Ar 1 | 2
+.Op Fl s Ar string
 .Op Ar file ...
 .Sh DESCRIPTION
 The

@@ -56,8 +56,8 @@ usage(void)
 	extern char *__progname;
 
 	(void)fprintf(stderr,
-		      "Usage: %s [-dFkm] [-e emul] [-f ctldev] "
-		      "[-t type] index\n", __progname);
+	    "usage: %s [-dFkm] [-e emul] [-f ctldev] [-t type] index\n",
+	    __progname);
 	exit(1);
 }
 

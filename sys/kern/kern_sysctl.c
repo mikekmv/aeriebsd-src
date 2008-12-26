@@ -385,7 +385,7 @@ kern_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp,
 		if (*oldlenp > sizeof(buf))
 			*oldlenp = sizeof(buf);
 		if (oldp) {
-			arc4random_bytes(buf, *oldlenp);
+			arc4random_buf(buf, *oldlenp);
 			if ((error = copyout(buf, oldp, *oldlenp)))
 				return (error);
 		}

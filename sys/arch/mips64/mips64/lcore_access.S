@@ -157,20 +157,6 @@ END(lp32_write8)
 #endif
 
 /*
- * fillw(pat, addr, count)
- */
-LEAF(fillw, 0)
-1:
-	PTR_ADDU a2, a2, -1
-	sh	a0, 0(a1)
-	bne	a2,zero, 1b
-	PTR_ADDU a1, a1, 2
-
-	jr	ra
-	nop
-END(fillw)
-
-/*
  * Optimized memory zero code.
  * mem_zero_page(addr);
  */

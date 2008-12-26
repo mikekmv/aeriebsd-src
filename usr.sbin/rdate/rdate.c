@@ -37,7 +37,7 @@
  *	midnight January 1st 1900.
  */
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: rdate.c,v 1.1.1.1 2008/08/26 14:44:32 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -66,15 +66,16 @@ extern char    *__progname;
 void
 usage(void)
 {
-	(void) fprintf(stderr, "Usage: %s [-46acnpsv] host\n", __progname);
-	(void) fprintf(stderr, "  -4: use IPv4 only\n");
-	(void) fprintf(stderr, "  -6: use IPv6 only\n");
-	(void) fprintf(stderr, "  -a: use adjtime instead of instant change\n");
-	(void) fprintf(stderr, "  -c: correct leap second count\n");
-	(void) fprintf(stderr, "  -n: use SNTP instead of RFC868 time protocol\n");
-	(void) fprintf(stderr, "  -p: just print, don't set\n");
-	(void) fprintf(stderr, "  -s: just set, don't print\n");
-	(void) fprintf(stderr, "  -v: verbose output\n");
+	(void) fprintf(stderr, "usage: %s [-46acnpsv] host\n", __progname);
+	(void) fprintf(stderr,
+	    "  -4: use IPv4 only\n"
+	    "  -6: use IPv6 only\n"
+	    "  -a: use adjtime instead of instant change\n"
+	    "  -c: correct leap second count\n"
+	    "  -n: use SNTP instead of RFC868 time protocol\n"
+	    "  -p: just print, don't set\n"
+	    "  -s: just set, don't print\n"
+	    "  -v: verbose output\n");
 }
 
 int

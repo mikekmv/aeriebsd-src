@@ -835,8 +835,7 @@ fdinit(struct proc *p)
 	struct filedesc0 *newfdp;
 	extern int cmask;
 
-	newfdp = pool_get(&fdesc_pool, PR_WAITOK);
-	bzero(newfdp, sizeof(struct filedesc0));
+	newfdp = pool_get(&fdesc_pool, PR_WAITOK|PR_ZERO);
 	if (p != NULL) {
 		struct filedesc *fdp = p->p_fd;
 

@@ -52,6 +52,7 @@
 #include <sys/param.h>
 #include <sys/device.h>
 #include <sys/kthread.h>
+#include <sys/malloc.h>
 #include <sys/systm.h>
 
 #include <machine/bus.h>
@@ -76,6 +77,8 @@ struct usbf_softc {
 	struct proc		*sc_proc;	/* task thread */
 	TAILQ_HEAD(,usbf_task)	 sc_tskq;	/* task queue head */
 	int			 sc_dying;
+
+	u_int8_t		*sc_hs_config;
 };
 
 #define DEVNAME(sc)	((sc)->sc_dev.dv_xname)
@@ -283,9 +286,6 @@ usbf_host_reset(usbf_bus_handle bus)
  * Device request handling
  */
 
-/* XXX */
-static u_int8_t hs_config[65536];
-
 usbf_status
 usbf_get_descriptor(usbf_device_handle dev, usb_device_request_t *req,
     void **data)
@@ -295,6 +295,7 @@ usbf_get_descriptor(usbf_device_handle dev, usb_device_request_t *req,
 	usb_device_descriptor_t *dd;
 	usb_config_descriptor_t *cd;
 	usb_string_descriptor_t *sd;
+	struct usbf_softc *sc;
 
 	switch (type) {
 	case UDESC_DEVICE:
@@ -335,9 +336,17 @@ usbf_get_descriptor(usbf_device_handle dev, usb_device_request_t *req,
 		cd = usbf_config_descriptor(dev, index);
 		if (cd == NULL)
 			return USBF_INVAL;
-		bcopy(cd, &hs_config, UGETW(cd->wTotalLength));
-		*data = &hs_config;
-		((usb_config_descriptor_t *)&hs_config)->bDescriptorType =
+		sc = dev->bus->usbfctl;
+		if (sc->sc_hs_config == NULL) {
+			/* XXX should allocate more dynamically */
+			sc->sc_hs_config =
+			    (u_int8_t *)malloc(65536, M_USB, M_NOWAIT);
+		}
+		if (sc->sc_hs_config == NULL)
+			return USBF_INVAL;
+		bcopy(cd, sc->sc_hs_config, UGETW(cd->wTotalLength));
+		*data = sc->sc_hs_config;
+		((usb_config_descriptor_t *)sc->sc_hs_config)->bDescriptorType =
 		    UDESC_OTHER_SPEED_CONFIGURATION;
 		USETW(req->wLength, MIN(UGETW(req->wLength),
 		    UGETW(cd->wTotalLength)));

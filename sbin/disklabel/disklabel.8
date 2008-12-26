@@ -31,7 +31,7 @@
 .\"
 .\"	@(#)disklabel.8	8.2 (Berkeley) 4/19/94
 .\"
-.Dd $Mdocdate: April 6 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt DISKLABEL 8
 .Os
 .Sh NAME
@@ -353,6 +353,8 @@ thinks (the
 geometry is simply what the label said before
 .Nm
 made any changes).
+.It Cm l Op Ar unit
+Print the disk label header.
 .It Cm M
 Display this manual page.
 .It Cm m Op Ar part
@@ -375,7 +377,7 @@ was invoked with the
 .Fl f
 flag.
 .It Cm p Op Ar unit
-Print the current disk label.
+Print the current partition list.
 If a
 .Em unit
 is given, the size and offsets are displayed in terms of the

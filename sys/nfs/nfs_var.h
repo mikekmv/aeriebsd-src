@@ -29,34 +29,17 @@
  */
 
 /*
- * XXX needs <nfs/rpcv2.h> and <nfs/nfs.h> because of typedefs
+ * XXX needs <nfs/rpcv2.h> and <nfs/nfs.h> because of typedefs.
  */
+#ifndef _NFS_NFS_VAR_H_
+#define _NFS_NFS_VAR_H_
 
-struct vnode;
-struct uio;
-struct ucred;
-struct proc;
-struct buf;
-struct nfs_diskless;
-struct sockaddr_in;
-struct nfs_dlmount;
-struct vnode;
-struct nfsd;
-struct mbuf;
-struct file;
-struct nfssvc_sock;
-struct nfsmount;
-struct socket;
-struct nfsreq;
-struct vattr;
-struct nameidata;
+#ifdef _KERNEL
+
 struct nfsnode;
 struct sillyrename;
 struct componentname;
-struct nfsd_srvargs;
-struct nfsrv_descript;
-struct nfs_fattr;
-union nethostaddr;
+struct nfs_diskless;
 
 /* nfs_bio.c */
 int nfs_bioread(struct vnode *, struct uio *, int, struct ucred *);
@@ -212,7 +195,7 @@ int nfs_request(struct vnode *, struct mbuf *, int, struct proc *,
 		     struct ucred *, struct mbuf **, struct mbuf **,
 		     caddr_t *);
 int nfs_rephead(int, struct nfsrv_descript *, struct nfssvc_sock *, int,
-		struct mbuf **, struct mbuf **, caddr_t *);
+		struct mbuf **, struct mbuf **);
 void nfs_timer(void *);
 int nfs_sigintr(struct nfsmount *, struct nfsreq *, struct proc *);
 int nfs_sndlock(int *, struct nfsreq *);
@@ -235,29 +218,31 @@ void nfsrv_updatecache(struct nfsrv_descript *, int, struct mbuf *);
 void nfsrv_cleancache(void);
 
 /* nfs_subs.c */
-struct mbuf *nfsm_reqh(struct vnode *, u_long, int, caddr_t *);
+struct mbuf *nfsm_reqhead(int);
+u_int32_t nfs_get_xid(void);
 void nfsm_rpchead(struct nfsreq *, struct ucred *, int, struct mbuf *, int);
-void *nfsm_build(struct mbuf **, u_int, caddr_t *);
+void *nfsm_build(struct mbuf **, u_int);
 int nfsm_mbuftouio(struct mbuf **, struct uio *, int, caddr_t *);
-void nfsm_uiotombuf(struct mbuf **, struct uio *, size_t, caddr_t *);
-void nfsm_strtombuf(struct mbuf **, void *, size_t, caddr_t *);
-void nfsm_buftombuf(struct mbuf **, void *, size_t, caddr_t *);
+void nfsm_uiotombuf(struct mbuf **, struct uio *, size_t);
+void nfsm_strtombuf(struct mbuf **, void *, size_t);
+void nfsm_buftombuf(struct mbuf **, void *, size_t);
 int nfsm_disct(struct mbuf **, caddr_t *, int, int, caddr_t *);
 int nfs_adv(struct mbuf **, caddr_t *, int, int);
 int nfsm_strtmbuf(struct mbuf **, char **, char *, long);
 int nfs_vfs_init(struct vfsconf *);
+int nfs_attrtimeo(struct nfsnode *);
 int nfs_loadattrcache(struct vnode **, struct mbuf **, caddr_t *,
 			   struct vattr *);
 int nfs_getattrcache(struct vnode *, struct vattr *);
 int nfs_namei(struct nameidata *, fhandle_t *, int, struct nfssvc_sock *,
 		   struct mbuf *, struct mbuf **, caddr_t *, struct vnode **,
 		   struct proc *);
-void nfsm_v3attrbuild(struct mbuf **, struct vattr *, int, caddr_t *);
+void nfsm_v3attrbuild(struct mbuf **, struct vattr *, int);
 void nfsm_adj(struct mbuf *, int, int);
 void nfsm_srvwcc(struct nfsrv_descript *, int, struct vattr *, int,
-		      struct vattr *, struct mbuf **, char **);
-void nfsm_srvpostopattr(struct nfsrv_descript *, int, struct vattr *,
-			     struct mbuf **, char **);
+		      struct vattr *, struct mbuf **);
+void nfsm_srvpostop_attr(struct nfsrv_descript *, int, struct vattr *,
+			     struct mbuf **);
 void nfsm_srvfattr(struct nfsrv_descript *, struct vattr *,
 			struct nfs_fattr *);
 int nfsrv_fhtovp(fhandle_t *, int, struct vnode **, struct ucred *,
@@ -292,3 +277,6 @@ int  nfs_kqfilter(void *);
 /* Internal NFS utility macros */
 #define	mb_offset(m)	(mtod((m), caddr_t) + (m)->m_len)
 #define	nfsm_padlen(s)	(nfsm_rndup(s) - (s))
+
+#endif /* _KERNEL */
+#endif /* _NFS_NFS_VAR_H_ */

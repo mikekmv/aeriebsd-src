@@ -41,7 +41,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "from: @(#)nfsstat.c	8.1 (Berkeley) 6/6/93";
 #else
-static char *rcsid = "$ABSD$";
+static char *rcsid = "$ABSD: nfsstat.c,v 1.1.1.1 2008/08/26 14:43:04 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -247,14 +247,16 @@ intpr(u_int display)
 		    nfsstats.rpccnt[NFSPROC_PATHCONF],
 		    nfsstats.rpccnt[NFSPROC_COMMIT]);
 		printf("Rpc Info:\n");
-		printf("%9.9s %9.9s %9.9s %9.9s %9.9s\n",
-		    "TimedOut", "Invalid", "X Replies", "Retries", "Requests");
-		printf("%9llu %9llu %9llu %9llu %9llu\n",
+		printf("%9.9s %9.9s %9.9s %9.9s %9.9s %9.9s\n",
+		    "TimedOut", "Invalid", "X Replies", "Retries", "Requests",
+		    "FrcSync");
+		printf("%9llu %9llu %9llu %9llu %9llu %9llu\n",
 		    nfsstats.rpctimeouts,
 		    nfsstats.rpcinvalid,
 		    nfsstats.rpcunexpected,
 		    nfsstats.rpcretries,
-		    nfsstats.rpcrequests);
+		    nfsstats.rpcrequests,
+		    nfsstats.forcedsync);
 		printf("Cache Info:\n");
 		printf("%9.9s %9.9s %9.9s %9.9s",
 		    "Attr Hits", "Misses", "Lkup Hits", "Misses");

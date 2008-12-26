@@ -335,6 +335,7 @@
 #define MIB_openBSD			MIB_enterprises, 30155
 
 /* OPENBSD-MIB */
+#define MIB_pfMIBObjects		MIB_openBSD, 1
 #define MIB_sensorMIBObjects		MIB_openBSD, 2
 #define MIB_sensors			MIB_sensorMIBObjects, 1
 #define MIB_sensorNumber		MIB_sensors, 1
@@ -349,6 +350,8 @@
 #define MIB_sensorValue			MIB_sensorEntry, 5
 #define MIB_sensorUnits			MIB_sensorEntry, 6
 #define MIB_sensorStatus		MIB_sensorEntry, 7
+#define MIB_carpMIBObjects		MIB_openBSD, 3
+#define MIB_ipsecMIBObjects		MIB_openBSD, 4
 #define MIB_localSystem			MIB_openBSD, 23
 #define MIB_SYSOID_DEFAULT		MIB_openBSD, 23, 1
 #define MIB_localTest			MIB_openBSD, 42

@@ -34,16 +34,18 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <dev/pci/if_ixgb.h>
 
+#ifdef IXGB_DEBUG
 /*********************************************************************
  *  Set this to one to display debug statistics
  *********************************************************************/
 int             ixgb_display_debug_stats = 0;
+#endif
 
 /*********************************************************************
  *  Driver version
  *********************************************************************/
 
-char ixgb_driver_version[] = "6.1.0";
+#define IXGB_DRIVER_VERSION	"6.1.0"
 
 /*********************************************************************
  *  PCI Device ID Table
@@ -100,7 +102,9 @@ ixgb_transmit_checksum_setup(struct ixgb_softc *,
 			     u_int8_t *);
 void ixgb_set_promisc(struct ixgb_softc *);
 void ixgb_set_multi(struct ixgb_softc *);
+#ifdef IXGB_DEBUG
 void ixgb_print_hw_stats(struct ixgb_softc *);
+#endif
 void ixgb_update_link_status(struct ixgb_softc *);
 int
 ixgb_get_buf(struct ixgb_softc *, int i,
@@ -298,6 +302,7 @@ ixgb_start(struct ifnet *ifp)
 {
 	struct mbuf    *m_head;
 	struct ixgb_softc *sc = ifp->if_softc;
+	int		post = 0;
 
 	if ((ifp->if_flags & (IFF_OACTIVE | IFF_RUNNING)) != IFF_RUNNING)
 		return;
@@ -305,9 +310,12 @@ ixgb_start(struct ifnet *ifp)
 	if (!sc->link_active)
 		return;
 
+	bus_dmamap_sync(sc->txdma.dma_tag, sc->txdma.dma_map, 0,
+	    sc->txdma.dma_map->dm_mapsize,
+	    BUS_DMASYNC_POSTREAD | BUS_DMASYNC_POSTWRITE);
+
 	for (;;) {
 		IFQ_POLL(&ifp->if_snd, m_head);
-
 		if (m_head == NULL)
 			break;
 
@@ -326,7 +334,20 @@ ixgb_start(struct ifnet *ifp)
 
 		/* Set timeout in case hardware has problems transmitting */
 		ifp->if_timer = IXGB_TX_TIMEOUT;
+
+		post = 1;
 	}
+
+	bus_dmamap_sync(sc->txdma.dma_tag, sc->txdma.dma_map, 0,
+	    sc->txdma.dma_map->dm_mapsize,
+	    BUS_DMASYNC_PREREAD | BUS_DMASYNC_PREWRITE);
+	/*
+	 * Advance the Transmit Descriptor Tail (Tdt),
+	 * this tells the E1000 that this frame
+	 * is available to transmit.
+	 */
+	if (post)
+		IXGB_WRITE_REG(&sc->hw, TDT, sc->next_avail_tx_desc);
 }
 
 /*********************************************************************
@@ -721,15 +742,6 @@ ixgb_encap(struct ixgb_softc *sc, struct mbuf *m_head)
 	 */
 	current_tx_desc->cmd_type_len |= htole32(IXGB_TX_DESC_CMD_EOP);
 
-	/*
-	 * Advance the Transmit Descriptor Tail (Tdt), this tells the E1000
-	 * that this frame is available to transmit.
-	 */
-	bus_dmamap_sync(sc->txdma.dma_tag, sc->txdma.dma_map, 0,
-	    sc->txdma.dma_map->dm_mapsize,
-	    BUS_DMASYNC_PREREAD | BUS_DMASYNC_PREWRITE);
-	IXGB_WRITE_REG(&sc->hw, TDT, i);
-
 	return (0);
 
 fail:
@@ -822,8 +834,10 @@ ixgb_local_timer(void *arg)
 	ixgb_check_for_link(&sc->hw);
 	ixgb_update_link_status(sc);
 	ixgb_update_stats_counters(sc);
+#ifdef IXGB_DEBUG
 	if (ixgb_display_debug_stats && ifp->if_flags & IFF_RUNNING)
 		ixgb_print_hw_stats(sc);
+#endif
 
 	timeout_add(&sc->timer_handle, hz);
 
@@ -1435,15 +1449,16 @@ ixgb_txeof(struct ixgb_softc *sc)
 	 * clear the timeout. Otherwise, if some descriptors have been freed,
 	 * restart the timeout.
 	 */
-	if (num_avail > IXGB_TX_CLEANUP_THRESHOLD) {
+	if (num_avail > IXGB_TX_CLEANUP_THRESHOLD)
 		ifp->if_flags &= ~IFF_OACTIVE;
-		/* All clean, turn off the timer */
-		if (num_avail == sc->num_tx_desc)
-			ifp->if_timer = 0;
-		/* Some cleaned, reset the timer */
-		else if (num_avail != sc->num_tx_desc_avail)
-			ifp->if_timer = IXGB_TX_TIMEOUT;
-	}
+
+	/* All clean, turn off the timer */
+	if (num_avail == sc->num_tx_desc)
+		ifp->if_timer = 0;
+	/* Some cleaned, reset the timer */
+	else if (num_avail != sc->num_tx_desc_avail)
+		ifp->if_timer = IXGB_TX_TIMEOUT;
+
 	sc->num_tx_desc_avail = num_avail;
 }
 
@@ -2034,6 +2049,7 @@ ixgb_update_stats_counters(struct ixgb_softc *sc)
 		sc->watchdog_events;
 }
 
+#ifdef IXGB_DEBUG
 /**********************************************************************
  *
  *  This routine is called only when ixgb_display_debug_stats is enabled.
@@ -2108,3 +2124,4 @@ ixgb_print_hw_stats(struct ixgb_softc *sc)
 	printf("%s: Jumbo frames Xmtd = %lld\n", unit,
 		(long long)sc->stats.jptcl);
 }
+#endif

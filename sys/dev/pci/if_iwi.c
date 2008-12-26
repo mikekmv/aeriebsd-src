@@ -867,6 +867,7 @@ iwi_frame_intr(struct iwi_softc *sc, struct iwi_rx_data *data,
 	struct ifnet *ifp = &ic->ic_if;
 	struct mbuf *mnew, *m;
 	struct ieee80211_frame *wh;
+	struct ieee80211_rxinfo rxi;
 	struct ieee80211_node *ni;
 	int error;
 
@@ -931,6 +932,7 @@ iwi_frame_intr(struct iwi_softc *sc, struct iwi_rx_data *data,
 
 	wh = mtod(m, struct ieee80211_frame *);
 
+	rxi.rxi_flags = 0;
 	if ((wh->i_fc[1] & IEEE80211_FC1_WEP) &&
 	    ic->ic_opmode != IEEE80211_M_MONITOR) {
 		/*
@@ -944,6 +946,8 @@ iwi_frame_intr(struct iwi_softc *sc, struct iwi_rx_data *data,
 		m_adj(m, IEEE80211_WEP_IVLEN + IEEE80211_WEP_KIDLEN);
 		m_adj(m, -IEEE80211_WEP_CRCLEN);
 		wh = mtod(m, struct ieee80211_frame *);
+
+		rxi.rxi_flags |= IEEE80211_RXI_HWDEC;
 	}
 
 #if NBPFILTER > 0
@@ -975,7 +979,9 @@ iwi_frame_intr(struct iwi_softc *sc, struct iwi_rx_data *data,
 	ni = ieee80211_find_rxnode(ic, wh);
 
 	/* send the frame to the upper layer */
-	ieee80211_input(ifp, m, ni, frame->rssi_dbm, 0);
+	rxi.rxi_rssi = frame->rssi_dbm;
+	rxi.rxi_tstamp = 0;	/* unused */
+	ieee80211_input(ifp, m, ni, &rxi);
 
 	/* node is no longer needed */
 	ieee80211_release_node(ic, ni);

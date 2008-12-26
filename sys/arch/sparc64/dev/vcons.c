@@ -84,7 +84,7 @@ vcons_attach(struct device *parent, struct device *self, void *aux)
 	cn_tab->cn_getc = vcons_cngetc;
 	cn_tab->cn_putc = vcons_cnputc;
 
-	/* Locate the mahor number. */
+	/* Locate the major number. */
 	for (maj = 0; maj < nchrdev; maj++)
 		if (cdevsw[maj].d_open == vconsopen)
 			break;
