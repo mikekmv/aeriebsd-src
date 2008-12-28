@@ -28,7 +28,7 @@
 .\"
 .\"	@(#)intro.8	8.2 (Berkeley) 12/11/93
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt INTRO 8
 .Os
 .Sh NAME
@@ -175,22 +175,6 @@ variables:
 .Va rdate_flags ,
 and
 .Va timed_flags .
-.Ss Concatenated disks (ccd)
-If you are using
-.Xr ccd 4
-concatenated disks, edit
-.Pa /etc/ccd.conf .
-Use the
-.Ic ccdconfig -U
-command to unload and the
-.Ic ccdconfig -C
-command to create tables internal to the kernel for the concatenated disks.
-You then
-.Xr mount 8 ,
-.Xr umount 8 ,
-and edit
-.Pa /etc/fstab
-as needed.
 .Ss BOOTP/DHCP server
 If this is a
 BOOTP or DHCP
