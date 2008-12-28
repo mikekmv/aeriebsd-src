@@ -1,4 +1,4 @@
-
+/*
  * Copyright (c) 2004 Bob Beck
  * Copyright (c) 1995 - 2003 Kungliga Tekniska Högskolan
  * (Royal Institute of Technology, Stockholm, Sweden).
