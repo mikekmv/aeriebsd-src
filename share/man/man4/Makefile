@@ -12,7 +12,7 @@ MAN=	aac.4 ac97.4 acphy.4 \
 	bce.4 bge.4 bha.4 \
 	bio.4 bktr.4 bluetooth.4 bmtphy.4 bnx.4 boca.4 bpf.4 brgphy.4 bridge.4 \
 	bwi.4 \
-	cac.4 cas.4 cardbus.4 carp.4 ccd.4 cd.4 cdce.4 cdcef.4 che.4 cfxga.4 \
+	cac.4 cas.4 cardbus.4 carp.4 cd.4 cdce.4 cdcef.4 che.4 cfxga.4 \
 	ch.4 ciphy.4 ciss.4 clcs.4 clct.4 cmpci.4 cnw.4 \
 	com.4 crypto.4 cue.4 cy.4 cz.4 dc.4 dcphy.4 ddb.4 de.4 dpt.4 \
 	drum.4 eap.4 ec.4 eephy.4 ef.4 eg.4 ehci.4 eisa.4 el.4 em.4 \
@@ -37,13 +37,13 @@ MAN=	aac.4 ac97.4 acphy.4 \
 	pcagpio.4 pcaled.4 pcdisplay.4 pchb.4 pci.4 pcib.4 pcfadc.4 \
 	pcfiic.4 pciide.4 pckbc.4 pckbd.4 pcmcia.4 pcn.4 pcppi.4 pcscp.4 \
 	pf.4 pflog.4 pfsync.4 pgt.4 piixpm.4 pim.4 \
-	pms.4 ppb.4 ppp.4 pppoe.4 pty.4 puc.4 pwdog.4 qsphy.4 radio.4 raid.4 \
+	pms.4 ppb.4 ppp.4 pppoe.4 pty.4 puc.4 pwdog.4 qsphy.4 radio.4 \
 	ral.4 random.4 ray.4 rd.4 re.4 rgephy.4 ricohrtc.4 \
 	rl.4 rlphy.4 route.4 rt.4 rum.4 \
 	rtfps.4 rtii.4 rtw.4 safe.4 safte.4 san.4 sbt.4 sbus.4 scsi.4 sd.4 \
 	sdmmc.4 sdhc.4 ses.4 \
 	sequencer.4 sf.4 sf2r.4 sfr.4 sili.4 siop.4 sis.4 sk.4 sl.4 sli.4 \
-	sm.4 softraid.4 spdmem.4 sdtemp.4 speaker.4 sppp.4 sqphy.4 \
+	sm.4 spdmem.4 sdtemp.4 speaker.4 sppp.4 sqphy.4 \
 	ss.4 st.4 ste.4 stge.4 sti.4 \
 	stp.4 sv.4 systrace.4 tcic.4 tcp.4 termios.4 tht.4 ti.4 tl.4 \
 	tlphy.4 thmc.4 tqphy.4 trm.4 trunk.4 tsl.4 tty.4 tun.4 twe.4 txp.4 \

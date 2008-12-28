@@ -33,7 +33,7 @@
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt OPTIONS 4
 .Os
 .Sh NAME
@@ -270,11 +270,6 @@ control and observe another process.
 See
 .Xr ptrace 2
 for details.
-.It Cd option RAIDDEBUG
-Be verbose on what RAIDframe does.
-See
-.Xr raid 4
-for details.
 .It Cd option SMALL_KERNEL
 Removes some features and some optimizations from the kernel to reduce the
 size of the resulting kernel binary.
@@ -486,18 +481,6 @@ Adds support for the
 boot option (User Kernel Config).
 Allows modification of kernel settings (e.g., device parameters) before
 booting the system.
-.It Cd option CCDNBUF= Ns Ar integer
-The
-.Xr ccd 4
-device driver uses
-.Dq component buffers
-to distribute I/O requests to the components of a concatenated disk.
-It keeps a freelist of buffer
-headers in order to reduce use of the kernel memory allocator.
-.Em CCDNBUF
-is the number of buffer headers allocated on the freelist for
-each component buffer.
-It defaults to 8.
 .It Cd option CRYPTO
 Enables support for the kernel cryptographic framework.
 See
@@ -539,9 +522,6 @@ of certain code in the kernel if enabled.
 Examples of such code include the
 .Fn namei
 routine, the
-.Xr ccd 4
-driver,
-the
 .Xr siop 4
 driver, and much of the networking code.
 Note that this option is silently turned on by the
@@ -565,14 +545,6 @@ Makes the boot process more verbose for PCI peripherals
 (vendor names and other information is printed, etc.).
 .It Cd option PCMCIAVERBOSE
 Makes the boot process more verbose for PCMCIA peripherals.
-.It Cd option RAID_AUTOCONFIG
-Adds support for auto-configuring the RAIDframe devices during the kernel
-initialization.
-See
-.Xr raid 4
-and
-.Xr raidctl 8
-for details.
 .It Cd option USER_LDT
 Enable userland manipulation of per-process
 Local Descriptor Table (LDT) entries;
