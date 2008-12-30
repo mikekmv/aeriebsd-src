@@ -1,4 +1,3 @@
-/* $FreeBSD: /c/ncvs/src/sys/dev/sound/pci/maestro.c,v 1.3 2000/11/21 12:22:11 julian Exp $ */
 /*
  * FreeBSD's ESS Agogo/Maestro driver 
  * Converted from FreeBSD's pcm to OpenBSD's audio.
@@ -579,7 +578,7 @@ struct audio_device maestro_audev = {
 	"ESS Maestro", "", "maestro"
 };
 
-struct {
+const struct {
 	u_short vendor, product;
 	int flags;
 } maestro_pcitab[] = {
@@ -973,7 +972,7 @@ maestro_query_devinfo(self, cp)
 		return (ENXIO);
 }
 
-struct audio_encoding maestro_tab[] = { 
+const struct audio_encoding maestro_tab[] = { 
 	{0, AudioEslinear_le, AUDIO_ENCODING_SLINEAR_LE, 16, 0},
 	{1, AudioEslinear, AUDIO_ENCODING_SLINEAR, 8, 0},
 	{2, AudioEulinear, AUDIO_ENCODING_ULINEAR, 8, 0},
