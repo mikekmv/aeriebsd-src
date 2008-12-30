@@ -116,7 +116,7 @@ const struct cfattach atu_ca = {
 /*
  * Various supported device vendors/products/radio type.
  */
-struct atu_type atu_devs[] = {
+const struct atu_type atu_devs[] = {
 	{ USB_VENDOR_3COM,	USB_PRODUCT_3COM_3CRSHEW696,
 	  RadioRFMD,		ATU_NO_QUIRK },
 	{ USB_VENDOR_ABOCOM,	USB_PRODUCT_ABOCOM_BWU613,
@@ -1114,7 +1114,7 @@ atu_match(struct device *parent, void *match, void *aux)
 		return(UMATCH_NONE);
 
 	for (i = 0; i < sizeof(atu_devs)/sizeof(atu_devs[0]); i++) {
-		struct atu_type *t = &atu_devs[i];
+		const struct atu_type *t = &atu_devs[i];
 
 		if (uaa->vendor == t->atu_vid &&
 		    uaa->product == t->atu_pid) {
@@ -1282,7 +1282,7 @@ atu_attach(struct device *parent, struct device *self, void *aux)
 	 * basically does the same as USB_MATCH
 	 */
 	for (i = 0; i < sizeof(atu_devs)/sizeof(atu_devs[0]); i++) {
-		struct atu_type *t = &atu_devs[i];
+		const struct atu_type *t = &atu_devs[i];
 
 		if (uaa->vendor == t->atu_vid &&
 		    uaa->product == t->atu_pid) {
