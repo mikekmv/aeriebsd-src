@@ -40,14 +40,14 @@ struct umq_data {
 	int		type;
 #define UMQ_TYPE_FIXED_EP	1
 #define UMQ_TYPE_YAMAHA		2
-	void		*data;
+	const void	*data;
 };
 
 struct umidi_quirk {
 	int			vendor;
 	int			product;
 	int			iface;
-	struct umq_data		*quirks;
+	const struct umq_data		*quirks;
         u_int32_t		type_mask;
 };
 #define UMQ_ISTYPE(q, type) \
@@ -55,7 +55,7 @@ struct umidi_quirk {
 
 #define UMQ_TERMINATOR	{ 0, }
 #define UMQ_DEF(v, p, i)					\
-static struct umq_data	umq_##v##_##p##_##i[]
+static const struct umq_data	umq_##v##_##p##_##i[]
 #define UMQ_REG(v, p, i)					\
 	{ USB_VENDOR_##v, USB_PRODUCT_##p, i,			\
 	  umq_##v##_##p##_##i, 0 }
@@ -76,20 +76,20 @@ struct umq_fixed_ep_endpoint {
 struct umq_fixed_ep_desc {
 	int				num_out_ep;
 	int				num_in_ep;
-	struct umq_fixed_ep_endpoint	*out_ep;
-	struct umq_fixed_ep_endpoint	*in_ep;
+	const struct umq_fixed_ep_endpoint	*out_ep;
+	const struct umq_fixed_ep_endpoint	*in_ep;
 };
 
 #define UMQ_FIXED_EP_DEF(v, p, i, noep, niep)				\
-static struct umq_fixed_ep_endpoint					\
+static const struct umq_fixed_ep_endpoint				\
 umq_##v##_##p##_##i##_fixed_ep_endpoints[noep+niep];			\
-static struct umq_fixed_ep_desc						\
+static const struct umq_fixed_ep_desc					\
 umq_##v##_##p##_##i##_fixed_ep_desc = {					\
 	noep, niep,							\
 	&umq_##v##_##p##_##i##_fixed_ep_endpoints[0],			\
 	&umq_##v##_##p##_##i##_fixed_ep_endpoints[noep],		\
 };									\
-static struct umq_fixed_ep_endpoint					\
+static const struct umq_fixed_ep_endpoint				\
 umq_##v##_##p##_##i##_fixed_ep_endpoints[noep+niep]
 
 #define UMQ_FIXED_EP_REG(v, p, i)					\
@@ -106,6 +106,6 @@ umq_##v##_##p##_##i##_fixed_ep_endpoints[noep+niep]
 /* extern struct umidi_quirk umidi_quirklist[]; */
 struct umidi_quirk *umidi_search_quirk(int, int, int);
 void umidi_print_quirk(struct umidi_quirk *);
-void *umidi_get_quirk_data_from_type(struct umidi_quirk *, u_int32_t);
+const void *umidi_get_quirk_data_from_type(struct umidi_quirk *, u_int32_t);
 
 #endif

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -371,7 +370,7 @@ struct umidi_quirk *
 umidi_search_quirk(int vendor, int product, int ifaceno)
 {
 	struct umidi_quirk *p;
-	struct umq_data *q;
+	const struct umq_data *q;
 
 	DPRINTF(("umidi_search_quirk: v=%d, p=%d, i=%d\n",
 		 vendor, product, ifaceno));
@@ -404,7 +403,7 @@ static char *quirk_name[] = {
 void
 umidi_print_quirk(struct umidi_quirk *q)
 {
-	struct umq_data *qd;
+	const struct umq_data *qd;
 	if (q) {
 		printf("(");
 		for (qd=q->quirks; qd->type; qd++)
@@ -415,10 +414,10 @@ umidi_print_quirk(struct umidi_quirk *q)
 	}
 }
 
-void *
+const void *
 umidi_get_quirk_data_from_type(struct umidi_quirk *q, u_int32_t type)
 {
-	struct umq_data *qd;
+	const struct umq_data *qd;
 	if (q) {
 		for (qd=q->quirks; qd->type; qd++)
 			if (qd->type == type)

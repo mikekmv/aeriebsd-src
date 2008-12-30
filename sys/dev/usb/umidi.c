@@ -447,7 +447,7 @@ static usbd_status
 alloc_all_endpoints_fixed_ep(struct umidi_softc *sc)
 {
 	usbd_status err;
-	struct umq_fixed_ep_desc *fp;
+	const struct umq_fixed_ep_desc *fp;
 	struct umidi_endpoint *ep;
 	usb_endpoint_descriptor_t *epd;
 	int i;
