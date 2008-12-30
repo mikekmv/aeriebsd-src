@@ -608,12 +608,6 @@ cdev_decl(sw);
 bdev_decl(vnd);
 cdev_decl(vnd);
 
-bdev_decl(ccd);
-cdev_decl(ccd);
-
-bdev_decl(raid);
-cdev_decl(raid);
-
 cdev_decl(iop);
 
 cdev_decl(ch);
