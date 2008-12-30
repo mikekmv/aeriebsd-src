@@ -98,8 +98,8 @@ esp_attach()
 int
 esp_init(struct tdb *tdbp, struct xformsw *xsp, struct ipsecinit *ii)
 {
-	struct enc_xform *txform = NULL;
-	struct auth_hash *thash = NULL;
+	const struct enc_xform *txform = NULL;
+	const struct auth_hash *thash = NULL;
 	struct cryptoini cria, crie;
 
 	if (!ii->ii_encalg && !ii->ii_authalg) {

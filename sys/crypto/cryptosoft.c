@@ -80,7 +80,7 @@ swcr_encdec(struct cryptodesc *crd, struct swcr_data *sw, caddr_t buf,
 {
 	unsigned char iv[EALG_MAX_BLOCK_LEN], blk[EALG_MAX_BLOCK_LEN], *idat;
 	unsigned char *ivp, piv[EALG_MAX_BLOCK_LEN];
-	struct enc_xform *exf;
+	const struct enc_xform *exf;
 	int i, k, j, blks, ind, count, ivlen;
 	struct mbuf *m = NULL;
 	struct uio *uio = NULL;
@@ -411,7 +411,7 @@ swcr_authcompute(struct cryptop *crp, struct cryptodesc *crd,
     struct swcr_data *sw, caddr_t buf, int outtype)
 {
 	unsigned char aalg[AALG_MAX_RESULT_LEN];
-	struct auth_hash *axf;
+	const struct auth_hash *axf;
 	union authctx ctx;
 	int err;
 
@@ -558,8 +558,8 @@ int
 swcr_newsession(u_int32_t *sid, struct cryptoini *cri)
 {
 	struct swcr_data **swd;
-	struct auth_hash *axf;
-	struct enc_xform *txf;
+	const struct auth_hash *axf;
+	const struct enc_xform *txf;
 	struct comp_algo *cxf;
 	u_int32_t i;
 	int k;
@@ -776,8 +776,8 @@ int
 swcr_freesession(u_int64_t tid)
 {
 	struct swcr_data *swd;
-	struct enc_xform *txf;
-	struct auth_hash *axf;
+	const struct enc_xform *txf;
+	const struct auth_hash *axf;
 	u_int32_t sid = ((u_int32_t) tid) & 0xffffffff;
 
 	if (sid > swcr_sesnum || swcr_sessions == NULL ||

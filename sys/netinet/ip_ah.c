@@ -97,7 +97,7 @@ ah_attach()
 int
 ah_init(struct tdb *tdbp, struct xformsw *xsp, struct ipsecinit *ii)
 {
-	struct auth_hash *thash = NULL;
+	const struct auth_hash *thash = NULL;
 	struct cryptoini cria;
 
 	/* Authentication operation. */

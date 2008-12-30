@@ -335,7 +335,7 @@ glxsb_crypto_newsession(uint32_t *sidp, struct cryptoini *cri)
 {
 	struct glxsb_softc *sc = glxsb_sc;
 	struct glxsb_session *ses = NULL;
-	struct auth_hash	*axf;
+	const struct auth_hash	*axf;
 	struct cryptoini	*c;
 	struct swcr_data	*swd;
 	int sesn, i;
@@ -462,7 +462,7 @@ glxsb_crypto_freesession(uint64_t tid)
 {
 	struct glxsb_softc *sc = glxsb_sc;
 	struct swcr_data *swd;
-	struct auth_hash *axf;
+	const struct auth_hash *axf;
 	int sesn;
 	uint32_t sid = ((uint32_t)tid) & 0xffffffff;
 

@@ -70,27 +70,27 @@ union authctx {
 	SHA512_CTX sha2_512ctx;
 };
 
-extern struct enc_xform enc_xform_des;
-extern struct enc_xform enc_xform_3des;
-extern struct enc_xform enc_xform_blf;
-extern struct enc_xform enc_xform_cast5;
-extern struct enc_xform enc_xform_skipjack;
-extern struct enc_xform enc_xform_rijndael128;
-extern struct enc_xform enc_xform_aes_ctr;
-extern struct enc_xform enc_xform_aes_xts;
-extern struct enc_xform enc_xform_arc4;
-extern struct enc_xform enc_xform_null;
+extern const struct enc_xform enc_xform_des;
+extern const struct enc_xform enc_xform_3des;
+extern const struct enc_xform enc_xform_blf;
+extern const struct enc_xform enc_xform_cast5;
+extern const struct enc_xform enc_xform_skipjack;
+extern const struct enc_xform enc_xform_rijndael128;
+extern const struct enc_xform enc_xform_aes_ctr;
+extern const struct enc_xform enc_xform_aes_xts;
+extern const struct enc_xform enc_xform_arc4;
+extern const struct enc_xform enc_xform_null;
 
-extern struct auth_hash auth_hash_md5;
-extern struct auth_hash auth_hash_sha1;
-extern struct auth_hash auth_hash_key_md5;
-extern struct auth_hash auth_hash_key_sha1;
-extern struct auth_hash auth_hash_hmac_md5_96;
-extern struct auth_hash auth_hash_hmac_sha1_96;
-extern struct auth_hash auth_hash_hmac_ripemd_160_96;
-extern struct auth_hash auth_hash_hmac_sha2_256_96;
-extern struct auth_hash auth_hash_hmac_sha2_384_96;
-extern struct auth_hash auth_hash_hmac_sha2_512_96;
+extern const struct auth_hash auth_hash_md5;
+extern const struct auth_hash auth_hash_sha1;
+extern const struct auth_hash auth_hash_key_md5;
+extern const struct auth_hash auth_hash_key_sha1;
+extern const struct auth_hash auth_hash_hmac_md5_96;
+extern const struct auth_hash auth_hash_hmac_sha1_96;
+extern const struct auth_hash auth_hash_hmac_ripemd_160_96;
+extern const struct auth_hash auth_hash_hmac_sha2_256_96;
+extern const struct auth_hash auth_hash_hmac_sha2_384_96;
+extern const struct auth_hash auth_hash_hmac_sha2_512_96;
 
 extern struct comp_algo comp_algo_deflate;
 extern struct comp_algo comp_algo_lzs;

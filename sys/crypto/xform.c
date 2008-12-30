@@ -124,7 +124,7 @@ struct aes_xts_ctx;
 void aes_xts_crypt(struct aes_xts_ctx *, u_int8_t *, u_int);
 
 /* Encryption instances */
-struct enc_xform enc_xform_des = {
+const struct enc_xform enc_xform_des = {
 	CRYPTO_DES_CBC, "DES",
 	8, 8, 8, 8,
 	des1_encrypt,
@@ -134,7 +134,7 @@ struct enc_xform enc_xform_des = {
 	NULL
 };
 
-struct enc_xform enc_xform_3des = {
+const struct enc_xform enc_xform_3des = {
 	CRYPTO_3DES_CBC, "3DES",
 	8, 8, 24, 24,
 	des3_encrypt,
@@ -144,7 +144,7 @@ struct enc_xform enc_xform_3des = {
 	NULL
 };
 
-struct enc_xform enc_xform_blf = {
+const struct enc_xform enc_xform_blf = {
 	CRYPTO_BLF_CBC, "Blowfish",
 	8, 8, 5, 56 /* 448 bits, max key */,
 	blf_encrypt,
@@ -154,7 +154,7 @@ struct enc_xform enc_xform_blf = {
 	NULL
 };
 
-struct enc_xform enc_xform_cast5 = {
+const struct enc_xform enc_xform_cast5 = {
 	CRYPTO_CAST_CBC, "CAST-128",
 	8, 8, 5, 16,
 	cast5_encrypt,
@@ -164,7 +164,7 @@ struct enc_xform enc_xform_cast5 = {
 	NULL
 };
 
-struct enc_xform enc_xform_skipjack = {
+const struct enc_xform enc_xform_skipjack = {
 	CRYPTO_SKIPJACK_CBC, "Skipjack",
 	8, 8, 10, 10,
 	skipjack_encrypt,
@@ -174,7 +174,7 @@ struct enc_xform enc_xform_skipjack = {
 	NULL
 };
 
-struct enc_xform enc_xform_rijndael128 = {
+const struct enc_xform enc_xform_rijndael128 = {
 	CRYPTO_RIJNDAEL128_CBC, "Rijndael-128/AES",
 	16, 16, 16, 32,
 	rijndael128_encrypt,
@@ -184,7 +184,7 @@ struct enc_xform enc_xform_rijndael128 = {
 	NULL
 };
 
-struct enc_xform enc_xform_aes_ctr = {
+const struct enc_xform enc_xform_aes_ctr = {
 	CRYPTO_AES_CTR, "AES-CTR",
 	16, 8, 16+4, 32+4,
 	aes_ctr_crypt,
@@ -194,7 +194,7 @@ struct enc_xform enc_xform_aes_ctr = {
 	aes_ctr_reinit
 };
 
-struct enc_xform enc_xform_aes_xts = {
+const struct enc_xform enc_xform_aes_xts = {
 	CRYPTO_AES_XTS, "AES-XTS",
 	16, 8, 32, 64,
 	aes_xts_encrypt,
@@ -204,7 +204,7 @@ struct enc_xform enc_xform_aes_xts = {
 	aes_xts_reinit
 };
 
-struct enc_xform enc_xform_arc4 = {
+const struct enc_xform enc_xform_arc4 = {
 	CRYPTO_ARC4, "ARC4",
 	1, 1, 1, 32,
 	NULL,
@@ -214,7 +214,7 @@ struct enc_xform enc_xform_arc4 = {
 	NULL
 };
 
-struct enc_xform enc_xform_null = {
+const struct enc_xform enc_xform_null = {
 	CRYPTO_NULL, "NULL",
 	4, 0, 0, 256,
 	null_encrypt,
@@ -225,70 +225,70 @@ struct enc_xform enc_xform_null = {
 };
 
 /* Authentication instances */
-struct auth_hash auth_hash_hmac_md5_96 = {
+const struct auth_hash auth_hash_hmac_md5_96 = {
 	CRYPTO_MD5_HMAC, "HMAC-MD5",
 	16, 16, 12, sizeof(MD5_CTX),
 	(void (*) (void *)) MD5Init, MD5Update_int,
 	(void (*) (u_int8_t *, void *)) MD5Final
 };
 
-struct auth_hash auth_hash_hmac_sha1_96 = {
+const struct auth_hash auth_hash_hmac_sha1_96 = {
 	CRYPTO_SHA1_HMAC, "HMAC-SHA1",
 	20, 20, 12, sizeof(SHA1_CTX),
 	(void (*) (void *)) SHA1Init, SHA1Update_int,
 	(void (*) (u_int8_t *, void *)) SHA1Final
 };
 
-struct auth_hash auth_hash_hmac_ripemd_160_96 = {
+const struct auth_hash auth_hash_hmac_ripemd_160_96 = {
 	CRYPTO_RIPEMD160_HMAC, "HMAC-RIPEMD-160",
 	20, 20, 12, sizeof(RMD160_CTX),
 	(void (*)(void *)) RMD160Init, RMD160Update_int,
 	(void (*)(u_int8_t *, void *)) RMD160Final
 };
 
-struct auth_hash auth_hash_hmac_sha2_256_96 = {
+const struct auth_hash auth_hash_hmac_sha2_256_96 = {
 	CRYPTO_SHA2_256_HMAC, "HMAC-SHA2-256",
 	32, 32, 12, sizeof(SHA256_CTX),
 	(void (*)(void *)) SHA256_Init, SHA256_Update_int,
 	(void (*)(u_int8_t *, void *)) SHA256_Final
 };
 
-struct auth_hash auth_hash_hmac_sha2_384_96 = {
+const struct auth_hash auth_hash_hmac_sha2_384_96 = {
 	CRYPTO_SHA2_384_HMAC, "HMAC-SHA2-384",
 	48, 48, 12, sizeof(SHA384_CTX),
 	(void (*)(void *)) SHA384_Init, SHA384_Update_int,
 	(void (*)(u_int8_t *, void *)) SHA384_Final
 };
 
-struct auth_hash auth_hash_hmac_sha2_512_96 = {
+const struct auth_hash auth_hash_hmac_sha2_512_96 = {
 	CRYPTO_SHA2_512_HMAC, "HMAC-SHA2-512",
 	64, 64, 12, sizeof(SHA512_CTX),
 	(void (*)(void *)) SHA512_Init, SHA512_Update_int,
 	(void (*)(u_int8_t *, void *)) SHA512_Final
 };
 
-struct auth_hash auth_hash_key_md5 = {
+const struct auth_hash auth_hash_key_md5 = {
 	CRYPTO_MD5_KPDK, "Keyed MD5",
 	0, 16, 16, sizeof(MD5_CTX),
 	(void (*)(void *)) MD5Init, MD5Update_int,
 	(void (*)(u_int8_t *, void *)) MD5Final
 };
 
-struct auth_hash auth_hash_key_sha1 = {
+const struct auth_hash auth_hash_key_sha1 = {
 	CRYPTO_SHA1_KPDK, "Keyed SHA1",
 	0, 20, 20, sizeof(SHA1_CTX),
 	(void (*)(void *)) SHA1Init, SHA1Update_int,
 	(void (*)(u_int8_t *, void *)) SHA1Final
 };
 
-struct auth_hash auth_hash_md5 = {
+const struct auth_hash auth_hash_md5 = {
 	CRYPTO_MD5, "MD5",
 	0, 16, 16, sizeof(MD5_CTX),
 	(void (*) (void *)) MD5Init, MD5Update_int,
 	(void (*) (u_int8_t *, void *)) MD5Final
 };
 
-struct auth_hash auth_hash_sha1 = {
+const struct auth_hash auth_hash_sha1 = {
 	CRYPTO_SHA1, "SHA1",
 	0, 20, 20, sizeof(SHA1_CTX),
 	(void (*)(void *)) SHA1Init, SHA1Update_int,

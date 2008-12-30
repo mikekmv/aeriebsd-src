@@ -280,8 +280,8 @@ struct tdb {				/* tunnel descriptor block */
 	struct tdb	*tdb_onext;
 
 	struct xformsw		*tdb_xform;		/* Transform to use */
-	struct enc_xform	*tdb_encalgxform;	/* Enc algorithm */
-	struct auth_hash	*tdb_authalgxform;	/* Auth algorithm */
+	const struct enc_xform	*tdb_encalgxform;	/* Enc algorithm */
+	const struct auth_hash	*tdb_authalgxform;	/* Auth algorithm */
 	struct comp_algo	*tdb_compalgxform;	/* Compression algo */
 
 #define	TDBF_UNIQUE		0x00001	/* This should not be used by others */
@@ -459,15 +459,15 @@ extern char ipsec_def_enc[];
 extern char ipsec_def_auth[];
 extern char ipsec_def_comp[];
 
-extern struct enc_xform enc_xform_des;
-extern struct enc_xform enc_xform_3des;
-extern struct enc_xform enc_xform_blf;
-extern struct enc_xform enc_xform_cast5;
-extern struct enc_xform enc_xform_skipjack;
+extern const struct enc_xform enc_xform_des;
+extern const struct enc_xform enc_xform_3des;
+extern const struct enc_xform enc_xform_blf;
+extern const struct enc_xform enc_xform_cast5;
+extern const struct enc_xform enc_xform_skipjack;
 
-extern struct auth_hash auth_hash_hmac_md5_96;
-extern struct auth_hash auth_hash_hmac_sha1_96;
-extern struct auth_hash auth_hash_hmac_ripemd_160_96;
+extern const struct auth_hash auth_hash_hmac_md5_96;
+extern const struct auth_hash auth_hash_hmac_sha1_96;
+extern const struct auth_hash auth_hash_hmac_ripemd_160_96;
 
 extern struct comp_algo comp_algo_deflate;
 
