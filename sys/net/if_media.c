@@ -388,7 +388,7 @@ ifmedia_delete_instance(struct ifmedia *ifm, u_int inst)
  * Compute the interface `baudrate' from the media, for the interface
  * metrics (used by routing daemons).
  */
-struct ifmedia_baudrate ifmedia_baudrate_descriptions[] =
+const struct ifmedia_baudrate ifmedia_baudrate_descriptions[] =
     IFM_BAUDRATE_DESCRIPTIONS;
 
 u_int64_t
@@ -408,13 +408,13 @@ ifmedia_baudrate(int mword)
 
 #ifdef IFMEDIA_DEBUG
 
-struct ifmedia_description ifm_type_descriptions[] =
+const struct ifmedia_description ifm_type_descriptions[] =
     IFM_TYPE_DESCRIPTIONS;
 
-struct ifmedia_description ifm_subtype_descriptions[] =
+const struct ifmedia_description ifm_subtype_descriptions[] =
     IFM_SUBTYPE_DESCRIPTIONS;
 
-struct ifmedia_description ifm_option_descriptions[] =
+const struct ifmedia_description ifm_option_descriptions[] =
     IFM_OPTION_DESCRIPTIONS;
 
 /*
@@ -423,7 +423,7 @@ struct ifmedia_description ifm_option_descriptions[] =
 static void
 ifmedia_printword(int ifmw)
 {
-	struct ifmedia_description *desc;
+	const struct ifmedia_description *desc;
 	int seen_option = 0;
 
 	/* Print the top-level interface type. */

@@ -1,4 +1,3 @@
-
 /*
  *	@(#)COPYRIGHT	1.1 (NRL) 17 January 1995
  * 
@@ -38,7 +37,6 @@
  * official policies, either expressed or implied, of the US Naval
  * Research Laboratory (NRL).
  */
-
 /*
  * Copyright (c) 1995, 1996, 1997, 1998, 1999 Craig Metz. All rights reserved.
  *
@@ -131,7 +129,7 @@ extern int encdebug;
 #define BITMAP_X_LIFETIME_LASTUSE      (1LL << SADB_X_EXT_LIFETIME_LASTUSE)
 #define BITMAP_X_TAG                   (1LL << SADB_X_EXT_TAG)
 
-uint64_t sadb_exts_allowed_in[SADB_MAX+1] =
+const uint64_t sadb_exts_allowed_in[SADB_MAX+1] =
 {
 	/* RESERVED */
 	~0,
@@ -167,7 +165,7 @@ uint64_t sadb_exts_allowed_in[SADB_MAX+1] =
 	BITMAP_X_POLICY,
 };
 
-uint64_t sadb_exts_required_in[SADB_MAX+1] =
+const uint64_t sadb_exts_required_in[SADB_MAX+1] =
 {
 	/* RESERVED */
 	0,
@@ -203,7 +201,7 @@ uint64_t sadb_exts_required_in[SADB_MAX+1] =
 	BITMAP_X_POLICY,
 };
 
-uint64_t sadb_exts_allowed_out[SADB_MAX+1] =
+const uint64_t sadb_exts_allowed_out[SADB_MAX+1] =
 {
 	/* RESERVED */
 	~0,
@@ -239,7 +237,7 @@ uint64_t sadb_exts_allowed_out[SADB_MAX+1] =
 	BITMAP_X_SRC_FLOW | BITMAP_X_DST_FLOW | BITMAP_X_SRC_MASK | BITMAP_X_DST_MASK | BITMAP_X_FLOW_TYPE | BITMAP_X_POLICY,
 };
 
-uint64_t sadb_exts_required_out[SADB_MAX+1] =
+const uint64_t sadb_exts_required_out[SADB_MAX+1] =
 {
 	/* RESERVED */
 	0,
