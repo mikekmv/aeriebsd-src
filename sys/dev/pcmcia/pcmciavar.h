@@ -177,8 +177,8 @@ struct pcmcia_cis_quirk {
 	u_int16_t manufacturer;
 	u_int16_t product;
 	char *cis1_info[4];
-	struct pcmcia_function *pf;
-	struct pcmcia_config_entry *cfe;
+	const struct pcmcia_function *pf;
+	const struct pcmcia_config_entry *cfe;
 };
 
 struct pcmcia_attach_args {

@@ -44,7 +44,7 @@
 /* these structures are just static templates which are then copied
    into "live" allocated structures */
 
-struct pcmcia_function pcmcia_3cxem556_func0 = {
+const struct pcmcia_function pcmcia_3cxem556_func0 = {
 	0,			/* function number */
 	PCMCIA_FUNCTION_NETWORK,
 	0x07,			/* last cfe number */
@@ -52,7 +52,7 @@ struct pcmcia_function pcmcia_3cxem556_func0 = {
 	0x63,			/* ccr_mask */
 };
 
-struct pcmcia_config_entry pcmcia_3cxem556_func0_cfe0 = {
+const struct pcmcia_config_entry pcmcia_3cxem556_func0_cfe0 = {
 	0x07,			/* cfe number */
 	PCMCIA_CFE_IO8 | PCMCIA_CFE_IO16 | PCMCIA_CFE_IRQLEVEL,
 	PCMCIA_IFTYPE_IO,
@@ -65,7 +65,7 @@ struct pcmcia_config_entry pcmcia_3cxem556_func0_cfe0 = {
 	0,			/* maxtwins */
 };
 
-static struct pcmcia_function pcmcia_3cxem556_func1 = {
+const struct pcmcia_function pcmcia_3cxem556_func1 = {
 	1,			/* function number */
 	PCMCIA_FUNCTION_SERIAL,
 	0x27,			/* last cfe number */
@@ -73,7 +73,7 @@ static struct pcmcia_function pcmcia_3cxem556_func1 = {
 	0x63,			/* ccr_mask */
 };
 
-static struct pcmcia_config_entry pcmcia_3cxem556_func1_cfe0 = {
+const struct pcmcia_config_entry pcmcia_3cxem556_func1_cfe0 = {
 	0x27,			/* cfe number */
 	PCMCIA_CFE_IO8 | PCMCIA_CFE_IRQLEVEL,
 	PCMCIA_IFTYPE_IO,
@@ -86,7 +86,7 @@ static struct pcmcia_config_entry pcmcia_3cxem556_func1_cfe0 = {
 	0,			/* maxtwins */
 };
 
-struct pcmcia_function pcmcia_megahertz_xjem1144_func0 = {
+const struct pcmcia_function pcmcia_megahertz_xjem1144_func0 = {
 	0,			/* function number */
 	PCMCIA_FUNCTION_NETWORK,
 	0x07,			/* last cfe number */
@@ -94,7 +94,7 @@ struct pcmcia_function pcmcia_megahertz_xjem1144_func0 = {
 	0x63,			/* ccr_mask */
 };
 
-struct pcmcia_config_entry pcmcia_megahertz_xjem1144_func0_cfe0 = {
+const struct pcmcia_config_entry pcmcia_megahertz_xjem1144_func0_cfe0 = {
 	0x07,			/* cfe number */
 	PCMCIA_CFE_IO8 | PCMCIA_CFE_IO16 | PCMCIA_CFE_IRQLEVEL,
 	PCMCIA_IFTYPE_IO,
@@ -107,7 +107,7 @@ struct pcmcia_config_entry pcmcia_megahertz_xjem1144_func0_cfe0 = {
 	0,			/* maxtwins */
 };
 
-static struct pcmcia_function pcmcia_megahertz_xjem1144_func1 = {
+const struct pcmcia_function pcmcia_megahertz_xjem1144_func1 = {
 	1,			/* function number */
 	PCMCIA_FUNCTION_SERIAL,
 	0x35,			/* last cfe number */
@@ -115,7 +115,7 @@ static struct pcmcia_function pcmcia_megahertz_xjem1144_func1 = {
 	0x3,			/* ccr_mask */
 };
 
-static struct pcmcia_config_entry pcmcia_megahertz_xjem1144_func1_cfe0 = {
+const struct pcmcia_config_entry pcmcia_megahertz_xjem1144_func1_cfe0 = {
 	0x35,			/* cfe number */
 	PCMCIA_CFE_IO8 | PCMCIA_CFE_IRQLEVEL, PCMCIA_IFTYPE_IO,
 	1,			/* num_iospace */
@@ -127,7 +127,7 @@ static struct pcmcia_config_entry pcmcia_megahertz_xjem1144_func1_cfe0 = {
 	0,			/* maxtwins */
 };
 
-static struct pcmcia_function pcmcia_sierra_a555_func1 = {
+const struct pcmcia_function pcmcia_sierra_a555_func1 = {
 	1,			/* function number */
 	PCMCIA_FUNCTION_SERIAL,
 	0x24,			/* last cfe number */
@@ -135,7 +135,7 @@ static struct pcmcia_function pcmcia_sierra_a555_func1 = {
 	0x73,			/* ccr_mask */
 };
 
-static struct pcmcia_config_entry pcmcia_sierra_a555_func1_cfe0 = {
+const struct pcmcia_config_entry pcmcia_sierra_a555_func1_cfe0 = {
 	0x20,			/* cfe number */
 	PCMCIA_CFE_IO8 | PCMCIA_CFE_IRQLEVEL, PCMCIA_IFTYPE_IO,
 	1,			/* num_iospace */
@@ -147,7 +147,7 @@ static struct pcmcia_config_entry pcmcia_sierra_a555_func1_cfe0 = {
 	0,			/* maxtwins */
 };
 
-static struct pcmcia_function pcmcia_sveclancard_func0 = {
+const struct pcmcia_function pcmcia_sveclancard_func0 = {
 	0,			/* function number */
 	PCMCIA_FUNCTION_NETWORK,
 	0x1,			/* last cfe number */
@@ -155,7 +155,7 @@ static struct pcmcia_function pcmcia_sveclancard_func0 = {
 	0x1,			/* ccr_mask */
 };
 
-static struct pcmcia_config_entry pcmcia_sveclancard_func0_cfe0 = {
+const struct pcmcia_config_entry pcmcia_sveclancard_func0_cfe0 = {
 	0x1,			/* cfe number */
 	PCMCIA_CFE_MWAIT_REQUIRED | PCMCIA_CFE_RDYBSY_ACTIVE |
 	PCMCIA_CFE_WP_ACTIVE | PCMCIA_CFE_BVD_ACTIVE | PCMCIA_CFE_IO16,
@@ -169,7 +169,7 @@ static struct pcmcia_config_entry pcmcia_sveclancard_func0_cfe0 = {
 	0,			/* maxtwins */
 };
 
-static struct pcmcia_cis_quirk pcmcia_cis_quirks[] = {
+const struct pcmcia_cis_quirk pcmcia_cis_quirks[] = {
 	{ PCMCIA_VENDOR_3COM, PCMCIA_PRODUCT_3COM_3CXEM556, PCMCIA_CIS_INVALID,
 	  &pcmcia_3cxem556_func0, &pcmcia_3cxem556_func0_cfe0 },
 	{ PCMCIA_VENDOR_3COM, PCMCIA_PRODUCT_3COM_3CXEM556, PCMCIA_CIS_INVALID,
@@ -208,10 +208,10 @@ static struct pcmcia_cis_quirk pcmcia_cis_quirks[] = {
 void pcmcia_check_cis_quirks(sc)
 	struct pcmcia_softc *sc;
 {
-	int wiped = 0;
-	int i, j;
-	struct pcmcia_function *pf, *pf_next, *pf_last;
+	struct pcmcia_function *pf, *pf_next;
 	struct pcmcia_config_entry *cfe, *cfe_next;
+	const struct pcmcia_function *pf_last;
+	int i, j, wiped = 0;
 
 	pf = NULL;
 	pf_last = NULL;
