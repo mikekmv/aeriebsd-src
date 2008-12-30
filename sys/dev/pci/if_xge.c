@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2004, SUNET, Swedish University Computer Network.
  * All rights reserved.
@@ -133,7 +132,7 @@
  * Magic to fix a bug when the MAC address cannot be read correctly.
  * This came from the Linux driver.
  */
-static uint64_t fix_mac[] = {
+static const uint64_t fix_mac[] = {
 	0x0060000000000000ULL, 0x0060600000000000ULL,
 	0x0040600000000000ULL, 0x0000600000000000ULL,
 	0x0020600000000000ULL, 0x0060600000000000ULL,
@@ -155,7 +154,7 @@ static uint64_t fix_mac[] = {
  * the XGXS transciever.
  */
 #define END_SIGN 0x0
-static uint64_t herc_dtx_cfg[] = {
+static const uint64_t herc_dtx_cfg[] = {
 	0x8000051536750000ULL, 0x80000515367500E0ULL,
 	0x8000051536750004ULL, 0x80000515367500E4ULL,
 

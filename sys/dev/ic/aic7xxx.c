@@ -1,4 +1,3 @@
-
 /*
  * Core routines and tables shareable across OS platforms.
  *
@@ -57,7 +56,7 @@
 struct ahc_softc_tailq ahc_tailq = TAILQ_HEAD_INITIALIZER(ahc_tailq);
 
 /***************************** Lookup Tables **********************************/
-char *ahc_chip_names[] =
+const char *const ahc_chip_names[] =
 {
 	"NONE",
 	"aic7770",
@@ -84,7 +83,7 @@ struct ahc_hard_error_entry {
 };
 
 #if !defined(SMALL_KERNEL)
-static struct ahc_hard_error_entry ahc_hard_errors[] = {
+static const struct ahc_hard_error_entry ahc_hard_errors[] = {
 	{ ILLHADDR,	"Illegal Host Access" },
 	{ ILLSADDR,	"Illegal Sequencer Address referrenced" },
 	{ ILLOPCODE,	"Illegal Opcode in sequencer program" },
@@ -97,7 +96,7 @@ static struct ahc_hard_error_entry ahc_hard_errors[] = {
 static const u_int num_errors = NUM_ELEMENTS(ahc_hard_errors);
 #endif /* !defined(SMALL_KERNEL) */
 
-static struct ahc_phase_table_entry ahc_phase_table[] =
+static const struct ahc_phase_table_entry ahc_phase_table[] =
 {
 	{ P_DATAOUT,	MSG_NOOP,		"in Data-out phase"	},
 	{ P_DATAIN,	MSG_INITIATOR_DET_ERR,	"in Data-in phase"	},
@@ -122,7 +121,7 @@ static const u_int num_phases = NUM_ELEMENTS(ahc_phase_table) - 1;
  * Provides a mapping of transfer periods in ns to the proper value to
  * stick in the scsixfer reg.
  */
-static struct ahc_syncrate ahc_syncrates[] =
+static const struct ahc_syncrate ahc_syncrates[] =
 {
       /* ultra2    fast/ultra  period     rate */
 	{ 0x42,      0x000,      9,      "80.0" },
@@ -155,7 +154,7 @@ static struct ahc_tmode_tstate*
 static void		ahc_free_tstate(struct ahc_softc *ahc,
 					u_int scsi_id, char channel, int force);
 #endif
-static struct ahc_syncrate*
+static const struct ahc_syncrate*
 			ahc_devlimited_syncrate(struct ahc_softc *ahc,
 					        struct ahc_initiator_tinfo *,
 						u_int *period,
@@ -1695,7 +1694,7 @@ ahc_free_tstate(struct ahc_softc *ahc, u_int scsi_id, char channel, int force)
  * by the capabilities of the bus connectivity of and sync settings for
  * the target.
  */
-struct ahc_syncrate *
+const struct ahc_syncrate *
 ahc_devlimited_syncrate(struct ahc_softc *ahc,
 			struct ahc_initiator_tinfo *tinfo,
 			u_int *period, u_int *ppr_options, role_t role)
@@ -1750,11 +1749,11 @@ ahc_devlimited_syncrate(struct ahc_softc *ahc,
  * Return the period and offset that should be sent to the target
  * if this was the beginning of an SDTR.
  */
-struct ahc_syncrate *
+const struct ahc_syncrate *
 ahc_find_syncrate(struct ahc_softc *ahc, u_int *period,
 		  u_int *ppr_options, u_int maxsync)
 {
-	struct ahc_syncrate *syncrate;
+	const struct ahc_syncrate *syncrate;
 
 	if ((ahc->features & AHC_DT) == 0)
 		*ppr_options &= ~MSG_EXT_PPR_DT_REQ;
@@ -1820,7 +1819,7 @@ ahc_find_syncrate(struct ahc_softc *ahc, u_int *period,
 u_int
 ahc_find_period(struct ahc_softc *ahc, u_int scsirate, u_int maxsync)
 {
-	struct ahc_syncrate *syncrate;
+	const struct ahc_syncrate *syncrate;
 
 	if ((ahc->features & AHC_ULTRA2) != 0)
 		scsirate &= SXFR_ULTRA2;
@@ -1850,7 +1849,7 @@ ahc_find_period(struct ahc_softc *ahc, u_int scsirate, u_int maxsync)
 void
 ahc_validate_offset(struct ahc_softc *ahc,
 		    struct ahc_initiator_tinfo *tinfo,
-		    struct ahc_syncrate *syncrate,
+		    const struct ahc_syncrate *syncrate,
 		    u_int *offset, int wide, role_t role)
 {
 	u_int maxoffset;
@@ -1954,7 +1953,7 @@ ahc_update_neg_request(struct ahc_softc *ahc, struct ahc_devinfo *devinfo,
  */
 void
 ahc_set_syncrate(struct ahc_softc *ahc, struct ahc_devinfo *devinfo,
-		 struct ahc_syncrate *syncrate, u_int period,
+		 const struct ahc_syncrate *syncrate, u_int period,
 		 u_int offset, u_int ppr_options, u_int type, int paused)
 {
 	struct	ahc_initiator_tinfo *tinfo;
@@ -2259,11 +2258,11 @@ ahc_fetch_devinfo(struct ahc_softc *ahc, struct ahc_devinfo *devinfo)
 			    role);
 }
 
-struct ahc_phase_table_entry*
+const struct ahc_phase_table_entry*
 ahc_lookup_phase_entry(int phase)
 {
-	struct ahc_phase_table_entry *entry;
-	struct ahc_phase_table_entry *last_entry;
+	const struct ahc_phase_table_entry *entry;
+	const struct ahc_phase_table_entry *last_entry;
 
 	/*
 	 * num_phases doesn't include the default entry which
@@ -2429,7 +2428,7 @@ ahc_build_transfer_msg(struct ahc_softc *ahc, struct ahc_devinfo *devinfo)
 	 */
 	struct	ahc_initiator_tinfo *tinfo;
 	struct	ahc_tmode_tstate *tstate;
-	struct	ahc_syncrate *rate;
+	const struct	ahc_syncrate *rate;
 	int	dowide;
 	int	dosync;
 	int	doppr;
@@ -3105,7 +3104,7 @@ ahc_parse_msg(struct ahc_softc *ahc, struct ahc_devinfo *devinfo)
 		switch (ahc->msgin_buf[2]) {
 		case MSG_EXT_SDTR:
 		{
-			struct	 ahc_syncrate *syncrate;
+			const struct	 ahc_syncrate *syncrate;
 			u_int	 period;
 			u_int	 ppr_options;
 			u_int	 offset;
@@ -3280,7 +3279,7 @@ ahc_parse_msg(struct ahc_softc *ahc, struct ahc_devinfo *devinfo)
 		}
 		case MSG_EXT_PPR:
 		{
-			struct	ahc_syncrate *syncrate;
+			const struct	ahc_syncrate *syncrate;
 			u_int	period;
 			u_int	offset;
 			u_int	bus_width;

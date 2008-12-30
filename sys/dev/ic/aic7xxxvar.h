@@ -1266,20 +1266,21 @@ int			ahc_abort_scbs(struct ahc_softc *, int, char, int,
 void			ahc_restart(struct ahc_softc *);
 void			ahc_calc_residual(struct ahc_softc *, struct scb *);
 /*************************** Utility Functions ********************************/
-struct ahc_phase_table_entry*
+const struct ahc_phase_table_entry*
 			ahc_lookup_phase_entry(int phase);
 void			ahc_compile_devinfo(struct ahc_devinfo *devinfo,
 					    u_int our_id, u_int target,
 					    u_int lun, char channel,
 					    role_t role);
 /************************** Transfer Negotiation ******************************/
-struct ahc_syncrate*	ahc_find_syncrate(struct ahc_softc *ahc, u_int *period,
+const struct ahc_syncrate *
+			ahc_find_syncrate(struct ahc_softc *ahc, u_int *period,
 					  u_int *ppr_options, u_int maxsync);
 u_int			ahc_find_period(struct ahc_softc *ahc,
 					u_int scsirate, u_int maxsync);
 void			ahc_validate_offset(struct ahc_softc *ahc,
 					    struct ahc_initiator_tinfo *tinfo,
-					    struct ahc_syncrate *syncrate,
+					    const struct ahc_syncrate *syncrate,
 					    u_int *offset, int wide,
 					    role_t role);
 void			ahc_validate_width(struct ahc_softc *ahc,
@@ -1301,7 +1302,7 @@ int			ahc_update_neg_request(struct ahc_softc *,
 void			ahc_set_width(struct ahc_softc *, struct ahc_devinfo *,
 			    u_int, u_int, int);
 void			ahc_set_syncrate(struct ahc_softc *,
-			    struct ahc_devinfo *, struct ahc_syncrate *,
+			    struct ahc_devinfo *, const struct ahc_syncrate *,
 			    u_int, u_int, u_int, u_int, int);
 void			ahc_scb_devinfo(struct ahc_softc *,
 					struct ahc_devinfo *, struct scb *);

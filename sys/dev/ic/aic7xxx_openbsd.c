@@ -725,7 +725,7 @@ ahc_adapter_req_set_xfer_mode(struct ahc_softc *ahc, struct scb *scb)
 {
 	struct ahc_initiator_tinfo *tinfo;
 	struct ahc_tmode_tstate *tstate;
-	struct ahc_syncrate *syncrate;
+	const struct ahc_syncrate *syncrate;
 	struct ahc_devinfo devinfo;
 	u_int16_t quirks;
 	u_int width, ppr_options, period, offset;
