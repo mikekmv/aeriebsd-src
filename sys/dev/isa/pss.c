@@ -241,14 +241,14 @@ struct audio_hw_if pss_audio_if = {
 
 
 /* Interrupt translation for WSS config */
-static u_char wss_interrupt_bits[16] = {
+static const u_char wss_interrupt_bits[16] = {
     0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0x08,
     0xff, 0x10, 0x18, 0x20,
     0xff, 0xff, 0xff, 0xff
 };
 /* ditto for WSS DMA channel */
-static u_char wss_dma_bits[4] = {1, 2, 0, 3};
+static const u_char wss_dma_bits[4] = {1, 2, 0, 3};
 
 struct cfattach pss_ca = {
 	sizeof(struct pss_softc), pssprobe, pssattach
