@@ -52,7 +52,7 @@ drm_pci_id_list_t *drm_find_description(int , int ,
 int	 drm_firstopen(struct drm_device *);
 int	 drm_lastclose(struct drm_device *);
 
-static drm_ioctl_desc_t		  drm_ioctls[256] = {
+static const drm_ioctl_desc_t		  drm_ioctls[256] = {
 	DRM_IOCTL_DEF(DRM_IOCTL_VERSION, drm_version, 0),
 	DRM_IOCTL_DEF(DRM_IOCTL_GET_UNIQUE, drm_getunique, 0),
 	DRM_IOCTL_DEF(DRM_IOCTL_GET_MAGIC, drm_getmagic, 0),
@@ -619,7 +619,7 @@ drmioctl(DRM_CDEV kdev, u_long cmd, caddr_t data, int flags,
 {
 	struct drm_device *dev = drm_get_device_from_kdev(kdev);
 	int retcode = 0;
-	drm_ioctl_desc_t *ioctl;
+	const drm_ioctl_desc_t *ioctl;
 	int (*func)(struct drm_device *, void *, struct drm_file *);
 	int nr = DRM_IOCTL_NR(cmd);
 	int is_driver_ioctl = 0;
