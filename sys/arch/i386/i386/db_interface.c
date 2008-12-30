@@ -320,7 +320,7 @@ db_ddbproc_cmd(db_expr_t addr, int have_addr, db_expr_t count, char *modif)
 #endif /* MULTIPROCESSOR */
 
 #if NACPI > 0
-struct db_command db_acpi_cmds[] = {
+const struct db_command db_acpi_cmds[] = {
 	{ "disasm",	db_acpi_disasm,		CS_OWN,	NULL },
 	{ "showval",	db_acpi_showval,	CS_OWN,	NULL },
 	{ "tree",	db_acpi_tree,		0,	NULL },
@@ -329,7 +329,7 @@ struct db_command db_acpi_cmds[] = {
 };
 #endif /* NACPI > 0 */
 
-struct db_command db_machine_command_table[] = {
+const struct db_command db_machine_command_table[] = {
 	{ "sysregs",	db_sysregs_cmd,		0,	0 },
 #ifdef MULTIPROCESSOR
 	{ "cpuinfo",	db_cpuinfo_cmd,		0,	0 },
@@ -348,10 +348,7 @@ db_machine_init(void)
 {
 #ifdef MULTIPROCESSOR
 	int i;
-#endif /* MULTIPROCESSOR */
 
-	db_machine_commands_install(db_machine_command_table);
-#ifdef MULTIPROCESSOR
 	for (i = 0; i < MAXCPUS; i++) {
 		if (cpu_info[i] != NULL)
 			cpu_info[i]->ci_ddb_paused = CI_DDB_RUNNING;

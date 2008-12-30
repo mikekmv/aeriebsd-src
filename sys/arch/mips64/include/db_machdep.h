@@ -32,8 +32,9 @@
 #include <machine/trap.h>
 #include <uvm/uvm_param.h>
 
-#define DB_MACHINE_COMMANDS	/* We have machine specific commands */
 #define	DB_ELF_SYMBOLS		/* Elf style symbol table support */
+#define DB_MACHINE_COMMANDS	mips_db_command_table
+extern const struct db_command mips_db_command_table[];
 
 typedef struct trap_frame db_regs_t;
 extern db_regs_t	ddb_regs;

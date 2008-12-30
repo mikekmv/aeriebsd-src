@@ -71,7 +71,7 @@ void db_frame_cmd(db_expr_t, int, db_expr_t, char *);
 void __db_print_symbol(db_expr_t);
 char *__db_procname_by_asid(int);
 
-struct db_command db_machine_command_table[] = {
+const struct db_command db_machine_command_table[] = {
 	{ "tlb",	db_tlbdump_cmd,		0,	NULL },
 	{ "cache",	db_cachedump_cmd,	0,	NULL },
 	{ "frame",	db_frame_cmd,		0,	NULL },
@@ -86,8 +86,6 @@ int db_active;
 void
 db_machine_init(void)
 {
-
-	db_machine_commands_install(db_machine_command_table);
 }
 
 void

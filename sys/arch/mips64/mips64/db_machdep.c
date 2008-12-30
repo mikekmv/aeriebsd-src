@@ -640,7 +640,7 @@ if ((tlbp.tlb_hi == tlb.tlb_hi && (tlb.tlb_lo0 & PG_V || tlb.tlb_lo1 & PG_V)) ||
 }
 
 
-struct db_command mips_db_command_table[] = {
+const struct db_command mips_db_command_table[] = {
 	{ "tlb",	db_dump_tlb_cmd,	0,	NULL },
 	{ "trap",	db_trap_trace_cmd,	0,	NULL },
 	{ NULL,		NULL,			0,	NULL }
@@ -649,8 +649,8 @@ struct db_command mips_db_command_table[] = {
 void
 db_machine_init()
 {
-extern char *ssym;
-	db_machine_commands_install(mips_db_command_table);
+	extern char *ssym;
+
 	if (ssym != NULL) {
 		ddb_init();	/* Init symbols */
 	}

@@ -342,7 +342,7 @@ Debugger(void)
 	asm(".word	0xe7ffffff");
 }
 
-struct db_command db_machine_command_table[] = {
+const struct db_command db_machine_command_table[] = {
 	{ "frame",	db_show_frame_cmd,	0, NULL },
 #ifdef ARM32_DB_COMMANDS
 	ARM32_DB_COMMANDS,
@@ -379,8 +379,6 @@ db_machine_init(void)
 	 */
 	db_uh.uh_handler = db_trapper;
 	install_coproc_handler_static(0, &db_uh);
-
-	db_machine_commands_install(db_machine_command_table);
 }
 
 u_int

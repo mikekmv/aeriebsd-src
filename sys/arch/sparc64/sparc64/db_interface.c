@@ -1050,7 +1050,7 @@ db_uvmhistdump(addr, have_addr, count, modif)
 extern void db_esp(db_expr_t, int, db_expr_t, char *);
 #endif
 
-struct db_command db_machine_command_table[] = {
+const struct db_command db_machine_command_table[] = {
 	{ "ctx",	db_ctx_cmd,	0,	0 },
 	{ "dtlb",	db_dump_dtlb,	0,	0 },
 	{ "dtsb",	db_dump_dtsb,	0,	0 },
@@ -1332,5 +1332,4 @@ db_inst_store(inst)
 void
 db_machine_init()
 {
-	db_machine_commands_install(db_machine_command_table);
 }

@@ -131,7 +131,8 @@ void		db_machine_init(void);
 #define next_instr_address(pc, bd) \
 	((bd) ? (pc) : ddb_regs.ddb_tf.tf_npc)
 
-#define DB_MACHINE_COMMANDS
+#define DB_MACHINE_COMMANDS	db_machine_command_table
+extern const struct db_command db_machine_command_table[];
 
 void db_machine_init(void);
 int kdb_trap(int, struct trapframe64 *);

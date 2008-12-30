@@ -71,7 +71,8 @@ extern db_regs_t	ddb_regs;	/* register state */
 #define inst_load(ins)		0
 #define inst_store(ins)		0
 
-#define DB_MACHINE_COMMANDS
+#define DB_MACHINE_COMMANDS	db_machine_command_table
+extern const struct db_command db_machine_command_table[];
 
 /* macros for printing OS server dependent task name */
 

@@ -1,4 +1,3 @@
-
 /* 
  * Mach Operating System
  * Copyright (c) 1993,1992,1991,1990 Carnegie Mellon University
@@ -98,14 +97,13 @@ db_skip_to_eol(void)
  * Search for command prefix.
  */
 int
-db_cmd_search(char *name, struct db_command *table, struct db_command **cmdp)
+db_cmd_search(const char *name, const struct db_command *table, const struct db_command **cmdp)
 {
-	struct db_command	*cmd;
+	const struct db_command	*cmd;
 	int			result = CMD_NONE;
 
 	for (cmd = table; cmd->name != 0; cmd++) {
-	    char *lp;
-	    char *rp;
+	    const char *lp, *rp;
 	    int  c;
 
 	    lp = name;
@@ -137,9 +135,9 @@ db_cmd_search(char *name, struct db_command *table, struct db_command **cmdp)
 }
 
 void
-db_cmd_list(struct db_command *table)
+db_cmd_list(const struct db_command *table)
 {
-	struct db_command *cmd;
+	const struct db_command *cmd;
 
 	for (cmd = table; cmd->name != 0; cmd++) {
 	    db_printf("%-12s", cmd->name);
@@ -148,9 +146,9 @@ db_cmd_list(struct db_command *table)
 }
 
 void
-db_command(struct db_command **last_cmdp, struct db_command *cmd_table)
+db_command(const struct db_command **last_cmdp, const struct db_command *cmd_table)
 {
-	struct db_command	*cmd;
+	const struct db_command	*cmd;
 	int		t;
 	char		modif[TOK_STRING_SIZE];
 	db_expr_t	addr, count;
@@ -426,7 +424,7 @@ db_uvmexp_print_cmd(db_expr_t addr, int have_addr, db_expr_t count, char *modif)
  * 'show' commands
  */
 
-struct db_command db_show_all_cmds[] = {
+const struct db_command db_show_all_cmds[] = {
 	{ "procs",	db_show_all_procs,	0, NULL },
 	{ "callout",	db_show_callout,	0, NULL },
 	{ "pools",	db_show_all_pools,	0, NULL },
@@ -434,7 +432,7 @@ struct db_command db_show_all_cmds[] = {
 	{ NULL, 	NULL, 			0, NULL }
 };
 
-struct db_command db_show_cmds[] = {
+const struct db_command db_show_cmds[] = {
 	{ "all",	NULL,			0,	db_show_all_cmds },
 	{ "breaks",	db_listbreak_cmd, 	0,	NULL },
 	{ "buf",	db_buf_print_cmd,	0,	NULL },
@@ -454,7 +452,7 @@ struct db_command db_show_cmds[] = {
 	{ NULL,		NULL,			0,	NULL }
 };
 
-struct db_command db_boot_cmds[] = {
+const struct db_command db_boot_cmds[] = {
 	{ "sync",	db_boot_sync_cmd,	0,	0 },
 	{ "crash",	db_boot_crash_cmd,	0,	0 },
 	{ "dump",	db_boot_dump_cmd,	0,	0 },
@@ -464,10 +462,10 @@ struct db_command db_boot_cmds[] = {
 	{ NULL, }
 };
 
-struct db_command db_command_table[] = {
+const struct db_command db_command_table[] = {
 #ifdef DB_MACHINE_COMMANDS
   /* this must be the first entry, if it exists */
-	{ "machine",    NULL,                   0,     		NULL},
+	{ "machine",	NULL,			0,	DB_MACHINE_COMMANDS},
 #endif
 	{ "print",	db_print_cmd,		0,		NULL },
 	{ "examine",	db_examine_cmd,		CS_SET_DOT, 	NULL },
@@ -500,19 +498,7 @@ struct db_command db_command_table[] = {
 	{ NULL, 	NULL,			0,		NULL }
 };
 
-#ifdef DB_MACHINE_COMMANDS
-
-/* this function should be called to install the machine dependent
-   commands. It should be called before the debugger is enabled  */
-void db_machine_commands_install(struct db_command *ptr)
-{
-  db_command_table[0].more = ptr;
-  return;
-}
-
-#endif
-
-struct db_command	*db_last_command = 0;
+const struct db_command	*db_last_command = NULL;
 
 void
 db_help_cmd(db_expr_t addr, int haddr, db_expr_t count, char *modif)

@@ -95,7 +95,8 @@ extern db_regs_t		ddb_regs;	/* register state */
 #define getreg_val			(0)
 #define next_instr_address(pc, bd)	((bd) ? (pc) : ((pc) + INSN_SIZE))
 
-#define DB_MACHINE_COMMANDS
+#define DB_MACHINE_COMMANDS	db_machine_command_table
+extern const struct db_command db_machine_command_table[];
 
 #define SOFTWARE_SSTEP
 

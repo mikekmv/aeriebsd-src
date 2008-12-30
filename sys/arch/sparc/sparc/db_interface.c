@@ -228,7 +228,7 @@ db_prom_cmd(addr, have_addr, count, modif)
 	callrom();
 }
 
-struct db_command sparc_db_command_table[] = {
+const struct db_command sparc_db_command_table[] = {
 	{ "prom",	db_prom_cmd,	0,	0 },
 	{ (char *)0, }
 };
@@ -236,6 +236,5 @@ struct db_command sparc_db_command_table[] = {
 void
 db_machine_init()
 {
-	db_machine_commands_install(sparc_db_command_table);
 }
 #endif /* DDB */

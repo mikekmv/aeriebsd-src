@@ -1,4 +1,3 @@
-
 /* 
  * Mach Operating System
  * Copyright (c) 1993,1992,1991,1990 Carnegie Mellon University
@@ -33,9 +32,9 @@
  */
 void db_skip_to_eol(void);
 struct db_command;
-int db_cmd_search(char *, struct db_command *, struct db_command **);
-void db_cmd_list(struct db_command *);
-void db_command(struct db_command **, struct db_command *);
+int db_cmd_search(const char *, const struct db_command *, const struct db_command **);
+void db_cmd_list(const struct db_command *);
+void db_command(const struct db_command **, const struct db_command *);
 void db_buf_print_cmd(db_expr_t, int, db_expr_t, char *);
 void db_map_print_cmd(db_expr_t, int, db_expr_t, char *);
 void db_malloc_print_cmd(db_expr_t, int, db_expr_t, char *);
@@ -48,7 +47,6 @@ void db_pool_print_cmd(db_expr_t, int, db_expr_t, char *);
 void db_proc_print_cmd(db_expr_t, int, db_expr_t, char *);
 void db_uvmexp_print_cmd(db_expr_t, int, db_expr_t, char *);
 void db_vnode_print_cmd(db_expr_t, int, db_expr_t, char *);
-void db_machine_commands_install(struct db_command *);
 void db_help_cmd(db_expr_t, int, db_expr_t, char *);
 void db_command_loop(void);
 void db_error(char *);
@@ -77,5 +75,5 @@ struct db_command {
 #define	CS_MORE		0x2		/* standard syntax, but may have other
 					   words at end */
 #define	CS_SET_DOT	0x100		/* set dot after command */
-	struct db_command *more;	/* another level of command */
+	const struct db_command *more;	/* another level of command */
 };

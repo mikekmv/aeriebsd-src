@@ -113,7 +113,8 @@ extern struct mutex ddb_mp_mutex;
 /*
  * We define some of our own commands
  */
-#define DB_MACHINE_COMMANDS
+#define DB_MACHINE_COMMANDS	db_machine_command_table
+extern const struct db_command db_machine_command_table[];
 
 #define	DB_ELF_SYMBOLS
 #define	DB_ELFSIZE	64

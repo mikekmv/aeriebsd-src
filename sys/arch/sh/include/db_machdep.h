@@ -74,6 +74,7 @@ boolean_t inst_trap_return(int);
 /*
  * We have machine-dependent commands.
  */
-#define	DB_MACHINE_COMMANDS
+#define	DB_MACHINE_COMMANDS	db_machine_command_table
+extern const struct db_command db_machine_command_table[];
 
 #endif	/* !_SH_DB_MACHDEP_H_ */
