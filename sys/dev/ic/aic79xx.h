@@ -1372,7 +1372,7 @@ struct ahd_pci_identity {
 	uint64_t		 id_mask;
 	ahd_device_setup_t	*setup;
 };
-extern struct ahd_pci_identity ahd_pci_ident_table [];
+extern const struct ahd_pci_identity ahd_pci_ident_table [];
 extern const u_int ahd_num_pci_devs;
 
 /*************************** Function Declarations ****************************/

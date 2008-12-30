@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2004 Milos Urbanek, Kenneth R. Westerback & Marco Peereboom
  * All rights reserved.
@@ -25,7 +24,6 @@
  * SUCH DAMAGE.
  *
  */
-
 /*
  * Product specific probe and attach routines for:
  *	aic7901 and aic7902 SCSI controllers
@@ -150,7 +148,7 @@ ahd_device_setup_t ahd_aic7901A_setup;
 ahd_device_setup_t ahd_aic7902_setup;
 ahd_device_setup_t ahd_aic790X_setup;
 
-struct ahd_pci_identity ahd_pci_ident_table [] =
+const struct ahd_pci_identity ahd_pci_ident_table [] =
 {
 	/* aic7901 based controllers */
 	{
@@ -249,7 +247,7 @@ const u_int ahd_num_pci_devs = NUM_ELEMENTS(ahd_pci_ident_table);
 #define	PCI_BUS_MODES_INDEX(devconfig)	\
 	(((devconfig) & PCIXINITPAT) >> 13)
 
-static const char *pci_bus_modes[] =
+static const char *const pci_bus_modes[] =
 {
 	"PCI bus mode unknown",
 	"PCI bus mode unknown",
@@ -867,7 +865,7 @@ ahd_configure_termination(struct ahd_softc *ahd, u_int adapter_control)
 #define STA	0x08
 #define DPR	0x01
 
-static const char *split_status_source[] =
+static const char *const split_status_source[] =
 {
 	"DFF0",
 	"DFF1",
@@ -875,7 +873,7 @@ static const char *split_status_source[] =
 	"CMC",
 };
 
-static const char *pci_status_source[] =
+static const char *const pci_status_source[] =
 {
 	"DFF0",
 	"DFF1",
@@ -887,7 +885,7 @@ static const char *pci_status_source[] =
 	"TARG"
 };
 
-static const char *split_status_strings[] =
+static const char *const split_status_strings[] =
 {
 	"%s: Received split response in %s.\n",
 	"%s: Received split completion error message in %s\n",
@@ -899,7 +897,7 @@ static const char *split_status_strings[] =
 	"%s: Signaled Target-abort to early terminate a split in %s\n"
 };
 
-static const char *pci_status_strings[] =
+static const char *const pci_status_strings[] =
 {
 	"%s: Data Parity Error has been reported via PERR# in %s\n",
 	"%s: Target initial wait state error in %s\n",
