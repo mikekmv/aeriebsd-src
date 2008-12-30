@@ -103,7 +103,7 @@ struct fins_softc {
 	struct ksensor fins_ksensors[FINS_MAX_SENSORS];
 	struct ksensordev fins_sensordev;
 	struct sensor_task *fins_sensortask;
-	struct fins_sensor *fins_sensors;
+	const struct fins_sensor *fins_sensors;
 	u_int fins_numsensors;
 	void (*refresh_sensor_data) (struct fins_softc *);
 
@@ -125,7 +125,7 @@ void fins_isa_attach(struct device *, struct device *, void *);
 u_int8_t fins_isa_readreg(struct fins_softc *, int);
 void fins_isa_writereg(struct fins_softc *, int, int);
 
-void fins_setup_sensors(struct fins_softc *, struct fins_sensor *);
+void fins_setup_sensors(struct fins_softc *, const struct fins_sensor *);
 void fins_refresh(void *);
 
 void fins_refresh_volt(struct fins_softc *, int);
@@ -145,7 +145,7 @@ struct cfdriver fins_cd = {
 	NULL, "fins", DV_DULL
 };
 
-struct fins_sensor fins_sensors[] = {
+const struct fins_sensor fins_sensors[] = {
 	/* Voltage */
 	{ "+3.3V", SENSOR_VOLTS_DC, 0, 0x10, fins_refresh_volt, FRFACT(100, 100) },
 	{ "Vtt", SENSOR_VOLTS_DC, 0, 0x11, fins_refresh_volt, FRFACT_NONE },
@@ -308,7 +308,7 @@ fins_detach(struct fins_softc *sc)
 
 
 void
-fins_setup_sensors(struct fins_softc *sc, struct fins_sensor *sensors)
+fins_setup_sensors(struct fins_softc *sc, const struct fins_sensor *sensors)
 {
 	int i;
 	struct ksensor *ksensor = sc->fins_ksensors;
@@ -340,7 +340,7 @@ void
 fins_refresh_volt(struct fins_softc *sc, int n)
 {
 	struct ksensor *sensor = &sc->fins_ksensors[n];
-	struct fins_sensor *fs = &sc->fins_sensors[n];
+	const struct fins_sensor *fs = &sc->fins_sensors[n];
 	int data;
 
 	data = sc->fins_readreg(sc, fs->fs_reg);
@@ -358,7 +358,7 @@ void
 fins_refresh_temp(struct fins_softc *sc, int n)
 {
 	struct ksensor *sensor = &sc->fins_ksensors[n];
-	struct fins_sensor *fs = &sc->fins_sensors[n];
+	const struct fins_sensor *fs = &sc->fins_sensors[n];
 	u_int data;
 	u_int max;
 
@@ -385,7 +385,7 @@ void
 fins_refresh_offset(struct fins_softc *sc, int n)
 {
 	struct ksensor *sensor = &sc->fins_ksensors[n];
-	struct fins_sensor *fs = &sc->fins_sensors[n];
+	const struct fins_sensor *fs = &sc->fins_sensors[n];
 	u_int data;
 
 	sensor->flags &= ~SENSOR_FINVALID;
@@ -400,7 +400,7 @@ void
 fins_refresh_fanrpm(struct fins_softc *sc, int n)
 {
 	struct ksensor *sensor = &sc->fins_ksensors[n];
-	struct fins_sensor *fs = &sc->fins_sensors[n];
+	const struct fins_sensor *fs = &sc->fins_sensors[n];
 	int data;
 
 	data = sc->fins_readreg(sc, fs->fs_reg) << 8;
