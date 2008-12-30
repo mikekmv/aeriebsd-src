@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2006 Broadcom Corporation
  *	David Christensen <davidch@broadcom.com>.  All rights reserved.
@@ -28,11 +27,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#if 0
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD: src/sys/dev/bce/if_bce.c,v 1.3 2006/04/13 14:12:26 ru Exp $");
-#endif
 
 /*
  * The following controllers are supported by this driver:
@@ -199,7 +193,7 @@ const struct pci_matchid bnx_devices[] = {
 /****************************************************************************/
 /* Supported Flash NVRAM device data.                                       */
 /****************************************************************************/
-static struct flash_spec flash_table[] =
+static const struct flash_spec flash_table[] =
 {
 	/* Slow EEPROM */
 	{0x00000000, 0x40830380, 0x009f0081, 0xa184a053, 0xaf000400,
@@ -1617,7 +1611,7 @@ bnx_init_nvram(struct bnx_softc *sc)
 {
 	u_int32_t		val;
 	int			j, entry_count, rc;
-	struct flash_spec	*flash;
+	const struct flash_spec	*flash;
 
 	DBPRINT(sc,BNX_VERBOSE_RESET, "Entering %s()\n", __FUNCTION__);
 

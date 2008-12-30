@@ -4633,7 +4633,7 @@ struct bnx_softc
 	int					bnx_if_flags;
 
 	u_int16_t					bus_speed_mhz;		/* PCI bus speed */
-	struct flash_spec	*bnx_flash_info;	/* Flash NVRAM settings */
+	const struct flash_spec	*bnx_flash_info;	/* Flash NVRAM settings */
 	u_int32_t					bnx_flash_size;		/* Flash NVRAM size */
 	u_int32_t					bnx_shmem_base;		/* Shared Memory base address */
 	char *				bnx_name;			/* Name string */
