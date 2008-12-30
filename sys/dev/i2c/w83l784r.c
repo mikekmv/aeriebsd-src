@@ -79,14 +79,14 @@ struct wbenv_softc {
 
 	struct ksensor sc_sensors[WBENV_MAX_SENSORS];
 	struct ksensordev sc_sensordev;
-	struct wbenv_sensor *sc_wbenv_sensors;
+	const struct wbenv_sensor *sc_wbenv_sensors;
 	int sc_numsensors;
 };
 
 int	wbenv_match(struct device *, void *, void *);
 void	wbenv_attach(struct device *, struct device *, void *);
 
-void	wbenv_setup_sensors(struct wbenv_softc *, struct wbenv_sensor *);
+void	wbenv_setup_sensors(struct wbenv_softc *, const struct wbenv_sensor *);
 void	wbenv_refresh(void *);
 
 void	w83l784r_refresh_volt(struct wbenv_softc *, int);
@@ -107,7 +107,7 @@ struct cfdriver wbenv_cd = {
 	NULL, "wbenv", DV_DULL
 };
 
-struct wbenv_sensor w83l784r_sensors[] =
+const struct wbenv_sensor w83l784r_sensors[] =
 {
 	{ "VCore", SENSOR_VOLTS_DC, W83L784R_VCORE, w83l784r_refresh_volt, RFACT_NONE },
 	{ "VBAT", SENSOR_VOLTS_DC, W83L784R_VBAT, w83l784r_refresh_volt, RFACT(232, 99) },
@@ -122,7 +122,7 @@ struct wbenv_sensor w83l784r_sensors[] =
 	{ NULL }
 };
 
-struct wbenv_sensor w83l785r_sensors[] =
+const struct wbenv_sensor w83l785r_sensors[] =
 {
 	{ "VCore", SENSOR_VOLTS_DC, W83L784R_VCORE, w83l785r_refresh_volt, RFACT_NONE },
 	{ "+2.5V", SENSOR_VOLTS_DC, W83L785R_2_5V, w83l785r_refresh_volt, RFACT(100, 100) },
@@ -136,7 +136,7 @@ struct wbenv_sensor w83l785r_sensors[] =
 	{ NULL }
 };
 
-struct wbenv_sensor w83l785ts_l_sensors[] =
+const struct wbenv_sensor w83l785ts_l_sensors[] =
 {
 	{ "", SENSOR_TEMP, W83L784R_TEMP1, wbenv_refresh_temp },
 
@@ -235,7 +235,7 @@ wbenv_attach(struct device *parent, struct device *self, void *aux)
 }
 
 void
-wbenv_setup_sensors(struct wbenv_softc *sc, struct wbenv_sensor *sensors)
+wbenv_setup_sensors(struct wbenv_softc *sc, const struct wbenv_sensor *sensors)
 {
 	int i;
 
