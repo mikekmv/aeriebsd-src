@@ -141,7 +141,7 @@ struct lm_softc {
 	struct ksensor sensors[WB_MAX_SENSORS];
 	struct ksensordev sensordev;
 	struct sensor_task *sensortask;
-	struct lm_sensor *lm_sensors;
+	const struct lm_sensor *lm_sensors;
 	u_int numsensors;
 	void (*refresh_sensor_data) (struct lm_softc *);
 
