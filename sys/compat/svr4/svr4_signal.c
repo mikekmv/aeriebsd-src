@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994 Christos Zoulas
  * All rights reserved.
@@ -73,7 +72,7 @@ svr4_sigfillset(s)
 		svr4_sigaddset(s, i);
 }
 
-int bsd_to_svr4_sig[] = {
+const int bsd_to_svr4_sig[] = {
 	0,
 	SVR4_SIGHUP,
 	SVR4_SIGINT,
@@ -108,7 +107,7 @@ int bsd_to_svr4_sig[] = {
 	SVR4_SIGUSR2,
 };
 
-int svr4_to_bsd_sig[] = {
+const int svr4_to_bsd_sig[] = {
 	0,
 	SIGHUP,
 	SIGINT,

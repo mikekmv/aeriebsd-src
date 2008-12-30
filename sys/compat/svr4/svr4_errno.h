@@ -167,6 +167,6 @@
 #define	SVR4_EAUTH		SVR4_ENOSYS
 #define	SVR4_ENEEDAUTH		SVR4_ENOSYS
 
-extern int native_to_svr4_errno[];
+extern const int native_to_svr4_errno[];
 
 #endif /* !_SVR4_ERRNO_H_ */

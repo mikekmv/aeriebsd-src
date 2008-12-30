@@ -33,7 +33,7 @@
 #include <sys/errno.h>
 #include <compat/linux/linux_errno.h>
 
-int linux_error[1 + ELAST] = {
+const int linux_error[1 + ELAST] = {
 	0,
 	-LINUX_EPERM,
 	-LINUX_ENOENT,

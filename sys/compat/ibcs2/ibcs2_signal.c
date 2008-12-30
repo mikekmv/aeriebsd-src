@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995 Scott Bartram
  * All rights reserved.
@@ -54,7 +53,7 @@
 #define ibcs2_sigismember(s, n)	(*(s) & ibcs2_sigmask(n))
 #define ibcs2_sigaddset(s, n)	(*(s) |= ibcs2_sigmask(n))
 
-int bsd_to_ibcs2_sig[] = {
+const int bsd_to_ibcs2_sig[] = {
 	0,			/* 0 */
 	IBCS2_SIGHUP,		/* 1 */
 	IBCS2_SIGINT,		/* 2 */
@@ -89,7 +88,7 @@ int bsd_to_ibcs2_sig[] = {
 	IBCS2_SIGUSR2,		/* 31 */
 };
 
-int ibcs2_to_bsd_sig[] = {
+const int ibcs2_to_bsd_sig[] = {
 	0,			/* 0 */
 	SIGHUP,			/* 1 */
 	SIGINT,			/* 2 */

@@ -33,7 +33,7 @@
 #include <sys/errno.h>
 #include <compat/ibcs2/ibcs2_errno.h>
 
-int bsd2ibcs_errno[1 + ELAST] = {
+const int bsd2ibcs_errno[1 + ELAST] = {
 	0,			/* 0 */
 	IBCS2_EPERM,		/* 1 */
 	IBCS2_ENOENT,		/* 2 */

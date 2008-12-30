@@ -371,7 +371,7 @@ compat_43_sys_getdirentries(p, v, retval)
 #	if (BYTE_ORDER != LITTLE_ENDIAN)
 		if (vp->v_mount->mnt_maxsymlinklen <= 0) {
 			error = VOP_READDIR(vp, &auio, fp->f_cred, &eofflag,
-			    (int *)0, (u_long **)0);
+			    NULL, NULL);
 			fp->f_offset = auio.uio_offset;
 		} else
 #	endif
@@ -387,8 +387,7 @@ compat_43_sys_getdirentries(p, v, retval)
 		dirbuf = (caddr_t)malloc(nbytes, M_TEMP, M_WAITOK);
 		kiov.iov_base = dirbuf;
 
-		error = VOP_READDIR(vp, &kuio, fp->f_cred, &eofflag,
-				    0, 0);
+		error = VOP_READDIR(vp, &kuio, fp->f_cred, &eofflag,NULL,NULL);
 		fp->f_offset = kuio.uio_offset;
 		if (error == 0) {
 			readcnt = nbytes - kuio.uio_resid;

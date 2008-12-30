@@ -116,8 +116,8 @@ struct linux_sigaltstack {
 #define LINUX_SS_ONSTACK	0x00000001
 #define LINUX_SS_DISABLE	0x00000002
 
-extern int bsd_to_linux_sig[];
-extern int linux_to_bsd_sig[];
+extern const int bsd_to_linux_sig[];
+extern const int linux_to_bsd_sig[];
 
 void linux_old_to_bsd_sigset(const linux_old_sigset_t *, sigset_t *);
 void bsd_to_linux_old_sigset(const sigset_t *, linux_old_sigset_t *);

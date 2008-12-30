@@ -63,7 +63,7 @@
 #define	linux_sigaddset(s, n)	((s)->sig[((n) - 1) / LINUX__NSIG_BPW]	\
 					|= (1 << ((n) - 1) % LINUX__NSIG_BPW))
 
-int bsd_to_linux_sig[NSIG] = {
+const int bsd_to_linux_sig[NSIG] = {
 	0,
 	LINUX_SIGHUP,
 	LINUX_SIGINT,
@@ -98,7 +98,7 @@ int bsd_to_linux_sig[NSIG] = {
 	LINUX_SIGUSR2,
 };
 
-int linux_to_bsd_sig[LINUX__NSIG] = {
+const int linux_to_bsd_sig[LINUX__NSIG] = {
 	0,
 	SIGHUP,
 	SIGINT,

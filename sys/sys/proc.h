@@ -83,7 +83,7 @@ union sigval;
 
 struct	emul {
 	char	e_name[8];		/* Symbolic name */
-	int	*e_errno;		/* Errno array */
+	const int *e_errno;		/* Errno array */
 					/* Signal sending function */
 	void	(*e_sendsig)(sig_t, int, int, u_long, int, union sigval);
 	int	e_nosys;		/* Offset of the nosys() syscall */

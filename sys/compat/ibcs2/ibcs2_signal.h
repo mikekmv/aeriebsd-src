@@ -98,6 +98,6 @@ struct ibcs2_sigaction {
 /* sa_flags */
 #define IBCS2_SA_NOCLDSTOP	1
 
-extern int bsd_to_ibcs2_sig[];
+extern const int bsd_to_ibcs2_sig[];
 
 #endif /* _IBCS2_SIGNAL_H */

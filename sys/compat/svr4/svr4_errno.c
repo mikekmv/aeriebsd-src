@@ -34,7 +34,7 @@
 #include <compat/svr4/svr4_errno.h>
 
 
-int native_to_svr4_errno[1 + ELAST] = {
+const int native_to_svr4_errno[1 + ELAST] = {
 	0,
 	SVR4_EPERM,
 	SVR4_ENOENT,

@@ -148,6 +148,6 @@
 #define IBCS2_ESTALE		151
 #define IBCS2_EIORESID		500
 
-extern int bsd2ibcs_errno[];
+extern const int bsd2ibcs_errno[];
 
 #endif /* _IBCS2_ERRNO_H */

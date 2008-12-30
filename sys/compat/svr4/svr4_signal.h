@@ -118,7 +118,7 @@ struct svr4_sigaltstack {
 #define SVR4_SS_ONSTACK		0x00000001
 #define SVR4_SS_DISABLE		0x00000002
 
-extern int bsd_to_svr4_sig[];
+extern const int bsd_to_svr4_sig[];
 void bsd_to_svr4_sigaltstack(const struct sigaltstack *, struct svr4_sigaltstack *);
 void bsd_to_svr4_sigset(const sigset_t *, svr4_sigset_t *);
 void svr4_to_bsd_sigaltstack(const struct svr4_sigaltstack *, struct sigaltstack *);
