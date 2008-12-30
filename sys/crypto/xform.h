@@ -92,7 +92,7 @@ extern const struct auth_hash auth_hash_hmac_sha2_256_96;
 extern const struct auth_hash auth_hash_hmac_sha2_384_96;
 extern const struct auth_hash auth_hash_hmac_sha2_512_96;
 
-extern struct comp_algo comp_algo_deflate;
-extern struct comp_algo comp_algo_lzs;
+extern const struct comp_algo comp_algo_deflate;
+extern const struct comp_algo comp_algo_lzs;
 
 #endif /* _CRYPTO_XFORM_H_ */

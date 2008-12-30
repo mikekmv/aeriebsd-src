@@ -483,7 +483,7 @@ swcr_compdec(struct cryptodesc *crd, struct swcr_data *sw,
     caddr_t buf, int outtype)
 {
 	u_int8_t *data, *out;
-	struct comp_algo *cxf;
+	const struct comp_algo *cxf;
 	int adj;
 	u_int32_t result;
 
@@ -560,7 +560,7 @@ swcr_newsession(u_int32_t *sid, struct cryptoini *cri)
 	struct swcr_data **swd;
 	const struct auth_hash *axf;
 	const struct enc_xform *txf;
-	struct comp_algo *cxf;
+	const struct comp_algo *cxf;
 	u_int32_t i;
 	int k;
 

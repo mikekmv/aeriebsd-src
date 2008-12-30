@@ -296,13 +296,13 @@ const struct auth_hash auth_hash_sha1 = {
 };
 
 /* Compression instance */
-struct comp_algo comp_algo_deflate = {
+const struct comp_algo comp_algo_deflate = {
 	CRYPTO_DEFLATE_COMP, "Deflate",
 	90, deflate_compress,
 	deflate_decompress
 };
 
-struct comp_algo comp_algo_lzs = {
+const struct comp_algo comp_algo_lzs = {
 	CRYPTO_LZS_COMP, "LZS",
 	90, lzs_dummy,
 	lzs_dummy

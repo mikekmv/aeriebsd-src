@@ -282,7 +282,7 @@ struct tdb {				/* tunnel descriptor block */
 	struct xformsw		*tdb_xform;		/* Transform to use */
 	const struct enc_xform	*tdb_encalgxform;	/* Enc algorithm */
 	const struct auth_hash	*tdb_authalgxform;	/* Auth algorithm */
-	struct comp_algo	*tdb_compalgxform;	/* Compression algo */
+	const struct comp_algo	*tdb_compalgxform;	/* Compression algo */
 
 #define	TDBF_UNIQUE		0x00001	/* This should not be used by others */
 #define	TDBF_TIMER		0x00002	/* Absolute expiration timer in use */
@@ -458,18 +458,6 @@ extern int ipsec_exp_first_use;
 extern char ipsec_def_enc[];
 extern char ipsec_def_auth[];
 extern char ipsec_def_comp[];
-
-extern const struct enc_xform enc_xform_des;
-extern const struct enc_xform enc_xform_3des;
-extern const struct enc_xform enc_xform_blf;
-extern const struct enc_xform enc_xform_cast5;
-extern const struct enc_xform enc_xform_skipjack;
-
-extern const struct auth_hash auth_hash_hmac_md5_96;
-extern const struct auth_hash auth_hash_hmac_sha1_96;
-extern const struct auth_hash auth_hash_hmac_ripemd_160_96;
-
-extern struct comp_algo comp_algo_deflate;
 
 extern TAILQ_HEAD(ipsec_policy_head, ipsec_policy) ipsec_policy_head;
 extern TAILQ_HEAD(ipsec_acquire_head, ipsec_acquire) ipsec_acquire_head;

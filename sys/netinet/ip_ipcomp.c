@@ -88,7 +88,7 @@ ipcomp_init(tdbp, xsp, ii)
 	struct xformsw *xsp;
 	struct ipsecinit *ii;
 {
-	struct comp_algo *tcomp = NULL;
+	const struct comp_algo *tcomp = NULL;
 	struct cryptoini cric;
 
 	switch (ii->ii_compalg) {
