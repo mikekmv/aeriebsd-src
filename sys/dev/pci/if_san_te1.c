@@ -164,7 +164,7 @@ typedef struct RLPS_EQUALIZER_RAM_T {
 /* Transmit Waveform Values for T1 Long Haul (LBO 0db)
 ** unsigned char t1_tx_waveform_lh_0db
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_lh_0db =
+const TX_WAVEFORM t1_tx_waveform_lh_0db =
 {
 	{ 0x00, 0x44, 0x00, 0x00, 0x00 },
 	{ 0x0A, 0x44, 0x00, 0x00, 0x00 },
@@ -195,7 +195,7 @@ TX_WAVEFORM t1_tx_waveform_lh_0db =
 /* Transmit Waveform Values for T1 Long Haul (LBO 7.5 dB): 
 ** unsigned char t1_tx_waveform_lh_75db
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_lh_75db =
+const TX_WAVEFORM t1_tx_waveform_lh_75db =
 {
     { 0x00, 0x10, 0x00, 0x00, 0x00 },
     { 0x01, 0x0E, 0x00, 0x00, 0x00 },
@@ -227,7 +227,7 @@ TX_WAVEFORM t1_tx_waveform_lh_75db =
 /* Transmit Waveform Values for T1 Long Haul (LBO 15 dB)
 ** unsigned char t1_tx_waveform_lh_15db
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_lh_15db =
+const TX_WAVEFORM t1_tx_waveform_lh_15db =
 {
     { 0x00, 0x2A, 0x09, 0x01, 0x00 },
     { 0x00, 0x28, 0x08, 0x01, 0x00 },
@@ -259,7 +259,7 @@ TX_WAVEFORM t1_tx_waveform_lh_15db =
 /* Transmit Waveform Values for T1 Long Haul (LBO 22.5 dB)
 ** unsigned char t1_tx_waveform_lh_225db
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_lh_225db =
+const TX_WAVEFORM t1_tx_waveform_lh_225db =
 {
     { 0x00, 0x1F, 0x16, 0x06, 0x01 },
     { 0x00, 0x20, 0x15, 0x05, 0x01 },
@@ -291,7 +291,7 @@ TX_WAVEFORM t1_tx_waveform_lh_225db =
 /* Transmit Waveform Values for T1 Short Haul (0 - 110 ft.)
 ** unsigned char t1_tx_waveform_sh_110ft
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_sh_110ft =
+const TX_WAVEFORM t1_tx_waveform_sh_110ft =
 {
     { 0x00, 0x45, 0x00, 0x00, 0x00 },
     { 0x0A, 0x44, 0x00, 0x00, 0x00 },
@@ -323,7 +323,7 @@ TX_WAVEFORM t1_tx_waveform_sh_110ft =
 /* Transmit Waveform Values for T1 Short Haul (110 - 220 ft.)
 ** unsigned char t1_tx_waveform_sh_220ft
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_sh_220ft =
+const TX_WAVEFORM t1_tx_waveform_sh_220ft =
 {
     { 0x00, 0x44, 0x00, 0x00, 0x00 },
     { 0x0A, 0x44, 0x00, 0x00, 0x00 },
@@ -355,7 +355,7 @@ TX_WAVEFORM t1_tx_waveform_sh_220ft =
 /* Transmit Waveform Values for T1 Short Haul (220 - 330 ft.)
 ** unsigned char t1_tx_waveform_sh_330ft
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_sh_330ft =
+const TX_WAVEFORM t1_tx_waveform_sh_330ft =
 {
     { 0x00, 0x44, 0x00, 0x00, 0x00 },
     { 0x0A, 0x44, 0x00, 0x00, 0x00 },
@@ -387,7 +387,7 @@ TX_WAVEFORM t1_tx_waveform_sh_330ft =
 /* Transmit Waveform Values for T1 Short Haul (330 - 440 ft.)
 ** unsigned char t1_tx_waveform_sh_440ft
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_sh_440ft =
+const TX_WAVEFORM t1_tx_waveform_sh_440ft =
 {
     { 0x00, 0x44, 0x00, 0x00, 0x00 },
     { 0x0A, 0x44, 0x00, 0x00, 0x00 },
@@ -419,7 +419,7 @@ TX_WAVEFORM t1_tx_waveform_sh_440ft =
 /* Transmit Waveform Values for T1 Short Haul (440 - 550 ft.)
 ** unsigned char t1_tx_waveform_sh_550ft
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_sh_550ft =
+const TX_WAVEFORM t1_tx_waveform_sh_550ft =
 {
     { 0x00, 0x44, 0x00, 0x00, 0x00 },
     { 0x0A, 0x44, 0x00, 0x00, 0x00 },
@@ -451,7 +451,7 @@ TX_WAVEFORM t1_tx_waveform_sh_550ft =
 /* Transmit Waveform Values for T1 Short Haul (550 - 660 ft.)
 ** unsigned char t1_tx_waveform_sh_660ft
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM t1_tx_waveform_sh_660ft =
+const TX_WAVEFORM t1_tx_waveform_sh_660ft =
 {
     { 0x00, 0x44, 0x00, 0x00, 0x00 },
     { 0x0A, 0x44, 0x00, 0x00, 0x00 },
@@ -483,7 +483,7 @@ TX_WAVEFORM t1_tx_waveform_sh_660ft =
 /* Transmit Waveform Values for E1 120 Ohm
 ** unsigned char e1_tx_waveform_120
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM e1_tx_waveform_120 =
+const TX_WAVEFORM e1_tx_waveform_120 =
 {
     { 0x00, 0x00, 0x00, 0x00, 0x00 },
     { 0x00, 0x00, 0x00, 0x00, 0x00 },
@@ -515,7 +515,7 @@ TX_WAVEFORM e1_tx_waveform_120 =
 /* Transmit Waveform Values for E1 75 Ohm
 ** unsigned char e1_tx_waveform_75
 **		[LAST_SAMPLE-FIRST_SAMPLE+1][LAST_UI-FIRST_UI+1] = */
-TX_WAVEFORM e1_tx_waveform_75 =
+const TX_WAVEFORM e1_tx_waveform_75 =
 {
     { 0x00, 0x00, 0x00, 0x00, 0x00 },
     { 0x00, 0x00, 0x00, 0x00, 0x00 },
@@ -544,7 +544,7 @@ TX_WAVEFORM e1_tx_waveform_75 =
 };
 
 
-RLPS_EQUALIZER_RAM t1_rlps_ram_table[] =
+const RLPS_EQUALIZER_RAM t1_rlps_ram_table[] =
 {
     { 0x03, 0xFE, 0x18, 0x40 },
     { 0x03, 0xF6, 0x18, 0x40 },
@@ -804,7 +804,7 @@ RLPS_EQUALIZER_RAM t1_rlps_ram_table[] =
     { 0xFC, 0x21, 0x53, 0xC0 }
 };
 
-RLPS_EQUALIZER_RAM t1_rlps_perf_mode_ram_table[] =
+const RLPS_EQUALIZER_RAM t1_rlps_perf_mode_ram_table[] =
 {
 	{ 0x03, 0xFE, 0x18, 0x40 },
 	{ 0x03, 0xFE, 0x18, 0x40 },
@@ -1064,7 +1064,7 @@ RLPS_EQUALIZER_RAM t1_rlps_perf_mode_ram_table[] =
 	{ 0x03, 0x06, 0x18, 0x40 }
 };
 
-RLPS_EQUALIZER_RAM e1_rlps_ram_table[] =
+const RLPS_EQUALIZER_RAM e1_rlps_ram_table[] =
 {
     { 0x07, 0xDE, 0x18, 0x2C },
     { 0x07, 0xDE, 0x18, 0x2C },
@@ -1382,7 +1382,7 @@ InitTemplate(sdla_t *card)
 	sdla_te_cfg_t* te_cfg = &card->fe_te.te_cfg;
 	int i = 0, j = 0;
 	unsigned char indirect_addr = 0x00, xlpg_scale = 0x00;
-	TX_WAVEFORM* tx_waveform = NULL;
+	const TX_WAVEFORM* tx_waveform = NULL;
 
 	if (IS_T1(&card->fe_te.te_cfg)) {
 		switch (te_cfg->lbo) {
@@ -1454,7 +1454,7 @@ static void
 InitLineReceiver(sdla_t *card)
 {
 	int			ram_addr = 0x00;
-	RLPS_EQUALIZER_RAM	*rlps_ram_table = NULL;
+	const RLPS_EQUALIZER_RAM *rlps_ram_table = NULL;
 
 	if (IS_E1(&card->fe_te.te_cfg)) {
 		rlps_ram_table = e1_rlps_ram_table;
