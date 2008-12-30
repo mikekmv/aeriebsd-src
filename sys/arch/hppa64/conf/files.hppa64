@@ -98,7 +98,6 @@ file	arch/hppa64/dev/apic.c		elroy
 
 ###
 
-major	{ccd = 1}
 major	{vnd = 2}
 major	{rd = 3}
 

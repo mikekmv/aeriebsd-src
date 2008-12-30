@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
@@ -27,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      @(#)conf.c	7.9 (Berkeley) 5/28/91
+ *	@(#)conf.c	7.9 (Berkeley) 5/28/91
  */
 
 #include <sys/param.h>
@@ -50,22 +49,20 @@ bdev_decl(fd);
 #include "ss.h"
 #include "uk.h"
 #include "vnd.h"
-#include "raid.h"
-#include "ccd.h"
 #include "rd.h"
 #include "bktr.h"
 #include "radio.h"
 
 struct bdevsw	bdevsw[] =
 {
-	bdev_disk_init(NWD,wd),	        /* 0: ST506/ESDI/IDE disk */
+	bdev_disk_init(NWD,wd),		/* 0: ST506/ESDI/IDE disk */
 	bdev_swap_init(1,sw),		/* 1: swap pseudo-device */
 	bdev_tape_init(NST,st),		/* 2: SCSI tape */
 	bdev_disk_init(NCD,cd),		/* 3: SCSI CD-ROM */
 	bdev_disk_init(NFD,fd),		/* 4: Floppy disk */
 	bdev_notdef(),			/* 5 */
 	bdev_disk_init(NRD,rd),		/* 6: ram disk driver */
-	bdev_disk_init(NCCD,ccd),	/* 7: concatenated disk driver */
+	bdev_notdef(),			/* 7 */
 	bdev_disk_init(NSD,sd),		/* 8: SCSI disk */
 	bdev_disk_init(NVND,vnd),	/* 9: vnode disk driver */
 	bdev_lkm_dummy(),		/* 10 */
@@ -74,7 +71,6 @@ struct bdevsw	bdevsw[] =
 	bdev_lkm_dummy(),		/* 13 */
 	bdev_lkm_dummy(),		/* 14 */
 	bdev_lkm_dummy(),		/* 15 */
-	bdev_disk_init(NRAID,raid),	/* 16 */
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -158,11 +154,11 @@ struct cdevsw	cdevsw[] =
 	cdev_lkm_dummy(),		/* 20 */
 	cdev_lkm_dummy(),		/* 21 */
 	cdev_lkm_dummy(),		/* 22 */
-	cdev_tty_init(1,prom),          /* 23: XXX prom console */
+	cdev_tty_init(1,prom),		/* 23: XXX prom console */
 	cdev_audio_init(NAUDIO,audio),	/* 24: generic audio I/O */
 	cdev_wsdisplay_init(NWSDISPLAY,wsdisplay), /* 25: workstation console */
 	cdev_tty_init(NCOM,com),	/* 26: ns16550 UART */
-	cdev_disk_init(NCCD,ccd),	/* 27: concatenated disk driver */
+	cdev_notdef(),			/* 27 */
 	cdev_disk_init(NRD,rd),		/* 28: ram disk driver */
 	cdev_mouse_init(NWSKBD,wskbd),	/* 29: /dev/kbd XXX */
 	cdev_mouse_init(NWSMOUSE,wsmouse),	/* 30: /dev/mouse XXX */
@@ -171,14 +167,14 @@ struct cdevsw	cdevsw[] =
 	cdev_uk_init(NUK,uk),		/* 33: SCSI unknown */
 	cdev_random_init(1,random),	/* 34: random data source */
 	cdev_pf_init(NPF, pf),		/* 35: packet filter */
-	cdev_disk_init(NWD,wd), 	/* 36: ST506/ESDI/IDE disk */
+	cdev_disk_init(NWD,wd),		/* 36: ST506/ESDI/IDE disk */
 	cdev_disk_init(NFD,fd),		/* 37: Floppy disk */
-        cdev_tty_init(NCY,cy),          /* 38: Cyclom serial port */
+	cdev_tty_init(NCY,cy),		/* 38: Cyclom serial port */
 	cdev_ksyms_init(NKSYMS,ksyms),	/* 39: Kernel symbols device */
 	cdev_spkr_init(NSPKR,spkr),	/* 40: PC speaker */
-	cdev_midi_init(NMIDI,midi),     /* 41: MIDI I/O */
-        cdev_midi_init(NSEQUENCER,sequencer),   /* 42: sequencer I/O */
-	cdev_disk_init(NRAID,raid),	/* 43: RAIDframe disk driver */
+	cdev_midi_init(NMIDI,midi),	/* 41: MIDI I/O */
+	cdev_midi_init(NSEQUENCER,sequencer),/* 42: sequencer I/O */
+	cdev_notdef(),			/* 43 */
 	cdev_video_init(NVIDEO,video),	/* 44: generic video I/O */
 	cdev_usb_init(NUSB,usb),	/* 45: USB controller */
 	cdev_usbdev_init(NUHID,uhid),	/* 46: USB generic HID */
@@ -207,7 +203,7 @@ struct cdevsw	cdevsw[] =
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
-int	mem_no = 2; 	/* major device number of memory special file */
+int	mem_no = 2;	/* major device number of memory special file */
 
 /*
  * Swapdev is a fake device implemented
@@ -278,7 +274,7 @@ int chrtoblktbl[] = {
 	/* 24 */	NODEV,
 	/* 25 */	NODEV,
 	/* 26 */	NODEV,
-	/* 27 */	7,		/* ccd */
+	/* 27 */	NODEV,
 	/* 28 */	6,		/* rd */
 	/* 29 */	NODEV,
 	/* 30 */	NODEV,
@@ -294,7 +290,7 @@ int chrtoblktbl[] = {
 	/* 40 */	NODEV,
 	/* 41 */	NODEV,
 	/* 42 */	NODEV,
-	/* 43 */	16,		/* raid */
+	/* 43 */	NODEV,
 	/* 44 */	NODEV,
 	/* 45 */	NODEV,
 	/* 46 */	NODEV,

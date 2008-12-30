@@ -445,8 +445,6 @@ file	dev/vmt.c			vmt	needs-flag
 
 # legitimate pseudo-devices
 pseudo-device vnd: disk
-pseudo-device ccd: disk
-pseudo-device raid: disk
 pseudo-device rd: disk
 file	dev/ramdisk.c			rd needs-flag
 

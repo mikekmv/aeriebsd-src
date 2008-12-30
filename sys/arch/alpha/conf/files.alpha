@@ -27,7 +27,6 @@ device	cpu {}				# not really optional
 attach	cpu at mainbus
 file	arch/alpha/alpha/cpu.c			cpu
 
-major	{ccd = 7}
 major	{vnd = 9}
 
 #

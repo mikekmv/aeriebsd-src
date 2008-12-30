@@ -96,8 +96,6 @@
 extern void nfs_init(void);
 #endif
 
-#include "softraid.h"
-
 const char	copyright[] =
 "Copyright (c) 1982, 1986, 1989, 1991, 1993\n"
 "\tThe Regents of the University of California.  All rights reserved.\n"
@@ -436,10 +434,6 @@ main(void *framep)
 		(void) tsleep((void *)&config_pending, PWAIT, "cfpend", 0);
 
 	dostartuphooks();
-
-#if NSOFTRAID > 0
-	config_rootfound("softraid", NULL);
-#endif
 
 	/* Configure root/swap devices */
 	diskconf();

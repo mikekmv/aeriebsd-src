@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994-1998 Mark Brinicombe.
  * All rights reserved.
@@ -40,7 +39,7 @@
  *
  * Defines the structures cdevsw and constab
  *
- * Created      : 17/09/94
+ * Created : 17/09/94
  */
 
 #include <sys/param.h>
@@ -85,9 +84,7 @@
 /*
  * Disk/Filesystem pseudo-devices
  */
-#include "ccd.h"			/* concatenated disk driver */
 #include "rd.h"				/* memory disk driver */
-#include "raid.h"			/* RAIDframe */
 #include "vnd.h"			/* vnode disk driver */
 
 /*
@@ -181,7 +178,7 @@ struct bdevsw bdevsw[] = {
 	bdev_disk_init(NRD,rd),		/* 18: memory disk */
 	bdev_disk_init(NVND,vnd),	/* 19: vnode disk driver */
 	bdev_lkm_dummy(),		/* 20: */
- 	bdev_disk_init(NCCD,ccd),	/* 21: concatenated disk driver */
+	bdev_lkm_dummy(),		/* 21: */
 	bdev_lkm_dummy(),		/* 22: */
 	bdev_lkm_dummy(),		/* 23: */
 	bdev_disk_init(NSD,sd),		/* 24: SCSI disk */
@@ -193,77 +190,13 @@ struct bdevsw bdevsw[] = {
 	bdev_lkm_dummy(),		/* 30: */
 	bdev_lkm_dummy(),		/* 31: */
 	bdev_lkm_dummy(),		/* 32: */
-	bdev_lkm_dummy(),		/* 33: */
-	bdev_lkm_dummy(),		/* 34: */
-	bdev_lkm_dummy(),		/* 35: */
-	bdev_lkm_dummy(),		/* 36: */
-	bdev_lkm_dummy(),		/* 37: */
-	bdev_lkm_dummy(),		/* 38: */
-	bdev_lkm_dummy(),		/* 39: */
-	bdev_lkm_dummy(),		/* 40: */
-	bdev_lkm_dummy(),		/* 41: */
-	bdev_lkm_dummy(),		/* 42: */
-	bdev_lkm_dummy(),		/* 43: */
-	bdev_lkm_dummy(),		/* 44: */
-	bdev_lkm_dummy(),		/* 45: */
-	bdev_lkm_dummy(),		/* 46: */
-	bdev_lkm_dummy(),		/* 47: */
-	bdev_lkm_dummy(),		/* 48: */
-	bdev_lkm_dummy(),		/* 49: */
-	bdev_lkm_dummy(),		/* 50: */
-	bdev_lkm_dummy(),		/* 51: */
-	bdev_lkm_dummy(),		/* 52: */
-	bdev_lkm_dummy(),		/* 53: */
-	bdev_lkm_dummy(),		/* 54: */
-	bdev_lkm_dummy(),		/* 55: */
-	bdev_lkm_dummy(),		/* 56: */
-	bdev_lkm_dummy(),		/* 57: */
-	bdev_lkm_dummy(),		/* 58: */
-	bdev_lkm_dummy(),		/* 59: */
-	bdev_lkm_dummy(),		/* 60: */
-	bdev_lkm_dummy(),		/* 61: */
-	bdev_lkm_dummy(),		/* 62: */
-	bdev_lkm_dummy(),		/* 63: */
-	bdev_lkm_dummy(),		/* 64: */
-	bdev_lkm_dummy(),		/* 65: */
-	bdev_lkm_dummy(),		/* 66: */
-	bdev_lkm_dummy(),		/* 67: */
-	bdev_lkm_dummy(),		/* 68: */
-	bdev_lkm_dummy(),		/* 69: */
-	bdev_lkm_dummy(),		/* 70: */
-	bdev_disk_init(NRAID,raid),	/* 71: RAIDframe disk driver */
-	bdev_lkm_dummy(),		/* 72: */
-	bdev_lkm_dummy(),		/* 73: */
-	bdev_lkm_dummy(),		/* 74: */
-	bdev_lkm_dummy(),		/* 75: */
-	bdev_lkm_dummy(),		/* 76: */
-	bdev_lkm_dummy(),		/* 77: */
-	bdev_lkm_dummy(),		/* 78: */
-	bdev_lkm_dummy(),		/* 79: */
-	bdev_lkm_dummy(),		/* 80: */
-	bdev_lkm_dummy(),		/* 81: */
-	bdev_lkm_dummy(),		/* 82: */
-	bdev_lkm_dummy(),		/* 83: */
-	bdev_lkm_dummy(),		/* 84: */
-	bdev_lkm_dummy(),		/* 85: */
-	bdev_lkm_dummy(),		/* 86: */
-	bdev_lkm_dummy(),		/* 87: */
-	bdev_lkm_dummy(),		/* 88: */
-	bdev_lkm_dummy(),		/* 89: */
-	bdev_lkm_dummy(),		/* 90: */
-	bdev_lkm_dummy(),		/* 91: */
-	bdev_lkm_dummy(),		/* 93: */
-	bdev_lkm_dummy(),		/* 94: */
-	bdev_lkm_dummy(),		/* 95: */
-	bdev_lkm_dummy(),		/* 96: */
-	bdev_lkm_dummy(),		/* 97: */
 };
 
 /* Character devices */
-#define ptstty          ptytty
-#define ptsioctl        ptyioctl
-#define ptctty          ptytty
-#define ptcioctl        ptyioctl
+#define ptstty		ptytty
+#define ptsioctl	ptyioctl
+#define ptctty		ptytty
+#define ptcioctl	ptyioctl
 
 #ifdef XFS
 #include <xfs/nxfs.h>
@@ -299,7 +232,7 @@ struct cdevsw cdevsw[] = {
 	cdev_lkm_dummy(),			/* 10: */
 	cdev_lkm_dummy(),			/* 11: */
 	cdev_tty_init(NCOM,com),		/* 12: serial port */
-	cdev_gpio_init(NGPIO,gpio),     	/* 13: GPIO interface */
+	cdev_gpio_init(NGPIO,gpio),		/* 13: GPIO interface */
 	cdev_lkm_dummy(),			/* 14: */
 	cdev_lkm_dummy(),			/* 15: */
 	cdev_disk_init(NWD,wd),			/* 16: ST506/ESDI/IDE disk */
@@ -307,14 +240,14 @@ struct cdevsw cdevsw[] = {
 	cdev_disk_init(NRD,rd),			/* 18: ram disk driver */
 	cdev_disk_init(NVND,vnd),		/* 19: vnode disk driver */
 	cdev_lkm_dummy(),			/* 20: */
-	cdev_disk_init(NCCD,ccd),		/* 21: concatenated disk driver */
+	cdev_lkm_dummy(),			/* 21: */
 	cdev_bpf_init(NBPFILTER,bpf),		/* 22: Berkeley packet filter */
 	cdev_lkm_dummy(),			/* 23: */
 	cdev_disk_init(NSD,sd),			/* 24: SCSI disk */
 	cdev_tape_init(NST,st),			/* 25: SCSI tape */
 	cdev_disk_init(NCD,cd),			/* 26: SCSI CD-ROM */
-	cdev_ch_init(NCH,ch),	 		/* 27: SCSI autochanger */
-	cdev_uk_init(NUK,uk),	 		/* 28: SCSI unknown */
+	cdev_ch_init(NCH,ch),			/* 27: SCSI autochanger */
+	cdev_uk_init(NUK,uk),			/* 28: SCSI unknown */
 	cdev_scanner_init(NSS,ss),		/* 29: SCSI scanner */
 	cdev_lkm_dummy(),			/* 30: */
 	cdev_lkm_dummy(),			/* 31: */
@@ -332,8 +265,8 @@ struct cdevsw cdevsw[] = {
 	cdev_lkm_dummy(),			/* 43: reserved */
 	cdev_lkm_dummy(),			/* 44: reserved */
 	cdev_lkm_dummy(),			/* 45: reserved */
-	cdev_pf_init(NPF,pf),           	/* 46: packet filter */
-	cdev_crypto_init(NCRYPTO,crypto), 	/* 47: /dev/crypto */
+	cdev_pf_init(NPF,pf),			/* 46: packet filter */
+	cdev_crypto_init(NCRYPTO,crypto),	/* 47: /dev/crypto */
 	cdev_lkm_dummy(),			/* 48: reserved */
 	cdev_lkm_dummy(),			/* 49: reserved */
 	cdev_systrace_init(NSYSTRACE,systrace),	/* 50: system call tracing */
@@ -342,10 +275,10 @@ struct cdevsw cdevsw[] = {
 #else
 	cdev_notdef(),				/* 51: reserved */
 #endif
- 	cdev_bio_init(NBIO,bio),		/* 52: ioctl tunnel */
+	cdev_bio_init(NBIO,bio),		/* 52: ioctl tunnel */
 	cdev_notdef(),				/* 53: reserved */
 	cdev_tty_init(NFCOM,fcom),		/* 54: FOOTBRIDGE console */
-	cdev_lkm_dummy(),			/* 55: Reserved for bypass device */	
+	cdev_lkm_dummy(),			/* 55: Reserved for bypass device */
 	cdev_notdef(),				/* 56: reserved */
 	cdev_midi_init(NMIDI,midi),		/* 57: MIDI I/O */
 	cdev_midi_init(NSEQUENCER,sequencer),	/* 58: sequencer I/O */
@@ -361,36 +294,36 @@ struct cdevsw cdevsw[] = {
 	cdev_tty_init(NUCOM,ucom),		/* 68: USB tty */
 	cdev_usbdev_init(NUSCANNER,uscanner),	/* 69: USB scanner */
 	cdev_usbdev_init(NUGEN,ugen),		/* 70: USB generic driver */
-	cdev_disk_init(NRAID,raid),    		/* 71: RAIDframe disk driver */
+	cdev_lkm_dummy(),			/* 71: reserved */
 	cdev_lkm_dummy(),			/* 72: reserved */
 	cdev_lkm_dummy(),			/* 73: reserved */
 	cdev_lkm_dummy(),			/* 74: reserved */
 	cdev_lkm_dummy(),			/* 75: reserved */
 	cdev_lkm_dummy(),			/* 76: reserved */
-	cdev_notdef(),                          /* 77: removed device */
-	cdev_notdef(),                          /* 78: removed device */
-	cdev_notdef(),                          /* 79: removed device */
-	cdev_notdef(),                          /* 80: removed device */
-	cdev_notdef(),                          /* 81: removed device */
-	cdev_notdef(),                          /* 82: removed device */
-	cdev_notdef(),                          /* 83: removed device */
-	cdev_notdef(),                          /* 84: removed device */
-	cdev_notdef(),                          /* 85: removed device */
-	cdev_notdef(),                          /* 86: removed device */
-	cdev_notdef(),                          /* 87: removed device */
+	cdev_notdef(),				/* 77: removed device */
+	cdev_notdef(),				/* 78: removed device */
+	cdev_notdef(),				/* 79: removed device */
+	cdev_notdef(),				/* 80: removed device */
+	cdev_notdef(),				/* 81: removed device */
+	cdev_notdef(),				/* 82: removed device */
+	cdev_notdef(),				/* 83: removed device */
+	cdev_notdef(),				/* 84: removed device */
+	cdev_notdef(),				/* 85: removed device */
+	cdev_notdef(),				/* 86: removed device */
+	cdev_notdef(),				/* 87: removed device */
 #ifdef USER_PCICONF
 	cdev_pci_init(NPCI,pci),		/* 88: PCI user */
 #else
 	cdev_notdef(),
 #endif
-	cdev_notdef(),                          /* 89: removed device */
-	cdev_notdef(),                          /* 90: removed device */
-	cdev_notdef(),                          /* 91: removed device */
-	cdev_notdef(),                          /* 92: removed device */
-	cdev_notdef(),                          /* 93: removed device */
-	cdev_notdef(),                          /* 94: removed device */
-	cdev_notdef(),                          /* 95: removed device */
-	cdev_notdef(),                          /* 96: removed device */
+	cdev_notdef(),				/* 89: removed device */
+	cdev_notdef(),				/* 90: removed device */
+	cdev_notdef(),				/* 91: removed device */
+	cdev_notdef(),				/* 92: removed device */
+	cdev_notdef(),				/* 93: removed device */
+	cdev_notdef(),				/* 94: removed device */
+	cdev_notdef(),				/* 95: removed device */
+	cdev_notdef(),				/* 96: removed device */
 	cdev_radio_init(NRADIO,radio),		/* 97: generic radio I/O */
 	cdev_ptm_init(NPTY,ptm),		/* 98: pseudo-tty ptm device */
 	cdev_spkr_init(NSPKR,spkr),		/* 99: PC speaker */
@@ -399,7 +332,7 @@ struct cdevsw cdevsw[] = {
 int nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
 int nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 
-int mem_no = 2; 	/* major device number of memory special file */
+int mem_no = 2;		/* major device number of memory special file */
 
 /*
  * Swapdev is a fake device implemented
@@ -435,79 +368,34 @@ iszerodev(dev)
 
 int chrtoblktbl[] = {
 /* XXXX This needs to be dynamic for LKMs. */
-    /*VCHR*/        /*VBLK*/
-    /*  0 */        NODEV,
-    /*  1 */        NODEV,
-    /*  2 */        NODEV,
-    /*  3 */        NODEV,
-    /*  4 */        NODEV,
-    /*  5 */        NODEV,
-    /*  6 */        NODEV,
-    /*  7 */        NODEV,
-    /*  8 */        NODEV,
-    /*  9 */        NODEV,
-    /* 10 */        NODEV,
-    /* 11 */        NODEV,
-    /* 12 */        NODEV,
-    /* 13 */        NODEV,
-    /* 14 */        NODEV,
-    /* 15 */        NODEV,
-    /* 16 */        16,		/* wd */
-    /* 17 */        NODEV,
-    /* 18 */        18,		/* rd */
-    /* 19 */        19,		/* vnd */
-    /* 20 */        NODEV,
-    /* 21 */        21,		/* ccd */
-    /* 22 */        NODEV,
-    /* 23 */        NODEV,
-    /* 24 */        24,		/* sd */
-    /* 25 */        25,		/* st */
-    /* 26 */        26,		/* cd */
-    /* 27 */        NODEV,
-    /* 28 */        NODEV,
-    /* 29 */        NODEV,
-    /* 30 */        NODEV,
-    /* 31 */        NODEV,
-    /* 32 */        NODEV,
-    /* 33 */        NODEV,
-    /* 34 */        NODEV,
-    /* 35 */        NODEV,
-    /* 36 */        NODEV,
-    /* 37 */        NODEV,
-    /* 38 */        NODEV,
-    /* 39 */        NODEV,
-    /* 40 */        NODEV,
-    /* 41 */        NODEV,
-    /* 42 */        NODEV,
-    /* 43 */        NODEV,
-    /* 44 */        NODEV,
-    /* 45 */        NODEV,
-    /* 46 */        NODEV,
-    /* 47 */        NODEV,
-    /* 48 */        NODEV,
-    /* 49 */        NODEV,
-    /* 50 */        NODEV,
-    /* 51 */        NODEV,
-    /* 52 */        NODEV,
-    /* 53 */        NODEV,
-    /* 54 */        NODEV,
-    /* 55 */        NODEV,
-    /* 56 */	    NODEV,
-    /* 57 */	    NODEV,
-    /* 58 */	    NODEV,
-    /* 59 */        NODEV,
-    /* 60 */        NODEV,
-    /* 61 */        NODEV,
-    /* 62 */        NODEV,
-    /* 63 */        NODEV,
-    /* 64 */        NODEV,
-    /* 65 */        NODEV,
-    /* 66 */	    NODEV,
-    /* 67 */	    NODEV,
-    /* 68 */	    NODEV,
-    /* 69 */	    NODEV,
-    /* 70 */	    NODEV,
-    /* 71 */	    71,		/* raid */
+    /*VCHR*/	/*VBLK*/
+    /*  0 */	NODEV,
+    /*  1 */	NODEV,
+    /*  2 */	NODEV,
+    /*  3 */	NODEV,
+    /*  4 */	NODEV,
+    /*  5 */	NODEV,
+    /*  6 */	NODEV,
+    /*  7 */	NODEV,
+    /*  8 */	NODEV,
+    /*  9 */	NODEV,
+    /* 10 */	NODEV,
+    /* 11 */	NODEV,
+    /* 12 */	NODEV,
+    /* 13 */	NODEV,
+    /* 14 */	NODEV,
+    /* 15 */	NODEV,
+    /* 16 */	16,		/* wd */
+    /* 17 */	NODEV,
+    /* 18 */	18,		/* rd */
+    /* 19 */	19,		/* vnd */
+    /* 20 */	NODEV,
+    /* 21 */	NODEV,
+    /* 22 */	NODEV,
+    /* 23 */	NODEV,
+    /* 24 */	24,		/* sd */
+    /* 25 */	25,		/* st */
+    /* 26 */	26,		/* cd */
 };
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);
 

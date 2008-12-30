@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -55,8 +54,6 @@
 #include "tun.h"
 #include "audio.h"
 #include "vnd.h"
-#include "ccd.h"
-#include "raid.h"
 #include "ch.h"
 #include "ss.h"
 #include "uk.h"
@@ -102,7 +99,7 @@ struct bdevsw	bdevsw[] =
 	bdev_notdef(),			/* 6 */
 	bdev_disk_init(NSD,sd),		/* 7: SCSI disk */
 	bdev_disk_init(NVND,vnd),	/* 8: vnode disk driver */
-	bdev_disk_init(NCCD,ccd),	/* 9: concatenated disk driver */
+	bdev_notdef(),			/* 9 */
 	bdev_disk_init(NXD,xd),		/* 10: SMD disk */
 	bdev_tape_init(NST,st),		/* 11: SCSI tape */
 	bdev_notdef(),			/* 12 */
@@ -118,7 +115,7 @@ struct bdevsw	bdevsw[] =
 	bdev_lkm_dummy(),		/* 22 */
 	bdev_lkm_dummy(),		/* 23 */
 	bdev_lkm_dummy(),		/* 24 */
-	bdev_disk_init(NRAID,raid),	/* 25: RAIDframe disk driver */
+	bdev_notdef(),			/* 25 */
 	bdev_disk_init(NPRESTO,presto),	/* 26: Prestoserve NVRAM */
 };
 int	nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
@@ -152,7 +149,7 @@ struct cdevsw	cdevsw[] =
 	cdev_tty_init(NPTY,pts),	/* 20: pseudo-tty slave */
 	cdev_ptc_init(NPTY,ptc),	/* 21: pseudo-tty master */
 	cdev_notdef(),			/* 22: was /dev/fb */
-	cdev_disk_init(NCCD,ccd),	/* 23: concatenated disk driver */
+	cdev_notdef(),			/* 23 */
 	cdev_fd_init(1,filedesc),	/* 24: file descriptor pseudo-device */
 	cdev_disk_init(NPRESTO,presto),	/* 25: Prestoserve NVRAM */
 	cdev_notdef(),			/* 26 */
@@ -259,15 +256,15 @@ struct cdevsw	cdevsw[] =
 	cdev_lkm_dummy(),		/* 118 */
 	cdev_random_init(1,random),	/* 119: random generator */
 	cdev_uk_init(NUK,uk),		/* 120: unknown SCSI */
-	cdev_ss_init(NSS,ss),           /* 121: SCSI scanner */
+	cdev_ss_init(NSS,ss),		/* 121: SCSI scanner */
 	cdev_ksyms_init(NKSYMS,ksyms),	/* 122: Kernel symbols device */
-	cdev_disk_init(NRAID,raid),     /* 123: RAIDframe disk driver */
+	cdev_notdef(),			/* 123 */
 	cdev_bio_init(NBIO,bio),	/* 124: ioctl tunnel */
 	cdev_ptm_init(NPTY,ptm),	/* 125: pseudo-tty ptm device */
 };
 int	nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 
-int	mem_no = 3; 	/* major device number of memory special file */
+int	mem_no = 3;	/* major device number of memory special file */
 
 /*
  * Swapdev is a fake device implemented
@@ -332,7 +329,7 @@ int chrtoblktbl[] = {
 	/* 20 */	NODEV,
 	/* 21 */	NODEV,
 	/* 22 */	NODEV,
-	/* 23 */	9,
+	/* 23 */	NODEV,
 	/* 24 */	NODEV,
 	/* 25 */	26,
 	/* 26 */	NODEV,
@@ -420,18 +417,5 @@ int chrtoblktbl[] = {
 	/*108 */	NODEV,
 	/*109 */	NODEV,
 	/*110 */	8,
-	/*111 */	NODEV,
-	/*112 */	NODEV,
-	/*113 */	NODEV,
-	/*114 */	NODEV,
-	/*115 */	NODEV,
-	/*116 */	NODEV,
-	/*117 */	NODEV,
-	/*118 */	NODEV,
-	/*119 */	NODEV,
-	/*120 */	NODEV,
-	/*121 */	NODEV,
-	/*122 */	NODEV,
-	/*123 */	25,
 };
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);

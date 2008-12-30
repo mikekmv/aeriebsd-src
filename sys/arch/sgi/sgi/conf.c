@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -54,7 +53,6 @@
 #include "st.h"
 #include "wd.h"
 bdev_decl(wd);
-#include "ccd.h"
 #include "rd.h"
 
 struct bdevsw	bdevsw[] =
@@ -65,7 +63,7 @@ struct bdevsw	bdevsw[] =
 	bdev_disk_init(NCD,cd),		/* 3: SCSI CD-ROM */
 	bdev_disk_init(NWD,wd),		/* 4: ST506/ESDI/IDE disk */
 	bdev_notdef(),			/* 5:  */
-	bdev_disk_init(NCCD,ccd),	/* 6: concatenated disk driver */
+	bdev_notdef(),			/* 6:  */
 	bdev_notdef(),			/* 7:  */
 	bdev_disk_init(NRD,rd),		/* 8: RAM disk (for install) */
 	bdev_notdef(),			/* 9:  */
@@ -152,7 +150,7 @@ struct cdevsw	cdevsw[] =
 	cdev_notdef(),			/* 20: */
 	cdev_notdef(),			/* 21: */
 	cdev_disk_init(NRD,rd),		/* 22: ramdisk device */
-	cdev_disk_init(NCCD,ccd),	/* 23: concatenated disk driver */
+	cdev_notdef(),			/* 23: */
 	cdev_notdef(),			/* 24: */
 cdev_wsdisplay_init(NWSDISPLAY, wsdisplay),	/* 25: */
 	cdev_mouse_init(NWSKBD, wskbd),	/* 26: */
@@ -238,7 +236,7 @@ getnulldev()
 
 
 int chrtoblktbl[] =  {
-	/* VCHR         VBLK */
+	/* VCHR		VBLK */
 	/* 0 */		NODEV,
 	/* 1 */		NODEV,
 	/* 2 */		NODEV,
@@ -262,7 +260,6 @@ int chrtoblktbl[] =  {
 	/* 20 */	NODEV,
 	/* 21 */	NODEV,
 	/* 22 */	8,		/* rd */
-	/* 23 */	6		/* ccd */
 };
 
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(int);

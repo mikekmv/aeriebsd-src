@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
@@ -27,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      @(#)conf.c	7.9 (Berkeley) 5/28/91
+ *	@(#)conf.c	7.9 (Berkeley) 5/28/91
  */
 
 #include <sys/param.h>
@@ -38,7 +37,6 @@
 #include <sys/conf.h>
 #include <sys/vnode.h>
 
-#include "ccd.h"
 #include "cd.h"
 #include "ch.h"
 #include "ct.h"
@@ -61,7 +59,7 @@ struct bdevsw	bdevsw[] =
 	bdev_disk_init(NHD,hd),		/* 2: HPIB disk */
 	bdev_swap_init(1,sw),		/* 3: swap pseudo-device */
 	bdev_disk_init(NSD,sd),		/* 4: SCSI disk */
-	bdev_disk_init(NCCD,ccd),	/* 5: concatenated disk driver */
+	bdev_notdef(),			/* 5 */
 	bdev_disk_init(NVND,vnd),	/* 6: vnode disk driver */
 	bdev_tape_init(NST,st),		/* 7: SCSI tape */
 	bdev_disk_init(NRD,rd),		/* 8: RAM disk */
@@ -127,11 +125,11 @@ struct cdevsw	cdevsw[] =
 	cdev_notdef(),			/* 10 */
 	cdev_ppi_init(NPPI,ppi),	/* 11: printer/plotter interface */
 	cdev_tty_init(NDCA,dca),	/* 12: built-in single-port serial */
-	cdev_notdef(),			/* 13: was console terminal emulator */
-	cdev_notdef(),			/* 14: was human interface loop */
+	cdev_notdef(),			/* 13 */
+	cdev_notdef(),			/* 14 */
 	cdev_tty_init(NDCM,dcm),	/* 15: 4-port serial */
 	cdev_tape_init(NMT,mt),		/* 16: magnetic reel tape */
-	cdev_disk_init(NCCD,ccd),	/* 17: concatenated disk */
+	cdev_notdef(),			/* 17 */
 	cdev_disk_init(NCD,cd),		/* 18: SCSI CD-ROM */
 	cdev_disk_init(NVND,vnd),	/* 19: vnode disk driver */
 	cdev_tape_init(NST,st),		/* 20: SCSI tape */
@@ -175,7 +173,7 @@ struct cdevsw	cdevsw[] =
 };
 int	nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 
-int	mem_no = 2; 	/* major device number of memory special file */
+int	mem_no = 2;	/* major device number of memory special file */
 
 /*
  * Swapdev is a fake device implemented
@@ -236,7 +234,7 @@ int chrtoblktbl[] = {
 	/* 14 */	NODEV,
 	/* 15 */	NODEV,
 	/* 16 */	1,		/* mt */
-	/* 17 */	5,		/* ccd */
+	/* 17 */	NODEV,
 	/* 18 */	9,		/* cd */
 	/* 19 */	6,		/* vnd */
 	/* 20 */	7,		/* st */

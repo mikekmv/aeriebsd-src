@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994, 1995 Charles M. Hannum.  All rights reserved.
  *
@@ -53,8 +52,6 @@ bdev_decl(fd);
 #include "mcd.h"
 bdev_decl(mcd);
 #include "vnd.h"
-#include "ccd.h"
-#include "raid.h"
 #include "rd.h"
 
 struct bdevsw	bdevsw[] =
@@ -75,10 +72,9 @@ struct bdevsw	bdevsw[] =
 	bdev_lkm_dummy(),		/* 13 */
 	bdev_disk_init(NVND,vnd),	/* 14: vnode disk driver */
 	bdev_lkm_dummy(),		/* 15: Sony CD-ROM */
-	bdev_disk_init(NCCD,ccd),	/* 16: concatenated disk driver */
+	bdev_notdef(),			/* 16 */
 	bdev_disk_init(NRD,rd),		/* 17: ram disk driver */
 	bdev_lkm_dummy(),		/* 18 */
-	bdev_disk_init(NRAID,raid),	/* 19: RAIDframe disk driver */
 };
 int	nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
 
@@ -97,10 +93,10 @@ int	nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
 
 /* open, close, ioctl, select -- XXX should be a generic device */
 #define cdev_ocis_init(c,n) { \
-        dev_init(c,n,open), dev_init(c,n,close), (dev_type_read((*))) enodev, \
-        (dev_type_write((*))) enodev, dev_init(c,n,ioctl), \
-        (dev_type_stop((*))) enodev, 0,  dev_init(c,n,poll), \
-        (dev_type_mmap((*))) enodev, 0 }
+	dev_init(c,n,open), dev_init(c,n,close), (dev_type_read((*))) enodev, \
+	(dev_type_write((*))) enodev, dev_init(c,n,ioctl), \
+	(dev_type_stop((*))) enodev, 0,  dev_init(c,n,poll), \
+	(dev_type_mmap((*))) enodev, 0 }
 
 /* open, close, read */
 #define cdev_nvram_init(c,n) { \
@@ -210,10 +206,10 @@ struct cdevsw	cdevsw[] =
 	cdev_disk_init(NCD,cd),		/* 15: SCSI CD-ROM */
 	cdev_lpt_init(NLPT,lpt),	/* 16: parallel printer */
 	cdev_ch_init(NCH,ch),		/* 17: SCSI autochanger */
-	cdev_disk_init(NCCD,ccd),	/* 18: concatenated disk driver */
-	cdev_ss_init(NSS,ss),           /* 19: SCSI scanner */
+	cdev_notdef(),			/* 18 */
+	cdev_ss_init(NSS,ss),		/* 19: SCSI scanner */
 	cdev_uk_init(NUK,uk),		/* 20: unknown SCSI */
-	cdev_notdef(), 			/* 21 */
+	cdev_notdef(),			/* 21 */
 	cdev_fd_init(1,filedesc),	/* 22: file descriptor pseudo-device */
 	cdev_bpf_init(NBPFILTER,bpf),	/* 23: Berkeley packet filter */
 	cdev_notdef(),			/* 24 */
@@ -249,7 +245,7 @@ struct cdevsw	cdevsw[] =
 	cdev_ocis_init(NPCTR,pctr),	/* 46: performance counters */
 	cdev_disk_init(NRD,rd),		/* 47: ram disk driver */
 	cdev_notdef(),			/* 48 */
-	cdev_bktr_init(NBKTR,bktr),     /* 49: Bt848 video capture device */
+	cdev_bktr_init(NBKTR,bktr),	/* 49: Bt848 video capture device */
 	cdev_ksyms_init(NKSYMS,ksyms),	/* 50: Kernel symbols device */
 #ifdef XFS
 	cdev_xfs_init(NXFS,xfs_dev),	/* 51: xfs communication device */
@@ -258,7 +254,7 @@ struct cdevsw	cdevsw[] =
 #endif
 	cdev_midi_init(NMIDI,midi),	/* 52: MIDI I/O */
 	cdev_midi_init(NSEQUENCER,sequencer),	/* 53: sequencer I/O */
-	cdev_disk_init(NRAID,raid),	/* 54: RAIDframe disk driver */
+	cdev_notdef(),			/* 54: */
 	cdev_notdef(),			/* 55: */
 	/* The following slots are reserved for isdn4bsd. */
 	cdev_notdef(),			/* 56: i4b main device */
@@ -270,7 +266,7 @@ struct cdevsw	cdevsw[] =
 	cdev_usb_init(NUSB,usb),	/* 61: USB controller */
 	cdev_usbdev_init(NUHID,uhid),	/* 62: USB generic HID */
 	cdev_usbdev_init(NUGEN,ugen),	/* 63: USB generic driver */
-	cdev_ulpt_init(NULPT,ulpt), 	/* 64: USB printers */
+	cdev_ulpt_init(NULPT,ulpt),	/* 64: USB printers */
 	cdev_urio_init(NURIO,urio),	/* 65: USB Diamond Rio 500 */
 	cdev_tty_init(NUCOM,ucom),	/* 66: USB tty */
 	cdev_mouse_init(NWSKBD, wskbd),	/* 67: keyboards */
@@ -280,7 +276,7 @@ struct cdevsw	cdevsw[] =
 	cdev_crypto_init(NCRYPTO,crypto), /* 70: /dev/crypto */
 	cdev_tty_init(NCZ,cztty),	/* 71: Cyclades-Z serial port */
 #ifdef USER_PCICONF
-	cdev_pci_init(NPCI,pci),        /* 72: PCI user */
+	cdev_pci_init(NPCI,pci),	/* 72: PCI user */
 #else
 	cdev_notdef(),
 #endif
@@ -290,7 +286,7 @@ struct cdevsw	cdevsw[] =
 	cdev_radio_init(NRADIO, radio), /* 76: generic radio I/O */
 	cdev_usbdev_init(NUSCANNER,uscanner),	/* 77: USB scanners */
 	cdev_systrace_init(NSYSTRACE,systrace),	/* 78: system call tracing */
- 	cdev_bio_init(NBIO,bio),	/* 79: ioctl tunnel */
+	cdev_bio_init(NBIO,bio),	/* 79: ioctl tunnel */
 	cdev_notdef(),			/* 80: gpr? XXX */
 	cdev_ptm_init(NPTY,ptm),	/* 81: pseudo-tty ptm device */
 	cdev_hotplug_init(NHOTPLUG,hotplug), /* 82: devices hot plugging */
@@ -302,7 +298,7 @@ struct cdevsw	cdevsw[] =
 };
 int	nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 
-int	mem_no = 2; 	/* major device number of memory special file */
+int	mem_no = 2;	/* major device number of memory special file */
 
 /*
  * Swapdev is a fake device implemented
@@ -362,7 +358,7 @@ int chrtoblktbl[] = {
 	/* 15 */	6,		/* cd */
 	/* 16 */	NODEV,
 	/* 17 */	NODEV,
-	/* 18 */	16,		/* ccd */
+	/* 18 */	NODEV,
 	/* 19 */	NODEV,
 	/* 20 */	NODEV,
 	/* 21 */	NODEV,
@@ -398,7 +394,6 @@ int chrtoblktbl[] = {
 	/* 51 */	NODEV,
 	/* 52 */	NODEV,
 	/* 53 */	NODEV,
-	/* 54 */	19,		/* raid */
 };
 
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);

@@ -238,7 +238,6 @@ struct	__partitionv0 {		/* the partition table */
 #define	DTYPE_CCD		11		/* concatenated disk device */
 #define	DTYPE_VND		12		/* vnode pseudo-disk */
 #define	DTYPE_ATAPI		13		/* ATAPI */
-#define DTYPE_RAID		14		/* RAIDframe */
 
 #ifdef DKTYPENAMES
 static char *dktypenames[] = {
@@ -256,7 +255,6 @@ static char *dktypenames[] = {
 	"ccd",
 	"vnd",
 	"ATAPI",
-	"RAID",
 	NULL
 };
 #define DKMAXTYPES	(sizeof(dktypenames) / sizeof(dktypenames[0]) - 1)
@@ -286,7 +284,7 @@ static char *dktypenames[] = {
 #define	FS_ADFS		16		/* Acorn Disk Filing System */
 #define FS_EXT2FS	17		/* ext2fs */
 #define FS_CCD		18		/* ccd component */
-#define FS_RAID		19		/* RAIDframe */
+#define FS_UNUSED2	19		/* was RAIDframe */
 #define FS_NTFS		20		/* Windows/NT file system */
 #define FS_UDF		21		/* UDF (DVD) filesystem */
 
@@ -311,7 +309,7 @@ static char *fstypenames[] = {
 	"ADFS",
 	"ext2fs",
 	"ccd",
-	"RAID",
+	"unused2",
 	"NTFS",
 	"UDF",
 	NULL

@@ -7,8 +7,6 @@ maxpartitions 16
 
 maxusers 2 16 100
 
-major	{ccd = 16}
-
 file	arch/i386/i386/autoconf.c
 file	arch/i386/i386/conf.c
 file	arch/i386/i386/db_disasm.c	ddb

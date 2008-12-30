@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -29,7 +28,7 @@
  */
 /*-
  * Derived a long time ago from
- *      @(#)conf.c	7.9 (Berkeley) 5/28/91
+ *	@(#)conf.c	7.9 (Berkeley) 5/28/91
  */
 
 #include <sys/param.h>
@@ -46,25 +45,24 @@
 #include "cd.h"
 #include "ch.h"
 #include "vnd.h"
-#include "ccd.h"
 #include "rd.h"
 
 struct bdevsw	bdevsw[] =
 {
-	bdev_notdef(),         		/* 0 */
+	bdev_notdef(),			/* 0 */
 	bdev_notdef(),			/* 1 */
-	bdev_notdef(),         		/* 2 */
+	bdev_notdef(),			/* 2 */
 	bdev_swap_init(1,sw),		/* 3: swap pseudo-device */
 	bdev_disk_init(NSD,sd),		/* 4: SCSI disk */
 	bdev_tape_init(NST,st),		/* 5: SCSI tape */
 	bdev_disk_init(NCD,cd),		/* 6: SCSI CD-ROM */
-	bdev_notdef(),        	 	/* 7 */
+	bdev_notdef(),			/* 7 */
 	bdev_disk_init(NVND,vnd),	/* 8: vnode disk driver */
-	bdev_disk_init(NCCD,ccd),	/* 9: concatenated disk driver */
-	bdev_notdef(),        	 	/* 10 */
-	bdev_notdef(),        	 	/* 11 */
-	bdev_notdef(),        	 	/* 12 */
-	bdev_disk_init(NRD,rd),	 	/* 13: RAM disk -- for install */
+	bdev_notdef(),			/* 9 */
+	bdev_notdef(),			/* 10 */
+	bdev_notdef(),			/* 11 */
+	bdev_notdef(),			/* 12 */
+	bdev_disk_init(NRD,rd),		/* 13: RAM disk -- for install */
 	bdev_lkm_dummy(),		/* 14 */
 	bdev_lkm_dummy(),		/* 15 */
 	bdev_lkm_dummy(),		/* 16 */
@@ -124,9 +122,9 @@ struct cdevsw	cdevsw[] =
 	cdev_disk_init(NCD,cd),		/* 15: SCSI CD-ROM */
 	cdev_notdef(),			/* 16 */
 	cdev_ch_init(NCH,ch),		/* 17: SCSI autochanger */
-        cdev_disk_init(NRD,rd),         /* 18: ramdisk device */
+	cdev_disk_init(NRD,rd),		/* 18: ramdisk device */
 	cdev_disk_init(NVND,vnd),	/* 19: vnode disk driver */
-	cdev_disk_init(NCCD,ccd),	/* 20: concatenated disk driver */
+	cdev_notdef(),			/* 20 */
 	cdev_fd_init(1,filedesc),	/* 21: file descriptor pseudo-device */
 	cdev_bpf_init(NBPFILTER,bpf),	/* 22: Berkeley packet filter */
 	cdev_notdef(),			/* 23 was ADB */
@@ -139,10 +137,10 @@ struct cdevsw	cdevsw[] =
 	cdev_lkm_dummy(),		/* 30 */
 	cdev_lkm_dummy(),		/* 31 */
 	cdev_random_init(1,random),	/* 32: random data source */
-	cdev_ss_init(NSS,ss),           /* 33: SCSI scanner */
+	cdev_ss_init(NSS,ss),		/* 33: SCSI scanner */
 	cdev_uk_init(NUK,uk),		/* 34: SCSI unknown */
 	cdev_pf_init(NPF,pf),		/* 35: packet filter */
-	cdev_audio_init(NASC,asc),      /* 36: ASC audio device */
+	cdev_audio_init(NASC,asc),	/* 36: ASC audio device */
 	cdev_ksyms_init(NKSYMS,ksyms),	/* 37: Kernel symbols device */
 	cdev_wsdisplay_init(NWSDISPLAY, wsdisplay), /* 38: displays */
 	cdev_mouse_init(NWSKBD, wskbd),	/* 39: keyboards */
@@ -166,7 +164,7 @@ struct cdevsw	cdevsw[] =
 };
 int	nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 
-int	mem_no = 2; 	/* major device number of memory special file */
+int	mem_no = 2;	/* major device number of memory special file */
 
 /*
  * Swapdev is a fake device implemented
@@ -230,7 +228,6 @@ int chrtoblktbl[] = {
 	/* 17 */	NODEV,
 	/* 18 */	13,		/* rd */
 	/* 19 */	8,		/* vnd */
-	/* 20 */	9,		/* ccd */
 };
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);
 

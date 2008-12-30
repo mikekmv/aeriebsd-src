@@ -14,11 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include <sys/param.h>
-  
-#include <dev/cons.h>   
-     
+#include <dev/cons.h>
 #include <lib/libsa/stand.h>
-
 
 const char version[] = "1.1";
 int     debug = 0;

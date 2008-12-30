@@ -74,7 +74,6 @@ pseudo-device	pty	16	# initial number of pseudo-terminals
 pseudo-device	nmea	1	# NMEA 0183 line discipline
 pseudo-device	msts	1	# MSTS line discipline
 pseudo-device	vnd	4	# paging to files
-pseudo-device	ccd	4	# concatenated disk devices
 pseudo-device	ksyms	1	# kernel symbols device
 pseudo-device	systrace 1	# system call tracing device
 

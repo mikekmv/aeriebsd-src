@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997 Per Fogelstrom
  * Copyright (c) 1997 RTMX Inc, North Carolina
@@ -51,8 +50,6 @@ bdev_decl(wd);
 cdev_decl(wd);
 
 #include "vnd.h"
-#include "ccd.h"
-#include "raid.h"
 
 struct bdevsw bdevsw[] = {
 	bdev_disk_init(NWD,wd),		/* 0: ST506/ESDI/IDE disk */
@@ -71,10 +68,8 @@ struct bdevsw bdevsw[] = {
 	bdev_lkm_dummy(),		/* 13 */
 	bdev_disk_init(NVND,vnd),	/* 14 vnode disk driver*/
 	bdev_notdef(),			/* 15 unknown*/
-	bdev_disk_init(NCCD,ccd),	/* 16 concatenated disk driver*/
+	bdev_notdef(),			/* 16 unknown*/
 	bdev_disk_init(NRD,rd),		/* 17 ram disk driver*/
-	bdev_notdef(),			/* 18 unknown*/
-	bdev_disk_init(NRAID,raid),	/* 19: RAIDframe disk driver */
 };
 int nblkdev = sizeof bdevsw / sizeof bdevsw[0];
 
@@ -161,7 +156,7 @@ struct cdevsw cdevsw[] = {
 	cdev_notdef(),			/* 15 */
 	cdev_notdef(),			/* 16 */
 	cdev_disk_init(NRD,rd),		/* 17 ram disk driver*/
-	cdev_disk_init(NCCD,ccd),	/* 18 concatenated disk driver */
+	cdev_notdef(),			/* 18 */
 	cdev_disk_init(NVND,vnd),	/* 19: vnode disk */
 	cdev_tape_init(NST,st),		/* 20: SCSI tape */
 	cdev_fd_init(1,filedesc),	/* 21: file descriptor pseudo-dev */
@@ -169,7 +164,7 @@ struct cdevsw cdevsw[] = {
 	cdev_tun_init(NTUN,tun),	/* 23: network tunnel */
 	cdev_lkm_init(NLKM,lkm),	/* 24: loadable module driver */
 	cdev_apm_init(NAPM,apm),	/* 25: APM interface */
-	cdev_tty_init(NCOM,com),        /* 26: Serial Ports via com(4) */
+	cdev_tty_init(NCOM,com),	/* 26: Serial Ports via com(4) */
 	cdev_notdef(),			/* 27 */
 	cdev_notdef(),			/* 28 */
 	cdev_notdef(),			/* 29 */
@@ -201,7 +196,7 @@ struct cdevsw cdevsw[] = {
 #endif
 	cdev_notdef(),			/* 52 */
 	cdev_notdef(),			/* 53 */
-	cdev_disk_init(NRAID,raid),	/* 54: RAIDframe disk driver */
+	cdev_notdef(),			/* 54 */
 	cdev_notdef(),			/* 55 */
 	/* The following slots are reserved for isdn4bsd. */
 	cdev_notdef(),			/* 56: i4b main device */
@@ -293,43 +288,9 @@ int chrtoblktbl[] = {
 	/* 15 */	NODEV,
 	/* 16 */	NODEV,
 	/* 17 */	17,		/* rd */
-	/* 18 */	16,		/* ccd */
+	/* 18 */	NODEV,
 	/* 19 */	14,		/* vnd */
 	/* 20 */	5,		/* st */
-	/* 21 */	NODEV,
-	/* 22 */	NODEV,
-	/* 23 */	NODEV,
-	/* 24 */	NODEV,
-	/* 25 */	NODEV,
-	/* 26 */	NODEV,
-	/* 27 */	NODEV,
-	/* 28 */	NODEV,
-	/* 29 */	NODEV,
-	/* 30 */	NODEV,
-	/* 31 */	NODEV,
-	/* 32 */	NODEV,
-	/* 33 */	NODEV,
-	/* 34 */	NODEV,
-	/* 35 */	NODEV,
-	/* 36 */	NODEV,
-	/* 37 */	NODEV,
-	/* 38 */	NODEV,
-	/* 39 */	NODEV,
-	/* 40 */	NODEV,
-	/* 41 */	NODEV,
-	/* 42 */	NODEV,
-	/* 43 */	NODEV,
-	/* 44 */	NODEV,
-	/* 45 */	NODEV,
-	/* 46 */	NODEV,
-	/* 47 */	NODEV,
-	/* 48 */	NODEV,
-	/* 49 */	NODEV,
-	/* 50 */	NODEV,
-	/* 51 */	NODEV,
-	/* 52 */	NODEV,
-	/* 53 */	NODEV,
-	/* 54 */	19,		/* raid */
 };
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);
 

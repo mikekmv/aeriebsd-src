@@ -186,7 +186,6 @@ file	arch/hppa/dev/siop_sgc.c		siop_gedoens
 
 ###
 
-major	{ccd = 1}
 major	{vnd = 2}
 major	{rd = 3}
 

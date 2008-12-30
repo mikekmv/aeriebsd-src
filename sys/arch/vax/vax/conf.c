@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1982, 1986 The Regents of the University of California.
  * All rights reserved.
@@ -88,10 +87,6 @@ bdev_decl(uu);
 bdev_decl(rl);
 #endif
 
-#include "ccd.h"
-
-#include "raid.h"
-
 #include "vnd.h"
 
 #include "hdc.h"
@@ -123,7 +118,7 @@ struct bdevsw	bdevsw[] =
 	bdev_notdef(),			/* 14: RL01/02 */
 	bdev_tape_init(NMT,mt),		/* 15: MSCP tape */
 	bdev_notdef(),			/* 16: was: KDB50/RA?? */
-	bdev_disk_init(NCCD,ccd),	/* 17: concatenated disk driver */
+	bdev_notdef(),			/* 17 */
 	bdev_disk_init(NVND,vnd),	/* 18: vnode disk driver */
 	bdev_disk_init(NHD,hd),		/* 19: VS3100 ST506 disk */
 	bdev_disk_init(NSD,sd),		/* 20: SCSI disk */
@@ -131,7 +126,6 @@ struct bdevsw	bdevsw[] =
 	bdev_disk_init(NCD,cd),		/* 22: SCSI CD-ROM */
 	bdev_disk_init(NRD,rd),		/* 23: ram disk driver */
 	bdev_disk_init(NRY,ry),		/* 24: VS3100 floppy */
-	bdev_disk_init(NRAID,raid),	/* 25: RAIDframe disk driver */
 };
 int	nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
 
@@ -335,7 +329,7 @@ cdev_decl(ii);
 
 #include "bpfilter.h"
 
-#include "tun.h" 
+#include "tun.h"
 #include "ch.h"
 #include "ss.h"
 #include "uk.h"
@@ -409,7 +403,7 @@ struct cdevsw	cdevsw[] =
 	cdev_cnstore_init(NCRX,crx),	/* 51: Console RX50 at 8200 */
 	cdev_notdef(),			/* 52: was: KDB50/RA?? */
 	cdev_fd_init(1,filedesc),	/* 53: file descriptor pseudo-device */
-	cdev_disk_init(NCCD,ccd),	/* 54: concatenated disk driver */
+	cdev_notdef(),			/* 54 */
 	cdev_disk_init(NVND,vnd),	/* 55: vnode disk driver */
 	cdev_bpf_init(NBPFILTER,bpf),	/* 56: berkeley packet filter */
 	cdev_tun_init(NTUN,tun),	/* 57: tunnel filter */
@@ -428,7 +422,7 @@ struct cdevsw	cdevsw[] =
 	cdev_mouse_init(NWSMOUSE, wsmouse), /* 70: mice */
 	cdev_disk_init(NRY,ry),		/* 71: VS floppy */
 	cdev_bio_init(NBIO,bio),	/* 72: ioctl tunnel */
-	cdev_disk_init(NRAID,raid),	/* 73: RAIDframe disk driver */
+	cdev_notdef(),			/* 73 */
 #ifdef XFS
 	cdev_xfs_init(NXFS,xfs_dev),	/* 74: xfs communication device */
 #else
@@ -506,7 +500,7 @@ int	chrtoblktbl[] = {
 	NODEV,	/* 51 */
 	NODEV,	/* 52 */
 	NODEV,	/* 53 */
-	17,	/* 54 */
+	NODEV,	/* 54 */
 	18,	/* 55 */
 	NODEV,	/* 56 */
 	NODEV,	/* 57 */
@@ -524,9 +518,6 @@ int	chrtoblktbl[] = {
 	NODEV,	/* 69 */
 	NODEV,	/* 70 */
 	24,	/* 71 */
-	NODEV,	/* 72 */
-	25,	/* 73 */
-	NODEV,	/* 74 */
 };
 int nchrtoblktbl = sizeof(chrtoblktbl) / sizeof(chrtoblktbl[0]);
 
@@ -562,7 +553,7 @@ getmajor(void *ptr)
 	for (i = 0; i < nchrdev; i++)
 		if (cdevsw[i].d_open == ptr)
 			return i;
-	
+
 	return (-1);
 }
 
