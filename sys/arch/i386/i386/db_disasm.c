@@ -93,11 +93,11 @@
 #define	Iba	37			/* byte immediate, don't print if 0xa */
 
 struct inst {
-	char *	i_name;			/* name */
+	const char *i_name;			/* name */
 	short	i_has_modrm;		/* has regmodrm byte */
 	short	i_size;			/* operand size */
 	int	i_mode;			/* addressing modes */
-	void *	i_extra;		/* pointer to extra opcode table */
+	const void *i_extra;		/* pointer to extra opcode table */
 };
 
 #define	op1(x)		(x)
@@ -105,49 +105,49 @@ struct inst {
 #define	op3(x,y,z)	((x)|((y)<<8)|((z)<<16))
 
 struct finst {
-	char *	f_name;			/* name for memory instruction */
+	const char *f_name;		/* name for memory instruction */
 	int	f_size;			/* size for memory instruction */
 	int	f_rrmode;		/* mode for rr instruction */
-	void *	f_rrname;		/* name for rr instruction
+	const void *f_rrname;		/* name for rr instruction
 					   (or pointer to table) */
 };
 
-char *	db_Grp6[] = {
+const char *const	db_Grp6[] = {
 	"sldt",		"str",		"lldt",		"ltr",
 	"verr",		"verw",		"",		""
 };
 
-char *	db_Grp7[] = {
+const char *const	db_Grp7[] = {
 	"sgdt",		"sidt",		"lgdt",		"lidt",
 	"smsw",		"",		"lmsw",		"invlpg"
 };
 
-char *	db_Grp8[] = {
+const char *const	db_Grp8[] = {
 	"",		"",		"",		"",
 	"bt",		"bts",		"btr",		"btc"
 };
 
-char *	db_Grp9[] = {
+const char *const	db_Grp9[] = {
 	"fxsave",	"fxrstor",	"",		"",
 	"",		"",		"",		""
 };
 
-char *	db_GrpA[] = {
+const char *const	db_GrpA[] = {
 	"",		"cmpxchg8b",	"",		"",
 	"",		"",		"",		""
 };
 
-char *	db_GrpB[] = {
+const char *const	db_GrpB[] = {
 	"xstore-rng",	"xcrypt-ecb",	"xcrypt-cbc",	"xcrypt-ctr",
 	"xcrypt-cfb",	"xcrypt-ofb",	"",		""
 };
 
-char *	db_GrpC[] = {
+const char *const	db_GrpC[] = {
 	"montmul",	"xsha1",	"xsha256",	"",
 	"",		"",		"",		""
 };
 
-struct inst db_inst_0f0x[] = {
+const struct inst db_inst_0f0x[] = {
 /*00*/	{ "",	   TRUE,  NONE,  op1(Ew),     db_Grp6 },
 /*01*/	{ "",	   TRUE,  NONE,  op1(Ew),     db_Grp7 },
 /*02*/	{ "lar",   TRUE,  LONG,  op2(E,R),    0 },
@@ -167,7 +167,7 @@ struct inst db_inst_0f0x[] = {
 /*0f*/	{ "",      FALSE, NONE,  0,	      0 },
 };
 
-struct inst	db_inst_0f2x[] = {
+const struct inst	db_inst_0f2x[] = {
 /*20*/	{ "mov",   TRUE,  LONG,  op2(CR,E),   0 }, /* use E for reg */
 /*21*/	{ "mov",   TRUE,  LONG,  op2(DR,E),   0 }, /* since mod == 11 */
 /*22*/	{ "mov",   TRUE,  LONG,  op2(E,CR),   0 },
@@ -187,7 +187,7 @@ struct inst	db_inst_0f2x[] = {
 /*2f*/	{ "",      FALSE, NONE,  0,	      0 },
 };
 
-struct inst	db_inst_0f3x[] = {
+const struct inst	db_inst_0f3x[] = {
 /*30*/	{ "wrmsr", FALSE, NONE,  0,           0 },
 /*31*/	{ "rdtsc", FALSE, NONE,  0,           0 },
 /*32*/	{ "rdmsr", FALSE, NONE,  0,           0 },
@@ -207,7 +207,7 @@ struct inst	db_inst_0f3x[] = {
 /*3f*/	{ "",      FALSE, NONE,  0,           0 },
 };
 
-struct inst	db_inst_0f8x[] = {
+const struct inst	db_inst_0f8x[] = {
 /*80*/	{ "jo",    FALSE, NONE,  op1(Dl),     0 },
 /*81*/	{ "jno",   FALSE, NONE,  op1(Dl),     0 },
 /*82*/	{ "jb",    FALSE, NONE,  op1(Dl),     0 },
@@ -227,7 +227,7 @@ struct inst	db_inst_0f8x[] = {
 /*8f*/	{ "jnle",  FALSE, NONE,  op1(Dl),     0 },
 };
 
-struct inst	db_inst_0f9x[] = {
+const struct inst	db_inst_0f9x[] = {
 /*90*/	{ "seto",  TRUE,  NONE,  op1(Eb),     0 },
 /*91*/	{ "setno", TRUE,  NONE,  op1(Eb),     0 },
 /*92*/	{ "setb",  TRUE,  NONE,  op1(Eb),     0 },
@@ -247,7 +247,7 @@ struct inst	db_inst_0f9x[] = {
 /*9f*/	{ "setnle",TRUE,  NONE,  op1(Eb),     0 },
 };
 
-struct inst	db_inst_0fax[] = {
+const struct inst	db_inst_0fax[] = {
 /*a0*/	{ "push",  FALSE, NONE,  op1(Si),     0 },
 /*a1*/	{ "pop",   FALSE, NONE,  op1(Si),     0 },
 /*a2*/	{ "cpuid", FALSE, NONE,  0,	      0 },
@@ -267,7 +267,7 @@ struct inst	db_inst_0fax[] = {
 /*af*/	{ "imul",  TRUE,  LONG,  op2(E,R),    0 },
 };
 
-struct inst	db_inst_0fbx[] = {
+const struct inst	db_inst_0fbx[] = {
 /*b0*/	{ "cmpxchg",TRUE, BYTE,	 op2(R, E),   0 },
 /*b1*/	{ "cmpxchg",TRUE, LONG,	 op2(R, E),   0 },
 /*b2*/	{ "lss",   TRUE,  LONG,  op2(E, R),   0 },
@@ -287,7 +287,7 @@ struct inst	db_inst_0fbx[] = {
 /*bf*/	{ "movsw", TRUE,  LONG,  op2(Ew, R),  0 },
 };
 
-struct inst	db_inst_0fcx[] = {
+const struct inst	db_inst_0fcx[] = {
 /*c0*/	{ "xadd",  TRUE,  BYTE,	 op2(R, E),   0 },
 /*c1*/	{ "xadd",  TRUE,  LONG,	 op2(R, E),   0 },
 /*c2*/	{ "",	   FALSE, NONE,	 0,	      0 },
@@ -307,7 +307,7 @@ struct inst	db_inst_0fcx[] = {
 /*cf*/	{ "bswap", FALSE, LONG,  op1(Ril),    0 },
 };
 
-struct inst *db_inst_0f[] = {
+const struct inst *const db_inst_0f[] = {
 	db_inst_0f0x,
 	NULL,
 	db_inst_0f2x,
@@ -326,48 +326,48 @@ struct inst *db_inst_0f[] = {
 	NULL
 };
 
-char *	db_Esc92[] = {
+const char *const	db_Esc92[] = {
 	"fnop",		"",		"",		"",
 	"",		"",		"",		""
 };
-char *	db_Esc94[] = {
+const char *const	db_Esc94[] = {
 	"fchs",		"fabs",		"",		"",
 	"ftst",		"fxam",		"",		""
 };
-char *	db_Esc95[] = {
+const char *const	db_Esc95[] = {
 	"fld1",		"fldl2t",	"fldl2e",	"fldpi",
 	"fldlg2",	"fldln2",	"fldz",		""
 };
-char *	db_Esc96[] = {
+const char *const	db_Esc96[] = {
 	"f2xm1",	"fyl2x",	"fptan",	"fpatan",
 	"fxtract",	"fprem1",	"fdecstp",	"fincstp"
 };
-char *	db_Esc97[] = {
+const char *const	db_Esc97[] = {
 	"fprem",	"fyl2xp1",	"fsqrt",	"fsincos",
 	"frndint",	"fscale",	"fsin",		"fcos"
 };
 
-char *	db_Esca5[] = {
+const char *const	db_Esca5[] = {
 	"",		"fucompp",	"",		"",
 	"",		"",		"",		""
 };
 
-char *	db_Escb4[] = {
+const char *const	db_Escb4[] = {
 	"fneni",	"fndisi",       "fnclex",	"fninit",
 	"fsetpm",	"",		"",		""
 };
 
-char *	db_Esce3[] = {
+const char *const	db_Esce3[] = {
 	"",		"fcompp",	"",		"",
 	"",		"",		"",		""
 };
 
-char *	db_Escf4[] = {
+const char *const	db_Escf4[] = {
 	"fnstsw",	"",		"",		"",
 	"",		"",		"",		""
 };
 
-struct finst db_Esc8[] = {
+const struct finst db_Esc8[] = {
 /*0*/	{ "fadd",   SNGL,  op2(STI,ST),	0 },
 /*1*/	{ "fmul",   SNGL,  op2(STI,ST),	0 },
 /*2*/	{ "fcom",   SNGL,  op2(STI,ST),	0 },
@@ -378,7 +378,7 @@ struct finst db_Esc8[] = {
 /*7*/	{ "fdivr",  SNGL,  op2(STI,ST),	0 },
 };
 
-struct finst db_Esc9[] = {
+const struct finst db_Esc9[] = {
 /*0*/	{ "fld",    SNGL,  op1(STI),	0 },
 /*1*/	{ "",       NONE,  op1(STI),	"fxch" },
 /*2*/	{ "fst",    SNGL,  op1(X),	db_Esc92 },
@@ -389,7 +389,7 @@ struct finst db_Esc9[] = {
 /*7*/	{ "fnstcw", NONE,  op1(X),	db_Esc97 },
 };
 
-struct finst db_Esca[] = {
+const struct finst db_Esca[] = {
 /*0*/	{ "fiadd",  LONG,  0,		0 },
 /*1*/	{ "fimul",  LONG,  0,		0 },
 /*2*/	{ "ficom",  LONG,  0,		0 },
@@ -400,7 +400,7 @@ struct finst db_Esca[] = {
 /*7*/	{ "fidivr", LONG,  0,		0 }
 };
 
-struct finst db_Escb[] = {
+const struct finst db_Escb[] = {
 /*0*/	{ "fild",   LONG,  0,		0 },
 /*1*/	{ "",       NONE,  0,		0 },
 /*2*/	{ "fist",   LONG,  0,		0 },
@@ -411,10 +411,10 @@ struct finst db_Escb[] = {
 /*7*/	{ "fstp",   EXTR,  0,		0 },
 };
 
-struct finst db_Escc[] = {
+const struct finst db_Escc[] = {
 /*0*/	{ "fadd",   DBLR,  op2(ST,STI),	0 },
 /*1*/	{ "fmul",   DBLR,  op2(ST,STI),	0 },
-/*2*/	{ "fcom",   DBLR,  0,	 	0 },
+/*2*/	{ "fcom",   DBLR,  0,		0 },
 /*3*/	{ "fcomp",  DBLR,  0,		0 },
 /*4*/	{ "fsub",   DBLR,  op2(ST,STI),	"fsubr" },
 /*5*/	{ "fsubr",  DBLR,  op2(ST,STI),	"fsub" },
@@ -422,7 +422,7 @@ struct finst db_Escc[] = {
 /*7*/	{ "fdivr",  DBLR,  op2(ST,STI),	"fdiv" },
 };
 
-struct finst db_Escd[] = {
+const struct finst db_Escd[] = {
 /*0*/	{ "fld",    DBLR,  op1(STI),	"ffree" },
 /*1*/	{ "",       NONE,  0,		0 },
 /*2*/	{ "fst",    DBLR,  op1(STI),	0 },
@@ -433,7 +433,7 @@ struct finst db_Escd[] = {
 /*7*/	{ "fnstsw", NONE,  0,		0 },
 };
 
-struct finst db_Esce[] = {
+const struct finst db_Esce[] = {
 /*0*/	{ "fiadd",  WORD,  op2(ST,STI),	"faddp" },
 /*1*/	{ "fimul",  WORD,  op2(ST,STI),	"fmulp" },
 /*2*/	{ "ficom",  WORD,  0,		0 },
@@ -444,7 +444,7 @@ struct finst db_Esce[] = {
 /*7*/	{ "fidivr", WORD,  op2(ST,STI),	"fdivp" },
 };
 
-struct finst db_Escf[] = {
+const struct finst db_Escf[] = {
 /*0*/	{ "fild",   WORD,  0,		0 },
 /*1*/	{ "",       WORD,  0,		0 },
 /*2*/	{ "fist",   WORD,  0,		0 },
@@ -455,12 +455,12 @@ struct finst db_Escf[] = {
 /*7*/	{ "fistp",  QUAD,  0,		0 },
 };
 
-struct finst *db_Esc_inst[] = {
+const struct finst *const db_Esc_inst[] = {
 	db_Esc8, db_Esc9, db_Esca, db_Escb,
 	db_Escc, db_Escd, db_Esce, db_Escf
 };
 
-char *	db_Grp1[] = {
+const char *const	db_Grp1[] = {
 	"add",
 	"or",
 	"adc",
@@ -471,7 +471,7 @@ char *	db_Grp1[] = {
 	"cmp"
 };
 
-char *	db_Grp2[] = {
+const char *const	db_Grp2[] = {
 	"rol",
 	"ror",
 	"rcl",
@@ -482,7 +482,7 @@ char *	db_Grp2[] = {
 	"sar"
 };
 
-struct inst db_Grp3[] = {
+const struct inst db_Grp3[] = {
 	{ "test",  TRUE, NONE, op2(I,E), 0 },
 	{ "test",  TRUE, NONE, op2(I,E), 0 },
 	{ "not",   TRUE, NONE, op1(E),   0 },
@@ -493,7 +493,7 @@ struct inst db_Grp3[] = {
 	{ "idiv",  TRUE, NONE, op2(E,A), 0 },
 };
 
-struct inst	db_Grp4[] = {
+const struct inst	db_Grp4[] = {
 	{ "inc",   TRUE, BYTE, op1(E),   0 },
 	{ "dec",   TRUE, BYTE, op1(E),   0 },
 	{ "",      TRUE, NONE, 0,	 0 },
@@ -504,7 +504,7 @@ struct inst	db_Grp4[] = {
 	{ "",      TRUE, NONE, 0,	 0 }
 };
 
-struct inst	db_Grp5[] = {
+const struct inst	db_Grp5[] = {
 	{ "inc",   TRUE, LONG, op1(E),   0 },
 	{ "dec",   TRUE, LONG, op1(E),   0 },
 	{ "call",  TRUE, NONE, op1(Eind),0 },
@@ -515,7 +515,7 @@ struct inst	db_Grp5[] = {
 	{ "",      TRUE, NONE, 0,	 0 }
 };
 
-struct inst db_inst_table[256] = {
+const struct inst db_inst_table[256] = {
 /*00*/	{ "add",   TRUE,  BYTE,  op2(R, E),  0 },
 /*01*/	{ "add",   TRUE,  LONG,  op2(R, E),  0 },
 /*02*/	{ "add",   TRUE,  BYTE,  op2(E, R),  0 },
@@ -805,7 +805,7 @@ struct inst db_inst_table[256] = {
 /*ff*/	{ "",	   TRUE,  NONE,  0,	     db_Grp5 },
 };
 
-struct inst	db_bad_inst =
+const struct inst	db_bad_inst =
 	{ "???",   FALSE, NONE,  0,	      0 }
 ;
 
@@ -820,12 +820,12 @@ struct inst	db_bad_inst =
 struct i_addr {
 	int		is_reg;	/* if reg, reg number is in 'disp' */
 	int		disp;
-	char *		base;
-	char *		index;
+	const char	*base;
+	const char	*index;
 	int		ss;
 };
 
-char *	db_index_reg_16[8] = {
+const char *const	db_index_reg_16[8] = {
 	"%bx,%si",
 	"%bx,%di",
 	"%bp,%si",
@@ -836,20 +836,20 @@ char *	db_index_reg_16[8] = {
 	"%bx"
 };
 
-char *	db_reg[3][8] = {
+const char *const	db_reg[3][8] = {
 	{ "%al",  "%cl",  "%dl",  "%bl",  "%ah",  "%ch",  "%dh",  "%bh" },
 	{ "%ax",  "%cx",  "%dx",  "%bx",  "%sp",  "%bp",  "%si",  "%di" },
 	{ "%eax", "%ecx", "%edx", "%ebx", "%esp", "%ebp", "%esi", "%edi" }
 };
 
-char *	db_seg_reg[8] = {
+const char *const	db_seg_reg[8] = {
 	"%es", "%cs", "%ss", "%ds", "%fs", "%gs", "", ""
 };
 
 /*
  * lengths for size attributes
  */
-int db_lengths[] = {
+const int db_lengths[] = {
 	1,	/* BYTE */
 	2,	/* WORD */
 	4,	/* LONG */
@@ -980,11 +980,10 @@ db_print_address(char *seg, int size, struct i_addr *addrp)
 db_addr_t
 db_disasm_esc(db_addr_t loc, int inst, int short_addr, int size, char *seg)
 {
-	int		regmodrm;
-	struct finst	*fp;
-	int		mod;
 	struct i_addr	address;
-	char *		name;
+	const struct finst	*fp;
+	const char	*name;
+	int		regmodrm, mod;
 
 	get_value_inc(regmodrm, loc, 1, FALSE);
 	fp = &db_Esc_inst[inst - 0xd8][f_reg(regmodrm)];
@@ -1071,23 +1070,14 @@ db_disasm_esc(db_addr_t loc, int inst, int short_addr, int size, char *seg)
 db_addr_t
 db_disasm(db_addr_t loc, boolean_t altfmt)
 {
-	int	inst;
-	int	size;
-	int	short_addr;
-	char *	seg;
-	struct inst *	ip;
-	char *	i_name;
-	int	i_size;
-	int	i_mode;
-	int	regmodrm = 0;
-	boolean_t	first;
-	int	displ;
-	int	prefix;
-	int	imm;
-	int	imm2;
-	int	len;
-	struct i_addr	address;
 	char	tmpfmt[24];
+	struct i_addr	address;
+	const struct inst *ip;
+	const char	*i_name;
+	char	*seg;
+	int	i_size, i_mode, regmodrm = 0;
+	int	displ, prefix, imm, imm2, len, inst, size, short_addr;
+	boolean_t	first;
 
 	get_value_inc(inst, loc, 1, FALSE);
 	short_addr = FALSE;
@@ -1208,9 +1198,7 @@ db_disasm(db_addr_t loc, boolean_t altfmt)
 		}
 	}
 	db_printf("\t");
-	for (first = TRUE;
-	     i_mode != 0;
-	     i_mode >>= 8, first = FALSE) {
+	for (first = TRUE; i_mode != 0; i_mode >>= 8, first = FALSE) {
 		if (!first)
 			db_printf(",");
 
