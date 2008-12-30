@@ -298,10 +298,9 @@ update-moduli:
 .PHONY: distribution-etc-root-var distribution distrib-dirs \
 	release allarchs snap_md m4 snap_pre
 
-SUBDIR+= etc.alpha etc.amd64 etc.armish etc.hp300 etc.hppa
-SUBDIR+= etc.hppa64 etc.i386 etc.landisk etc.mac68k
-SUBDIR+= etc.sgi etc.sparc etc.sparc64
-SUBDIR+= etc.vax etc.zaurus
+SUBDIR+= etc.alpha etc.amd64 etc.armish etc.hp300 etc.hppa etc.hppa64
+SUBDIR+= etc.i386 etc.landisk etc.mac68k etc.macppc etc.sgi
+SUBDIR+= etc.sparc etc.sparc64 etc.vax etc.zaurus
 
 .include <bsd.subdir.mk>
 .include <bsd.prog.mk>
