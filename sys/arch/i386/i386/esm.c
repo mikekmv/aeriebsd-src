@@ -147,7 +147,7 @@ void		esm_refresh(void *);
 int		esm_get_devmap(struct esm_softc *, int, struct esm_devmap *);
 void		esm_devmap(struct esm_softc *, struct esm_devmap *);
 void		esm_make_sensors(struct esm_softc *, struct esm_devmap *,
-		    struct esm_sensor_map *, int);
+		    const struct esm_sensor_map *, int);
 int		esm_thresholds(struct esm_softc *, struct esm_devmap *,
 		    struct esm_sensor *);
 
@@ -523,7 +523,7 @@ esm_get_devmap(struct esm_softc *sc, int dev, struct esm_devmap *devmap)
 	return (0);
 }
 
-struct esm_sensor_map esm_sensors_esm2[] = {
+const struct esm_sensor_map esm_sensors_esm2[] = {
 	{ ESM_S_UNKNOWN,	0,		"Motherboard" },
 	{ ESM_S_TEMP,		0,		"CPU 1" },
 	{ ESM_S_TEMP,		0,		"CPU 2" },
@@ -591,7 +591,7 @@ struct esm_sensor_map esm_sensors_esm2[] = {
 	{ ESM_S_UNKNOWN,	0,		"PS Over Temp" }
 };
 
-struct esm_sensor_map esm_sensors_backplane[] = {
+const struct esm_sensor_map esm_sensors_backplane[] = {
 	{ ESM_S_UNKNOWN,	0,		"Backplane" },
 	{ ESM_S_UNKNOWN,	0,		"Backplane Control" },
 	{ ESM_S_TEMP,		0,		"Backplane Top" },
@@ -626,7 +626,7 @@ struct esm_sensor_map esm_sensors_backplane[] = {
 	{ ESM_S_VOLTS,		0,		"Backplane +3.3V" },
 };
 
-struct esm_sensor_map esm_sensors_powerunit[] = {
+const struct esm_sensor_map esm_sensors_powerunit[] = {
 	{ ESM_S_UNKNOWN,	0,		"Power Unit" },
 	{ ESM_S_VOLTSx10,	0,		"Power Supply 1 +5V" },
 	{ ESM_S_VOLTSx10,	0,		"Power Supply 1 +12V" },
@@ -685,7 +685,7 @@ struct esm_sensor_map esm_sensors_powerunit[] = {
 void
 esm_devmap(struct esm_softc *sc, struct esm_devmap *devmap)
 {
-	struct esm_sensor_map	*sensor_map;
+	const struct esm_sensor_map	*sensor_map;
 	const char		*name = NULL, *fname = NULL;
 	int			mapsize;
 
@@ -815,7 +815,7 @@ esm_devmap(struct esm_softc *sc, struct esm_devmap *devmap)
 
 void
 esm_make_sensors(struct esm_softc *sc, struct esm_devmap *devmap,
-    struct esm_sensor_map *sensor_map, int mapsize)
+    const struct esm_sensor_map *sensor_map, int mapsize)
 {
 	struct esm_smb_req	req;
 	struct esm_smb_resp	resp;
