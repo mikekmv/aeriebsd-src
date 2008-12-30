@@ -1174,7 +1174,7 @@ struct ahc_pci_identity {
 	uint64_t		 id_mask;
 	ahc_device_setup_t	*setup;
 };
-extern struct ahc_pci_identity ahc_pci_ident_table[];
+extern const struct ahc_pci_identity ahc_pci_ident_table[];
 
 /***************************** VL/EISA Declarations ***************************/
 struct aic7770_identity {
