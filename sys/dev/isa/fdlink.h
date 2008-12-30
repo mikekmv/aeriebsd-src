@@ -109,7 +109,7 @@ struct fdc_attach_args {
 	int fa_drive;
 	int fa_flags;
 	int fa_type;			/* tape drive type */
-	struct fd_type *fa_deftype;
+	const struct fd_type *fa_deftype;
 };
 
 /* Functions from fdc.c. */
@@ -120,4 +120,4 @@ void fdcstatus(struct device *, int, char *);
 void fdcpseudointr(void *);
 
 /* Functions from fd.c. */
-struct fd_type *fd_nvtotype(char *, int, int);
+const struct fd_type *fd_nvtotype(char *, int, int);

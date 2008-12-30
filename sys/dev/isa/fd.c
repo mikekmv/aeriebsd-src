@@ -81,7 +81,7 @@
 /* fd_type struct now in ioctl_fd.h */
 
 /* The order of entries in the following table is important -- BEWARE! */
-struct fd_type fd_types[] = {
+const struct fd_type fd_types[] = {
         { 18,2,36,2,0xff,0xcf,0x1b,0x6c,80,2880,1,FDC_500KBPS,"1.44MB"    }, /* 1.44MB diskette */
         { 15,2,30,2,0xff,0xdf,0x1b,0x54,80,2400,1,FDC_500KBPS, "1.2MB"    }, /* 1.2 MB AT-diskettes */
         {  9,2,18,2,0xff,0xdf,0x23,0x50,40, 720,2,FDC_300KBPS, "360KB/AT" }, /* 360kB in 1.2MB drive */
@@ -98,8 +98,8 @@ struct fd_softc {
 	struct device sc_dev;
 	struct disk sc_dk;
 
-	struct fd_type *sc_deftype;	/* default type descriptor */
-	struct fd_type *sc_type;	/* current type descriptor */
+	const struct fd_type *sc_deftype;	/* default type descriptor */
+	const struct fd_type *sc_type;	/* current type descriptor */
 
 	daddr64_t	sc_blkno;	/* starting block number */
 	int sc_bcount;		/* byte count left */
@@ -150,7 +150,7 @@ void fd_motor_off(void *arg);
 void fd_motor_on(void *arg);
 void fdfinish(struct fd_softc *fd, struct buf *bp);
 int fdformat(dev_t, struct fd_formb *, struct proc *);
-static __inline struct fd_type *fd_dev_to_type(struct fd_softc *, dev_t);
+static __inline const struct fd_type *fd_dev_to_type(struct fd_softc *, dev_t);
 void fdretry(struct fd_softc *);
 void fdtimeout(void *);
 
@@ -260,7 +260,7 @@ fdattach(parent, self, aux)
 	struct fdc_softc *fdc = (void *)parent;
 	struct fd_softc *fd = (void *)self;
 	struct fdc_attach_args *fa = aux;
-	struct fd_type *type = fa->fa_deftype;
+	const struct fd_type *type = fa->fa_deftype;
 	int drive = fa->fa_drive;
 
 	if (!type || (fa->fa_flags & 0x10)) {
@@ -326,7 +326,7 @@ fdattach(parent, self, aux)
  * Translate nvram type into internal data structure.  Return NULL for
  * none/unknown/unusable.
  */
-struct fd_type *
+const struct fd_type *
 fd_nvtotype(fdc, nvraminfo, drive)
 	char *fdc;
 	int nvraminfo, drive;
@@ -362,7 +362,7 @@ fd_nvtotype(fdc, nvraminfo, drive)
 #endif
 }
 
-static __inline struct fd_type *
+static __inline const struct fd_type *
 fd_dev_to_type(fd, dev)
 	struct fd_softc *fd;
 	dev_t dev;
@@ -578,7 +578,7 @@ fdopen(dev, flags, fmt, p)
 {
  	int unit, pmask;
 	struct fd_softc *fd;
-	struct fd_type *type;
+	const struct fd_type *type;
 
 	unit = FDUNIT(dev);
 	if (unit >= fd_cd.cd_ndevs)
@@ -685,7 +685,7 @@ fdintr(fdc)
 	bus_space_handle_t ioh = fdc->sc_ioh;
 	bus_space_handle_t ioh_ctl = fdc->sc_ioh_ctl;
 	int read, head, sec, i, nblks;
-	struct fd_type *type;
+	const struct fd_type *type;
 	struct fd_formb *finfo = NULL;
 	int fd_bsize;
 
@@ -1114,7 +1114,7 @@ fdformat(dev, finfo, p)
 {
         int rv = 0;
 	struct fd_softc *fd = fd_cd.cd_devs[FDUNIT(dev)];
-	struct fd_type *type = fd->sc_type;
+	const struct fd_type *type = fd->sc_type;
         struct buf *bp;
 	int fd_bsize = FD_BSIZE(fd);
 
