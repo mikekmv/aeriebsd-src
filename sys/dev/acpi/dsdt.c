@@ -85,7 +85,7 @@ int			aml_evalterm(struct aml_scope *scope,
 void			aml_gasio(struct acpi_softc *, int, uint64_t, uint64_t,
 			    int, int, int, void *, int);
 
-struct aml_opcode	*aml_findopcode(int);
+const struct aml_opcode	*aml_findopcode(int);
 
 #define acpi_os_malloc(sz) _acpi_os_malloc(sz, __FUNCTION__, __LINE__)
 #define acpi_os_free(ptr)  _acpi_os_free(ptr, __FUNCTION__, __LINE__)
@@ -126,8 +126,8 @@ struct acpi_softc	*dsdt_softc;
  * XXX this array should be sorted, and then aml_findopcode() should
  * do a binary search
  */
-struct aml_opcode **aml_ophash;
-struct aml_opcode aml_table[] = {
+const struct aml_opcode **aml_ophash;
+const struct aml_opcode aml_table[] = {
 	/* Simple types */
 	{ AMLOP_ZERO,		"Zero",		"c",	},
 	{ AMLOP_ONE,		"One",		"c",	},
@@ -318,15 +318,16 @@ aml_hashopcodes(void)
 	int i;
 
 	/* Dynamically allocate hash table */
-	aml_ophash = (struct aml_opcode **)acpi_os_malloc(HASH_SIZE*sizeof(struct aml_opcode *));
+	aml_ophash = (const struct aml_opcode **)
+	    acpi_os_malloc(HASH_SIZE*sizeof(struct aml_opcode *));
 	for (i = 0; i < sizeof(aml_table) / sizeof(aml_table[0]); i++)
 		aml_ophash[HASH_KEY(aml_table[i].opcode)] = &aml_table[i];
 }
 
-struct aml_opcode *
+const struct aml_opcode *
 aml_findopcode(int opcode)
 {
-	struct aml_opcode *hop;
+	const struct aml_opcode *hop;
 
 	hop = aml_ophash[HASH_KEY(opcode)];
 	if (hop && hop->opcode == opcode)
@@ -338,7 +339,7 @@ aml_findopcode(int opcode)
 const char *
 aml_mnem(int opcode, uint8_t *pos)
 {
-	struct aml_opcode *tab;
+	const struct aml_opcode *tab;
 	static char mnemstr[32];
 
 	if ((tab = aml_findopcode(opcode)) != NULL) {
@@ -374,7 +375,7 @@ aml_mnem(int opcode, uint8_t *pos)
 const char *
 aml_args(int opcode)
 {
-	struct aml_opcode *tab;
+	const struct aml_opcode *tab;
 
 	if ((tab = aml_findopcode(opcode)) != NULL)
 		return tab->args;
@@ -1520,7 +1521,7 @@ aml_fixup_dsdt(u_int8_t *acpi_hdr, u_int8_t *base, int len)
  * @@@: Default Object creation
  */
 static char osstring[] = "Macrosift Windogs MT";
-struct aml_defval {
+const struct aml_defval {
 	const char		*name;
 	int			type;
 	int64_t			ival;
@@ -1538,7 +1539,7 @@ struct aml_defval {
  * Returns True if string argument matches list of known OS strings
  * We return True for Windows to fake out nasty bad AML
  */
-char *aml_valid_osi[] = {
+const char *const aml_valid_osi[] = {
 	"Windows 2000",
 	"Windows 2001",
 	"Windows 2001.1",
@@ -1570,7 +1571,7 @@ void
 aml_create_defaultobjects()
 {
 	struct aml_value *tmp;
-	struct aml_defval *def;
+	const struct aml_defval *def;
 
 	osstring[1] = 'i';
 	osstring[6] = 'o';
@@ -2899,7 +2900,7 @@ aml_disasm(struct aml_scope *scope, int lvl,
     void *arg)
 {
 	int pc, opcode;
-	struct aml_opcode *htab;
+	const struct aml_opcode *htab;
 	uint64_t ival;
 	struct aml_value *rv, tmp;
 	uint8_t *end;
@@ -3495,7 +3496,7 @@ struct aml_value *
 aml_xparse(struct aml_scope *scope, int ret_type, const char *stype)
 {
 	int    opcode, idx, pc, optype[8];
-	struct aml_opcode *htab;
+	const struct aml_opcode *htab;
 	struct aml_value *opargs[8], *my_ret, *tmp, *cname;
 	struct aml_scope *mscope, *iscope;
 	const char *ch;
