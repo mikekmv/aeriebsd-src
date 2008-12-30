@@ -161,7 +161,7 @@ void		esa_powerhook(int, void *);
 int		esa_suspend(struct esa_softc *);
 int		esa_resume(struct esa_softc *);
 
-static audio_encoding_t esa_encoding[] = {
+static const audio_encoding_t esa_encoding[] = {
 	{ 0, AudioEulinear, AUDIO_ENCODING_ULINEAR, 8, 0 },
 	{ 1, AudioEmulaw, AUDIO_ENCODING_ULAW, 8,
 		AUDIO_ENCODINGFLAG_EMULATED },
