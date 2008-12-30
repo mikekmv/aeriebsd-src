@@ -77,7 +77,7 @@
 #define ADL_TACH4		12
 #define ADL_NUM_SENSORS		13
 
-struct {
+const struct {
 	char		sensor;
 	u_int8_t	hreg;			/* MS-byte register */
 	u_int8_t	lreg;			/* LS-byte register */

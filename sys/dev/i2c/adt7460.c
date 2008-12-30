@@ -68,7 +68,7 @@
 #define ADT_TACH6		15
 #define ADT_NUM_SENSORS		16
 
-struct adt_chip {
+const struct adt_chip {
 	const char	*name;
 	short		ratio[7];
 	int		type;
@@ -90,11 +90,11 @@ struct adt_chip {
 	{ "sch5027",	{ 5000, 2250, 3300, 5000, 12000, 3300, 3300 },	5027,	   0 }
 };
 
-struct {
+const struct {
 	char		sensor;
 	u_int8_t	cmd;
 	u_short		index;
-} worklist[] = {
+} adt_worklist[] = {
 	{ ADT_2_5V, ADT7460_2_5V, 32768 + 0 },
 	{ ADT_VCCP, ADT7460_VCCP, 32768 + 1 },
 	{ ADT_VCC, ADT7460_VCC, 32768 + 2 },
@@ -118,7 +118,7 @@ struct adt_softc {
 	i2c_tag_t sc_tag;
 	i2c_addr_t sc_addr;
 	u_int8_t sc_conf;
-	struct adt_chip *chip;
+	const struct adt_chip *chip;
 
 	struct ksensor sc_sensor[ADT_NUM_SENSORS];
 	struct ksensordev sc_sensordev;
@@ -264,8 +264,8 @@ adt_attach(struct device *parent, struct device *self, void *aux)
 	}
 
 	for (i = 0; i < ADT_NUM_SENSORS; i++) {
-		if (worklist[i].index >= 32768 &&
-		    sc->chip->ratio[worklist[i].index - 32768] == 0)
+		if (adt_worklist[i].index >= 32768 &&
+		    sc->chip->ratio[adt_worklist[i].index - 32768] == 0)
 			continue;
 		sensor_attach(&sc->sc_sensordev, &sc->sc_sensor[i]);
 	}
@@ -285,14 +285,14 @@ adt_refresh(void *arg)
 
 	iic_acquire_bus(sc->sc_tag, 0);
 
-	for (i = 0; i < sizeof worklist / sizeof(worklist[0]); i++) {
+	for (i = 0; i < sizeof adt_worklist / sizeof(adt_worklist[0]); i++) {
 
-		if (worklist[i].index >= 32768) {
-			ratio = sc->chip->ratio[worklist[i].index - 32768];
+		if (adt_worklist[i].index >= 32768) {
+			ratio = sc->chip->ratio[adt_worklist[i].index - 32768];
 			if (ratio == 0)	/* do not read a dead register */
 				continue;
 		}
-		cmd = worklist[i].cmd;
+		cmd = adt_worklist[i].cmd;
 		if (iic_exec(sc->sc_tag, I2C_OP_READ_WITH_STOP,
 		    sc->sc_addr, &cmd, sizeof cmd, &data, sizeof data, 0)) {
 			sc->sc_sensor[i].flags |= SENSOR_FINVALID;
@@ -300,7 +300,7 @@ adt_refresh(void *arg)
 		}
 
 		sc->sc_sensor[i].flags &= ~SENSOR_FINVALID;
-		switch (worklist[i].sensor) {
+		switch (adt_worklist[i].sensor) {
 		case ADT_VCC:
 			if (sc->chip->vcc && (sc->sc_conf & ADT7460_CONFIG_Vcc))
 				ratio = sc->chip->vcc;
@@ -326,7 +326,7 @@ adt_refresh(void *arg)
 		case ADT_TACH2:
 		case ADT_TACH3:
 		case ADT_TACH4:
-			cmd = worklist[i].cmd + 1; /* TACHnH follows TACHnL */
+			cmd = adt_worklist[i].cmd + 1; /* TACHnH follows TACHnL */
 			if (iic_exec(sc->sc_tag, I2C_OP_READ_WITH_STOP,
 			    sc->sc_addr, &cmd, sizeof cmd, &data2, sizeof data2, 0)) {
 				sc->sc_sensor[i].flags |= SENSOR_FINVALID;
@@ -345,7 +345,7 @@ adt_refresh(void *arg)
 				sc->sc_sensor[i].flags |= SENSOR_FINVALID;
 				break;	/* only 5027 has these fans? */
 			}
-			cmd = worklist[i].cmd + 1; /* TACHnH follows TACHnL */
+			cmd = adt_worklist[i].cmd + 1; /* TACHnH follows TACHnL */
 			if (iic_exec(sc->sc_tag, I2C_OP_READ_WITH_STOP,
 			    sc->sc_addr, &cmd, sizeof cmd, &data2, sizeof data2, 0)) {
 				sc->sc_sensor[i].flags |= SENSOR_FINVALID;

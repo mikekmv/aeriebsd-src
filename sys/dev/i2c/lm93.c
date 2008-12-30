@@ -80,7 +80,7 @@
 #define LMN_TACH4		23
 #define LMN_NUM_SENSORS		24
 
-struct {
+const struct {
 	char		sensor;
 	u_int8_t	cmd;
 	char		*name;
