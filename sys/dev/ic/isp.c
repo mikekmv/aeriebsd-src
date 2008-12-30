@@ -1534,7 +1534,7 @@ isp_get_portname(struct ispsoftc *isp, int loopid, int nodename)
 static int
 isp_fclink_test(struct ispsoftc *isp, int usdelay)
 {
-	static char *toponames[] = {
+	static const char *const toponames[] = {
 		"Private Loop",
 		"FL Port",
 		"N-Port to N-Port",
@@ -4913,7 +4913,7 @@ static const u_int16_t mbpscsi[] = {
 #endif
 
 #ifndef	ISP_STRIPPED
-static char *scsi_mbcmd_names[] = {
+static const char *const scsi_mbcmd_names[] = {
 	"NO-OP",
 	"LOAD RAM",
 	"EXEC FIRMWARE",
@@ -5149,7 +5149,7 @@ static const u_int16_t mbpfc[] = {
  */
 
 #ifndef	ISP_STRIPPED
-static char *fc_mbcmd_names[] = {
+static const char *const fc_mbcmd_names[] = {
 	"NO-OP",
 	"LOAD RAM",
 	"EXEC FIRMWARE",
@@ -5325,9 +5325,10 @@ isp_mboxcmd_qnw(struct ispsoftc *isp, mbreg_t *mbp, int nodelay)
 static void
 isp_mboxcmd(struct ispsoftc *isp, mbreg_t *mbp, int logmask)
 {
-	char *cname, *xname, tname[16], mname[16];
 	unsigned int lim, ibits, obits, box, opcode;
+	char *xname, tname[16], mname[16];
 	const u_int16_t *mcp;
+	const char *cname;
 
 	if (IS_FC(isp)) {
 		mcp = mbpfc;
