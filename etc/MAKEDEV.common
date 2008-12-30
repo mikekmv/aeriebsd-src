@@ -1,4 +1,4 @@
-vers(a, {-$ABSD: MAKEDEV.common,v 1.1.1.1 2008/08/26 14:36:38 root Exp $-})dnl
+vers(a, {-$ABSD: MAKEDEV.common,v 1.2 2008/12/26 18:43:25 mickey Exp $-})dnl
 dnl
 dnl Copyright (c) 2001-2006 Todd T. Fries <todd@OpenBSD.org>
 dnl
@@ -126,7 +126,6 @@ target(all, mcd, 0)dnl
 twrget(all, fdesc, fd)dnl
 target(all, st, 0, 1)dnl
 target(all, std)dnl
-target(all, raid, 0, 1, 2, 3)dnl
 target(all, rz, 0, 1, 2, 3, 4)dnl
 target(all, hp, 0, 1, 2, 3)dnl
 target(all, ra, 0, 1, 2, 3)dnl
@@ -286,8 +285,6 @@ _mkdev(flo, fd*,
 __devitem(iop, iop*, I2O controller devices)dnl
 _mcdev(iop, iop*, iop, {-major_iop_c-}, 660)dnl
 __devitem(wd, {-wd*-}, {-quote(winchester)disk drives (ST506{-,-} IDE{-,-} ESDI{-,-} RLL{-,-} ...)-})dnl
-__devitem(ccd, ccd*, Concatenated disk devices)dnl
-__devitem(raid, raid*, RAIDframe disk devices)dnl
 __devitem(vnd, vnd*, quote(file)pseudo-disk devices)dnl
 _mkdev(vnd, vnd*, {-dodisk vnd $U major_vnd_b major_vnd_c $U 0{--}ifstep(vnd)
 	dodisk svnd $U major_vnd_b major_vnd_c $U 2048{--}ifstep(vnd)-})dnl
@@ -302,12 +299,10 @@ dnl
 dnl For normal disk devices, add a disk_q entry; anything else define like
 dnl the rest (such as vnd above).
 dnl
-disk_q({-ccd-})dnl
 disk_q({-hd-})dnl
 disk_q({-hk-})dnl
 disk_q({-hp-})dnl
 disk_q({-ra-})dnl
-disk_q({-raid-})dnl
 disk_q({-rb-})dnl
 disk_q({-rl-})dnl
 disk_q({-rx-})dnl

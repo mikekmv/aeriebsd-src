@@ -1,5 +1,5 @@
 define(MACHINE,sparc)dnl
-vers(__file__, {-$ABSD: MAKEDEV.md,v 1.1.1.1 2008/08/26 14:36:40 root Exp $-},
+vers(__file__, {-$ABSD: MAKEDEV.md,v 1.2 2008/12/26 18:43:26 mickey Exp $-},
 etc.MACHINE)dnl
 dnl
 dnl Copyright (c) 2001-2006 Todd T. Fries <todd@OpenBSD.org>
@@ -56,12 +56,10 @@ _DEV(ramdisk)
 _DEV(std)
 _DEV(local)
 _TITLE(dis)
-_DEV(ccd, 23, 9)
 _DEV(cd, 58, 18)
 _DEV(flo, 54, 16)
 _DEV(presto, 25, 26)
 _DEV(sd, 17, 7)
-_DEV(raid, 123, 25)
 _DEV(rd, 106, 17)
 _DEV(vnd, 110, 8)
 _DEV(xd, 42, 10)
@@ -137,7 +135,6 @@ target(all, rd, 0)dnl
 target(all, cd, 0, 1)dnl
 target(all, sd, 0, 1, 2, 3, 4)dnl
 target(all, vnd, 0, 1, 2, 3)dnl
-target(all, ccd, 0, 1, 2, 3)dnl
 target(all, bpp, 0)dnl
 target(all, presto, 0)dnl
 twrget(wscons, wscons, ttyD, cfg, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, a, b)dnl

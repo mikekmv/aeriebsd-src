@@ -1,5 +1,5 @@
 define(MACHINE,armish)dnl
-vers(__file__, {-$ABSD: MAKEDEV.md,v 1.1.1.1 2008/08/26 14:36:39 root Exp $-},
+vers(__file__, {-$ABSD: MAKEDEV.md,v 1.2 2008/12/26 18:43:25 mickey Exp $-},
 etc.MACHINE)dnl
 dnl
 dnl Copyright (c) 2001-2004 Todd T. Fries <todd@OpenBSD.org>
@@ -32,10 +32,8 @@ _DEV(ramdisk)
 _DEV(std)
 _DEV(local)
 _TITLE(dis)
-_DEV(ccd, 21, 21)
 _DEV(cd, 26, 26)
 _DEV(ch, 27)
-_DEV(raid, 71, 71)
 _DEV(rd, 18, 18)
 _DEV(sd, 24, 24)
 _DEV(vnd, 19, 19)
@@ -114,4 +112,3 @@ target(all, rd, 0)dnl
 target(all, cd, 0, 1)dnl
 target(all, sd, 0, 1, 2, 3, 4)dnl
 target(all, vnd, 0, 1, 2, 3)dnl
-target(all, ccd, 0, 1, 2, 3)dnl

@@ -10,7 +10,7 @@ NOOBJ=	oobj
 # -rw-r--r--
 BINOWN= root
 BINGRP= wheel
-BIN1=	changelist ccd.conf csh.cshrc csh.login csh.logout daily dhcpd.conf \
+BIN1=	changelist csh.cshrc csh.login csh.logout daily dhcpd.conf \
 	exports ftpusers ftpchroot gettytab group hosts hosts.lpd inetd.conf \
 	ksh.kshrc locate.rc man.conf monthly motd mrouted.conf myname \
 	netstart networks newsyslog.conf phones printcap protocols \

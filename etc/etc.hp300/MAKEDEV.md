@@ -1,5 +1,5 @@
 define(MACHINE,hp300)dnl
-vers(__file__, {-$ABSD: MAKEDEV.md,v 1.1.1.1 2008/08/26 14:36:39 root Exp $-},
+vers(__file__, {-$ABSD: MAKEDEV.md,v 1.2 2008/12/26 18:43:25 mickey Exp $-},
 etc.MACHINE)dnl
 dnl
 dnl Copyright (c) 2001-2006 Todd T. Fries <todd@OpenBSD.org>
@@ -49,7 +49,6 @@ _DEV(ramdisk)
 _DEV(std)
 _DEV(local)
 _TITLE(dis)
-_DEV(ccd, 17, 5)
 _DEV(cd, 18, 9)
 _DEV(hd, 9, 2)
 _DEV(rd, 34, 8)
@@ -180,7 +179,6 @@ target(all, sd, 0, 1, 2, 3, 4)dnl
 target(all, st, 0, 1)dnl
 target(all, uk, 0)dnl
 target(all, vnd, 0, 1, 2, 3)dnl
-target(all, ccd, 0, 1, 2, 3)dnl
 target( all, dca, 0, 1)dnl
 target( all, dcm, 0, 1, 2, 3)dnl
 target( all, hd, 0, 1, 2)dnl

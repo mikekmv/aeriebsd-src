@@ -1,5 +1,5 @@
 define(MACHINE,vax)dnl
-vers(__file__, {-$ABSD: MAKEDEV.md,v 1.1.1.1 2008/08/26 14:36:40 root Exp $-},
+vers(__file__, {-$ABSD: MAKEDEV.md,v 1.2 2008/12/26 18:43:27 mickey Exp $-},
 etc.MACHINE)dnl
 dnl
 dnl Copyright (c) 2001-2006 Todd T. Fries <todd@OpenBSD.org>
@@ -88,14 +88,12 @@ _DEV(ramdisk)
 _DEV(std)
 _DEV(local)
 _TITLE(dis)
-_DEV(ccd, 54, 17)
 _DEV(cd, 61, 22)
 _DEV(flo, 54, 16)
 _DEV(hk, 11, 3)
 _DEV(hd, 58, 19)
 _DEV(hp, 4, 0)
 _DEV(ra, 9, 9)
-_DEV(raid, 73, 25)
 _DEV(rb, 23, 11)
 _DEV(rd, 62, 23)
 _DEV(rl, 32, 14)
@@ -216,7 +214,6 @@ dnl target(all, rd, 0)dnl
 target(all, cd, 0)dnl
 target(all, sd, 0, 1, 2, 3)dnl
 target(all, vnd, 0)dnl
-target( all, ccd, 0)dnl
 target( all, hd, 0, 1, 2)dnl
 target( all, mt, 0, 1)dnl
 target( all, ts, 0, 1)dnl

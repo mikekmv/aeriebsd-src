@@ -12,7 +12,6 @@
 /etc/bgpd.conf
 /etc/boot.conf
 /etc/bootparams
-/etc/ccd.conf
 /etc/changelist
 /etc/chio.conf
 /etc/crontab

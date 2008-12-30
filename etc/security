@@ -538,7 +538,7 @@ fi
 # Check for block and character disk devices that are readable or writeable
 # or not owned by root.operator.
 >$TMP1
-DISKLIST="ccd dk fd hd hk hp jb kra ra rb rd rl rx rz sd up vnd wd xd"
+DISKLIST="dk fd hd hk hp jb kra ra rb rd rl rx rz sd up vnd wd xd"
 for i in $DISKLIST; do
 	egrep "^b.*/${i}[0-9][0-9]*[B-H]?[a-p]$"  $LIST >> $TMP1
 	egrep "^c.*/r${i}[0-9][0-9]*[B-H]?[a-p]$"  $LIST >> $TMP1
