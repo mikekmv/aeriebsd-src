@@ -84,19 +84,21 @@ u_int32_t rpc_call, rpc_vers, rpc_reply, rpc_msgdenied, rpc_autherr,
 u_int32_t nfs_prog, nfs_true, nfs_false;
 
 /* And other global data */
-nfstype nfsv2_type[9] = { NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFNON,
-		      NFCHR, NFNON };
-nfstype nfsv3_type[9] = { NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFSOCK,
-		      NFFIFO, NFNON };
-enum vtype nv2tov_type[8] = { VNON, VREG, VDIR, VBLK, VCHR, VLNK, VNON, VNON };
-enum vtype nv3tov_type[8]={ VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO };
+const nfstype nfsv2_type[9] =
+    { NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFNON, NFCHR, NFNON };
+const nfstype nfsv3_type[9] =
+    { NFNON, NFREG, NFDIR, NFBLK, NFCHR, NFLNK, NFSOCK, NFFIFO, NFNON };
+const enum vtype nv2tov_type[8] =
+    { VNON, VREG, VDIR, VBLK, VCHR, VLNK, VNON, VNON };
+const enum vtype nv3tov_type[8] =
+    { VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO };
 int nfs_ticks;
 struct nfsstats nfsstats;
 
 /*
  * Mapping of old NFS Version 2 RPC numbers to generic numbers.
  */
-int nfsv3_procid[NFS_NPROCS] = {
+const int nfsv3_procid[NFS_NPROCS] = {
 	NFSPROC_NULL,
 	NFSPROC_GETATTR,
 	NFSPROC_SETATTR,
@@ -128,7 +130,7 @@ int nfsv3_procid[NFS_NPROCS] = {
 /*
  * and the reverse mapping from generic to Version 2 procedure numbers
  */
-int nfsv2_procid[NFS_NPROCS] = {
+const int nfsv2_procid[NFS_NPROCS] = {
 	NFSV2PROC_NULL,
 	NFSV2PROC_GETATTR,
 	NFSV2PROC_SETATTR,
@@ -162,7 +164,7 @@ int nfsv2_procid[NFS_NPROCS] = {
  * Use NFSERR_IO as the catch all for ones not specifically defined in
  * RFC 1094.
  */
-static u_char nfsrv_v2errmap[] = {
+const u_char nfsrv_v2errmap[] = {
   NFSERR_PERM,	NFSERR_NOENT,	NFSERR_IO,	NFSERR_IO,	NFSERR_IO,
   NFSERR_NXIO,	NFSERR_IO,	NFSERR_IO,	NFSERR_IO,	NFSERR_IO,
   NFSERR_IO,	NFSERR_IO,	NFSERR_ACCES,	NFSERR_IO,	NFSERR_IO,
@@ -191,12 +193,12 @@ static u_char nfsrv_v2errmap[] = {
  * The first entry is the default error return and the rest are the valid
  * errors for that RPC in increasing numeric order.
  */
-static short nfsv3err_null[] = {
+const short nfsv3err_null[] = {
 	0,
 	0,
 };
 
-static short nfsv3err_getattr[] = {
+const short nfsv3err_getattr[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_STALE,
@@ -205,7 +207,7 @@ static short nfsv3err_getattr[] = {
 	0,
 };
 
-static short nfsv3err_setattr[] = {
+const short nfsv3err_setattr[] = {
 	NFSERR_IO,
 	NFSERR_PERM,
 	NFSERR_IO,
@@ -221,7 +223,7 @@ static short nfsv3err_setattr[] = {
 	0,
 };
 
-static short nfsv3err_lookup[] = {
+const short nfsv3err_lookup[] = {
 	NFSERR_IO,
 	NFSERR_NOENT,
 	NFSERR_IO,
@@ -234,7 +236,7 @@ static short nfsv3err_lookup[] = {
 	0,
 };
 
-static short nfsv3err_access[] = {
+const short nfsv3err_access[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_STALE,
@@ -243,7 +245,7 @@ static short nfsv3err_access[] = {
 	0,
 };
 
-static short nfsv3err_readlink[] = {
+const short nfsv3err_readlink[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_ACCES,
@@ -255,7 +257,7 @@ static short nfsv3err_readlink[] = {
 	0,
 };
 
-static short nfsv3err_read[] = {
+const short nfsv3err_read[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_NXIO,
@@ -267,7 +269,7 @@ static short nfsv3err_read[] = {
 	0,
 };
 
-static short nfsv3err_write[] = {
+const short nfsv3err_write[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_ACCES,
@@ -282,7 +284,7 @@ static short nfsv3err_write[] = {
 	0,
 };
 
-static short nfsv3err_create[] = {
+const short nfsv3err_create[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_ACCES,
@@ -299,7 +301,7 @@ static short nfsv3err_create[] = {
 	0,
 };
 
-static short nfsv3err_mkdir[] = {
+const short nfsv3err_mkdir[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_ACCES,
@@ -316,7 +318,7 @@ static short nfsv3err_mkdir[] = {
 	0,
 };
 
-static short nfsv3err_symlink[] = {
+const short nfsv3err_symlink[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_ACCES,
@@ -333,7 +335,7 @@ static short nfsv3err_symlink[] = {
 	0,
 };
 
-static short nfsv3err_mknod[] = {
+const short nfsv3err_mknod[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_ACCES,
@@ -351,7 +353,7 @@ static short nfsv3err_mknod[] = {
 	0,
 };
 
-static short nfsv3err_remove[] = {
+const short nfsv3err_remove[] = {
 	NFSERR_IO,
 	NFSERR_NOENT,
 	NFSERR_IO,
@@ -365,7 +367,7 @@ static short nfsv3err_remove[] = {
 	0,
 };
 
-static short nfsv3err_rmdir[] = {
+const short nfsv3err_rmdir[] = {
 	NFSERR_IO,
 	NFSERR_NOENT,
 	NFSERR_IO,
@@ -383,7 +385,7 @@ static short nfsv3err_rmdir[] = {
 	0,
 };
 
-static short nfsv3err_rename[] = {
+const short nfsv3err_rename[] = {
 	NFSERR_IO,
 	NFSERR_NOENT,
 	NFSERR_IO,
@@ -406,7 +408,7 @@ static short nfsv3err_rename[] = {
 	0,
 };
 
-static short nfsv3err_link[] = {
+const short nfsv3err_link[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_ACCES,
@@ -426,7 +428,7 @@ static short nfsv3err_link[] = {
 	0,
 };
 
-static short nfsv3err_readdir[] = {
+const short nfsv3err_readdir[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_ACCES,
@@ -439,7 +441,7 @@ static short nfsv3err_readdir[] = {
 	0,
 };
 
-static short nfsv3err_readdirplus[] = {
+const short nfsv3err_readdirplus[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_ACCES,
@@ -453,7 +455,7 @@ static short nfsv3err_readdirplus[] = {
 	0,
 };
 
-static short nfsv3err_fsstat[] = {
+const short nfsv3err_fsstat[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_STALE,
@@ -462,7 +464,7 @@ static short nfsv3err_fsstat[] = {
 	0,
 };
 
-static short nfsv3err_fsinfo[] = {
+const short nfsv3err_fsinfo[] = {
 	NFSERR_STALE,
 	NFSERR_STALE,
 	NFSERR_BADHANDLE,
@@ -470,7 +472,7 @@ static short nfsv3err_fsinfo[] = {
 	0,
 };
 
-static short nfsv3err_pathconf[] = {
+const short nfsv3err_pathconf[] = {
 	NFSERR_STALE,
 	NFSERR_STALE,
 	NFSERR_BADHANDLE,
@@ -478,7 +480,7 @@ static short nfsv3err_pathconf[] = {
 	0,
 };
 
-static short nfsv3err_commit[] = {
+const short nfsv3err_commit[] = {
 	NFSERR_IO,
 	NFSERR_IO,
 	NFSERR_STALE,
@@ -487,7 +489,7 @@ static short nfsv3err_commit[] = {
 	0,
 };
 
-static short *nfsrv_v3errmap[] = {
+const short *nfsrv_v3errmap[] = {
 	nfsv3err_null,
 	nfsv3err_getattr,
 	nfsv3err_setattr,
@@ -1792,7 +1794,7 @@ nfsrv_errmap(nd, err)
 	struct nfsrv_descript *nd;
 	int err;
 {
-	short *defaulterrp, *errp;
+	const short *defaulterrp, *errp;
 
 	if (nd->nd_flag & ND_NFSV3) {
 	    if (nd->nd_procnum <= NFSPROC_COMMIT) {

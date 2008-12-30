@@ -74,7 +74,7 @@ u_long nfsrvhash;
 	(((rp)->rc_flag & RC_INETADDR) ? AF_INET : AF_UNSPEC)
 
 /* Array that defines which nfs rpc's are nonidempotent */
-int nonidempotent[NFS_NPROCS] = {
+const int nonidempotent[NFS_NPROCS] = {
 	FALSE,
 	FALSE,
 	TRUE,
@@ -104,7 +104,7 @@ int nonidempotent[NFS_NPROCS] = {
 };
 
 /* True iff the rpc reply is an nfs status ONLY! */
-int nfsv2_repstat[NFS_NPROCS] = {
+const int nfsv2_repstat[NFS_NPROCS] = {
 	FALSE,
 	FALSE,
 	FALSE,

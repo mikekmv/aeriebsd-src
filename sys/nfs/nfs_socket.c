@@ -107,7 +107,7 @@ extern int nfs_ticks;
  * 3 - read
  * 4 - write
  */
-static int proct[NFS_NPROCS] = {
+static const int proct[NFS_NPROCS] = {
 	0, 1, 0, 2, 1, 3, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0,
 	0, 0, 0,
 };
@@ -127,7 +127,7 @@ static int proct[NFS_NPROCS] = {
  */
 #define	NFS_CWNDSCALE	256
 #define	NFS_MAXCWND	(NFS_CWNDSCALE * 32)
-static int nfs_backoff[8] = { 2, 4, 8, 16, 32, 64, 128, 256, };
+static const int nfs_backoff[8] = { 2, 4, 8, 16, 32, 64, 128, 256, };
 int nfsrtton = 0;
 struct nfsrtt nfsrtt;
 
@@ -1587,7 +1587,7 @@ nfs_msg(p, server, msg)
 }
 
 #ifdef NFSSERVER
-int (*nfsrv3_procs[NFS_NPROCS])(struct nfsrv_descript *,
+int (*const nfsrv3_procs[NFS_NPROCS])(struct nfsrv_descript *,
 				    struct nfssvc_sock *, struct proc *,
 				    struct mbuf **) = {
 	nfsrv_null,
