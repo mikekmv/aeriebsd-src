@@ -1,0 +1,237 @@
+.\"
+.\" Copyright (c) 2005 Michael Shalayeff
+.\" All rights reserved.
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF MIND, USE, DATA OR PROFITS, WHETHER IN
+.\" AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+.\" OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd August 10, 2005
+.Dt PLOT
+.Os
+.Sh NAME
+.Nm plot
+.Nd Plotting library
+.Sh SYNOPSIS
+.Fd #include <plot.h>
+.Ft void *
+.Fn plot_open "const char *tty" "FILE *fp"
+.Ft int
+.Fn plot_close "void *v"
+.Ft int
+.Fn plot_arc "void *v" "int x" "int y" "int x0" "int y0" "int x1" "int y1"
+.Ft int
+.Fn plot_circle "void *v" "int x" "int y" "int r"
+.Ft int
+.Fn plot_cont "void *v" "int x" "int y"
+.Ft int
+.Fn plot_dot "void *v" "int x" "int y" "int dx" "int n" "const int *pat"
+.Ft int
+.Fn plot_erase "void *v"
+.Ft int
+.Fn plot_label "void *v" "const char *s"
+.Ft int
+.Fn plot_line "void *v" "int x" "int y" "int x1" "int y1"
+.Ft int
+.Fn plot_linemod "void *v" "int mod"
+.Ft int
+.Fn plot_move "void *v" "int x" "int y"
+.Ft int
+.Fn plot_point "void *v" "int x" "int y"
+.Ft int
+.Fn plot_space "void *v" "int x0" "int y0" "int x1" "int y1"
+.Sh DESCRIPTION
+.Nm
+provides a portable high level interface to plotters and other
+drawing devices (such as
+.Tn PostScript
+file format).
+.Sh ROUTINES
+.Bl -tag -width plot_circle -compact
+.It Fn plot_open "const char *tty" "FILE *fp"
+Allocate and initialise plotting context (that is returned as
+an opaque
+.Ar void * )
+for plotter type given in
+.Ar tty
+argument and using output file given in the
+.Ar fp
+argument.
+Either of arguments can be NULL in which case default will be assumed
+that is
+.Nm PLOTCAP
+or
+.Nm TERM
+environment variable contents for plotter specification and
+.Nm stdout
+for the output stream.
+If the initialisation sequence is specified it will be put out.
+.Pp
+.It Fn plot_close "void *v"
+Put out the finilasing sequence should one be specified for the given
+plotter type and free the plotting context.
+For the dumb mode the resulting image is output at this time as well.
+The output file pointer is left open.
+.Pp
+.It Fn plot_arc "void *v" "int x" "int y" "int x0" "int y0" "int x1" "int y1"
+Draw an arc with centre in
+.Ar [ x ,
+.Ar y ]
+and endpoints specified in
+.Ar [ x0 ,
+.Ar y0 ]
+and
+.Ar [ x1 ,
+.Ar y1 ] .
+.Pp
+.It Fn plot_circle "void *v" "int x" "int y" "int r"
+Draw a circle with centre in
+.Ar [ x ,
+.Ar y ]
+and of radius
+.Ar r .
+.Pp
+.It Fn plot_cont "void *v" "int x" "int y"
+Draw a straight line form current position to
+.Ar [ x ,
+.Ar y ]
+and change the current position to there as well.
+.Pp
+.It Fn plot_dot "void *v" "int x" "int y" "int dx" "int n" "const int *pat"
+Draw a dot at
+.Ar [ x ,
+.Ar y ]
+of size
+.Ar n
+and using pattern
+.Ar pat .
+Current position is changed accordignly.
+.Pp
+.It Fn plot_erase "void *v"
+Erase whole shit and reset current position to the plotter's default.
+.Pp
+.It Fn plot_label "void *v" "const char *s"
+Print a label from string
+.Ar s
+using whatever plotter's default font is.
+.Pp
+.It Fn plot_line "void *v" "int x" "int y" "int x1" "int y1"
+Draw a straight line between points
+.Ar [ x ,
+.Ar y ]
+and
+.Ar [ x1 ,
+.Ar y1 ]
+using current selected line mode (set with
+.Nm plot_linemod ) .
+Current position is set to
+.Ar [ x1 ,
+.Ar y1 ] .
+.Pp
+.It Fn plot_linemod "void *v" "int mod"
+Set line drawing mode to
+.Ar mod
+specified.
+Currently only values 0 through 8 are supported.
+The value of 0 resets the mode to the plotter's default.
+.Pp
+.It Fn plot_move "void *v" "int x" "int y"
+Change current position to
+.Ar [ x ,
+.Ar y ] .
+.Pp
+.It Fn plot_point "void *v" "int x" "int y"
+Pitch a point at
+.Ar [ x ,
+.Ar y ]
+and change current position accordingly.
+.Pp
+.It Fn plot_space "void *v" "int x0" "int y0" "int x1" "int y1"
+Set the system of coordinates and change the drawing size if supported or
+otherwise scale to the closest matching supported size.
+Values are allowed to be negative.
+.Pp
+.El
+.Sh RETURN VALUES
+.Nm plot_open
+returns NULL upon error.
+All the other functions return 0 on success and -1 on error.
+.Sh ENVIRONMENT
+.Bl -tag -width PLOTCAP -compact
+.It Nm PLOTCAP
+environment variable is checked upon first to contain plotter (see
+.Xr plotcap 5 )
+specification.
+.It Nm TERM
+environment variable is used to determine the plotter type to use (see
+.Xr plotcap 5 )
+to fetch description for from the
+.Pa plotcap
+database.
+.El
+.Sh FILES
+.Bl -tag -width 11 -compact
+.It Pa /usr/share/misc/plotcap
+Plotters descriptions.
+.El
+.Sh EXAMPLES
+
+.Sh ERRORS
+.Bl -tag -width _EOPNOTSUPP_ -compact
+.It Bq Er EINVAL
+Invalid arguments specified.
+.It Bq Er ENOMEM
+No memory to allocate.
+.It Bq Er EOPNOTSUPP
+No operation is found in the
+.Nm plotcap
+database and cannot emulate.
+.El
+See also
+.Xr stdio 3
+and
+.Xr getcap 3
+for other possible errors returned.
+.Sh SEE ALSO
+.Xr cap_mkdb 1 ,
+.Xr graph 1 ,
+.Xr plot 1 ,
+.Xr spline 1 ,
+.Xr getcap 3 ,
+.Xr malloc 3 ,
+.Xr plot 5 ,
+.Xr plotcap 5
+.Sh HISTORY
+The
+.Nm
+library first appeared in
+.At v6 .
+.Pp
+This implementaion however is different and first appeared in
+.Ox 3.9 .
+.Sh AUTHORS
+The
+.Nm
+library was written by
+.An Michael Shalayeff Aq mickey@openbsd.org .
+.Sh CAVEATS
+Library functions take the best effort to draw the primitives requested
+including descending to simpler or otherwise rasing to more complex
+primitives should there be no definition for direct implementation such as:
+.Bl -bullet -compact
+.It
+drawing a circle using arcs or lines or points;
+.It
+drawing a line using arcs or moves of points;
+.It
+drawing a point using a line or a circle or a dot.
+.El
+It is made sure however that endless recursion does not happen.

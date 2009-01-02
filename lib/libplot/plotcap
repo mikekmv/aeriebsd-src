@@ -1,0 +1,104 @@
+#
+# be	big endian (default)
+# cl	set colour
+# ci	circle (curpt is the centre, %x, %y, %r(adius))
+# co	continue a line from the curpt
+# em	emulation mode (dumb, tek, default)
+# er	erase screen
+# fi	finish sequence
+# in	init sequence
+# lb	draw a label (if none, just out)
+# le	little endian
+# lmN	line mode (a mask is passed)
+#	0 solid
+#	1 short dash
+#	2 dotted
+#	3 dotdashed
+#	4 longdashed
+# mv	move there
+# pt	pin a point (gets a colour ?, if none, just out a '.')
+# rc	draw an arc (curpt is a center, %x, %y, %X, %Y, %a(ngle))
+# sp	scale
+# tc	fetch the rest from the given entry
+
+aed|AED 512 color graphics terminal:\
+	:w#511:h#482:em=ascii:\
+	:cl=L%s:er=\14\E:mv=Q%x%y:lb=\6%s\E:lm=1%m:pt=O%s:ln=A%x%y:
+
+ascii|plottoa|plot format in ASCII:\
+	:em=ascii:\
+	:tc=plot:
+
+ato:\
+	:
+
+bg:bitgraph:\
+	:w#768:h#1024:em=ascii:\
+	:ln=\E\:%x;%yd:er=\E[H\E[J:mv=\E\:%x;%ym:
+
+crt:\
+	:
+
+dumb|Dumb terminal without cursor addressing or line printer:\
+	:w#72:h#24:em=dumb:pt=*:lb=%s:
+
+gigi|DEC Gigi terminal:\
+	:w#767:h#479:em=ascii:\
+	:rc=C(A%a c)[%x,%y]:ci=P[%x,%y]C[%d]:co=V[%x,%y]:er=S(E):mv=P[%x,%y]:\
+	:lb=T(S0 H2 D0 I0) "%s":pt=P[%x,%y]V[]:\
+	:lm0=W(P1):lm1=W(P00011100):lm2=W(P10000000):\
+	:lm3=W(P10001100):lm4=W(P11111100):
+
+grn:\
+	:w#512:h#512:\
+	:
+
+hp|h8|2648|2648a|hp2648|HP2648|hp2648a|HP2648A|HP 2648 graphics terminal:\
+	:
+
+hp7|h7|hp7221|HP7221|HP 7221 graphics terminal:\
+	:
+
+ip|imagen|Imagen laser printer (default 240 dots-per-inch resolution).:\
+	:
+
+t300|GSI 300:\
+	:
+
+t300s|T300S|GSI 300S:\
+	:
+
+t450|GSI 450:\
+	:
+
+t4013|Tektronix 4014 or 4015 without the Enhanced Graphics Module:\
+	:w#780:h#780:lb=\037%s:tc=t4014:
+
+tek|t4014|Tektronix 4014 and 4015 terminals with the Enhanced Graphics Module:\
+	:w#3120:h#3120:em=tek:fi=\037:er=\E^L:mv=\035%C:co=%C:\
+	:lb=\036\040\0110\0110\0110\0110\0110\0110\0112\0112\0112\0112\0112\0112\0112\0112\0112\0112\037%s\036\040\0104\0104\0104\0104\0104\0104\0105\0105\0105\0105\0105\0105\0105\0105\0105\0105\037:
+
+xterm:\
+	:in=\E[?38h\E^L:fi=\037\E^C:tc=t4014:
+
+vt0|DEC VT100 terminal:\
+	:
+
+var|Varian:\
+	:
+
+ver|Versatec:\
+	:
+
+plot:\
+	:em=plot:mv=m%C:co=n%C:pt=p%C:ln=l%c%C:lb=t%s\n:rc=a%c%C%C%d:\
+	:ci=c%c%d:er=e:lm0=fsolid\n:lm1=fdotted\n:lm2=fshortdashed\n:\
+	:lm3=flongdashed\n:lm4=fdotdashed\n:sp=s%C%C:
+
+ps|postscript:\
+	:em=ascii:\
+	:in=%%!PS-Adobe-2.0 EPSF-2.0\n1 setlinewidth\nnewpath\n0 setgray\n:\
+	:fi=stroke\nshowpage\n:sp=%%%%BoundingBox\072 %C %C\n:\
+	:mv=%C moveto\n:co=%C lineto\n:ci=%c %d 0 360 arc\n:\
+	:rc=%c %d %s %e arc\n:
+

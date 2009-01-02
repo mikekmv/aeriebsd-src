@@ -1,7 +1,7 @@
 SUBDIR=	csu libarch libc libcompat libcurses \
 	libdes libedit libevent libexpat \
 	libform libkeynote libkvm libl libm libmenu \
-	libocurses libossaudio libpanel libpcap libpthread librpcsvc \
+	libocurses libossaudio libpanel libpcap libplot libpthread librpcsvc \
 	libskey libsectok libssl libusbhid libutil libwrap liby libz
 
 .include <bsd.own.mk>
