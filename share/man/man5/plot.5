@@ -1,0 +1,181 @@
+.\"
+.\" Copyright (C) 1985, 1993, 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" Copyright (C) Caldera International Inc.  2001-2002.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code and documentation must retain the above
+.\"    copyright notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed or owned by Caldera
+.\"	International, Inc.
+.\" 4. Neither the name of Caldera International, Inc. nor the names of other
+.\"    contributors may be used to endorse or promote products derived from
+.\"    this software without specific prior written permission.
+.\"
+.\" USE OF THE SOFTWARE PROVIDED FOR UNDER THIS LICENSE BY CALDERA
+.\" INTERNATIONAL, INC. AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL CALDERA INTERNATIONAL, INC. BE LIABLE FOR ANY DIRECT,
+.\" INDIRECT INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+.\" (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+.\" SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+.\" STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+.\" IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+.\" POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\"	@(#)plot.5	6.3 (Berkeley) 4/29/91
+.\"
+.Dd $Mdocdate$
+.Dt PLOT 5
+.Os
+.Sh NAME
+.Nm plot
+.Nd graphics interface
+.Sh DESCRIPTION
+Files of this format are produced by routines described in 
+.Xr plot 3
+and are interpreted for various devices by commands described in
+.Xr plot 1 .
+A graphics file is a stream of plotting instructions.
+Each instruction consists of an ASCII letter
+usually followed by bytes of binary information.
+The instructions are executed in order.
+A point is designated by four bytes representing the
+x and y values; each value is a signed integer.
+The last designated point in an
+.Nm l ,
+.Nm m ,
+.Nm n ,
+.Nm a ,
+or
+.Nm p
+instruction becomes the
+.Sq current point
+for the next instruction.
+The
+.B a
+and
+.B c
+instructions change the current point in a manner dependent
+upon the specific device.
+.Pp
+Each of the following descriptions begins with the name
+of the corresponding routine in
+.Xr plot 3 .
+.Bl -tag -width xx
+.It m
+move: The next four bytes give a new current point.
+.It n
+cont: Draw a line from the current point to
+the point given by the next four bytes.
+.It p
+point: Plot the point given by the next four bytes.
+.It l
+line: Draw a line from the point given by the next
+four bytes to the point given by the following four bytes.
+.It t
+label: Place the following ASCII string so that its
+first character falls on the current point.
+The string is terminated by a newline.
+.It a
+arc:
+The first four bytes give the center, the next four give the starting
+point, and the last four give the end point of a circular arc.
+The least significant coordinate of the end point is
+used only to determine the quadrant.
+The arc is drawn counter-clockwise.
+.It c
+circle:
+The first four bytes give the center of the circle,
+the next two the radius.
+.It e
+erase: Start another frame of output.
+.It f
+linemod: Take the following string, up to a newline,
+as the style for drawing further lines.
+The styles are
+.Sq dotted ,
+.Sq solid ,
+.Sq longdashed ,
+.Sq shortdashed ,
+and
+.Sq dotdashed .
+Effective only in 
+.Nm 4014
+and
+.Nm ver .
+.It s
+space: The next four bytes give
+the lower left corner of the plotting area;
+the following four give the upper right corner.
+The plot will be magnified or reduced to fit
+the device as closely as possible.
+.Br
+Space settings that exactly fill the plotting area
+with unity scaling appear below for devices supported by the filters of
+.Xr plot 1 .
+The upper limit is just outside the plotting area.
+In every case the plotting area is taken to be square;
+points outside may be displayable on devices whose face isn't square.
+.Pp
+Default spaces for various terminals are as listed below:
+.Bl -tag -width xxxxx
+.It 300
+space(0, 0, 4096, 4096);
+.It 450
+space(0, 0, 4096, 4096);
+.It 4013
+space(0, 0, 780, 780);
+.It 4014
+space(0, 0, 3120, 3120);
+.It PS
+space(0, 0, 4096, 4096);
+.It ver
+space(0, 0, 2048, 2048);
+.El
+.El
+.Sh "SEE ALSO"
+.Xr graph 1 ,
+.Xr plot 1 ,
+.Xr plot 3 .
+.Sh BUGS
+A
+.Nm label
+instruction immediately followed by a
+.Nm cont
+instruction does the wrong thing on a 4014.
