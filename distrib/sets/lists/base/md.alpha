@@ -51,7 +51,6 @@
 ./sbin/kbd
 ./sbin/mount_ntfs
 ./sbin/wsconsctl
-./usr/bin/gccbug
 ./usr/lib/apache/modules/libproxy.so
 ./usr/lib/apache/modules/mod_auth_anon.so
 ./usr/lib/apache/modules/mod_auth_db.so
@@ -72,12 +71,6 @@
 ./usr/lib/apache/modules/mod_unique_id.so
 ./usr/lib/apache/modules/mod_usertrack.so
 ./usr/lib/apache/modules/mod_vhost_alias.so
-./usr/lib/gcc-lib/alpha-unknown-openbsd4.4
-./usr/lib/gcc-lib/alpha-unknown-openbsd4.4/3.3.5
-./usr/lib/gcc-lib/alpha-unknown-openbsd4.4/3.3.5/cc1
-./usr/lib/gcc-lib/alpha-unknown-openbsd4.4/3.3.5/collect2
-./usr/lib/gcc-lib/alpha-unknown-openbsd4.4/3.3.5/include
-./usr/lib/gcc-lib/alpha-unknown-openbsd4.4/3.3.5/specs
 ./usr/lib/libasn1.so.16.0
 ./usr/lib/libc.so.48.0
 ./usr/lib/libcom_err.so.16.0

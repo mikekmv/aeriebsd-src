@@ -20,13 +20,6 @@
 ./usr/lib/apache/modules/mod_unique_id.so
 ./usr/lib/apache/modules/mod_usertrack.so
 ./usr/lib/apache/modules/mod_vhost_alias.so
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.4
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/cc1
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/collect2
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/cpp0
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/include
-./usr/lib/gcc-lib/m68k-unknown-openbsd4.4/2.95.3/specs
 ./usr/lib/libasn1.so.16.0
 ./usr/lib/libc.so.48.0
 ./usr/lib/libcom_err.so.16.0
@@ -39,7 +32,6 @@
 ./usr/lib/libform.so.3.0
 ./usr/lib/libg2c.so.8.0
 ./usr/lib/libgssapi.so.5.0
-./usr/lib/libiberty.so.9.0
 ./usr/lib/libkafs.so.16.0
 ./usr/lib/libkrb5.so.16.0
 ./usr/lib/libkvm.so.9.0
@@ -47,7 +39,6 @@
 ./usr/lib/libmenu.so.3.0
 ./usr/lib/libmilter.so.2.1
 ./usr/lib/libncurses.so.10.0
-./usr/lib/libobjc.so.4.0
 ./usr/lib/libocurses.so.5.0
 ./usr/lib/libossaudio.so.3.1
 ./usr/lib/libotermcap.so.5.0
@@ -60,7 +51,6 @@
 ./usr/lib/libsectok.so.6.0
 ./usr/lib/libskey.so.5.1
 ./usr/lib/libssl.so.11.0
-./usr/lib/libstdc++.so.43.0
 ./usr/lib/libtermcap.so.10.0
 ./usr/lib/libtermlib.so.10.0
 ./usr/lib/libusbhid.so.3.0
