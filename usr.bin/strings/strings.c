@@ -1,5 +1,5 @@
-
 /*
+ * Copyright (c) 2009 Michael Shalayeff. All rights reserved.
  * Copyright (c) 1980, 1987, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -29,62 +29,71 @@
  */
 
 #ifndef lint
-static char copyright[] =
+static const char copyright[] =
+"Copyright (c) 2009 Michael Shalayeff. All rights reserved.\n"
 "@(#) Copyright (c) 1980, 1987, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
 #if 0
-static char sccsid[] = "@(#)strings.c	8.2 (Berkeley) 1/28/94";
+static const char sccsid[] = "@(#)strings.c	8.2 (Berkeley) 1/28/94";
 #endif
-static char rcsid[] = "$ABSD: strings.c,v 1.1.1.1 2008/08/26 14:43:15 root Exp $";
+static const char rcsid[] =
+    "$ABSD: strings.c,v 1.2 2008/12/26 18:52:10 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
-
-#include <a.out.h>
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
+#include <sys/exec_elf.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <locale.h>
-#include <unistd.h>
+#include <ctype.h>
+#include <errno.h>
+#include <ranlib.h>
 #include <err.h>
+#include <a.out.h>
+#include <elfuncs.h>
+
+/* XXX get shared code to handle a.out byte-order swaps */
+#include "byte.c"
 
 #define FORMAT_DEC "%07ld "
 #define FORMAT_OCT "%07lo "
 #define FORMAT_HEX "%07lx "
 
-#define DEF_LEN		4		/* default minimum string length */
+#define DEF_LEN		4	/* default minimum string length */
 #define ISSTR(ch)	(isascii(ch) && (isprint(ch) || ch == '\t'))
+#define	SZXHEAD		128	/* XXX shall be enough */
+#define	MAXMAXLEN	65536
 
-typedef struct exec	EXEC;		/* struct exec cast */
+long	foff;			/* offset in the file */
+int	hcnt,			/* head count */
+	head_len,		/* length of header */
+	read_len;		/* length to read */
+u_char	hbfr[SZXHEAD];		/* buffer for struct exec */
+u_char *bfr;
+int asdata, fflg, minlen, maxlen;
+char *offset_format;
 
-static long	foff;			/* offset in the file */
-static int	hcnt,			/* head count */
-		head_len,		/* length of header */
-		read_len;		/* length to read */
-static u_char	hbfr[sizeof(EXEC)];	/* buffer for struct exec */
+char *stab;		/* libelf needs it */
+int usemmap = 1;
 
-static void usage(void);
+void usage(void);
 int getch(void);
+int strings(const char *);
+int strscan(const char *);
 
 int
 main(int argc, char *argv[])
 {
 	extern char *optarg;
 	extern int optind;
-	int ch, cnt;
-	u_char *C;
-	EXEC *head;
-	int exitcode, minlen, maxlen, bfrlen;
-	short asdata, fflg;
-	u_char *bfr;
-	char *file, *p;
-	char *offset_format;
+	int ch, exitcode, bfrlen;
+	const char *file, *p, *errstr;
 
 	setlocale(LC_ALL, "");
 
@@ -92,8 +101,7 @@ main(int argc, char *argv[])
 	 * for backward compatibility, allow '-' to specify 'a' flag; no
 	 * longer documented in the man page or usage string.
 	 */
-	asdata = exitcode = fflg = 0;
-	offset_format = NULL;
+	exitcode = 0;
 	minlen = -1;
 	maxlen = -1;
 	while ((ch = getopt(argc, argv, "0123456789an:m:oft:-")) != -1)
@@ -120,10 +128,14 @@ main(int argc, char *argv[])
 			fflg = 1;
 			break;
 		case 'n':
-			minlen = atoi(optarg);
+			minlen = strtonum(optarg, 1, MAXMAXLEN, &errstr);
+			if (errstr)
+				err(1, "illegal minlen \"%s\"", optarg);
 			break;
 		case 'm':
-			maxlen = atoi(optarg);
+			maxlen = strtonum(optarg, 1, MAXMAXLEN, &errstr);
+			if (errstr)
+				err(1, "illegal maxlen \"%s\"", optarg);
 			break;
 		case 'o':
 			offset_format = FORMAT_OCT;
@@ -169,73 +181,150 @@ main(int argc, char *argv[])
 			if (!freopen(file, "r", stdin)) {
 				warn("%s", file);
 				exitcode = 1;
-				goto nextfile;
+				continue;
 			}
 		}
-		foff = 0;
-#define DO_EVERYTHING()		{read_len = -1; head_len = 0; goto start;}
-		read_len = -1;
-		if (asdata)
-			DO_EVERYTHING()
-		else {
-			head = (EXEC *)hbfr;
-			if ((head_len =
-			    read(fileno(stdin), head, sizeof(EXEC))) == -1)
-				DO_EVERYTHING()
-			if (head_len == sizeof(EXEC) && !N_BADMAG(*head)) {
-				foff = N_TXTOFF(*head);
-				if (fseek(stdin, foff, SEEK_SET) == -1)
-					DO_EVERYTHING()
+		exitcode |= strings(file);
+	} while (*argv);
+
+	exit(exitcode);
+}
+
+int
+strings(const char *file)
+{
+	Elf32_Ehdr *elf32 = (Elf32_Ehdr *)hbfr;
+	Elf64_Ehdr *elf64 = (Elf64_Ehdr *)hbfr;
+	int rv;
+
+	rv = 0;
+	foff = 0;
+	read_len = -1;
+	head_len = 0;
+	if (!asdata) {
+		if ((head_len = read(fileno(stdin), hbfr, SZXHEAD)) != SZXHEAD)
+			head_len = 0;
+		else if (IS_ELF(*elf32) &&
+		    elf32->e_ident[EI_CLASS] == ELFCLASS32 &&
+		    elf32->e_ident[EI_VERSION] == ELF_TARG_VER) {
+			Elf32_Phdr *phdr;
+			int i;
+
+			elf32_fix_header(elf32);
+			if ((phdr = elf32_load_phdrs(file, stdin, 0, elf32))) {
+				elf32_fix_phdrs(elf32, phdr);
+				for (i = elf32->e_phnum; i--; phdr++) {
+					if (phdr->p_type != PT_LOAD ||
+					    phdr->p_memsz == 0 ||
+					    phdr->p_filesz == 0)
+						continue;
+					foff = phdr->p_offset;
+					if (fseek(stdin, foff, SEEK_SET) == -1)
+						head_len = 0;
+					else {
+						read_len = phdr->p_filesz;
+						head_len = 0;
+					}
+					rv |= strscan(file);
+				}
+				return rv;
+			} else
+				hcnt = 0;
+
+		} else if (IS_ELF(*elf64) &&
+		    elf64->e_ident[EI_CLASS] == ELFCLASS64 &&
+		    elf64->e_ident[EI_VERSION] == ELF_TARG_VER) {
+			Elf64_Phdr *phdr;
+			int i;
+
+			elf64_fix_header(elf64);
+			if ((phdr = elf64_load_phdrs(file, stdin, 0, elf64))) {
+				elf64_fix_phdrs(elf64, phdr);
+				for (i = elf64->e_phnum; i--; phdr++) {
+					if (phdr->p_type != PT_LOAD ||
+					    phdr->p_memsz == 0 ||
+					    phdr->p_filesz == 0)
+						continue;
+					foff = phdr->p_offset;
+					if (fseek(stdin, foff, SEEK_SET) == -1)
+						head_len = 0;
+					else {
+						read_len = phdr->p_filesz;
+						head_len = 0;
+					}
+					rv |= strscan(file);
+				}
+				return rv;
+			} else
+				hcnt = 0;
+
+		} else if (!BAD_OBJECT(*(struct exec *)hbfr)) {
+			struct exec *head;
+
+			head = (struct exec *)hbfr;
+			fix_header_order(head);
+			foff = N_TXTOFF(*head);
+			if (fseek(stdin, foff, SEEK_SET) == -1)
+				head_len = 0;
+			else {
 				read_len = head->a_text + head->a_data;
 				head_len = 0;
 			}
-			else
-				hcnt = 0;
-		}
-start:
-		for (cnt = 0, C = bfr; (ch = getch()) != EOF;) {
-			if (ISSTR(ch)) {
-				*C++ = ch;
-				if (++cnt < minlen)
-					continue;
-				if (maxlen != -1) {
-					while ((ch = getch()) != EOF &&
-					       ISSTR(ch) && cnt++ < maxlen)
-						*C++ = ch;
-					if (ch == EOF ||
-					    (ch != 0 && ch != '\n')) {
-						/* get all of too big string */
-						while ((ch = getch()) != EOF &&
-						       ISSTR(ch))
-							;
-						ungetc(ch, stdin);
-						goto out;
-					}
-					*C = 0;
-				}
+			return strscan(file);
+		} else
+			hcnt = 0;
+	}
+	return strscan(file);
+}
 
-				if (fflg)
-					printf("%s:", file);
+int
+strscan(const char *file)
+{
+	u_char *C;
+	int ch, cnt;
 
-				if (offset_format) 
-					printf(offset_format, foff - minlen);
-
-				printf("%s", bfr);
-				
-				if (maxlen == -1)
+	for (cnt = 0, C = bfr; (ch = getch()) != EOF;) {
+		if (ISSTR(ch)) {
+			*C++ = ch;
+			if (++cnt < minlen)
+				continue;
+			if (maxlen != -1) {
+				while ((ch = getch()) != EOF &&
+				       ISSTR(ch) && cnt++ < maxlen)
+					*C++ = ch;
+				if (ch == EOF ||
+				    (ch != 0 && ch != '\n')) {
+					/* get all of too big string */
 					while ((ch = getch()) != EOF &&
 					       ISSTR(ch))
-						putchar((char)ch);
-				putchar('\n');
-			out:
-				;
+						;
+					ungetc(ch, stdin);
+					goto out;
+				}
+				*C = 0;
 			}
-			cnt = 0;
-			C = bfr;
+
+			if (fflg)
+				printf("%s:", file);
+
+			if (offset_format) 
+				printf(offset_format, foff - minlen);
+
+			printf("%s", bfr);
+
+			if (maxlen == -1)
+				while ((ch = getch()) != EOF &&
+				    ISSTR(ch))
+					putchar((char)ch);
+			putchar('\n');
+		out:
+			;
 		}
-nextfile: ;
-	} while (*argv);
-	exit(exitcode);
+		cnt = 0;
+		C = bfr;
+	}
+
+	return (0);
 }
 
 /*
@@ -256,7 +345,7 @@ getch(void)
 	return(EOF);
 }
 
-static void
+void
 usage(void)
 {
 	(void)fprintf(stderr,
