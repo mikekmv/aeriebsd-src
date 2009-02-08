@@ -1,4 +1,3 @@
-#	$NetBSD: bsd.prog.mk,v 1.55 1996/04/08 21:19:26 jtc Exp $
 #	@(#)bsd.prog.mk	5.26 (Berkeley) 6/25/91
 
 .if exists(${.CURDIR}/../Makefile.inc)
@@ -32,6 +31,8 @@ LIBCURSES?=	${DESTDIR}/usr/lib/libcurses.a
 LIBDES?=	${DESTDIR}/usr/lib/libdes.a
 LIBEDIT?=	${DESTDIR}/usr/lib/libedit.a
 LIBEVENT?=	${DESTDIR}/usr/lib/libevent.a
+LIBELF?=	${DESTDIR}/usr/lib/libelf.a
+LIBEXPAT?=	${DESTDIR}/usr/lib/libexpat.a
 LIBGCC?=	${DESTDIR}/usr/lib/libgcc.a
 LIBGSSAPI?=	${DESTDIR}/usr/lib/libgssapi.a
 LIBHDB?=	${DESTDIR}/usr/lib/libhdb.a
@@ -49,6 +50,7 @@ LIBM?=		${DESTDIR}/usr/lib/libm.a
 LIBOLDCURSES?=	${DESTDIR}/usr/lib/libocurses.a
 LIBPCAP?=	${DESTDIR}/usr/lib/libpcap.a
 LIBPERL?=	${DESTDIR}/usr/lib/libperl.a
+LIBPLOT?=	${DESTDIR}/usr/lib/libplot.a
 LIBRPCSVC?=	${DESTDIR}/usr/lib/librpcsvc.a
 LIBSECTOK?=	${DESTDIR}/usr/lib/libsectok.a
 LIBSKEY?=	${DESTDIR}/usr/lib/libskey.a
@@ -73,7 +75,6 @@ LIBARCH?=
 LIBDBM?=	${DESTDIR}/usr/lib/libdbm.a
 LIBMP?=		${DESTDIR}/usr/lib/libmp.a
 LIBPC?=		${DESTDIR}/usr/lib/libpc.a
-LIBPLOT?=	${DESTDIR}/usr/lib/libplot.a
 LIBRESOLV?=	${DESTDIR}/usr/lib/libresolv.a
 
 .if defined(PROG)
