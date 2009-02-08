@@ -1,5 +1,5 @@
-
 /*
+ * Copyright (c) 2009 Michael Shalayeff. All rights reserved.
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
@@ -29,68 +29,60 @@
  */
 
 #ifndef lint
-char copyright[] =
+static const char copyright[] =
+"Copyright (c) 2009 Michael Shalayeff. All rights reserved.\n"
 "@(#) Copyright (c) 1988 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)strip.c	5.8 (Berkeley) 11/6/91";*/
-static char rcsid[] = "$ABSD$";
+static char const rcsid[] =
+    "$ABSD: strip.c,v 1.1.1.1 2008/08/26 14:43:15 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/exec_elf.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <a.out.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <err.h>
 #include <ranlib.h>
+#include <a.out.h>
+#include <link_aout.h>
+#include <elfuncs.h>
+
 #include "byte.c"
 
-#ifdef MID_MACHINE_OVERRIDE
-#undef MID_MACHINE
-#define MID_MACHINE MID_MACHINE_OVERRIDE
-#if MID_MACHINE_OVERRIDE == MID_M68K
-#undef __LDPGSZ
-#undef ELF_TARG_DATA
-#undef ELF_TARG_MACH
-#include "m68k/exec.h"
-#elif MID_MACHINE_OVERRIDE == MID_M88K
-#undef __LDPGSZ
-#undef ELF_TARG_DATA
-#undef ELF_TARG_MACH
-#include "m88k/exec.h"
-#endif
-#endif
+union hdr {
+	struct exec aout;
+	Elf32_Ehdr elf32;
+	Elf64_Ehdr elf64;
+};
 
-typedef struct exec EXEC;
-typedef struct nlist NLIST;
-
-#define	strx	n_un.n_strx
-
-int s_stab(const char *, int, EXEC *, struct stat *, off_t *);
-int s_sym(const char *, int, EXEC *, struct stat *, off_t *);
+int s_stab(const char *, struct exec *, struct stat *, off_t *);
+int s_sym(const char *, struct exec *, struct stat *, off_t *);
 void usage(void);
 
 int xflag = 0;
-        
+int usemmap = 1;
+char *stab;		/* libelf needs it */
+
 int
 main(int argc, char *argv[])
 {
-	int fd;
-	EXEC *ep;
 	struct stat sb;
-	int (*sfcn)(const char *, int, EXEC *, struct stat *, off_t *);
-	int ch, errors;
+	union hdr eh;
+	int (*sfcn)(const char *, struct exec *, struct stat *, off_t *);
+	FILE *fp;
 	char *fn;
 	off_t newsize;
+	int ch, rv, errors;
 
 	sfcn = s_sym;
 	while ((ch = getopt(argc, argv, "dx")) != -1)
@@ -111,40 +103,67 @@ main(int argc, char *argv[])
 	errors = 0;
 #define	ERROR(x) errors |= 1; warnx("%s: %s", fn, strerror(x)); continue;
 	while ((fn = *argv++)) {
-		if ((fd = open(fn, O_RDWR)) < 0) {
+		if (!(fp = fopen(fn, "r+"))) {
 			ERROR(errno);
 		}
-        	if (fstat(fd, &sb)) {
-			(void)close(fd);
-			ERROR(errno);
+		if (fstat(fileno(fp), &sb)) {
+			rv = errno;
+			fclose(fp);
+			ERROR(rv);
 		}
-		if (sb.st_size < sizeof(EXEC)) {
-			(void)close(fd);
+		if (sb.st_size < sizeof(eh)) {
+			fclose(fp);
 			ERROR(EFTYPE);
 		}
-		if ((ep = (EXEC *)mmap(NULL, sb.st_size, PROT_READ|PROT_WRITE,
-		    MAP_SHARED, fd, (off_t)0)) == MAP_FAILED) {
-			(void)close(fd);
-			ERROR(errno);
+		if (fread(&eh, sizeof(eh), 1, fp) != 1) {
+			rv = errno;
+			fclose(fp);
+			ERROR(rv);
 		}
-		if (BAD_OBJECT(*ep)) {
-			munmap((caddr_t)ep, sb.st_size);
-			(void)close(fd);
-			ERROR(EFTYPE);
-		}
-		/* since we're dealing with an mmap there, we have to convert once
-		   for dealing with data in memory, and a second time for out
-		 */
-		fix_header_order(ep);
+
 		newsize = 0;
-		errors |= sfcn(fn, fd, ep, &sb, &newsize);
-		fix_header_order(ep);
-		munmap((caddr_t)ep, sb.st_size);
-		if (newsize  && ftruncate(fd, newsize)) {
-			warn("%s", fn);
-			errors = 1;
+		if (IS_ELF(eh.elf32) &&
+		    eh.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
+		    eh.elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
+			if (sfcn == s_stab)
+				errors |= elf32_symseed(fn, fp, &eh.elf32,
+				    &sb, &newsize);
+			else
+				errors |= elf32_strip(fn, fp, &eh.elf32,
+				    &sb, &newsize);
+		} else if (IS_ELF(eh.elf64) &&
+		    eh.elf64.e_ident[EI_CLASS] == ELFCLASS64 &&
+		    eh.elf64.e_ident[EI_VERSION] == ELF_TARG_VER) {
+			if (sfcn == s_stab)
+				errors |= elf64_symseed(fn, fp, &eh.elf64,
+				    &sb, &newsize);
+			else
+				errors |= elf64_strip(fn, fp, &eh.elf64,
+				    &sb, &newsize);
+		} else if (BAD_OBJECT(eh.aout)) {
+			fclose(fp);
+			ERROR(EFTYPE);
+		} else {
+			void *ep;
+			if ((ep = mmap(NULL, sb.st_size, PROT_READ|PROT_WRITE,
+			    MAP_SHARED, fileno(fp), (off_t)0)) == MAP_FAILED) {
+				rv = errno;
+				fclose(fp);
+				ERROR(rv);
+			}
+			errors |= (sfcn)(fn, ep, &sb, &newsize);
+			munmap(ep, sb.st_size);
 		}
-		if (close(fd)) {
+
+		/*
+		 * since we're dealing with an mmap there,
+		 * we have to convert once for dealing with
+		 * data in memory, and a second time for out
+		 */
+		if (fclose(fp)) {
+			ERROR(errno);
+		}
+		if (newsize  && truncate(fn, newsize)) {
 			ERROR(errno);
 		}
 	}
@@ -153,13 +172,15 @@ main(int argc, char *argv[])
 }
 
 int
-s_sym(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
+s_sym(const char *fn, struct exec *ep, struct stat *sp, off_t *sz)
 {
 	char *neweof;
 #if	0
 	char *mineof;
 #endif
 	int zmagic;
+
+	fix_header_order(ep);
 
 	zmagic = ep->a_data &&
 		 (N_GETMAGIC(*ep) == ZMAGIC || N_GETMAGIC(*ep) == QMAGIC);
@@ -174,6 +195,7 @@ s_sym(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
 			return 0;
 		if (sp->st_size < N_TRELOFF(*ep))
 #endif
+			fix_header_order(ep);
 			return 0;
 	}
 
@@ -211,30 +233,32 @@ s_sym(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
 	/* Truncate the file. */
 	*sz = neweof - (char *)ep;
 
+	fix_header_order(ep);
 	return 0;
 }
 
 int
-s_stab(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
+s_stab(const char *fn, struct exec *ep, struct stat *sp, off_t *sz)
 {
-	int cnt, len;
-	char *nstr, *nstrbase=0, *used=0, *p, *strbase;
-	NLIST *sym, *nsym;
-	u_long allocsize;
-	int mid;
-	NLIST *symbase;
-	unsigned int *mapping=0;
-	int error=1;
-	unsigned int nsyms;
+	char *nstr, *nstrbase = NULL, *used = NULL, *p, *strbase;
+	struct nlist *sym, *nsym, *symbase;
 	struct relocation_info *reloc_base;
-	unsigned int i, j;
+	unsigned int *mapping = NULL;
+	u_long allocsize;
+	int cnt, len, mid, nsyms, error = 1;
+	u_int i, j;
+
+	fix_header_order(ep);
 
 	/* Quit if no symbols. */
-	if (ep->a_syms == 0)
+	if (ep->a_syms == 0) {
+		fix_header_order(ep);
 		return 0;
+	}
 
 	if (N_SYMOFF(*ep) >= sp->st_size) {
 		warnx("%s: bad symbol table", fn);
+		fix_header_order(ep);
 		return 1;
 	}
 
@@ -245,7 +269,7 @@ s_stab(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
 	 * beginning of the symbol table in memory, since we're deleting
 	 * entries.
 	 */
-	sym = nsym = symbase = (NLIST *)((char *)ep + N_SYMOFF(*ep));
+	sym = nsym = symbase = (struct nlist *)((char *)ep + N_SYMOFF(*ep));
 
 	/*
 	 * Allocate space for the new string table, initialize old and
@@ -261,7 +285,7 @@ s_stab(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
 	nstr = nstrbase + sizeof(u_long);
 
 	/* okay, so we also need to keep symbol numbers for relocations. */
-	nsyms = ep->a_syms/ sizeof(NLIST);
+	nsyms = ep->a_syms/ sizeof(struct nlist);
 	used = calloc(nsyms, 1);
 	if (!used) {
 		warnx("%s", strerror(ENOMEM));
@@ -317,10 +341,10 @@ s_stab(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
 	 */
 	for (cnt = nsyms, i = 0, j = 0; cnt--; ++sym, ++i) {
 		fix_nlist_order(sym, mid);
-		if (!(sym->n_type & N_STAB) && sym->strx) {
+		if (!(sym->n_type & N_STAB) && sym->n_un.n_strx) {
 			*nsym = *sym;
-			nsym->strx = nstr - nstrbase;
-			p = strbase + sym->strx;
+			nsym->n_un.n_strx = nstr - nstrbase;
+			p = strbase + sym->n_un.n_strx;
                         if (xflag && !used[i] &&
                             (!(sym->n_type & N_EXT) ||
                              (sym->n_type & ~N_EXT) == N_FN ||
@@ -331,7 +355,7 @@ s_stab(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
                         }
 			len = strlen(p) + 1;
 			mapping[i] = j++;
-			if (N_STROFF(*ep) + sym->strx + len > sp->st_size) {
+			if (N_STROFF(*ep)+sym->n_un.n_strx+len > sp->st_size) {
 				warnx("%s: bad symbol table", fn);
 				goto end;
 			}
@@ -358,7 +382,7 @@ s_stab(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
 	}
 
 	/* Fill in new symbol table size. */
-	ep->a_syms = (nsym - symbase) * sizeof(NLIST);
+	ep->a_syms = (nsym - symbase) * sizeof(struct nlist);
 
 	/* Fill in the new size of the string table. */
 	len = nstr - nstrbase;
@@ -371,6 +395,7 @@ s_stab(const char *fn, int fd, EXEC *ep, struct stat *sp, off_t *sz)
 	bcopy(nstrbase, (void *)nsym, len);
 	error = 0;
 end:
+	fix_header_order(ep);
 	free(nstrbase);
 	free(used);
 	free(mapping);
@@ -389,4 +414,3 @@ usage(void)
 	fprintf(stderr, "usage: %s [-dx] file ...\n", __progname);
 	exit(1);
 }
-
