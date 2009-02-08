@@ -113,88 +113,69 @@ static pid_t atopid(const char *, u_int);
 /*
  * Prototypes for procfs vnode ops
  */
-int procfs_lookup(struct vnode *, struct vnode **, struct componentname *);
-int procfs_open(struct vnode *, int, struct ucred *, struct proc *);
-int procfs_close(struct vnode *, int, struct ucred *, struct proc *);
-int procfs_access(struct vnode *, int, struct ucred *, struct proc *);
-int procfs_getattr(struct vnode *, struct vattr*, struct ucred*, struct proc*);
-int procfs_setattr(struct vnode *, struct vattr*, struct ucred*, struct proc*);
-#define	procfs_ioctl	(void *)enoioctl
-#define	procfs_link	vop_generic_link
-#define	procfs_symlink	vop_generic_symlink
-int procfs_readdir(struct vnode *, struct uio *, struct ucred *, int *, int *,
-    u_long **);
-int procfs_readlink(struct vnode *, struct uio *, struct ucred *);
-int procfs_inactive(struct vnode *, struct proc *);
-int procfs_reclaim(struct vnode *, struct proc *);
-int procfs_print(struct vnode *);
-int procfs_pathconf(struct vnode *, int, register_t *);
-#define	procfs_create	(void *)eopnotsupp
-#define	procfs_mknod	(void *)eopnotsupp
-#define	procfs_read	procfs_rw
-#define	procfs_write	procfs_rw
-#define	procfs_kqfilter	(void *)eopnotsupp
-#define	procfs_revoke	(void *)eopnotsupp
-#define	procfs_fsync	(void *)eopnotsupp
-#define	procfs_remove	(void *)eopnotsupp
-#define	procfs_rename	(void *)eopnotsupp
-#define	procfs_mkdir	(void *)eopnotsupp
-#define	procfs_rmdir	(void *)eopnotsupp
-#define	procfs_abortop	vop_generic_abortop
-#define	procfs_lock	(void *)nullop
-#define	procfs_unlock	(void *)nullop
-#define	procfs_islocked	(void *)nullop
-#define	procfs_bmap	vop_generic_bmap
-#define	procfs_poll	vop_generic_poll
-#define	procfs_advlock	(void *)eopnotsupp
-#define	procfs_reallockblocks	(void *)eopnotsupp
-#define	procfs_strategy	(void *)eopnotsupp
-#define	procfs_bwrite	(void *)eopnotsupp
+int	procfs_badop(void *);
 
-pid_t atopid(const char *, u_int);
+int	procfs_lookup(void *);
+int	procfs_open(void *);
+int	procfs_close(void *);
+int	procfs_access(void *);
+int	procfs_getattr(void *);
+int	procfs_setattr(void *);
+int	procfs_ioctl(void *);
+int	procfs_link(void *);
+int	procfs_symlink(void *);
+int	procfs_readdir(void *);
+int	procfs_readlink(void *);
+int	procfs_inactive(void *);
+int	procfs_reclaim(void *);
+int	procfs_bmap(void *);
+int	procfs_print(void *);
+int	procfs_pathconf(void *);
+
+static pid_t atopid(const char *, u_int);
 
 /*
  * procfs vnode operations.
  */
-const struct vnodeops procfs_vnodeops = {
-	procfs_lookup,
-	procfs_create,
-	procfs_mknod,
-	procfs_open,
-	procfs_close,
-	procfs_access,
-	procfs_getattr,
-	procfs_setattr,
-	procfs_read,
-	procfs_write,
-	procfs_ioctl,
-	procfs_poll,
-	procfs_kqfilter,
-	procfs_revoke,
-	procfs_fsync,
-	procfs_remove,
-	procfs_link,
-	procfs_rename,
-	procfs_mkdir,
-	procfs_rmdir,
-	procfs_symlink,
-	procfs_readdir,
-	procfs_readlink,
-	procfs_abortop,
-	procfs_inactive,
-	procfs_reclaim,
-	procfs_lock,
-	procfs_unlock,
-	procfs_islocked,
-	procfs_bmap,
-	procfs_print,
-	procfs_pathconf,
-	procfs_advlock,
-	procfs_reallockblocks,
-	procfs_strategy,
-	procfs_bwrite
+int (**procfs_vnodeop_p)(void *);
+struct vnodeopv_entry_desc procfs_vnodeop_entries[] = {
+	{ &vop_default_desc, eopnotsupp },
+	{ &vop_lookup_desc, procfs_lookup },		/* lookup */
+	{ &vop_create_desc, procfs_badop },		/* create */
+	{ &vop_mknod_desc, procfs_badop },		/* mknod */
+	{ &vop_open_desc, procfs_open },		/* open */
+	{ &vop_close_desc, procfs_close },		/* close */
+	{ &vop_access_desc, procfs_access },		/* access */
+	{ &vop_getattr_desc, procfs_getattr },		/* getattr */
+	{ &vop_setattr_desc, procfs_setattr },		/* setattr */
+	{ &vop_read_desc, procfs_rw },			/* read */
+	{ &vop_write_desc, procfs_rw },			/* write */
+	{ &vop_ioctl_desc, procfs_ioctl },		/* ioctl */
+	{ &vop_poll_desc, procfs_poll },		/* poll */
+	{ &vop_fsync_desc, procfs_badop},		/* fsync */
+	{ &vop_remove_desc, procfs_badop },		/* remove */
+	{ &vop_link_desc, procfs_link },		/* link */
+	{ &vop_rename_desc, procfs_badop },		/* rename */
+	{ &vop_mkdir_desc, procfs_badop },		/* mkdir */
+	{ &vop_rmdir_desc, procfs_badop },		/* rmdir */
+	{ &vop_symlink_desc, procfs_symlink },		/* symlink */
+	{ &vop_readdir_desc, procfs_readdir },		/* readdir */
+	{ &vop_readlink_desc, procfs_readlink },	/* readlink */
+	{ &vop_abortop_desc, vop_generic_abortop },	/* abortop */
+	{ &vop_inactive_desc, procfs_inactive },	/* inactive */
+	{ &vop_reclaim_desc, procfs_reclaim },		/* reclaim */
+	{ &vop_lock_desc, nullop },			/* lock */
+	{ &vop_unlock_desc, nullop },			/* unlock */
+	{ &vop_bmap_desc, procfs_bmap },		/* bmap */
+	{ &vop_strategy_desc, procfs_badop },		/* strategy */
+	{ &vop_print_desc, procfs_print },		/* print */
+	{ &vop_islocked_desc, nullop },			/* islocked */
+	{ &vop_pathconf_desc, procfs_pathconf },	/* pathconf */
+	{ &vop_advlock_desc, procfs_badop },		/* advlock */
+	{ NULL, NULL }
 };
-
+struct vnodeopv_desc procfs_vnodeop_opv_desc =
+	{ &procfs_vnodeop_p, procfs_vnodeop_entries };
 /*
  * set things up for doing i/o on
  * the pfsnode (vp).  (vp) is locked
@@ -207,10 +188,11 @@ const struct vnodeops procfs_vnodeops = {
  * memory images.
  */
 int
-procfs_open(struct vnode *vp, int mode, struct ucred *cred, struct proc *p)
+procfs_open(void *v)
 {
-	struct pfsnode *pfs = VTOPFS(vp);
-	struct proc *p1 = p;		/* tracer */
+	struct vop_open_args *ap = v;
+	struct pfsnode *pfs = VTOPFS(ap->a_vp);
+	struct proc *p1 = ap->a_p;	/* tracer */
 	struct proc *p2;		/* traced */
 	int error;
 
@@ -219,15 +201,15 @@ procfs_open(struct vnode *vp, int mode, struct ucred *cred, struct proc *p)
 
 	switch (pfs->pfs_type) {
 	case Pmem:
-		if (((pfs->pfs_flags & FWRITE) && (mode & O_EXCL)) ||
-		    ((pfs->pfs_flags & O_EXCL) && (mode & FWRITE)))
+		if (((pfs->pfs_flags & FWRITE) && (ap->a_mode & O_EXCL)) ||
+		    ((pfs->pfs_flags & O_EXCL) && (ap->a_mode & FWRITE)))
 			return (EBUSY);
 
 		if ((error = process_checkioperm(p1, p2)) != 0)
 			return (error);
 
-		if (mode & FWRITE)
-			pfs->pfs_flags = mode & (FWRITE|O_EXCL);
+		if (ap->a_mode & FWRITE)
+			pfs->pfs_flags = ap->a_mode & (FWRITE|O_EXCL);
 
 		return (0);
 
@@ -246,13 +228,14 @@ procfs_open(struct vnode *vp, int mode, struct ucred *cred, struct proc *p)
  * any exclusive open flag (see _open above).
  */
 int
-procfs_close(struct vnode *vp, int fflag, struct ucred *cred, struct proc *p)
+procfs_close(void *v)
 {
-	struct pfsnode *pfs = VTOPFS(vp);
+	struct vop_close_args *ap = v;
+	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 
 	switch (pfs->pfs_type) {
 	case Pmem:
-		if ((fflag & FWRITE) && (pfs->pfs_flags & O_EXCL))
+		if ((ap->a_fflag & FWRITE) && (pfs->pfs_flags & O_EXCL))
 			pfs->pfs_flags &= ~(FWRITE|O_EXCL);
 		break;
 	case Pctl:
@@ -276,6 +259,40 @@ procfs_close(struct vnode *vp, int fflag, struct ucred *cred, struct proc *p)
 }
 
 /*
+ * do an ioctl operation on pfsnode (vp).
+ * (vp) is not locked on entry or exit.
+ */
+/*ARGSUSED*/
+int
+procfs_ioctl(void *v)
+{
+
+	return (ENOTTY);
+}
+
+/*
+ * do block mapping for pfsnode (vp).
+ * since we don't use the buffer cache
+ * for procfs this function should never
+ * be called.  in any case, it's not clear
+ * what part of the kernel ever makes use
+ * of this function.  for sanity, this is the
+ * usual no-op bmap, although returning
+ * (EIO) would be a reasonable alternative.
+ */
+int
+procfs_bmap(void *v)
+{
+	struct vop_bmap_args *ap = v;
+
+	if (ap->a_vpp != NULL)
+		*ap->a_vpp = ap->a_vp;
+	if (ap->a_bnp != NULL)
+		*ap->a_bnp = ap->a_bn;
+	return (0);
+}
+
+/*
  * _inactive is called when the pfsnode
  * is vrele'd and the reference count goes
  * to zero.  (vp) will be on the vnode free
@@ -292,8 +309,10 @@ procfs_close(struct vnode *vp, int fflag, struct ucred *cred, struct proc *p)
  * (vp) is not locked on entry or exit.
  */
 int
-procfs_inactive(struct vnode *vp, struct proc *p)
+procfs_inactive(void *v)
 {
+	struct vop_inactive_args *ap = v;
+	struct vnode *vp = ap->a_vp;
 	struct pfsnode *pfs = VTOPFS(vp);
 
 	if (pfind(pfs->pfs_pid) == NULL && !(vp->v_flag & VXLOCK))
@@ -310,35 +329,39 @@ procfs_inactive(struct vnode *vp, struct proc *p)
  * from any private lists.
  */
 int
-procfs_reclaim(struct vnode *vp, struct proc *p)
+procfs_reclaim(void *v)
 {
-	return (procfs_freevp(vp));
+	struct vop_reclaim_args *ap = v;
+
+	return (procfs_freevp(ap->a_vp));
 }
 
 /*
  * Return POSIX pathconf information applicable to special devices.
  */
 int
-procfs_pathconf(struct vnode *vp, int name, register_t *retval)
+procfs_pathconf(void *v)
 {
-	switch (name) {
+	struct vop_pathconf_args *ap = v;
+
+	switch (ap->a_name) {
 	case _PC_LINK_MAX:
-		*retval = LINK_MAX;
+		*ap->a_retval = LINK_MAX;
 		return (0);
 	case _PC_MAX_CANON:
-		*retval = MAX_CANON;
+		*ap->a_retval = MAX_CANON;
 		return (0);
 	case _PC_MAX_INPUT:
-		*retval = MAX_INPUT;
+		*ap->a_retval = MAX_INPUT;
 		return (0);
 	case _PC_PIPE_BUF:
-		*retval = PIPE_BUF;
+		*ap->a_retval = PIPE_BUF;
 		return (0);
 	case _PC_CHOWN_RESTRICTED:
-		*retval = 1;
+		*ap->a_retval = 1;
 		return (0);
 	case _PC_VDISABLE:
-		*retval = _POSIX_VDISABLE;
+		*ap->a_retval = _POSIX_VDISABLE;
 		return (0);
 	default:
 		return (EINVAL);
@@ -352,13 +375,46 @@ procfs_pathconf(struct vnode *vp, int name, register_t *retval)
  * of (vp).
  */
 int
-procfs_print(struct vnode *vp)
+procfs_print(void *v)
 {
-	struct pfsnode *pfs = VTOPFS(vp);
+	struct vop_print_args *ap = v;
+	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 
 	printf("tag VT_PROCFS, type %d, pid %d, mode %x, flags %lx\n",
 	    pfs->pfs_type, pfs->pfs_pid, pfs->pfs_mode, pfs->pfs_flags);
 	return 0;
+}
+
+int
+procfs_link(void *v)
+{
+	struct vop_link_args *ap = v;
+
+	VOP_ABORTOP(ap->a_dvp, ap->a_cnp);
+	vput(ap->a_dvp);
+	return (EROFS);
+}
+
+int
+procfs_symlink(void *v)
+{
+	struct vop_symlink_args *ap = v;
+
+	VOP_ABORTOP(ap->a_dvp, ap->a_cnp);
+	vput(ap->a_dvp);
+	return (EROFS);
+}
+
+
+/*
+ * generic entry point for unsupported operations
+ */
+/*ARGSUSED*/
+int
+procfs_badop(void *v)
+{
+
+	return (EIO);
 }
 
 /*
@@ -371,10 +427,11 @@ procfs_print(struct vnode *vp)
  * this is relatively minimal for procfs.
  */
 int
-procfs_getattr(struct vnode *vp, struct vattr *vap, struct ucred *cred,
-    struct proc *p)
+procfs_getattr(void *v)
 {
-	struct pfsnode *pfs = VTOPFS(vp);
+	struct vop_getattr_args *ap = v;
+	struct pfsnode *pfs = VTOPFS(ap->a_vp);
+	struct vattr *vap = ap->a_vap;
 	struct proc *procp;
 	int error;
 
@@ -399,7 +456,7 @@ procfs_getattr(struct vnode *vp, struct vattr *vap, struct ucred *cred,
 	VATTR_NULL(vap);
 
 	/* next do all the common fields */
-	vap->va_type = vp->v_type;
+	vap->va_type = ap->a_vp->v_type;
 	vap->va_mode = pfs->pfs_mode;
 	vap->va_fileid = pfs->pfs_fileno;
 	vap->va_flags = 0;
@@ -551,8 +608,7 @@ procfs_getattr(struct vnode *vp, struct vattr *vap, struct ucred *cred,
 
 /*ARGSUSED*/
 int
-procfs_setattr(struct vnode *vp, struct vattr *vap, struct ucred *cred,
-    struct proc *p)
+procfs_setattr(void *v)
 {
 	/*
 	 * just fake out attribute setting
@@ -576,15 +632,17 @@ procfs_setattr(struct vnode *vp, struct vattr *vap, struct ucred *cred,
  * that the operation really does make sense.
  */
 int
-procfs_access(struct vnode *vp, int mode, struct ucred *cred, struct proc *p)
+procfs_access(void *v)
 {
+	struct vop_access_args *ap = v;
 	struct vattr va;
 	int error;
 
-	if ((error = VOP_GETATTR(vp, &va, cred, p)) != 0)
+	if ((error = VOP_GETATTR(ap->a_vp, &va, ap->a_cred, ap->a_p)) != 0)
 		return (error);
 
-	return vaccess(vp->v_type, va.va_mode, va.va_uid, va.va_gid,mode,cred);
+	return (vaccess(ap->a_vp->v_type, va.va_mode, va.va_uid, va.va_gid,
+	    ap->a_mode, ap->a_cred));
 }
 
 /*
@@ -597,8 +655,12 @@ procfs_access(struct vnode *vp, int mode, struct ucred *cred, struct proc *p)
  * read and inwardly digest ufs_lookup().
  */
 int
-procfs_lookup(struct vnode *dvp, struct vnode **vpp, struct componentname *cnp)
+procfs_lookup(void *v)
 {
+	struct vop_lookup_args *ap = v;
+	struct componentname *cnp = ap->a_cnp;
+	struct vnode **vpp = ap->a_vpp;
+	struct vnode *dvp = ap->a_dvp;
 	char *pname = cnp->cn_nameptr;
 	struct proc *curp = curproc;
 	const struct proc_target *pt;
@@ -763,12 +825,18 @@ procfs_validfile_linux(struct proc *p, struct mount *mp)
  * this should just be done through read()
  */
 int
-procfs_readdir(struct vnode *vp, struct uio *uio, struct ucred *cred,
-    int *eofflag, int *ncookies, u_long **cookies)
+procfs_readdir(void *v)
 {
+	struct vop_readdir_args *ap = v;
+	struct uio *uio = ap->a_uio;
 	struct dirent d;
-	struct pfsnode *pfs = VTOPFS(vp);
-	int i, error;
+	struct pfsnode *pfs;
+	struct vnode *vp;
+	int i;
+	int error;
+
+	vp = ap->a_vp;
+	pfs = VTOPFS(vp);
 
 	if (uio->uio_resid < UIO_MX)
 		return (EINVAL);
@@ -787,8 +855,8 @@ procfs_readdir(struct vnode *vp, struct uio *uio, struct ucred *cred,
 	 * from the procent[] table (top of this file).
 	 */
 	case Pproc: {
-		const struct proc_target *pt;
 		struct proc *p;
+		const struct proc_target *pt;
 
 		p = pfind(pfs->pfs_pid);
 		if (p == NULL)
@@ -925,21 +993,22 @@ procfs_readdir(struct vnode *vp, struct uio *uio, struct ucred *cred,
  * readlink reads the link of `curproc'
  */
 int
-procfs_readlink(struct vnode *vp, struct uio *uio, struct ucred *cred)
+procfs_readlink(void *v)
 {
+	struct vop_readlink_args *ap = v;
 	char buf[16];		/* should be enough */
 	int len;
 
-	if (VTOPFS(vp)->pfs_fileno == PROCFS_FILENO(0, Pcurproc))
+	if (VTOPFS(ap->a_vp)->pfs_fileno == PROCFS_FILENO(0, Pcurproc))
 		len = snprintf(buf, sizeof buf, "%ld", (long)curproc->p_pid);
-	else if (VTOPFS(vp)->pfs_fileno == PROCFS_FILENO(0, Pself))
+	else if (VTOPFS(ap->a_vp)->pfs_fileno == PROCFS_FILENO(0, Pself))
 		len = strlcpy(buf, "curproc", sizeof buf);
 	else
 		return (EINVAL);
 	if (len == -1 || len >= sizeof buf)
 		return (EINVAL);
 
-	return (uiomove(buf, len, uio));
+	return (uiomove(buf, len, ap->a_uio));
 }
 
 /*
@@ -960,4 +1029,11 @@ atopid(const char *b, u_int len)
 	}
 
 	return (p);
+}
+int
+procfs_poll(void *v)
+{
+	struct vop_poll_args *ap = v;
+
+	return (ap->a_events & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM));
 }
