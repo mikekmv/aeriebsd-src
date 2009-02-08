@@ -221,6 +221,7 @@ _C_LABEL(proc0paddr):	.long	0
 _C_LABEL(PTDpaddr):	.long	0	# paddr of PTD, for libkvm
 _C_LABEL(PTDsize):	.long	NBPG	# size of PTD, for libkvm
 
+	.bss
 	.space 512
 tmpstk:
 
