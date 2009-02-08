@@ -1,5 +1,5 @@
-
 /*
+ * Copyright (c) 2003-2009 Michael Shalayeff
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -33,6 +33,7 @@
 
 #ifndef lint
 static const char copyright[] =
+"Copyright (c) 2003-2009 Michael Shalayeff. All rights reserved.\n"
 "@(#) Copyright (c) 1989, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
@@ -40,7 +41,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #endif
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: nm.c,v 1.1.1.1 2008/08/26 14:43:04 root Exp $";
 
 #include <sys/param.h>
 #include <sys/mman.h>
@@ -61,7 +62,7 @@ static const char rcsid[] = "$ABSD$";
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include "elfuncs.h"
+#include <elfuncs.h>
 #include "util.h"
 
 /* XXX get shared code to handle a.out byte-order swaps */
@@ -628,9 +629,11 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 	    head->elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
 		void *shdr;
 
+		elf32_fix_header(&head->elf32);
 		if (!(shdr = elf32_load_shdrs(name, fp, foff, &head->elf32)))
 			return (1);
 
+		elf32_fix_shdrs(&head->elf32, shdr);
 		i = issize?
 		    elf32_size(&head->elf32, shdr, &text, &data, &bss) :
 		    elf32_symload(name, fp, foff, &head->elf32, shdr,
@@ -644,9 +647,11 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 	    head->elf64.e_ident[EI_VERSION] == ELF_TARG_VER) {
 		void *shdr;
 
+		elf64_fix_header(&head->elf64);
 		if (!(shdr = elf64_load_shdrs(name, fp, foff, &head->elf64)))
 			return (1);
 
+		elf64_fix_shdrs(&head->elf64, shdr);
 		i = issize?
 		    elf64_size(&head->elf64, shdr, &text, &data, &bss) :
 		    elf64_symload(name, fp, foff, &head->elf64, shdr,
