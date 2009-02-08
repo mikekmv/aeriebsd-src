@@ -26,7 +26,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.1.1.1 2008/08/26 14:43:04 root Exp $";
+    "$ABSD: elf.c,v 1.1 2009/02/08 11:11:21 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -203,7 +203,6 @@ elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head)
 		return (NULL);
 	}
 
-	elf_fix_shdrs(head, shdr);
 	return (shdr);
 }
 
@@ -211,8 +210,6 @@ int
 elf_save_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head,
     Elf_Shdr *shdr)
 {
-	elf_fix_shdrs(head, shdr);
-
 	if (fseeko(fp, foff + head->e_shoff, SEEK_SET)) {
 		warn("%s: fseeko", name);
 		free(shdr);
@@ -580,7 +577,7 @@ elf_shstrload(const char *name, FILE *fp, off_t foff, Elf_Ehdr *eh,
 
 	shstrsize = shdr[eh->e_shstrndx].sh_size;
 	if (shstrsize == 0) {
-		warnx("%s: no name list", name);
+		warnx("%s: no section name list", name);
 		return (NULL);
 	}
 
@@ -689,6 +686,7 @@ elf_strip(const char *name, FILE *fp, Elf_Ehdr *eh, struct stat *sb, off_t *nszp
 	if (!rv && sn) {
 		shdr[sn].sh_type = SHT_NULL;
 		shdr[sn+1].sh_type = SHT_NULL;
+		elf_fix_shdrs(head, shdr);
 		if (elf_save_shdrs(name, fp, 0, eh, shdr))
 			rv = 1;
 		else
