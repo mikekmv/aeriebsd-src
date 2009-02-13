@@ -26,7 +26,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.4 2009/02/13 14:02:29 mickey Exp $";
+    "$ABSD: elf.c,v 1.5 2009/02/13 14:05:38 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -312,7 +312,7 @@ elf_fix_sym(const Elf_Ehdr *eh, Elf_Sym *sym)
 }
 
 int
-elf_shn2type(Elf_Ehdr *eh, u_int shn, const char *sn)
+elf_shn2type(const Elf_Ehdr *eh, u_int shn, const char *sn)
 {
 	switch (shn) {
 	case SHN_MIPS_SUNDEFINED:
@@ -379,7 +379,8 @@ elf_shn2type(Elf_Ehdr *eh, u_int shn, const char *sn)
  * XXX this task is done as well in libc and kvm_mkdb.
  */
 int
-elf2nlist(Elf_Sym *sym, Elf_Ehdr *eh, Elf_Shdr *shdr, char *shstr, struct nlist *np)
+elf2nlist(Elf_Sym *sym, const Elf_Ehdr *eh, const Elf_Shdr *shdr,
+    char *shstr, struct nlist *np)
 {
 	u_char stt;
 	const char *sn;
@@ -485,8 +486,8 @@ elf_size(const Elf_Ehdr *head, const Elf_Shdr *shdr,
 }
 
 int
-elf_symloadx(const char *name, FILE *fp, off_t foff, Elf_Ehdr *eh,
-    Elf_Shdr *shdr, char *shstr, struct nlist **pnames,
+elf_symloadx(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
+    const Elf_Shdr *shdr, char *shstr, struct nlist **pnames,
     struct nlist ***psnames, size_t *pstabsize, int *pnrawnames,
     const char *strtab, const char *symtab)
 {
@@ -567,7 +568,7 @@ elf_symloadx(const char *name, FILE *fp, off_t foff, Elf_Ehdr *eh,
 }
 
 char *
-elf_shstrload(const char *name, FILE *fp, off_t foff, Elf_Ehdr *eh,
+elf_shstrload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Shdr *shdr)
 {
 	long shstrsize;
@@ -600,8 +601,8 @@ elf_shstrload(const char *name, FILE *fp, off_t foff, Elf_Ehdr *eh,
 }
 
 int
-elf_symload(const char *name, FILE *fp, off_t foff, Elf_Ehdr *eh,
-    Elf_Shdr *shdr, struct nlist **pnames, struct nlist ***psnames,
+elf_symload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
+    const Elf_Shdr *shdr, struct nlist **pnames, struct nlist ***psnames,
     size_t *pstabsize, int *pnrawnames)
 {
 	char *shstr;
@@ -630,7 +631,8 @@ elf_symload(const char *name, FILE *fp, off_t foff, Elf_Ehdr *eh,
 }
 
 int
-elf_strip(const char *name, FILE *fp, Elf_Ehdr *eh, struct stat *sb, off_t *nszp)
+elf_strip(const char *name, FILE *fp, const Elf_Ehdr *eh,
+    struct stat *sb, off_t *nszp)
 {
 	Elf_Shdr *shdr, *sp;
 	char *shstr;
@@ -638,7 +640,6 @@ elf_strip(const char *name, FILE *fp, Elf_Ehdr *eh, struct stat *sb, off_t *nszp
 	off_t off;
 	int i, sn, rv = 0;
 
-	elf_fix_header(eh);
 	if (!(shdr = elf_load_shdrs(name, fp, 0, eh)))
 		return 1;
 
@@ -697,7 +698,8 @@ elf_strip(const char *name, FILE *fp, Elf_Ehdr *eh, struct stat *sb, off_t *nszp
 }
 
 int
-elf_symseed(const char *name, FILE *fp, Elf_Ehdr *eh, struct stat *sb, off_t *nszp)
+elf_symseed(const char *name, FILE *fp, const Elf_Ehdr *eh,
+    struct stat *sb, off_t *nszp, int strip)
 {
 
 	return (0);

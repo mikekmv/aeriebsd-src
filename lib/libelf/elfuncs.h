@@ -24,6 +24,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define	ELFLIB_STRIPX	0x01
+#define	ELFLIB_STRIPD	0x02
+
 extern char *stab;
 
 int	elf32_fix_header(Elf32_Ehdr *eh);
@@ -36,15 +39,18 @@ int	elf32_fix_phdrs(const Elf32_Ehdr *eh, Elf32_Phdr *phdr);
 int	elf32_fix_sym(const Elf32_Ehdr *eh, Elf32_Sym *sym);
 int	elf32_size(const Elf32_Ehdr *, const Elf32_Shdr *,
 	    u_long *, u_long *, u_long *);
-char	*elf32_shstrload(const char *, FILE *, off_t, Elf32_Ehdr *,
+char	*elf32_shstrload(const char *, FILE *, off_t, const Elf32_Ehdr *,
 	    const Elf32_Shdr *shdr);
-int	elf32_symloadx(const char *, FILE *, off_t, Elf32_Ehdr *, Elf32_Shdr *,
-	    char *, struct nlist **, struct nlist ***, size_t *, int *,
-	    const char *, const char *);
-int	elf32_symload(const char *, FILE *, off_t, Elf32_Ehdr *, Elf32_Shdr *,
-	    struct nlist **, struct nlist ***, size_t *, int *);
-int	elf32_strip(const char *, FILE *, Elf32_Ehdr *, struct stat *, off_t *);
-int	elf32_symseed(const char *, FILE *, Elf32_Ehdr *, struct stat *, off_t *);
+int	elf32_symloadx(const char *, FILE *, off_t, const Elf32_Ehdr *,
+	    const Elf32_Shdr *, char *, struct nlist **, struct nlist ***,
+	    size_t *, int *, const char *, const char *);
+int	elf32_symload(const char *, FILE *, off_t, const Elf32_Ehdr *,
+	    const Elf32_Shdr *, struct nlist **, struct nlist ***,
+	    size_t *, int *);
+int	elf32_strip(const char *, FILE *, const Elf32_Ehdr *,
+	    struct stat *, off_t *);
+int	elf32_symseed(const char *, FILE *, const Elf32_Ehdr *,
+	    struct stat *, off_t *, int);
 
 int	elf64_fix_header(Elf64_Ehdr *eh);
 Elf64_Shdr*elf64_load_shdrs(const char *, FILE *, off_t, const Elf64_Ehdr *);
@@ -56,12 +62,15 @@ int	elf64_fix_phdrs(const Elf64_Ehdr *eh, Elf64_Phdr *phdr);
 int	elf64_fix_sym(const Elf64_Ehdr *eh, Elf64_Sym *sym);
 int	elf64_size(const Elf64_Ehdr *, const Elf64_Shdr *,
 	    u_long *, u_long *, u_long *);
-char	*elf64_shstrload(const char *, FILE *, off_t, Elf64_Ehdr *,
+char	*elf64_shstrload(const char *, FILE *, off_t, const Elf64_Ehdr *,
 	    const Elf64_Shdr *shdr);
-int	elf64_symloadx(const char *, FILE *, off_t, Elf64_Ehdr *, Elf64_Shdr *,
-	    char *, struct nlist **, struct nlist ***, size_t *, int *,
-	    const char *, const char *);
-int	elf64_symload(const char *, FILE *, off_t, Elf64_Ehdr *, Elf64_Shdr *,
-	    struct nlist **, struct nlist ***, size_t *, int *);
-int	elf64_strip(const char *, FILE *, Elf64_Ehdr *, struct stat *, off_t *);
-int	elf64_symseed(const char *, FILE *, Elf64_Ehdr *, struct stat *, off_t *);
+int	elf64_symloadx(const char *, FILE *, off_t, const Elf64_Ehdr *,
+	    const Elf64_Shdr *, char *, struct nlist **, struct nlist ***,
+	    size_t *, int *, const char *, const char *);
+int	elf64_symload(const char *, FILE *, off_t, const Elf64_Ehdr *,
+	    const Elf64_Shdr *, struct nlist **, struct nlist ***,
+	    size_t *, int *);
+int	elf64_strip(const char *, FILE *, const Elf64_Ehdr *,
+	    struct stat *, off_t *);
+int	elf64_symseed(const char *, FILE *, const Elf64_Ehdr *,
+	    struct stat *, off_t *, int);
