@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -37,7 +36,7 @@
 #if 0
 static char sccsid[] = "@(#)tape.c	8.6 (Berkeley) 9/13/94";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: tape.c,v 1.1.1.1 2008/08/26 14:40:28 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -142,7 +141,8 @@ setinput(char *source)
 	if (bflag)
 		newtapebuf(ntrec);
 	else
-		newtapebuf(NTREC > HIGHDENSITYTREC ? NTREC : HIGHDENSITYTREC);
+		/* Max out buffer size, let findtapeblksize() set ntrec. */
+		newtapebuf(MAXBSIZE / TP_BSIZE);
 	terminal = stdin;
 
 #ifdef RRESTORE
