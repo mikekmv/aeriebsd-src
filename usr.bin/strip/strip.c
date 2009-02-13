@@ -38,7 +38,7 @@ static const char copyright[] =
 #ifndef lint
 /*static char sccsid[] = "from: @(#)strip.c	5.8 (Berkeley) 11/6/91";*/
 static char const rcsid[] =
-    "$ABSD: strip.c,v 1.1.1.1 2008/08/26 14:43:15 root Exp $";
+    "$ABSD: strip.c,v 1.2 2009/02/08 12:14:32 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -88,9 +88,10 @@ main(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "dx")) != -1)
 		switch(ch) {
                 case 'x':
-                        xflag = 1;
+                        xflag = ELFLIB_STRIPX;
                         /*FALLTHROUGH*/
 		case 'd':
+                        xflag |= ELFLIB_STRIPD;
 			sfcn = s_stab;
 			break;
 		case '?':
@@ -125,18 +126,20 @@ main(int argc, char *argv[])
 		if (IS_ELF(eh.elf32) &&
 		    eh.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
 		    eh.elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
+			elf32_fix_header(&eh.elf32);
 			if (sfcn == s_stab)
 				errors |= elf32_symseed(fn, fp, &eh.elf32,
-				    &sb, &newsize);
+				    &sb, &newsize, xflag);
 			else
 				errors |= elf32_strip(fn, fp, &eh.elf32,
 				    &sb, &newsize);
 		} else if (IS_ELF(eh.elf64) &&
 		    eh.elf64.e_ident[EI_CLASS] == ELFCLASS64 &&
 		    eh.elf64.e_ident[EI_VERSION] == ELF_TARG_VER) {
+			elf64_fix_header(&eh.elf64);
 			if (sfcn == s_stab)
 				errors |= elf64_symseed(fn, fp, &eh.elf64,
-				    &sb, &newsize);
+				    &sb, &newsize, xflag);
 			else
 				errors |= elf64_strip(fn, fp, &eh.elf64,
 				    &sb, &newsize);
