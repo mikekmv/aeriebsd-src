@@ -124,7 +124,7 @@ extern register_t kpsw;
  */
 
 #define	HPPA_PGALIAS	0x00100000
-#define	HPPA_PGAMASK	0xffe00000
+#define	HPPA_PGAMASK	0xfff00000
 #define	HPPA_PGAOFF	0x000fffff
 
 #define	HPPA_IOBEGIN    0xf0000000
