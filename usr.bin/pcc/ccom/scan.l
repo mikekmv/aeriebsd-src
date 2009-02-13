@@ -1,6 +1,4 @@
 %{
-/*	$Id: scan.l,v 1.2 2009/02/13 15:24:59 mickey Exp $	*/
-
 /*
  * Copyright (c) 2002 Anders Magnusson. All rights reserved.
  *

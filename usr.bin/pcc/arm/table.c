@@ -1,4 +1,3 @@
-/*	$Id: table.c,v 1.2 2009/02/13 15:24:58 mickey Exp $	*/
 /*-
  * Copyright (c) 2007 Gregory McGarry <g.mcgarry@ieee.org>
  *

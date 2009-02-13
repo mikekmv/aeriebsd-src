@@ -1,4 +1,3 @@
-/*      $Id: match.c,v 1.2 2009/02/13 15:25:01 mickey Exp $   */
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -25,7 +24,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *

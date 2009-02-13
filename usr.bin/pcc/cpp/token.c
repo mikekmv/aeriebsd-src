@@ -1,5 +1,3 @@
-/*	$Id: token.c,v 1.1 2009/02/13 15:25:00 mickey Exp $	*/
-
 /*
  * Copyright (c) 2004 Anders Magnusson. All rights reserved.
  *

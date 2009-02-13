@@ -1,5 +1,3 @@
-/*	$Id: cpy.y,v 1.2 2009/02/13 15:24:59 mickey Exp $	*/
-
 /*
  * Copyright (c) 2004 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.

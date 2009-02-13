@@ -1,5 +1,3 @@
-/*	$Id: init.c,v 1.2 2009/02/13 15:24:59 mickey Exp $	*/
-
 /*
  * Copyright (c) 2004, 2007 Anders Magnusson (ragge@ludd.ltu.se).
  * All rights reserved.
