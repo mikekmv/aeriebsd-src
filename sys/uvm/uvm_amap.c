@@ -396,6 +396,11 @@ amap_extend(struct vm_map_entry *entry, vsize_t addsize)
 		if (newover != NULL) {
 			free(newover, M_UVMAMAP);
 		}
+#ifdef UVM_AMAP_PPREF
+		if (newppref != NULL) {
+			free(newppref, M_UVMAMAP);
+		}
+#endif
 		return (ENOMEM);
 	}
 	KASSERT(amap->am_maxslot < slotneed);
