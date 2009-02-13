@@ -55,7 +55,7 @@ extern struct pmap kernel_pmap_store;
 
 /*
  * according to the parisc manual aliased va's should be
- * different by high 12 bits only.
+ * different by high 40 bits only.
  */
 #define	PMAP_PREFER(o,h)	do {					\
 	vaddr_t pmap_prefer_hint;					\

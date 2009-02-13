@@ -58,7 +58,7 @@
 #define	STACKGAP_RANDOM	256*1024
 
 #ifndef USRIOSIZE
-#define	USRIOSIZE	((2*HPPA_PGALIAS)/PAGE_SIZE)	/* 2mb */
+#define	USRIOSIZE	((2*HPPA_PGALIAS)/PAGE_SIZE)	/* 32mb */
 #endif
 
 /*
