@@ -123,9 +123,9 @@ extern register_t kpsw;
  * Exported definitions unique to hp700/PA-RISC cpu support.
  */
 
-#define	HPPA_PGALIAS	0x00400000
-#define	HPPA_PGAMASK	0xffc00000
-#define	HPPA_PGAOFF	0x003fffff
+#define	HPPA_PGALIAS	0x00100000
+#define	HPPA_PGAMASK	0xffe00000
+#define	HPPA_PGAOFF	0x000fffff
 
 #define	HPPA_IOBEGIN    0xf0000000
 #define	HPPA_IOLEN      0x10000000
