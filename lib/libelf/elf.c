@@ -26,7 +26,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.3 2009/02/13 13:57:39 mickey Exp $";
+    "$ABSD: elf.c,v 1.4 2009/02/13 14:02:29 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -462,7 +462,7 @@ elf2nlist(Elf_Sym *sym, Elf_Ehdr *eh, Elf_Shdr *shdr, char *shstr, struct nlist 
 }
 
 int
-elf_size(const Elf_Ehdr *head, Elf_Shdr *shdr,
+elf_size(const Elf_Ehdr *head, const Elf_Shdr *shdr,
     u_long *ptext, u_long *pdata, u_long *pbss)
 {
 	int i;
