@@ -1,3 +1,4 @@
+/*	$Id: table.c,v 1.2 2009/02/13 15:25:03 mickey Exp $	*/
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *

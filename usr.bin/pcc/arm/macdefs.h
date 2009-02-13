@@ -1,3 +1,4 @@
+/*	$Id: macdefs.h,v 1.2 2009/02/13 15:24:58 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -84,7 +85,6 @@
 #define	MAX_ULONGLONG	0xffffffffffffffffULL
 
 #define	BOOL_TYPE	INT	/* what used to store _Bool */
-#define	WCHAR_TYPE	INT	/* what used to store wchar_t */
 
 /*
  * Use large-enough types.
@@ -126,12 +126,18 @@ typedef long long OFFSZ;
 #define R8	8
 #define R9	9
 #define R10	10
+#define R11	11
+#define R12	12
+#define	R13	13
+#define R14	14
+#define R15	15
 
-#define FP	11
-#define IP	12
-#define SP	13
-#define LR	14
-#define PC	15
+#define SL	R10
+#define FP	R11
+#define IP	R12
+#define SP	R13
+#define LR	R14
+#define PC	R15
 
 #define R0R1	16
 #define R1R2	17

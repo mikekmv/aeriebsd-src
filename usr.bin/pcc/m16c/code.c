@@ -1,3 +1,4 @@
+/*	$Id: code.c,v 1.2 2009/02/13 15:25:01 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -47,16 +48,13 @@ defalign(int n)
 }
 
 /*
- * define the current location as the name p->sname
+ * define the current location as the name p->soname
  */
 void
 defnam(struct symtab *p)
 {
-	char *c = p->sname;
+	char *c = p->soname;
 
-#ifdef GCC_COMPAT
-	c = gcc_findname(p);
-#endif
 	if (p->sclass == EXTDEF)
 		printf("	PUBLIC %s\n", c);
 	printf("%s:\n", c);
@@ -103,8 +101,7 @@ argmove(struct symtab *s, int regno)
 	s->sclass = AUTO;
 	s->soffset = NOOFFSET;
 	oalloc(s, &autooff);
-	spname = s;
-	p = buildtree(NAME, NIL, NIL);
+	p = nametree(s);
 	r = bcon(0);
 	r->n_op = REG;
 	r->n_rval = regno;
@@ -278,7 +275,7 @@ ejobcode(int flag )
 	for (w = sympole; w; w = w->next) {
 		if (w->sp->sclass != EXTERN)
 			continue;
-		printf("	EXTERN %s\n", w->sp->sname);
+		printf("	EXTERN %s\n", w->sp->soname);
 	}
 	
 	printf("	END\n");

@@ -65,20 +65,30 @@ clocal(NODE *p)
 		break;
 
 	case SCONV:
-		if (l->n_op == NAME || l->n_op == UMUL || l->n_op == TEMP) {
-			if ((p->n_type & TMASK) == 0 &&
-			    (l->n_type & TMASK) == 0 &&
-			    btdims[p->n_type].suesize ==
-			    btdims[l->n_type].suesize) {
-				if (p->n_type == FLOAT || p->n_type == DOUBLE)
-					break;
+        /* Remove redundant conversions. */
+		if ((p->n_type & TMASK) == 0 && (l->n_type & TMASK) == 0 &&
+		    btdims[p->n_type].suesize == btdims[l->n_type].suesize &&
+		    p->n_type != FLOAT && p->n_type != DOUBLE &&
+		    l->n_type != FLOAT && l->n_type != DOUBLE &&
+		    l->n_type != DOUBLE && p->n_type != LDOUBLE) {
+			if (l->n_op == NAME || l->n_op == UMUL ||
+			    l->n_op == TEMP) {
 				l->n_type = p->n_type;
 				nfree(p);
 				p = l;
+				break;
 			}
-			break;
 		}
 
+        /* Convert floating point to int before to char or short. */
+        if ((l->n_type == FLOAT || l->n_type == DOUBLE || l->n_type == LDOUBLE)
+            && (DEUNSIGN(p->n_type) == CHAR || DEUNSIGN(p->n_type) == SHORT)) {
+            p = block(SCONV, p, NIL, p->n_type, p->n_df, p->n_sue);
+            p->n_left->n_type = INT;
+            break;
+        }
+
+        /* Transform constants now. */
 		if (l->n_op != ICON)
 			break;
 
@@ -275,11 +285,11 @@ ninval(CONSZ off, int fsz, NODE *p)
 		case ULONGLONG:
 			printf("\t.xword %lld", p->n_lval);
 			if (sp != 0) {
-				if ((sp->sclass == STATIC && sp->slevel > 0)
-				    || sp->sclass == ILABEL)
+				if (sp->sclass == STATIC && sp->slevel > 0)
 					printf("+" LABFMT, sp->soffset);
 				else
-					printf("+%s", exname(sp->soname));
+					printf("+%s", sp->soname ?
+					    sp->soname : exname(sp->sname));
 			}
 			printf("\n");
 			break;
@@ -322,7 +332,7 @@ defzero(struct symtab *sp)
 	int off = (tsize(sp->stype, sp->sdf, sp->ssue) + SZCHAR - 1) / SZCHAR;
 	printf("\t.comm ");
 	if (sp->slevel == 0)
-		printf("%s,%d\n", exname(sp->soname), off);
+		printf("%s,%d\n", sp->soname ? sp->soname : exname(sp->sname), off);
 	else
 		printf(LABFMT ",%d\n", sp->soffset, off);
 }
@@ -337,3 +347,9 @@ void
 fixdef(struct symtab *sp)
 {
 }
+
+void
+pass1_lastchance(struct interpass *ip)
+{
+}
+

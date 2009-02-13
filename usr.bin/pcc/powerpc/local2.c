@@ -1,3 +1,4 @@
+/*	$Id: local2.c,v 1.2 2009/02/13 15:25:03 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -106,7 +107,7 @@ prologue(struct interpass_prolog *ipp)
 			ipp->ipp_name,
 			ipp->ipp_vis,
 			ipp->ipp_type,
-			ipp->ipp_regs,
+			ipp->ipp_regs[0],
 			ipp->ipp_autos,
 			ipp->ip_tmpnum,
 			ipp->ip_lblnum);
@@ -117,16 +118,16 @@ prologue(struct interpass_prolog *ipp)
 	addto = p2framesize;
 
 	if (p2calls != 0 || kflag) {
-		// get return address (not required for leaf function)
+		/* get return address (not required for leaf function) */
 		printf("\tmflr %s\n", rnames[R0]);
 		printf("\tstw %s,8(%s)\n", rnames[R0], rnames[R1]);
 	}
-	// save registers R30 and R31
+	/* save registers R30 and R31 */
 	printf("\tstmw %s,-8(%s)\n", rnames[R30], rnames[R1]);
 #ifdef FPREG
 	printf("\tmr %s,%s\n", rnames[FPREG], rnames[R1]);
 #endif
-	// create the new stack frame
+	/* create the new stack frame */
 	if (addto > 65535) {
 		printf("\tlis %s,%d\n", rnames[R0], (-addto) >> 16);
 		printf("\tori %s,%s,%d\n", rnames[R0],
@@ -252,7 +253,7 @@ static void
 twollcomp(NODE *p)
 {
 	int o = p->n_op;
-	int s = getlab();
+	int s = getlab2();
 	int e = p->n_label;
 	int cb1, cb2;
 
@@ -348,26 +349,27 @@ shiftop(NODE *p)
 static void
 stasg(NODE *p)
 {
+	NODE *l = p->n_left;
+	int val = l->n_lval;
+
         /* R3 = dest, R4 = src, R5 = len */
         printf("\tli %s,%d\n", rnames[R5], p->n_stsize);
-        if (p->n_left->n_op == OREG) {
-                printf("\taddi %s,%s," CONFMT "\n",
-                    rnames[R3], rnames[regno(p->n_left)],
-                    p->n_left->n_lval);
-        } else if (p->n_left->n_op == NAME) {
+        if (l->n_op == OREG) {
+                printf("\taddi %s,%s,%d\n", rnames[R3], rnames[regno(l)], val);
+        } else if (l->n_op == NAME) {
 #if defined(ELFABI)
                 printf("\tli %s,", rnames[R3]);
-                adrput(stdout, p->n_left);
+                adrput(stdout, l);
 		printf("@ha\n");
                 printf("\taddi %s,%s,", rnames[R3], rnames[R3]);
-                adrput(stdout, p->n_left);
+                adrput(stdout, l);
 		printf("@l\n");
 #elif defined(MACHOABI)
                 printf("\tli %s,ha16(", rnames[R3]);
-                adrput(stdout, p->n_left);
+                adrput(stdout, l);
 		printf(")\n");
                 printf("\taddi %s,%s,lo16(", rnames[R3], rnames[R3]);
-                adrput(stdout, p->n_left);
+                adrput(stdout, l);
 		printf(")\n");
 #endif
         }
@@ -607,13 +609,13 @@ ftou(NODE *p)
 {
 	static int lab = 0;
 	NODE *l = p->n_left;
-	int lab1 = getlab();
-	int lab2 = getlab();
+	int lab1 = getlab2();
+	int lab2 = getlab2();
 
 	printf(COM "start conversion of float/(l)double to unsigned\n");
 
 	if (lab == 0) {
-		lab = getlab();
+		lab = getlab2();
 		expand(p, 0, "\t.data\n");
 		printf(LABFMT ":\t.long 0x41e00000\n\t.long 0\n", lab);
 		expand(p, 0, "\t.text\n");
@@ -712,12 +714,12 @@ itof(NODE *p)
 	printf(COM "start conversion (u)int to float/(l)double\n");
 
 	if (labi == 0 && l->n_type == INT) {
-		labi = getlab();
+		labi = getlab2();
 		expand(p, 0, "\t.data\n");
 		printf(LABFMT ":\t.long 0x43300000\n\t.long 0x80000000\n", labi);
 		expand(p, 0, "\t.text\n");
 	} else if (labu == 0 && l->n_type == UNSIGNED) {
-		labu = getlab();
+		labu = getlab2();
 		expand(p, 0, "\t.data\n");
 		printf(LABFMT ":\t.long 0x43300000\n\t.long 0x00000000\n", labu);
 		expand(p, 0, "\t.text\n");
@@ -854,7 +856,7 @@ canaddr(NODE *p)
 	int o = p->n_op;
 
 	if (o == NAME || o == REG || o == ICON || o == OREG ||
-	    (o == UMUL && shumul(p->n_left)))
+	    (o == UMUL && shumul(p->n_left, SOREG)))
 		return(1);
 	return 0;
 }
@@ -868,7 +870,10 @@ fldexpand(NODE *p, int cookie, char **cp)
 	if (p->n_op == ASSIGN)
 		p = p->n_left;
 
-	shft = SZINT - UPKFSZ(p->n_rval) - UPKFOFF(p->n_rval);
+	if (features(FEATURE_BIGENDIAN))
+		shft = SZINT - UPKFSZ(p->n_rval) - UPKFOFF(p->n_rval);
+	else
+		shft = UPKFOFF(p->n_rval);
 
 	switch (**cp) {
 	case 'S':
@@ -900,7 +905,7 @@ flshape(NODE *p)
 
 	if (o == OREG || o == REG || o == NAME)
 		return SRDIR; /* Direct match */
-	if (o == UMUL && shumul(p->n_left))
+	if (o == UMUL && shumul(p->n_left, SOREG))
 		return SROREG; /* Convert into oreg */
 	return SRREG; /* put it into a register */
 }
@@ -1160,7 +1165,7 @@ calc_args_size(NODE *p)
 
 
 static void
-fixcalls(NODE *p)
+fixcalls(NODE *p, void *arg)
 {
 	int n = 0;
 
@@ -1236,7 +1241,7 @@ myreader(struct interpass *ipole)
 	DLIST_FOREACH(ip, ipole, qelem) {
 		if (ip->type != IP_NODE)
 			continue;
-		walkf(ip->ip_node, fixcalls);
+		walkf(ip->ip_node, fixcalls, 0);
 		storefloat(ip, ip->ip_node);
 	}
 
@@ -1269,7 +1274,7 @@ myreader(struct interpass *ipole)
  * Remove some PCONVs after OREGs are created.
  */
 static void
-pconv2(NODE *p)
+pconv2(NODE *p, void *arg)
 {
 	NODE *q;
 
@@ -1294,7 +1299,7 @@ pconv2(NODE *p)
 void
 mycanon(NODE *p)
 {
-	walkf(p, pconv2);
+	walkf(p, pconv2, 0);
 }
 
 void
@@ -1391,8 +1396,9 @@ COLORMAP(int c, int *r)
                 return num < 16;
 	case CLASSC:
 		return num < 32;
+        case CLASSD:
+                return r[CLASSD] < DREGCNT;
         }
-        assert(0);
         return 0; /* XXX gcc */
 }
 
@@ -1497,4 +1503,13 @@ int
 features(int mask)
 {
 	return ((fset & mask) == mask);
+}
+/*
+ * Do something target-dependent for xasm arguments.
+ * Supposed to find target-specific constraints and rewrite them.
+ */
+int
+myxasm(struct interpass *ip, NODE *p)
+{
+	return 0;
 }

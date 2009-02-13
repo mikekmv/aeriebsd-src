@@ -1,3 +1,4 @@
+/*	$Id: local.c,v 1.2 2009/02/13 15:25:01 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -272,11 +273,10 @@ ninval(NODE *p)
 	case UNSIGNED:
 		printf("\t.long 0x%x", (int)p->n_lval);
 		if ((q = p->n_sp) != NULL) {
-			if ((q->sclass == STATIC && q->slevel > 0) ||
-			    q->sclass == ILABEL) {
+			if ((q->sclass == STATIC && q->slevel > 0)) {
 				printf("+" LABFMT, q->soffset);
 			} else
-				printf("+%s", exname(q->sname));
+				printf("+%s", exname(q->soname));
 		}
 		printf("\n");
 		break;
@@ -389,14 +389,11 @@ void
 commdec(struct symtab *q)
 {
 	int off;
-	char *c = q->sname;
+	char *c = q->soname;
 
 	off = tsize(q->stype, q->sdf, q->ssue);
 	off = (off+(SZCHAR-1))/SZCHAR;
 
-#ifdef GCC_COMPAT
-	c = gcc_findname(q);
-#endif
 	printf("	PUBLIC %s\n", c);
 	/* XXX - NOROOT??? */
 	printf("	RSEG DATA16_Z:NEARDATA:SORT:NOROOT(1)\n");
@@ -414,11 +411,7 @@ lcommdec(struct symtab *q)
 	off = tsize(q->stype, q->sdf, q->ssue);
 	off = (off+(SZCHAR-1))/SZCHAR;
 	if (q->slevel == 0)
-#ifdef GCC_COMPAT
-		printf("	.lcomm %s,0%o\n", gcc_findname(q), off);
-#else
-		printf("	.lcomm %s,0%o\n", exname(q->sname), off);
-#endif
+		printf("	.lcomm %s,0%o\n", exname(q->soname), off);
 	else
 		printf("	.lcomm " LABFMT ",0%o\n", q->soffset, off);
 }
@@ -446,6 +439,7 @@ setloc1(int locc)
 void
 myp2tree(NODE *p)
 {
+	struct symtab *sp;
 	union dimfun *df;
 	union arglist *al;
 	NODE *q;
@@ -481,6 +475,45 @@ myp2tree(NODE *p)
 		} else
 			p->n_right->n_stalign = 0;
 		break;
+
+	case FCON:
+		/* Write float constants to memory */
+		sp = inlalloc(sizeof(struct symtab));
+		sp->sclass = STATIC;
+		sp->ssue = MKSUE(p->n_type);
+		sp->slevel = 1; /* fake numeric label */
+		sp->soffset = getlab();
+		sp->sflags = 0;
+		sp->stype = p->n_type;
+		sp->squal = (CON >> TSHIFT);
+
+		defloc(sp);
+		ninval(0, sp->ssue->suesize, p);
+
+		p->n_op = NAME;
+		p->n_lval = 0;
+		p->n_sp = sp;
+		break;
 	}
 
+}
+/*
+ * Give target the opportunity of handling pragmas.
+ */
+int
+mypragma(char **ary)
+{
+	return 0; }
+
+/*
+ * Called when a identifier has been declared, to give target last word.
+ */
+void
+fixdef(struct symtab *sp)
+{
+}
+
+void
+pass1_lastchance(struct interpass *ip)
+{
 }

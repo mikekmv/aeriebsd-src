@@ -1,3 +1,4 @@
+/*	$OpenBSD: table.c,v 1.2 2007/12/19 20:19:54 otto Exp $	*/
 
 /*
  * Copyright (c) 2007 Michael Shalayeff
@@ -292,7 +293,7 @@ struct optab table[] = {
 		NAREG,	RESC1,
 		"\tfcnvfxt,sgl,sgl\tAL,AL\n"
 		"\tfstws,ma\tAL,4(%sp)\n"
-		"\tldw,mb\t-1(%sp),A1\n", },
+		"\tldw,mb\t-4(%sp),A1\n", },
 
 /* convert double (in register) to (u)int */
 { SCONV,	ININT,
@@ -301,7 +302,7 @@ struct optab table[] = {
 		NCREG|NCSL|NAREG,	RESC2,
 		"\tfcnvfxt,dbl,sgl\tAL,A1\n"
 		"\tfstws,ma\tA1,4(%sp)\n"
-		"\tldw,mb\t-1(%sp),A2\n", },
+		"\tldw,mb\t-4(%sp),A2\n", },
 
 /* convert float (in register) to (u)long */
 { SCONV,	INLL,
@@ -829,7 +830,13 @@ struct optab table[] = {
 	SAREG,	TANY,
 	SNAME,	TANY,
 		0,	RDEST,
-		"\taddil\tUR,gp\n", },
+		"\taddil\tUR,%r27\n", },
+
+{ OPLTYPE,	INAREG,
+	SAREG,	TANY,
+	SCON,	TPOINT,
+		0,	RDEST,
+		"\taddil\tUR,%r27\n", },
 
 { OPLTYPE,	INLL,
 	SANY,	TANY,
@@ -852,6 +859,12 @@ struct optab table[] = {
 
 { OPLTYPE,	INAREG,
 	SANY,	TANY,
+	SPCNHI,	ANYFIXED,
+		NAREG,		RESC1,
+		"\tldil\tUR,A1\n", },
+
+{ OPLTYPE,	INAREG,
+	SANY,	TANY,
 	SPCON,	ANYFIXED,
 		NAREG,		RESC1,
 		"\tldi\tAR,A1\n", },
@@ -859,14 +872,30 @@ struct optab table[] = {
 { OPLTYPE,	INLL,
 	SANY,	TANY,
 	SPCON,	TLL,
-		NAREG,		RESC1,
+		NBREG,		RESC1,
 		"\tldi\tAR,A1\n"
 		"\tcopy\t%r0,U1\n", },
 
 { OPLTYPE,	ININT,
 	SANY,	TANY,
-	SCON,	TWORD|TPOINT,
+	SCON,	TWORD,
 		NAREG,		RESC1,
+		"\tldil\tUR,A1\n"
+		"\tldo\tAR(A1),A1\n", },
+
+{ OPLTYPE,	INLL,
+	SHLL,	TLL,
+	SPCNHW,	TLL,
+		NBREG,		RESC1,
+		"\tldil\tUR>>32,U1\n"
+		"\tldo\tAR>>32(U1),U1\n"
+		"\tcopy\t%r0,A1\n", },
+
+{ OPLTYPE,	INLL,
+	SHLL,	TLL,
+	SPCNLW,	TLL,
+		NBREG,		RESC1,
+		"\tcopy\t%r0,U1\n"
 		"\tldil\tUR,A1\n"
 		"\tldo\tAR(A1),A1\n", },
 
@@ -877,7 +906,7 @@ struct optab table[] = {
 		"\tldil\tUR,A1\n"
 		"\tldo\tAR(A1),A1\n"
 		"\tldil\tUR>>32,U1\n"
-		"\tldo\tAR>>32(A1),U1\n", },
+		"\tldo\tAR>>32(U1),U1\n", },
 
 { OPLTYPE,	INCREG,
 	SANY,	TFLOAT,
@@ -939,8 +968,8 @@ struct optab table[] = {
 { STARG,	FOREFF,
 	SAREG|SOREG|SNAME|SCON,	TANY,
 	SANY,	TSTRUCT,
-		NSPECIAL|NAREG,	0,
-		"ZF", },
+		NAREG | RNULL,	0,
+		"ZS", },
 
 /*
  * struct field ops

@@ -1,4 +1,5 @@
 %{
+/*	$Id: scanner.l,v 1.2 2009/02/13 15:24:59 mickey Exp $   */
 
 /*
  * Copyright (c) 2004 Anders Magnusson. All rights reserved.
@@ -26,20 +27,25 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <fcntl.h>
 #include <errno.h>
 
+#include "compat.h"
 #include "cpp.h"
 #include "y.tab.h"
 %}
 
 %{
 static void cvtdig(int rad);
-static int charcon(void);
+static int charcon(usch *);
 static void elsestmt(void);
 static void ifdefstmt(void);
 static void ifndefstmt(void);
@@ -82,15 +88,17 @@ yyinput(char *b, int m)
 }
 #undef YY_INPUT
 #undef YY_BUF_SIZE
-#define	YY_BUF_SIZE 32768
+#define	YY_BUF_SIZE (8*65536)
 #define YY_INPUT(b,r,m) (r = yyinput(b, m))
+#ifdef HAVE_CPP_VARARG_MACRO_GCC
 #define fprintf(x, ...) error(__VA_ARGS__)
+#endif
 #define	ECHO putstr((usch *)yytext)
 #undef fileno
 #define fileno(x) 0
 
 #if YY_FLEX_SUBMINOR_VERSION >= 31
-/* Hack to avoid unneccessary warnings */
+/* Hack to avoid unnecessary warnings */
 FILE *yyget_in	(void);
 FILE *yyget_out  (void);
 int yyget_leng	(void);
@@ -121,7 +129,7 @@ FS	(f|F|l|L)
 IS	(u|U|l|L)*
 WS	[\t ]
 
-%s IFR CONTR DEF
+%s IFR CONTR DEF COMMENT
 
 %%
 
@@ -176,7 +184,12 @@ WS	[\t ]
 				return NUMBER;
 			}
 
-[1-9][0-9]*		{ if (slow && !YYSTATE) return IDENT; scale = 10; goto num; }
+[0-9][0-9]*		{
+				if (slow && !YYSTATE)
+					return IDENT;
+				scale = yytext[0] == '0' ? 8 : 10;
+				goto num;
+			}
 
 0[xX]{H}+{IS}?		{	scale = 16;
 			num:	if (YYSTATE == IFR) 
@@ -185,11 +198,16 @@ WS	[\t ]
 			}
 0{D}+{IS}?		{ scale = 8; goto num; }
 {D}+{IS}?		{ scale = 10; goto num; }
-L?'(\\.|[^\\'])+'	{	if (YYSTATE) {
+'(\\.|[^\\'])+'		{
+				if (YYSTATE || slow) {
 					yylval.node.op = NUMBER;
-					yylval.node.nd_val = charcon();
+					yylval.node.nd_val = charcon((usch *)yytext);
+					return (NUMBER);
 				}
-				PRTOUT(NUMBER);
+				if (tflag)
+					yyless(1);
+				if (!flslvl)
+					putstr((usch *)yytext);
 			}
 
 <IFR>.			{ return yytext[0]; }
@@ -224,13 +242,19 @@ L?'(\\.|[^\\'])+'	{	if (YYSTATE) {
 
 
 "//".*$			{ /* if (tflag) yyless(..) */
-				if (Cflag && !flslvl)
+				if (Cflag && !flslvl && !slow)
 					putstr((usch *)yytext);
 				else if (!flslvl)
 					putch(' ');
 			}
 "/*"			{	int c, wrn;
-				if (Cflag && !flslvl)
+				int prtcm = Cflag && !flslvl && !slow;
+				extern int readmac;
+
+				if (Cflag && !flslvl && readmac)
+					return CMNT;
+
+				if (prtcm)
 					putstr((usch *)yytext);
 				wrn = 0;
 			more:	while ((c = input()) && c != '*') {
@@ -238,20 +262,18 @@ L?'(\\.|[^\\'])+'	{	if (YYSTATE) {
 						putch(c), ifiles->lineno++;
 					else if (c == 1) /* WARN */
 						wrn = 1;
-					else if (Cflag && !flslvl)
+					else if (prtcm)
 						putch(c);
 				}
 				if (c == 0)
 					return 0;
-				if (Cflag && !flslvl)
+				if (prtcm)
 					putch(c);
 				if ((c = input()) && c != '/') {
-					if (Cflag && !flslvl)
-						putch('*');
 					unput(c);
 					goto more;
 				}
-				if (Cflag && !flslvl)
+				if (prtcm)
 					putch(c);
 				if (c == 0)
 					return 0;
@@ -295,7 +317,31 @@ L?\"(\\.|[^\\"])*\"	{ PRTOUT(STRING); }
 				xx: ;
 			}
 
-.			{ PRTOUT(yytext[0]); }
+.			{
+				if (contr) {
+					while (input() != '\n')
+						;
+					unput('\n');
+					BEGIN 0;
+					contr = 0;
+					goto yy;
+				}
+				if (YYSTATE || slow)
+					return yytext[0];
+				if (yytext[0] == 6) { /* PRAGS */
+					usch *obp = stringbuf;
+					extern usch *prtprag(usch *);
+					*stringbuf++ = yytext[0];
+					do {
+						*stringbuf = input();
+					} while (*stringbuf++ != 14);
+					prtprag(obp);
+					stringbuf = obp;
+				} else {
+					PRTOUT(yytext[0]);
+				}
+				yy:;
+			}
 
 %%
 
@@ -423,12 +469,8 @@ pushfile(usch *file)
 
 	slow = 0;
 	if (file != NULL) {
-		if ((ic->infil = open((char *)file, O_RDONLY)) < 0) {
-			if (errno != ENOENT)
-				error("Cannot open '%s'. %s", file,
-						strerror(errno));
+		if ((ic->infil = open((char *)file, O_RDONLY)) < 0)
 			return -1;
-		}
 		ic->orgfn = ic->fname = file;
 		if (++inclevel > MAX_INCLEVEL)
 			error("Limit for nested includes exceeded");
@@ -479,7 +521,7 @@ prtline()
 			s = sheap("%s: %s\n", Mfile, ifiles->fname);
 			write(ofd, s, strlen((char *)s));
 		}
-	} else
+	} else if (!Pflag)
 		putstr(sheap("# %d \"%s\"\n", ifiles->lineno, ifiles->fname));
 	stringbuf = os;
 }
@@ -489,7 +531,7 @@ cunput(int c)
 {
 #ifdef CPP_DEBUG
 	extern int dflag;
-	if (dflag)printf(": '%c'(%d)", c, c);
+	if (dflag)printf(": '%c'(%d)", c > 31 ? c : ' ', c);
 #endif
 	unput(c);
 }
@@ -543,14 +585,11 @@ cvtdig(int rad)
 }
 
 static int
-charcon(void)
+charcon(usch *p)
 {
-	usch *p = (usch *)yytext;
 	int val, c;
 
-	if (*p == 'L')
-		p++;
-	p++; /* first ' */
+	p++; /* skip first ' */
 	val = 0;
 	if (*p++ == '\\') {
 		switch (*p++) {
@@ -748,8 +787,24 @@ storepb(void)
 	usch *opb = stringbuf;
 	int c;
 
-	while ((c = input()) != '\n')
+	while ((c = input()) != '\n') {
+		if (c == '/') {
+			 if ((c = input()) == '*') {
+				/* ignore comments here whatsoever */
+				usch *g = stringbuf;
+				getcmnt();
+				stringbuf = g;
+				continue;
+			} else if (c == '/') {
+				while ((c = input()) && c != '\n')
+					;
+				break;
+			}
+			unput(c);
+			c = '/';
+		}
 		savch(c);
+	}
 	cunput('\n');
 	savch(0);
 	fixdefined(opb); /* XXX can fail if #line? */
@@ -874,4 +929,10 @@ static void
 badop(const char *op)
 {
 	error("invalid operator in preprocessor expression: %s", op);
+}
+
+int
+cinput()
+{
+	return input();
 }

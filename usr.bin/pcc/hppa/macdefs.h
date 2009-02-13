@@ -1,3 +1,4 @@
+/*	$OpenBSD$	*/
 
 /*
  * Copyright (c) 2007 Michael Shalayeff
@@ -59,10 +60,10 @@
 #define	ALDOUBLE	64
 #define	ALLDOUBLE	64	/* 128 later */
 #define	ALLONG		32
-#define	ALLONGLONG	64
+#define	ALLONGLONG	32
 #define	ALSHORT		16
 #define	ALPOINT		32
-#define	ALSTRUCT	64
+#define	ALSTRUCT	32
 #define	ALSTACK		64
 
 /*
@@ -86,7 +87,6 @@
 
 #undef	CHAR_UNSIGNED
 #define	BOOL_TYPE	CHAR
-#define	WCHAR_TYPE	INT
 #define	ENUMSIZE(high,low)	INT
 
 typedef long long CONSZ;
@@ -464,7 +464,12 @@ int COLORMAP(int c, int *r);
 #define	MYOPTIM
 
 #define	SFUNCALL	(MAXSPECIAL+1)	/* struct assign after function call */
-#define	SPCON		(MAXSPECIAL+2)	/* smaller constant */
-#define	SPICON		(MAXSPECIAL+3)	/* even smaller constant */
-#define	SPIMM		(MAXSPECIAL+4)	/* immidiate const for depi/comib */
-#define	SPNAME		(MAXSPECIAL+5)	/* ext symbol reference load/store */
+#define	SPCNHI		(MAXSPECIAL+2)	/* high 21bits constant */
+#define	SPCON		(MAXSPECIAL+3)	/* smaller constant */
+#define	SPICON		(MAXSPECIAL+4)	/* even smaller constant */
+#define	SPCNHW		(MAXSPECIAL+5)	/* LL const w/ 0 in low word */
+#define	SPCNLW		(MAXSPECIAL+6)	/* LL const w/ 0 in high word */
+#define	SPIMM		(MAXSPECIAL+7)	/* immidiate const for depi/comib */
+#define	SPNAME		(MAXSPECIAL+8)	/* ext symbol reference load/store */
+#define	SPIMM		(MAXSPECIAL+6)	/* immidiate const for depi/comib */
+#define	SPNAME		(MAXSPECIAL+7)	/* ext symbol reference load/store */

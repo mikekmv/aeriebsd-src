@@ -1,3 +1,4 @@
+/*	$Id: manifest.h,v 1.2 2009/02/13 15:25:01 mickey Exp $	*/
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -37,7 +38,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "../config.h"
+#include "config.h"
 #include "macdefs.h"
 #include "node.h"
 
@@ -179,8 +180,11 @@ extern int ddebug, xdebug, f2debug;
 extern int iTflag, oTflag, kflag;
 extern int sflag, nflag, gflag, pflag;
 extern int Wstrict_prototypes, Wmissing_prototypes, Wimplicit_int,
-	Wimplicit_function_declaration;
-extern int xssaflag, xtailcallflag, xtemps, xdeljumps;
+	Wimplicit_function_declaration, Wpointer_sign, Wshadow,
+	Wsign_compare, Wunknown_pragmas, Wunreachable_code;
+extern int funsigned_char;
+extern int sspflag;
+extern int xssaflag, xtailcallflag, xtemps, xdeljumps, xdce;
 
 int yyparse(void);
 void yyaccpt(void);
@@ -220,17 +224,26 @@ void yyaccpt(void);
 /* Single-linked list */
 #define	SLIST_INIT(h)	\
 	{ (h)->q_forw = NULL; (h)->q_last = &(h)->q_forw; }
+#define	SLIST_SETUP(h) { NULL, &(h)->q_forw }
 #define	SLIST_ENTRY(t)	struct { struct t *q_forw; }
 #define	SLIST_HEAD(n,t) struct n { struct t *q_forw, **q_last; }
+#define	SLIST_ISEMPTY(h) ((h)->q_last == &(h)->q_forw)
 #define	SLIST_FIRST(h)	((h)->q_forw)
 #define	SLIST_FOREACH(v,h,f) \
 	for ((v) = (h)->q_forw; (v) != NULL; (v) = (v)->f.q_forw)
+#define	SLIST_INSERT_FIRST(h,e,f) {		\
+	if ((h)->q_last == &(h)->q_forw)	\
+		(h)->q_last = &(e)->f.q_forw;	\
+	(e)->f.q_forw = (h)->q_forw;		\
+	(h)->q_forw = (e);			\
+}
 #define	SLIST_INSERT_LAST(h,e,f) {	\
 	(e)->f.q_forw = NULL;		\
 	*(h)->q_last = (e);		\
 	(h)->q_last = &(e)->f.q_forw;	\
 }
 
+#ifndef	MKEXT
 /*
  * Functions for inter-pass communication.
  *
@@ -258,11 +271,20 @@ struct interpass_prolog {
 	char *ipp_name;		/* Function name */
 	int ipp_vis;		/* Function visibility */
 	TWORD ipp_type;		/* Function type */
-	int ipp_regs;		/* Bitmask of registers to save */
+#define	NIPPREGS	BIT2BYTE(MAXREGS)/sizeof(bittype)
+	bittype ipp_regs[NIPPREGS];
+				/* Bitmask of registers to save */
 	int ipp_autos;		/* Size on stack needed */
 	int ip_tmpnum;		/* # allocated temp nodes so far */
 	int ip_lblnum;		/* # used labels so far */
+#ifdef TARGET_IPP_MEMBERS
+	TARGET_IPP_MEMBERS
+#endif
 };
+#else
+struct interpass { int dummy; };
+struct interpass_prolog;
+#endif /* !MKEXT */
 
 /*
  * Epilog/prolog takes following arguments (in order):
@@ -295,12 +317,22 @@ void send_passt(int type, ...);
  * External declarations, typedefs and the like
  */
 
+/* used for memory allocation */
+typedef struct mark {
+	void *tmsav;
+	void *tasav;
+	int elem;
+} MARK;
+
 /* memory management stuff */
 void *permalloc(int size);
 void *tmpcalloc(int size);
 void *tmpalloc(int size);
 void tmpfree(void);
 char *newstring(char *, int len);
+char *tmpstrdup(char *str);
+void markset(struct mark *m);
+void markfree(struct mark *m);
 
 /* command-line processing */
 void mflags(char *);
@@ -315,8 +347,17 @@ void pass2_compile(struct interpass *);
 
 /* node routines */
 NODE *nfree(NODE *);
+void tfree(NODE *);
 NODE *tcopy(NODE *);
+void walkf(NODE *, void (*f)(NODE *, void *), void *);
 void fwalk(NODE *t, void (*f)(NODE *, int, int *, int *), int down);
+void flist(NODE *p, void (*f)(NODE *, void *), void *);
+void listf(NODE *p, void (*f)(NODE *));
+NODE *listarg(NODE *p, int n, int *cnt);
+void cerror(char *s, ...);
+void werror(char *s, ...);
+void uerror(char *s, ...);
+
 
 extern	int nerrors;		/* number of errors seen so far */
 extern	int warniserr;		/* treat warnings as errors */

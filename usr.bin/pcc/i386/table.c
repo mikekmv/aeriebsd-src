@@ -1,3 +1,4 @@
+/*	$Id: table.c,v 1.2 2009/02/13 15:25:01 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -228,7 +229,7 @@ struct optab table[] = {
 
 /* convert int to char. This is done when register is loaded */
 { SCONV,	INCH,
-	SAREG,	TWORD,
+	SAREG,	TWORD|TPOINT,
 	SANY,	TCHAR|TUCHAR,
 		NSPECIAL|NBREG|NBSL,	RESC1,
 		"ZM", },
@@ -597,6 +598,12 @@ struct optab table[] = {
 		NAREG|NASL,	RESC1,
 		"	leal CR(AL),A1\n", },
 
+{ PLUS,		INAREG|FOREFF,
+	SAREG|SNAME|SOREG,	TSHORT|TUSHORT,
+	SONE,	TANY,
+		0,	RLEFT,
+		"	incw AL\n", },
+
 { PLUS,		INCH|FOREFF,
 	SHCH|SNAME|SOREG,	TCHAR|TUCHAR,
 	SONE,	TANY,
@@ -614,6 +621,12 @@ struct optab table[] = {
 	SONE,			TANY,
 		0,	RLEFT,
 		"	decl AL\n", },
+
+{ MINUS,	INAREG|FOREFF,
+	SAREG|SNAME|SOREG,	TSHORT|TUSHORT,
+	SONE,			TANY,
+		0,	RLEFT,
+		"	decw AL\n", },
 
 { MINUS,	INCH|FOREFF,
 	SHCH|SNAME|SOREG,	TCHAR|TUCHAR,
@@ -647,45 +660,78 @@ struct optab table[] = {
 		"	fsubZAp\n", },
 
 /* Simple r/m->reg ops */
-{ OPSIMP,	INAREG|FOREFF,
+/* m/r |= r */
+{ OPSIMP,	INAREG|FOREFF|FORCC,
+	SAREG|SNAME|SOREG,	TWORD|TPOINT,
+	SAREG,			TWORD|TPOINT,
+		0,	RLEFT|RESCC,
+		"	Ol AR,AL\n", },
+
+/* r |= r/m */
+{ OPSIMP,	INAREG|FOREFF|FORCC,
 	SAREG,			TWORD|TPOINT,
 	SAREG|SNAME|SOREG,	TWORD|TPOINT,
-		0,	RLEFT,
+		0,	RLEFT|RESCC,
 		"	Ol AR,AL\n", },
 
-{ OPSIMP,	INAREG|FOREFF,
+/* m/r |= r */
+{ OPSIMP,	INAREG|FOREFF|FORCC,
+	SHINT|SNAME|SOREG,	TSHORT|TUSHORT,
+	SHINT,		TSHORT|TUSHORT,
+		0,	RLEFT|RESCC,
+		"	Ow AR,AL\n", },
+
+/* r |= r/m */
+{ OPSIMP,	INAREG|FOREFF|FORCC,
 	SHINT,		TSHORT|TUSHORT,
 	SHINT|SNAME|SOREG,	TSHORT|TUSHORT,
-		0,	RLEFT,
+		0,	RLEFT|RESCC,
 		"	Ow AR,AL\n", },
 
-{ OPSIMP,	INCH|FOREFF,
+/* m/r |= r */
+{ OPSIMP,	INCH|FOREFF|FORCC,
 	SHCH,		TCHAR|TUCHAR,
 	SHCH|SNAME|SOREG,	TCHAR|TUCHAR,
-		0,	RLEFT,
+		0,	RLEFT|RESCC,
 		"	Ob AR,AL\n", },
 
-{ OPSIMP,	INAREG|FOREFF,
-	SAREG,	TWORD|TPOINT,
+/* r |= r/m */
+{ OPSIMP,	INCH|FOREFF|FORCC,
+	SHCH,		TCHAR|TUCHAR,
+	SHCH|SNAME|SOREG,	TCHAR|TUCHAR,
+		0,	RLEFT|RESCC,
+		"	Ob AR,AL\n", },
+
+/* m/r |= const */
+{ OPSIMP,	INAREG|FOREFF|FORCC,
+	SAREG|SNAME|SOREG,	TWORD|TPOINT,
 	SCON,	TWORD|TPOINT,
-		0,	RLEFT,
+		0,	RLEFT|RESCC,
 		"	Ol AR,AL\n", },
 
-{ OPSIMP,	INAREG|FOREFF,
+{ OPSIMP,	INAREG|FOREFF|FORCC,
 	SHINT|SNAME|SOREG,	TSHORT|TUSHORT,
 	SCON,	TANY,
-		0,	RLEFT,
+		0,	RLEFT|RESCC,
 		"	Ow AR,AL\n", },
 
-{ OPSIMP,	INCH|FOREFF,
+{ OPSIMP,	INCH|FOREFF|FORCC,
 	SHCH|SNAME|SOREG,	TCHAR|TUCHAR,
 	SCON,	TANY,
-		0,	RLEFT,
+		0,	RLEFT|RESCC,
 		"	Ob AR,AL\n", },
 
+/* r |= r/m */
 { OPSIMP,	INLL|FOREFF,
 	SHLL,	TLL,
 	SHLL|SNAME|SOREG,	TLL,
+		0,	RLEFT,
+		"	Ol AR,AL\n	Ol UR,UL\n", },
+
+/* m/r |= r/const */
+{ OPSIMP,	INLL|FOREFF,
+	SHLL|SNAME|SOREG,	TLL,
+	SHLL|SCON,	TLL,
 		0,	RLEFT,
 		"	Ol AR,AL\n	Ol UR,UL\n", },
 
@@ -700,24 +746,28 @@ struct optab table[] = {
 		NSPECIAL|NCREG|NCSL|NCSR,	RESC1,
 		"ZO", },
 
+/* r/m <<= r */
 { LS,	INAREG|FOREFF,
 	SAREG|SNAME|SOREG,	TWORD,
 	SHCH,		TCHAR|TUCHAR,
 		NSPECIAL,	RLEFT,
 		"	sall AR,AL\n", },
 
+/* r/m <<= const */
 { LS,	INAREG|FOREFF,
-	SAREG,	TWORD,
+	SAREG|SNAME|SOREG,	TWORD,
 	SCON,	TANY,
 		0,	RLEFT,
 		"	sall AR,AL\n", },
 
+/* r/m <<= r */
 { LS,	INAREG|FOREFF,
 	SAREG|SNAME|SOREG,	TSHORT|TUSHORT,
 	SHCH,			TCHAR|TUCHAR,
 		NSPECIAL,	RLEFT,
 		"	shlw AR,AL\n", },
 
+/* r/m <<= const */
 { LS,	INAREG|FOREFF,
 	SAREG|SNAME|SOREG,	TSHORT|TUSHORT,
 	SCON,	TANY,
@@ -751,7 +801,7 @@ struct optab table[] = {
 
 { RS,	INAREG|FOREFF,
 	SAREG|SNAME|SOREG,	TSWORD,
-	SCON,			TWORD|TCHAR|TUCHAR|TSHORT|TUSHORT,
+	SCON,			TANY,
 		0,		RLEFT,
 		"	sarl AR,AL\n", },
 
@@ -763,7 +813,7 @@ struct optab table[] = {
 
 { RS,	INAREG|FOREFF,
 	SAREG|SNAME|SOREG,	TUWORD,
-	SCON,			TWORD|TCHAR|TUCHAR|TSHORT|TUSHORT,
+	SCON,			TANY,
 		0,		RLEFT,
 		"	shrl AR,AL\n", },
 
@@ -975,7 +1025,7 @@ struct optab table[] = {
 	SNAME|SOREG,	TLDOUBLE,
 	SHFL,	TFLOAT|TDOUBLE|TLDOUBLE,
 		0,	RDEST,
-		"	fstt AL\n", },
+		"	fst AL\n", },
 
 { ASSIGN,	FOREFF,
 	SNAME|SOREG,	TLDOUBLE,
@@ -1315,7 +1365,7 @@ struct optab table[] = {
 		0,	RNOP,
 		"	jmp LL\n", },
 
-#ifdef GCC_COMPAT
+#if defined(GCC_COMPAT) || defined(LANG_F77)
 { GOTO, 	FOREFF,
 	SAREG,	TANY,
 	SANY,	TANY,

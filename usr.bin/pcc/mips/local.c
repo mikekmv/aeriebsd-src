@@ -1,3 +1,4 @@
+/*	$Id: local.c,v 1.2 2009/02/13 15:25:02 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -32,6 +33,8 @@
 
 #include <assert.h>
 #include "pass1.h"
+
+#define IALLOC(sz) (isinlining ? permalloc(sz) : tmpalloc(sz))
 
 static int inbits, inval;
 
@@ -131,7 +134,7 @@ clocal(NODE *p)
 		l = p->n_left;
 
 		/*
-		 * Remove unneccessary conversion ops.
+		 * Remove unnecessary conversion ops.
 		 */
 		if (clogop(l->n_op) && l->n_left->n_op == SCONV) {
 			if (coptype(l->n_op) != BITYPE)
@@ -302,6 +305,14 @@ clocal(NODE *p)
 			l->n_type = m;
 			nfree(p);
 			p = l;
+		} else if (o == FCON) {
+			l->n_lval = l->n_dcon;
+			l->n_sp = NULL;
+			l->n_op = ICON;
+			l->n_type = m;
+			l->n_sue = MKSUE(m);
+			nfree(p);
+			p = clocal(l);
 		}
 		break;
 
@@ -354,8 +365,9 @@ myp2tree(NODE *p)
 
 	/* Write float constants to memory */
  
-	sp = tmpalloc(sizeof(struct symtab));
+	sp = IALLOC(sizeof(struct symtab));
 	sp->sclass = STATIC;
+	sp->ssue = MKSUE(p->n_type);
 	sp->slevel = 1; /* fake numeric label */
 	sp->soffset = getlab();
 	sp->sflags = 0;
@@ -363,7 +375,7 @@ myp2tree(NODE *p)
 	sp->squal = (CON >> TSHIFT);
 
 	defloc(sp);
-	ninval(0, btdims[p->n_type].suesize, p);
+	ninval(0, sp->ssue->suesize, p);
 
 	p->n_op = NAME;
 	p->n_lval = 0;
@@ -501,11 +513,11 @@ ninval(CONSZ off, int fsz, NODE *p)
         case UNSIGNED:
                 printf("\t.word " CONFMT, (CONSZ)p->n_lval);
                 if ((q = p->n_sp) != NULL) {
-                        if ((q->sclass == STATIC && q->slevel > 0) ||
-                            q->sclass == ILABEL) {
+                        if ((q->sclass == STATIC && q->slevel > 0)) {
                                 printf("+" LABFMT, q->soffset);
                         } else
-                                printf("+%s", exname(q->soname));
+                                printf("+%s",
+				    q->soname ? q->soname : exname(q->sname));
                 }
                 printf("\n");
                 break;
@@ -623,7 +635,7 @@ inwstring(struct symtab *sp)
 	NODE *p;
 
 	defloc(sp);
-	p = bcon(0);
+	p = xbcon(0, NULL, WCHAR_TYPE);
 	do {
 		if (*s++ == '\\')
 			p->n_lval = esccon(&s);
@@ -644,7 +656,7 @@ defzero(struct symtab *sp)
 	off = (off+(SZCHAR-1))/SZCHAR;
 	printf("	.%scomm ", sp->sclass == STATIC ? "l" : "");
 	if (sp->slevel == 0)
-		printf("%s,0%o\n", exname(sp->soname), off);
+		printf("%s,0%o\n", sp->soname ? sp->soname : exname(sp->sname), off);
 	else
 		printf(LABFMT ",0%o\n", sp->soffset, off);
 }
@@ -694,7 +706,7 @@ setloc1(int locc)
 {
 	if (locc == lastloc && locc != STRNG)
 		return;
-	if (locc == DATA && lastloc == STRNG)
+	if (locc == RDATA && lastloc == STRNG)
 		return;
 
 	if (locc != lastloc) {
@@ -778,30 +790,11 @@ mips_builtin_stdarg_start(NODE *f, NODE *a)
 {
 	NODE *p, *q;
 	int sz = 1;
-	int i;
 
 	/* check num args and type */
 	if (a == NULL || a->n_op != CM || a->n_left->n_op == CM ||
 	    !ISPTR(a->n_left->n_type))
 		goto bad;
-
-	/*
-	 * look at the offset of the last org to calculate the
-	 * number of remain registers that need to be written
-	 * to the stack.
-	 */
-	if (xtemps) {
-		for (i = 0; i < nargregs; i++) {
-			q = block(REG, NIL, NIL, PTR+INT, 0, MKSUE(INT));
-			q->n_rval = A0 + i;
-			p = block(REG, NIL, NIL, PTR+INT, 0, MKSUE(INT));
-			p->n_rval = SP;
-			p = block(PLUS, p, bcon(ARGINIT+i), PTR+INT, 0, MKSUE(INT));
-			p = buildtree(UMUL, p, NIL);
-			p = buildtree(ASSIGN, p, q);
-			ecomp(p);
-		}
-	}
 
 	/* must first deal with argument size; use int size */
 	p = a->n_right;
@@ -809,15 +802,6 @@ mips_builtin_stdarg_start(NODE *f, NODE *a)
 		/* round up to word */
 		sz = SZINT / tsize(p->n_type, p->n_df, p->n_sue);
 	}
-
-	/*
-	 * Once again, if xtemps, the register is written to a
-	 * temp.  We cannot take the address of the temp and
-	 * walk from there.
-	 *
-	 * No solution at the moment...
-	 */
-	assert(!xtemps);
 
 	p = buildtree(ADDROF, p, NIL);	/* address of last arg */
 	p = optim(buildtree(PLUS, p, bcon(sz)));
@@ -848,13 +832,9 @@ mips_builtin_va_arg(NODE *f, NODE *a)
 	    !ISPTR(a->n_left->n_type) || a->n_right->n_op != TYPE)
 		goto bad;
 
-	/* create a copy to a temp node */
-	p = tcopy(a->n_left);
-	q = tempnode(0, p->n_type, p->n_df, p->n_sue);
-	tmpnr = regno(q);
-	p = buildtree(ASSIGN, q, p);
-
 	r = a->n_right;
+
+	/* get type size */
 	sz = tsize(r->n_type, r->n_df, r->n_sue) / SZCHAR;
 	if (sz < SZINT/SZCHAR) {
 		werror("%s%s promoted to int when passed through ...",
@@ -862,7 +842,23 @@ mips_builtin_va_arg(NODE *f, NODE *a)
 			DEUNSIGN(r->n_type) == SHORT ? "short" : "char");
 		sz = SZINT/SZCHAR;
 	}
-	q = buildtree(PLUSEQ, a->n_left, bcon(sz));
+
+	/* alignment */
+	p = tcopy(a->n_left);
+	if (sz > SZINT/SZCHAR && r->n_type != UNIONTY && r->n_type != STRTY) {
+		p = buildtree(PLUS, p, bcon(7));
+		p = block(AND, p, bcon(-8), p->n_type, p->n_df, p->n_sue);
+	}
+
+	/* create a copy to a temp node */
+	q = tempnode(0, p->n_type, p->n_df, p->n_sue);
+	tmpnr = regno(q);
+	p = buildtree(ASSIGN, q, p);
+
+	q = tempnode(tmpnr, p->n_type, p->n_df,p->n_sue);
+	q = buildtree(PLUS, q, bcon(sz));
+	q = buildtree(ASSIGN, a->n_left, q);
+
 	q = buildtree(COMOP, p, q);
 
 	nfree(a->n_right);
@@ -902,13 +898,31 @@ bad:
 	uerror("bad argument to __buildtin_va_copy");
 	return bcon(0);
 }
+
+static int constructor;
+static int destructor;
+
 /*
  * Give target the opportunity of handling pragmas.
  */
 int
 mypragma(char **ary)
 {
-	return 0; }
+	if (strcmp(ary[1], "tls") == 0) { 
+		uerror("thread-local storage not supported for this target");
+		return 1;
+	} 
+	if (strcmp(ary[1], "constructor") == 0 || strcmp(ary[1], "init") == 0) {
+		constructor = 1;
+		return 1;
+	}
+	if (strcmp(ary[1], "destructor") == 0 || strcmp(ary[1], "fini") == 0) {
+		destructor = 1;
+		return 1;
+	}
+
+	return 0;
+}
 
 /*
  * Called when a identifier has been declared, to give target last word.
@@ -916,5 +930,16 @@ mypragma(char **ary)
 void
 fixdef(struct symtab *sp)
 {
+	if ((constructor || destructor) && (sp->sclass != PARAM)) {
+		printf("\t.section .%ctors,\"aw\",@progbits\n",
+		    constructor ? 'c' : 'd');
+		printf("\t.p2align 2\n");
+		printf("\t.long %s\n", exname(sp->sname));
+		constructor = destructor = 0;
+	}
 }
 
+void
+pass1_lastchance(struct interpass *ip)
+{
+}

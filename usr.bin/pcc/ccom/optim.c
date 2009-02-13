@@ -1,3 +1,4 @@
+/*	$Id: optim.c,v 1.2 2009/02/13 15:24:59 mickey Exp $	*/
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -134,7 +135,8 @@ again:	o = p->n_op;
 		goto setuleft;
 
 	case RS:
-		if (LO(p) == RS && RCON(p->n_left) && RCON(p)) {
+		if (LO(p) == RS && RCON(p->n_left) && RCON(p) &&
+		    (RV(p) + RV(p->n_left)) < p->n_sue->suesize) {
 			/* two right-shift  by constants */
 			RV(p) += RV(p->n_left);
 			p->n_left = zapleft(p->n_left);
@@ -331,7 +333,21 @@ again:	o = p->n_op;
 		p->n_op = revrel[p->n_op - EQ ];
 		break;
 
+#ifdef notyet
+	case ASSIGN:
+		/* Simple test to avoid two branches */
+		if (RO(p) != NE)
+			break;
+		q = p->n_right;
+		if (RCON(q) && RV(q) == 0 && LO(q) == AND &&
+		    RCON(q->n_left) && (i = ispow2(RV(q->n_left))) &&
+		    q->n_left->n_type == INT) {
+			q->n_op = RS;
+			RV(q) = i;
 		}
+		break;
+#endif
+	}
 
 	return(p);
 	}

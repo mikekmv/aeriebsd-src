@@ -1,3 +1,4 @@
+/*	$OpenBSD$	*/
 
 /*
  * Copyright (c) 2007 Michael Shalayeff
@@ -133,17 +134,14 @@ prologue(struct interpass_prolog *ipp)
 	int addto;
 
 	ftype = ipp->ipp_type;
-	printf("\t.align\t4\n");
-	if (ipp->ipp_vis)
-		printf("\t.export\t%s, code\n", ipp->ipp_name);
-	printf("\t.label\t%s\n\t.proc\n", ipp->ipp_name);
 
 	/*
-	 * We here know what register to save and how much to 
+	 * We here know what registers to save and how much to 
 	 * add to the stack.
 	 */
 	addto = offcalc(ipp);
-	printf("\t.callinfo frame=%d, save_rp, save_sp\n\t.entry\n", addto);
+	printf("\t.proc\ncallinfo frame=%d, save_rp, save_sp\n\t.entry\n",
+	    addto);
 	prtprolog(ipp, addto);
 }
 
@@ -178,7 +176,7 @@ eoftn(struct interpass_prolog *ipp)
 		if (p2calls)
 			printf("\tldw\t-20(%%r3),%%rp\n");
 		printf("\tcopy\t%%r3,%%r1\n"
-		    "\tldw\t(%%r3),%%r3\n"
+		    "\tldw\t0(%%r3),%%r3\n"
 		    "\tbv\t%%r0(%%rp)\n"
 		    "\tcopy\t%%r1,%%sp\n");
 	} else
@@ -320,7 +318,7 @@ static void
 twollcomp(NODE *p)
 {
 	int o = p->n_op;
-	int s = getlab();
+	int s = getlab2();
 	int e = p->n_label;
 	int cb1, cb2;
 
@@ -400,7 +398,7 @@ canaddr(NODE *p)
 	int o = p->n_op;
 
 	if (o == NAME || o == REG || o == ICON || o == OREG ||
-	    (o == UMUL && shumul(p->n_left)))
+	    (o == UMUL && shumul(p->n_left, SOREG)))
 		return(1);
 	return(0);
 }
@@ -471,17 +469,16 @@ adrcon(CONSZ val)
 void
 conput(FILE *fp, NODE *p)
 {
-	int val = p->n_lval;
+	CONSZ val = p->n_lval;
 
 	switch (p->n_op) {
 	case ICON:
 		if (p->n_name[0] != '\0') {
-			fprintf(fp, "RR'%s", p->n_name);
+			fprintf(fp, "RR'%s-$global$", p->n_name);
 			if (val)
-				fprintf(fp, "+%d", val);
-			fprintf(fp, "-$global$");
+				fprintf(fp, "+" CONFMT, val);
 		} else
-			fprintf(fp, "%d", val);
+			fprintf(fp, CONFMT, val);
 		return;
 
 	default:
@@ -519,10 +516,9 @@ upput(NODE *p, int size)
 	case ICON:
 	case NAME:
 		if (p->n_name[0] != '\0') {
-			printf("LL'%s", p->n_name);
+			printf("LR'%s-$global$", p->n_name);
 			if (p->n_lval != 0)
 				printf("+" CONFMT, p->n_lval);
-			printf("-$global$");
 		} else
 			printf("L%%" CONFMT, p->n_lval >> 32);
 		break;
@@ -545,10 +541,9 @@ adrput(FILE *io, NODE *p)
 	case ICON:
 	case NAME:
 		if (p->n_name[0] != '\0') {
-			fprintf(io, "RR'%s", p->n_name);
+			fprintf(io, "RR'%s-$global$", p->n_name);
 			if (p->n_lval != 0)
 				fprintf(io, "+" CONFMT, p->n_lval);
-			fprintf(io, "-$global$");
 		} else
 			fprintf(io, "R%%" CONFMT, p->n_lval);
 		return;
@@ -556,11 +551,10 @@ adrput(FILE *io, NODE *p)
 	case OREG:
 		r = p->n_rval;
 		if (p->n_name[0] != '\0') {
-			fprintf(io, "RR'%s", p->n_name);
+			fprintf(io, "RR'%s-$global$", p->n_name);
 			if (p->n_lval != 0)
 				fprintf(io, "+" CONFMT, p->n_lval);
-			fprintf(io, "-$global$");
-		} else if (p->n_lval)
+		} else
 			fprintf(io, "%d", (int)p->n_lval);
 		if (R2TEST(r)) {
 			fprintf(io, "%s(%s)", rnames[R2UPK1(r)],
@@ -607,7 +601,7 @@ countargs(NODE *p, int *n)
 }
 
 void
-fixcalls(NODE *p)
+fixcalls(NODE *p, void *arg)
 {
 	int n, o;
 
@@ -641,7 +635,7 @@ myreader(struct interpass *ipole)
 			break;
 
 		case IP_NODE:
-			walkf(ip->ip_node, fixcalls);
+			walkf(ip->ip_node, fixcalls, 0);
 			break;
 		}
 	}
@@ -657,7 +651,7 @@ myreader(struct interpass *ipole)
  * Remove some PCONVs after OREGs are created.
  */
 static void
-pconv2(NODE *p)
+pconv2(NODE *p, void *arg)
 {
 	NODE *q;
 
@@ -682,7 +676,7 @@ pconv2(NODE *p)
 void
 mycanon(NODE *p)
 {
-	walkf(p, pconv2);
+	walkf(p, pconv2, 0);
 }
 
 void
@@ -844,6 +838,18 @@ special(NODE *p, int shape)
 		    p->n_lval < -1024 || p->n_lval >= 1024)
 			break;
 		return SRDIR;
+	case SPCNHW:
+		if (o != ICON || p->n_name[0] || (p->n_lval & 0xffffffffLL))
+			break;
+		return SRDIR;
+	case SPCNLW:
+		if (o != ICON || p->n_name[0] || (p->n_lval & ~0xffffffffLL))
+			break;
+		return SRDIR;
+	case SPCNHI:
+		if (o != ICON || p->n_name[0] || (p->n_lval & ~0xfffff800LL))
+			break;
+		return SRDIR;
 	case SPCON:
 		if (o != ICON || p->n_name[0] ||
 		    p->n_lval < -8192 || p->n_lval >= 8192)
@@ -863,4 +869,13 @@ special(NODE *p, int shape)
 void
 mflags(char *str)
 {
+}
+/*
+ * Do something target-dependent for xasm arguments.
+ * Supposed to find target-specific constraints and rewrite them.
+ */
+int
+myxasm(struct interpass *ip, NODE *p)
+{
+	return 0;
 }

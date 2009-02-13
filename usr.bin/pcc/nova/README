@@ -1,4 +1,3 @@
-
 Calling conventions, stack frame and zero page:
 
 The variables that normally are placed on the stack or in registers in C

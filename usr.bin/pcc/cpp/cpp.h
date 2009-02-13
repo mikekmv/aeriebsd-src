@@ -1,3 +1,4 @@
+/*	$Id: cpp.h,v 1.2 2009/02/13 15:24:59 mickey Exp $	*/
 
 /*
  * Copyright (c) 2004 Anders Magnusson (ragge@ludd.luth.se).
@@ -27,8 +28,9 @@
  */
 
 #include <stdio.h> /* for obuf */
+#include <stdlib.h>
 
-#include "../config.h"
+#include "config.h"
 
 typedef unsigned char usch;
 #ifdef YYTEXT_POINTER
@@ -42,7 +44,7 @@ extern	int	trulvl;
 extern	int	flslvl;
 extern	int	elflvl;
 extern	int	elslvl;
-extern	int	tflag, Cflag;
+extern	int	tflag, Cflag, Pflag;
 extern	int	Mflag, dMflag;
 extern	usch	*Mfile;
 extern	int	ofd;
@@ -53,8 +55,11 @@ extern	int	ofd;
 
 /* buffer used internally */
 #ifndef CPPBUF
-#ifdef __pdp11__
+#if defined(__pdp11__)
 #define CPPBUF  BUFSIZ
+#elif defined(WIN32)
+/* winxp seems to fail > 26608 bytes */
+#define CPPBUF	16384
 #else
 #define CPPBUF	65536
 #endif
@@ -71,6 +76,7 @@ struct includ {
 	int infil;
 	usch *curptr;
 	usch *maxread;
+	usch *ostr;
 	usch *buffer;
 	usch bbuf[NAMEMAX+CPPBUF+1];
 } *ifiles;
@@ -133,6 +139,13 @@ void line(void);
 usch *sheap(char *fmt, ...);
 void xwarning(usch *);
 void xerror(usch *);
+#ifdef HAVE_CPP_VARARG_MACRO_GCC
 #define warning(...) xwarning(sheap(__VA_ARGS__))
 #define error(...) xerror(sheap(__VA_ARGS__))
+#else
+#define warning printf
+#define error printf
+#endif
 void expmac(struct recur *);
+int cinput(void);
+void getcmnt(void);

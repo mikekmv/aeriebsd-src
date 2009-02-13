@@ -30,6 +30,12 @@
  * Various settings that controls how the f77 compiler works.
  */
 
+#define	DYNLINKER { "-dynamic-linker", "/usr/libexec/ld.so", NULL }
+#define CRT0FILE "/usr/lib/crt0.o"
+#define CRT0FILE_PROFILE "/usr/lib/gcrt0.o"
+#define STARTFILES { "/usr/lib/crtbegin.o", NULL }
+#define	ENDFILES { "/usr/lib/crtend.o", NULL }
+
 #define PASS1NAME	"/usr/lib/f77pass1"
 #define PASS2NAME	"/lib/f1"
 #define PASS2OPT	"/lib/c2"
@@ -41,5 +47,5 @@
 #define PROFFOOT	"/usr/lib/mcrt0.o"
 #define NOFLFOOT	"/usr/lib/fcrt0.o"
 #define NOFLPROFFOOT	"/usr/lib/fmcrt0.o"
-#define LIBLIST		{ "-lF77", "-lI77", "-lm", "-lc", "-l", NULL };
+#define F77LIBLIST	{ "-lF77", "-lI77", "-lm", "-lc", "-l", NULL };
 

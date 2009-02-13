@@ -1,3 +1,4 @@
+/*	$Id: pass1.h,v 1.2 2009/02/13 15:24:59 mickey Exp $	*/
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -32,10 +33,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <stdarg.h>
+#include <string.h>
 #include <stdint.h>
 
+#ifndef MKEXT
+#include "external.h"
+#else
+typedef unsigned int bittype; /* XXX - for basicblock */
+#endif
 #include "manifest.h"
 
 #include "protos.h"
@@ -63,7 +72,6 @@
 #define MOE		16
 #define UFORTRAN 	17
 #define USTATIC		18
-#define ILABEL		19
 
 	/* field size is ORed in */
 #define FIELD		0100
@@ -81,14 +89,14 @@ extern	char *scnames(int);
 #define	NSTYPES		05
 #define	SMASK		07
 
-#define SSET		00010
-#define SREF		00020
-#define SNOCREAT	00040
-#define STEMP		00100
-#define	SDYNARRAY	00200
-#define	SINLINE		00400
-#define	STNODE		01000
-#define	SASG		04000
+/* #define SSET		00010 */
+/* #define SREF		00020 */
+#define SNOCREAT	00040	/* don't create a symbol in lookup() */
+#define STEMP		00100	/* Allocate symtab from temp or perm mem */
+#define	SDYNARRAY	00200	/* symbol is dynamic array on stack */
+#define	SINLINE		00400	/* function is of type inline */
+#define	STNODE		01000	/* symbol shall be a temporary node */
+#define	SASG		04000	/* symbol is assigned to already */
 #define	SLOCAL1		010000
 #define	SLOCAL2		020000
 #define	SLOCAL3		040000
@@ -101,6 +109,9 @@ extern	char *scnames(int);
 struct rstack;
 struct symtab;
 union arglist;
+#ifdef GCC_COMPAT
+struct gcc_attr_pack;
+#endif
 
 /*
  * Dimension/prototype information.
@@ -118,9 +129,14 @@ union dimfun {
  */
 struct suedef {
 	int	suesize;	/* Size of the struct */
-	struct	symtab *sylnk;	/* the list of elements */
 	int	suealign;	/* Alignment of this struct */
+	struct	symtab *suem;	/* the list of elements in struct/unions */
+	struct	suedef *suep;	/* parent, if any */
+#ifdef GCC_COMPAT
+	struct	gcc_attr_pack *suega;
+#endif
 };
+#define GETSUE(x, y)	for (x = y; x->suep; x = x->suep)
 
 /*
  * Argument list member info when storing prototypes.
@@ -135,19 +151,13 @@ union arglist {
 
 /*
  * Symbol table definition.
- *
- * The symtab_hdr struct is used to save label info in NAME and ICON nodes.
  */
-struct symtab_hdr {
-	struct	symtab *h_next;	/* link to other symbols in the same scope */
-	int	h_offset;	/* offset or value */
-	char	h_sclass;	/* storage class */
-	char	h_slevel;	/* scope level */
-	short	h_sflags;		/* flags, see below */
-};
-
 struct	symtab {
-	struct	symtab_hdr hdr;
+	struct	symtab *snext;	/* link to other symbols in the same scope */
+	int	soffset;	/* offset or value */
+	char	sclass;		/* storage class */
+	char	slevel;		/* scope level */
+	short	sflags;		/* flags, see below */
 	char	*sname;		/* Symbol name */
 	char	*soname;	/* Written-out name */
 	TWORD	stype;		/* type word */
@@ -155,12 +165,6 @@ struct	symtab {
 	union	dimfun *sdf;	/* ptr to the dimension/prototype array */
 	struct	suedef *ssue;	/* ptr to the definition table */
 };
-
-#define	snext	hdr.h_next
-#define	soffset	hdr.h_offset
-#define	sclass	hdr.h_sclass
-#define	slevel	hdr.h_slevel
-#define	sflags	hdr.h_sflags
 
 #define	MKSUE(type)  &btdims[type]
 extern struct suedef btdims[];
@@ -190,10 +194,7 @@ extern	OFFSZ inoff;
 
 extern	int reached;
 extern	int isinlining;
-
-/* 	tunnel to buildtree for name id's */
-
-extern	struct symtab *spname;
+extern	int xinline;
 
 extern	int sdebug, idebug, pdebug;
 
@@ -204,7 +205,7 @@ extern	int flostat;
 extern	int retlab;
 
 /* pragma globals */
-extern int pragma_packed, pragma_aligned;
+extern int pragma_allpacked, pragma_packed, pragma_aligned;
 extern char *pragma_renamed;
 
 /*
@@ -221,12 +222,12 @@ extern char *pragma_renamed;
 
 /* declarations of various functions */
 extern	NODE
-	*buildtree(int, NODE *l, NODE *r),
+	*buildtree(int, NODE *, NODE *r),
 	*mkty(unsigned, union dimfun *, struct suedef *),
 	*rstruct(char *, int),
 	*dclstruct(struct rstack *),
 	*strend(int gtype, char *),
-	*tymerge(NODE *typ, NODE *idp),
+	*tymerge(NODE *, NODE *),
 	*stref(NODE *),
 	*offcon(OFFSZ, TWORD, union dimfun *, struct suedef *),
 	*bcon(int),
@@ -238,72 +239,80 @@ extern	NODE
 	*ptmatch(NODE *),
 	*tymatch(NODE *),
 	*makety(NODE *, TWORD, TWORD, union dimfun *, struct suedef *),
-	*block(int, NODE *, NODE *r, TWORD, union dimfun *, struct suedef *),
+	*block(int, NODE *, NODE *, TWORD, union dimfun *, struct suedef *),
 	*doszof(NODE *),
 	*talloc(void),
 	*optim(NODE *),
 	*clocal(NODE *),
 	*ccopy(NODE *),
-	*tempnode(int, TWORD type, union dimfun *df, struct suedef *sue),
-	*doacall(NODE *f, NODE *a);
+	*tempnode(int, TWORD, union dimfun *, struct suedef *),
+	*eve(NODE *),
+	*doacall(struct symtab *, NODE *, NODE *);
 NODE	*intprom(NODE *);
 OFFSZ	tsize(TWORD, union dimfun *, struct suedef *),
 	psize(NODE *);
 NODE *	typenode(NODE *new);
 void	spalloc(NODE *, NODE *, OFFSZ);
 char	*exname(char *);
+NODE	*floatcon(char *);
+NODE	*fhexcon(char *);
+NODE	*bdty(int op, ...);
 extern struct rstack *rpole;
 
-int oalloc(struct symtab *p, int *poff);
+int oalloc(struct symtab *, int *);
 void deflabel(char *);
 void gotolabel(char *);
-unsigned int esccon(char **sptr);
-void inline_start(struct symtab *sp);
+unsigned int esccon(char **);
+void inline_start(struct symtab *);
 void inline_end(void);
 void inline_addarg(struct interpass *);
-void inline_ref(struct symtab *sp);
+void inline_ref(struct symtab *);
 void inline_prtout(void);
+void inline_args(struct symtab **, int);
+NODE *inlinetree(struct symtab *, NODE *, NODE *);
 void ftnarg(NODE *);
-struct rstack *bstruct(char *, int);
+struct rstack *bstruct(char *, int, NODE *);
 void moedef(char *);
 void beginit(struct symtab *);
 void simpleinit(struct symtab *, NODE *);
-struct symtab *lookup(char *name, int s);
-struct symtab *getsymtab(char *name, int flags);
+struct symtab *lookup(char *, int);
+struct symtab *getsymtab(char *, int);
 char *addstring(char *);
 char *addname(char *);
-char *newstring(char *, int len);
-void symclear(int level);
-struct symtab *hide(struct symtab *p);
+void symclear(int);
+struct symtab *hide(struct symtab *);
 void soumemb(NODE *, char *, int);
 int talign(unsigned int, struct suedef *);
 void bfcode(struct symtab **, int);
 int chkftn(union arglist *, union arglist *);
 void branch(int);
-void cbranch(NODE *p, NODE *q);
+void cbranch(NODE *, NODE *);
 void extdec(struct symtab *);
 void defzero(struct symtab *);
-int falloc(struct symtab *p, int w, int new, NODE *pty);
+int falloc(struct symtab *, int, int, NODE *);
 TWORD ctype(TWORD);  
-void ninval(CONSZ off, int fsz, NODE *);
-void infld(CONSZ off, int fsz, CONSZ);
-void zbits(CONSZ off, int fsz);
-void instring(struct symtab *sp);
-void inwstring(struct symtab *sp);
-void plabel(int lab);
+void ninval(CONSZ, int, NODE *);
+void infld(CONSZ, int, CONSZ);
+void zbits(CONSZ, int);
+void instring(struct symtab *);
+void inwstring(struct symtab *);
+void plabel(int);
 void bjobcode(void);
 void ejobcode(int);
 void calldec(NODE *, NODE *);
 int cisreg(TWORD);
-char *tmpsprintf(char *fmt, ...);
-char *tmpvsprintf(char *fmt, va_list ap);
+char *tmpsprintf(char *, ...);
+char *tmpvsprintf(char *, va_list);
 void asginit(NODE *);
 void desinit(NODE *);
 void endinit(void);
+void sspinit(void);
+void sspstart(void);
+void sspend(void);
 void ilbrace(void);
 void irbrace(void);
-void scalinit(NODE *p);
-void p1print(char *fmt, ...);
+void scalinit(NODE *);
+void p1print(char *, ...);
 char *copst(int);
 int cdope(int);
 void myp2tree(NODE *);
@@ -316,28 +325,110 @@ NODE *enumref(char *);
 CONSZ icons(NODE *);
 int mypragma(char **);
 void fixdef(struct symtab *);
-int cqual(TWORD t, TWORD q);
+int cqual(TWORD, TWORD);
 void defloc(struct symtab *);
-int fldchk(int sz);
+int fldchk(int);
 int nncon(NODE *);
-void cunput(char c);
+void cunput(char);
+NODE *nametree(struct symtab *sp);
+void *inlalloc(int size);
+void pass1_lastchance(struct interpass *);
+void fldty(struct symtab *p);
+int getlab(void);
+struct suedef *sueget(struct suedef *p);
 
+
+#ifdef SOFTFLOAT
+typedef struct softfloat SF;
+SF soft_neg(SF);
+SF soft_cast(CONSZ v, TWORD);
+SF soft_plus(SF, SF);
+SF soft_minus(SF, SF);
+SF soft_mul(SF, SF);
+SF soft_div(SF, SF);
+int soft_isz(SF);
+CONSZ soft_val(SF);
+#define FLOAT_NEG(sf)		soft_neg(sf)
+#define	FLOAT_CAST(v,t)		soft_cast(v, t)
+#define	FLOAT_PLUS(x1,x2)	soft_plus(x1, x2)
+#define	FLOAT_MINUS(x1,x2)	soft_minus(x1, x2)
+#define	FLOAT_MUL(x1,x2)	soft_mul(x1, x2)
+#define	FLOAT_DIV(x1,x2)	soft_div(x1, x2)
+#define	FLOAT_ISZERO(sf)	soft_isz(sf)
+#define	FLOAT_VAL(sf)		soft_val(sf)
+#else
+#define	FLOAT_NEG(p)		-(p)
+#define	FLOAT_CAST(p,v)		(ISUNSIGNED(v) ? \
+		(long double)(U_CONSZ)(p) : (long double)(CONSZ)(p))
+#define	FLOAT_PLUS(x1,x2)	(x1) + (x2)
+#define	FLOAT_MINUS(x1,x2)	(x1) - (x2)
+#define	FLOAT_MUL(x1,x2)	(x1) * (x2)
+#define	FLOAT_DIV(x1,x2)	(x1) / (x2)
+#define	FLOAT_ISZERO(p)		(p) == 0.0
+#define FLOAT_VAL(p)		(CONSZ)(p)
+#endif
 
 #ifdef GCC_COMPAT
+enum {	GCC_ATYP_NONE,
+
+	/* type attributes */
+	GCC_ATYP_ALIGNED,
+	GCC_ATYP_PACKED,
+	GCC_ATYP_SECTION,
+	GCC_ATYP_TRANSP_UNION,
+	GCC_ATYP_UNUSED,
+	GCC_ATYP_DEPRECATED,
+	GCC_ATYP_MAYALIAS,
+
+	/* function attributes */
+	GCC_ATYP_NORETURN,
+	GCC_ATYP_FORMAT,
+	GCC_ATYP_NONNULL,
+	GCC_ATYP_SENTINEL,
+	GCC_ATYP_WEAK,
+
+	/* other stuff */
+	GCC_ATYP_BOUNDED,	/* OpenBSD extra boundary checks */
+
+	GCC_ATYP_MAX
+};
+
+union gcc_aarg {
+	int iarg;
+	char *sarg;
+};
+
+struct gcc_attrib {
+	int atype;
+	union gcc_aarg a1, a2, a3;
+};
+
+struct gcc_attr_pack {
+	int num;
+	struct gcc_attrib ga[];
+};
+
+typedef struct gcc_attr_pack gcc_ap_t;
+
 void gcc_init(void);
 int gcc_keyword(char *, NODE **);
+gcc_ap_t *gcc_attr_parse(NODE *);
+void gcc_tcattrfix(NODE *, NODE *);
+struct gcc_attrib *gcc_get_attr(struct suedef *, int);
+void dump_attr(gcc_ap_t *gap);
 #endif
 
 #ifdef STABS
 void stabs_init(void);
 void stabs_file(char *);
+void stabs_efile(char *);
 void stabs_line(int);
 void stabs_rbrac(int);
 void stabs_lbrac(int);
 void stabs_func(struct symtab *);
 void stabs_newsym(struct symtab *);
 void stabs_chgsym(struct symtab *);
-void stabs_struct(struct symtab *p, struct suedef *sue);
+void stabs_struct(struct symtab *, struct suedef *);
 #endif
 
 #ifndef CHARCAST
@@ -363,7 +454,7 @@ void stabs_struct(struct symtab *p, struct suedef *sue);
 #define	OROR		(MAXOP+12)
 #define	NOT		(MAXOP+13)
 #define	CAST		(MAXOP+14)
-/* #define	STRING		(MAXOP+15) */
+#define	STRING		(MAXOP+15)
 
 /* The following must be in the same order as their NOASG counterparts */
 #define	PLUSEQ		(MAXOP+16)
@@ -381,12 +472,27 @@ void stabs_struct(struct symtab *p, struct suedef *sue);
 
 #define INCR		(MAXOP+26)
 #define DECR		(MAXOP+27)
+#define SZOF		(MAXOP+28)
+#define CLOP		(MAXOP+29)
+#define ATTRIB		(MAXOP+30)
+
+
 /*
  * The following types are only used in pass1.
  */
 #define SIGNED		(MAXTYPES+1)
 #define BOOL		(MAXTYPES+2)
+#define	FCOMPLEX	(MAXTYPES+3)
+#define	COMPLEX		(MAXTYPES+4)
+#define	LCOMPLEX	(MAXTYPES+5)
+#define	FIMAG		(MAXTYPES+6)
+#define	IMAG		(MAXTYPES+7)
+#define	LIMAG		(MAXTYPES+8)
+#define	ENUMTY		(MAXTYPES+9)
 
+#define	ISFTY(x)	((x) >= FLOAT && (x) <= LDOUBLE)
+#define	ISCTY(x)	((x) >= FCOMPLEX && (x) <= LCOMPLEX)
+#define	ISITY(x)	((x) >= FIMAG && (x) <= LIMAG)
 
 #define coptype(o)	(cdope(o)&TYFLG)
 #define clogop(o)	(cdope(o)&LOGFLG)

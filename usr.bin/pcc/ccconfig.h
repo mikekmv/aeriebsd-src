@@ -62,5 +62,9 @@
 	{ NULL }, \
 }
 #define MAXCPPMDARGS 8
+#define	MULTITARGET
 
 #define	STABS
+#define	ELFABI
+
+#define WCHAR_TYPE UNSIGNED

@@ -1,3 +1,4 @@
+/*	$Id: macdefs.h,v 1.2 2009/02/13 15:25:01 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -64,8 +65,9 @@
 #define ALLONGLONG	32
 #define ALSHORT		16
 #define ALPOINT		32
-#define ALSTRUCT	32
+#undef ALSTRUCT		/* Not defined if ELF ABI */
 #define ALSTACK		32 
+#define	ALMAX		128	/* not yet supported type */
 
 /*
  * Min/max values.
@@ -89,11 +91,6 @@
 /* Default char is signed */
 #undef	CHAR_UNSIGNED
 #define	BOOL_TYPE	CHAR	/* what used to store _Bool */
-#if os_mirbsd
-#define WCHAR_TYPE	USHORT	/* ISO 10646 16-bit Unicode */
-#else
-#define	WCHAR_TYPE	INT	/* what used to store wchar_t */
-#endif
 
 /*
  * Use large-enough types.
@@ -103,8 +100,13 @@ typedef	unsigned long long U_CONSZ;
 typedef long long OFFSZ;
 
 #define CONFMT	"%lld"		/* format for printing constants */
+#if defined(ELFABI)
 #define LABFMT	".L%d"		/* format for printing labels */
 #define	STABLBL	".LL%d"		/* format for stab (debugging) labels */
+#else
+#define LABFMT	"L%d"		/* format for printing labels */
+#define	STABLBL	"LL%d"		/* format for stab (debugging) labels */
+#endif
 #ifdef LANG_F77
 #define BLANKCOMMON "_BLNK_"
 #define MSKIREG  (M(TYSHORT)|M(TYLONG))
@@ -115,6 +117,10 @@ typedef long long OFFSZ;
 #define ARGOFFSET 8
 #endif
 
+#ifdef MACHOABI
+#define STAB_LINE_ABSOLUTE	/* S_LINE fields use absolute addresses */
+#endif
+
 #define BACKAUTO 		/* stack grows negatively for automatics */
 #define BACKTEMP 		/* stack grows negatively for temporaries */
 
@@ -122,6 +128,8 @@ typedef long long OFFSZ;
 #define	RTOLBYTES		/* bytes are numbered right to left */
 
 #define ENUMSIZE(high,low) INT	/* enums are always stored in full int */
+
+#define FINDMOPS	/* i386 has instructions that modifies memory */
 
 /* Definitions mostly used in pass2 */
 
@@ -279,7 +287,9 @@ int COLORMAP(int c, int *r);
 			 x == LONGLONG || x == ULONGLONG ? EAXEDX : \
 			 x == FLOAT || x == DOUBLE || x == LDOUBLE ? 31 : EAX)
 
-//#define R2REGS	1	/* permit double indexing */
+#if 0
+#define R2REGS	1	/* permit double indexing */
+#endif
 
 /* XXX - to die */
 #define FPREG	EBP	/* frame pointer */
@@ -301,3 +311,53 @@ int COLORMAP(int c, int *r);
  */
 #define	SSECTION	SLOCAL1
 #define	STLS		SLOCAL2
+#define	SNOUNDERSCORE	SLOCAL3
+#define SSTDCALL	SLOCAL2	
+#define SDLLINDIRECT	SLOCAL3
+
+/*
+ * i386-specific node flags.
+ */
+#define FSTDCALL	0x01
+
+/*
+ * i386-specific interpass stuff.
+ */
+
+#define TARGET_IPP_MEMBERS			\
+	int ipp_argstacksize;
+
+/*
+ * Extended assembler macros.
+ */
+void targarg(char *w, void *arg);
+#define	XASM_TARGARG(w, ary)	\
+	(w[1] == 'b' || w[1] == 'h' || w[1] == 'w' || w[1] == 'k' ? \
+	w++, targarg(w, ary), 1 : 0)
+int numconv(void *ip, void *p, void *q);
+#define	XASM_NUMCONV(ip, p, q)	numconv(ip, p, q)
+int xasmconstregs(char *);
+#define	XASMCONSTREGS(x) xasmconstregs(x)
+
+/*
+ * builtins.
+ */
+#define TARGET_BUILTINS							\
+	{ "__builtin_frame_address", i386_builtin_frame_address },	\
+	{ "__builtin_return_address", i386_builtin_return_address },
+
+#define NODE struct node
+struct node;
+NODE *i386_builtin_frame_address(NODE *f, NODE *a);
+NODE *i386_builtin_return_address(NODE *f, NODE *a);
+#undef NODE
+
+#if defined(MACHOABI)
+struct stub {
+	struct { struct stub *q_forw, *q_back; } link;
+	char *name;
+};    
+extern struct stub stublist;
+extern struct stub nlplist;
+void addstub(struct stub *list, char *name);
+#endif

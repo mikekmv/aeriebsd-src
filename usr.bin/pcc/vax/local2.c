@@ -1,3 +1,4 @@
+/*	$Id: local2.c,v 1.2 2009/02/13 15:25:03 mickey Exp $	*/
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -50,7 +51,7 @@ prologue(struct interpass_prolog *ipp)
 		printf("	.globl %s\n", ipp->ipp_name);
 	printf("	.align 4\n");
 	printf("%s:\n", ipp->ipp_name);
-	printf("	.word 0x%x\n", ipp->ipp_regs);
+	printf("	.word 0x%x\n", ipp->ipp_regs[0]);
 	if (p2maxautooff)
 		printf("	subl2 $%d,%%sp\n", p2maxautooff);
 }
@@ -203,7 +204,7 @@ zzzcode( p, c ) register NODE *p; {
 
 	case 'N':  /* logical ops, turned into 0-1 */
 		/* use register given by register 1 */
-		cbgen( 0, m=getlab());
+		cbgen( 0, m=getlab2());
 		deflab( p->n_label );
 		printf( "	clrl	%s\n", rnames[getlr( p, '1' )->n_rval] );
 		deflab( m );
@@ -530,12 +531,12 @@ int
 canaddr( p ) NODE *p; {
 	register int o = p->n_op;
 
-	if( o==NAME || o==REG || o==ICON || o==OREG || (o==UMUL && shumul(p->n_left)) ) return(1);
+	if( o==NAME || o==REG || o==ICON || o==OREG || (o==UMUL && shumul(p->n_left, STARNM|SOREG)) ) return(1);
 	return(0);
 	}
 
 shltype( o, p ) register NODE *p; {
-	return( o== REG || o == NAME || o == ICON || o == OREG || ( o==UMUL && shumul(p->n_left)) );
+	return( o== REG || o == NAME || o == ICON || o == OREG || ( o==UMUL && shumul(p->n_left, STARNM|SOREG)) );
 	}
 #endif
 
@@ -554,11 +555,11 @@ flshape( p ) register NODE *p; {
 int
 shtemp( p ) register NODE *p; {
 	if( p->n_op == STARG ) p = p->n_left;
-	return( p->n_op==NAME || p->n_op ==ICON || p->n_op == OREG || (p->n_op==UMUL && shumul(p->n_left)) );
+	return( p->n_op==NAME || p->n_op ==ICON || p->n_op == OREG || (p->n_op==UMUL && shumul(p->n_left, STARNM|SOREG)) );
 	}
 
 int
-shumul( p ) register NODE *p; {
+shumul( p, shape ) register NODE *p; int shape; {
 	register int o;
 	extern int xdebug;
 
@@ -569,7 +570,9 @@ shumul( p ) register NODE *p; {
 
 
 	o = p->n_op;
-	if( o == NAME || (o == OREG && !R2TEST(p->n_rval)) || o == ICON ) return( STARNM );
+	if( o == NAME || (o == OREG && !R2TEST(p->n_rval)) || o == ICON )
+		if (shape & STARNM)
+			return SRDIR;
 
 #ifdef notyet
 	if( ( o == INCR || o == ASG MINUS ) &&
@@ -611,7 +614,7 @@ shumul( p ) register NODE *p; {
 		}
 #endif
 
-	return( 0 );
+	return( SRNOPE );
 	}
 
 void
@@ -880,7 +883,7 @@ cbgen(int o, int lab)
 }
 
 static void
-optim2(NODE *p)
+optim2(NODE *p, void *arg)
 {
 	/* do local tree transformations and optimizations */
 
@@ -927,7 +930,7 @@ myreader(struct interpass *ipole)
 	DLIST_FOREACH(ip, ipole, qelem) {
 		if (ip->type != IP_NODE)
 			continue;
-		walkf(ip->ip_node, optim2);
+		walkf(ip->ip_node, optim2, 0);
 	}
 }
 
@@ -1021,4 +1024,13 @@ special(NODE *p, int shape)
 void
 mflags(char *str)
 {
+}
+/*
+ * Do something target-dependent for xasm arguments.
+ * Supposed to find target-specific constraints and rewrite them.
+ */
+int
+myxasm(struct interpass *ip, NODE *p)
+{
+	return 0;
 }

@@ -1,3 +1,4 @@
+/*      $Id: order.c,v 1.2 2009/02/13 15:24:58 mickey Exp $    */
 /*
  * Copyright (c) 2007 Gregory McGarry (g.mcgarry@ieee.org).
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
@@ -40,10 +41,13 @@
  * OREG can be generated.
  */
 int
-notoff(TWORD t, int r, CONSZ off, char *cp)
+notoff(TWORD ty, int r, CONSZ off, char *cp)
 {
 	if (cp && cp[0]) return 1;
-	return !(off < 32768 && off > -32769);  /* YES */
+	if (DEUNSIGN(ty) == INT || ty == UCHAR)
+		return !(off < 4096 && off > -4096);
+	else
+		return !(off < 256 && off > -256);
 }
 
 /*
@@ -92,7 +96,23 @@ myormake(NODE *q)
 		printf("myormake(%p)\n", q);
 
 	p = q->n_left;
-	if (p->n_op == PLUS && (r = p->n_right)->n_op == LS &&
+
+	/*
+	 * This handles failed OREGs conversions, due to the offset
+	 * being too large for an OREG.
+	 */
+	if ((p->n_op == PLUS || p->n_op == MINUS) && p->n_right->n_op == ICON) {
+		if (isreg(p->n_left) == 0)
+			(void)geninsn(p->n_left, INAREG);
+		if (isreg(p->n_right) == 0)
+			(void)geninsn(p->n_right, INAREG);
+		(void)geninsn(p, INAREG);
+	} else if (p->n_op == REG) {
+		q->n_op = OREG;
+		q->n_lval = p->n_lval;
+		q->n_rval = p->n_rval;
+		tfree(p);
+	} else if (p->n_op == PLUS && (r = p->n_right)->n_op == LS &&
 	    r->n_right->n_op == ICON && r->n_right->n_lval == 2 &&
  	    p->n_left->n_op == REG && r->n_left->n_op == REG) {
 		q->n_op = OREG;
@@ -107,10 +127,12 @@ myormake(NODE *q)
  * Check to if the UMUL node can be converted into an OREG.
  */
 int
-shumul(NODE *p)
+shumul(NODE *p, int shape)
 {
 	/* Turns currently anything into OREG */
-	return SOREG;
+	if (shape & SOREG)
+		return SROREG;
+	return SRNOPE;
 }
 
 /*

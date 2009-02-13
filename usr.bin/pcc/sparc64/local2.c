@@ -51,7 +51,7 @@ prologue(struct interpass_prolog *ipp)
 
 	stack = V9RESERVE + V9STEP(p2maxautooff);
 
-	for (i=ipp->ipp_regs; i; i >>= 1)
+	for (i = ipp->ipp_regs[0]; i; i >>= 1)
 		if (i & 1)
 			stack += 16;
 
@@ -355,7 +355,13 @@ myoptim(struct interpass * ipole)
 void
 rmove(int s, int d, TWORD t)
 {
-	printf("\tmov %s,%s\t\t\t! rmove()\n", rnames[s], rnames[d]);
+	printf("\t");
+
+	if (t == FLOAT)	      printf("fmovs");
+	else if (t == DOUBLE) printf("fmovd");
+	else                  printf("mov");
+
+	printf(" %s,%s\t\t\t! rmove()\n", rnames[s], rnames[d]);
 }
 
 int
@@ -406,4 +412,13 @@ COLORMAP(int c, int *r)
 			comperr("COLORMAP: unknown class: %d", c);
 			return 0;
 	}
+}
+/*
+ * Do something target-dependent for xasm arguments.
+ * Supposed to find target-specific constraints and rewrite them.
+ */
+int
+myxasm(struct interpass *ip, NODE *p)
+{
+	return 0;
 }

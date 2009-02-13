@@ -1,3 +1,4 @@
+/*      $Id: local2.c,v 1.2 2009/02/13 15:24:58 mickey Exp $    */
 /*
  * Copyright (c) 2007 Gregory McGarry (g.mcgarry@ieee.org).
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
@@ -168,7 +169,7 @@ prologue(struct interpass_prolog *ipp)
 			ipp->ipp_name,
 			ipp->ipp_vis,
 			ipp->ipp_type,
-			ipp->ipp_regs,
+			ipp->ipp_regs[0],
 			ipp->ipp_autos,
 			ipp->ip_tmpnum,
 			ipp->ip_lblnum);
@@ -323,7 +324,7 @@ static void
 twollcomp(NODE *p)
 {
 	int o = p->n_op;
-	int s = getlab();
+	int s = getlab2();
 	int e = p->n_label;
 	int cb1, cb2;
 
@@ -396,65 +397,9 @@ fldexpand(NODE *p, int cookie, char **cp)
         return 1;
 }
 
-#if 0
-/*
- * Assign to a bitfield.
- * Clumsy at least, but what to do?
- */
-static void
-bfasg(NODE *p)
-{
-	NODE *fn = p->n_left;
-	int shift = UPKFOFF(fn->n_rval);
-	int fsz = UPKFSZ(fn->n_rval);
-	int andval, tch = 0;
-
-	/* get instruction size */
-	switch (p->n_type) {
-	case CHAR: case UCHAR: tch = 'b'; break;
-	case SHORT: case USHORT: tch = 'w'; break;
-	case INT: case UNSIGNED: tch = 'l'; break;
-	default: comperr("bfasg");
-	}
-
-	/* put src into a temporary reg */
-	fprintf(stdout, "	mov%c ", tch);
-	adrput(stdout, getlr(p, 'R'));
-	fprintf(stdout, ",");
-	adrput(stdout, getlr(p, '1'));
-	fprintf(stdout, "\n");
-
-	/* AND away the bits from dest */
-	andval = ~(((1 << fsz) - 1) << shift);
-	fprintf(stdout, "	and%c $%d,", tch, andval);
-	adrput(stdout, fn->n_left);
-	fprintf(stdout, "\n");
-
-	/* AND away unwanted bits from src */
-	andval = ((1 << fsz) - 1);
-	fprintf(stdout, "	and%c $%d,", tch, andval);
-	adrput(stdout, getlr(p, '1'));
-	fprintf(stdout, "\n");
-
-	/* SHIFT left src number of bits */
-	if (shift) {
-		fprintf(stdout, "	sal%c $%d,", tch, shift);
-		adrput(stdout, getlr(p, '1'));
-		fprintf(stdout, "\n");
-	}
-
-	/* OR in src to dest */
-	fprintf(stdout, "	or%c ", tch);
-	adrput(stdout, getlr(p, '1'));
-	fprintf(stdout, ",");
-	adrput(stdout, fn->n_left);
-	fprintf(stdout, "\n");
-}
-#endif
 
 /*
- * Push a structure on stack as argument.
- * the scratch registers are already free here
+ * Structure assignment.
  */
 static void
 stasg(NODE *p)
@@ -462,17 +407,29 @@ stasg(NODE *p)
 	NODE *l = p->n_left;
 	int val = l->n_lval;
 
+	/* R0 = dest, R1 = src, R2 = len */
 	load_constant_into_reg(R2, p->n_stsize);
-	if (l->n_rval != R0 || l->n_lval != 0) {
-		if (trepresent(val)) {
-			printf("\tadd %s,%s,#%d\n",
-			    rnames[R0], rnames[regno(l)], val);
-		} else {
-			load_constant_into_reg(R0, val);
-			printf("\tadd %s,%s,%s\n", rnames[R0],
-			    rnames[R0], rnames[regno(l)]);
+	if (l->n_op == OREG) {
+		if (R2TEST(regno(l))) {
+			int r = regno(l);
+			printf("\tadd %s,%s,lsl #%d\n",
+			    rnames[R0], rnames[R2UPK2(r)], R2UPK3(r));
+			printf("\tadd %s,%s,%s\n", rnames[R0], rnames[R0],
+			    rnames[R2UPK1(r)]);
+		} else  {
+			if (trepresent(val)) {
+				printf("\tadd %s,%s,#%d\n",
+				    rnames[R0], rnames[regno(l)], val);
+			} else {
+				load_constant_into_reg(R0, val);
+				printf("\tadd %s,%s,%s\n", rnames[R0],
+				    rnames[R0], rnames[regno(l)]);
+			}
 		}
+	} else if (l->n_op == NAME) {
+		cerror("not implemented");
 	}
+
 	printf("\tbl %s\n", exname("memcpy"));
 }
 
@@ -582,7 +539,7 @@ fpemul(NODE *p)
 	else if (p->n_op == SCONV && p->n_type == FLOAT) {
 		if (l->n_type == DOUBLE) ch = "truncdfsf2";
 		else if (l->n_type == LDOUBLE) ch = "truncdfsf2";
-		else if (l->n_type == ULONGLONG) ch = "floatundisf";
+		else if (l->n_type == ULONGLONG) ch = "floatunsdisf";
 		else if (l->n_type == LONGLONG) ch = "floatdisf";
 		else if (l->n_type == LONG) ch = "floatsisf";
 		else if (l->n_type == ULONG) ch = "floatunsisf";
@@ -600,7 +557,7 @@ fpemul(NODE *p)
 	} else if (p->n_op == SCONV && p->n_type == LDOUBLE) {
 		if (l->n_type == FLOAT) ch = "extendsfdf2";
 		else if (l->n_type == DOUBLE) ch = "extenddftd2";
-		else if (l->n_type == ULONGLONG) ch = "floatundidf";
+		else if (l->n_type == ULONGLONG) ch = "floatunsdidf";
 		else if (l->n_type == LONGLONG) ch = "floatdidf";
 		else if (l->n_type == LONG) ch = "floatsidf";
 		else if (l->n_type == ULONG) ch = "floatunsidf";
@@ -650,40 +607,41 @@ emul(NODE *p)
 {
 	char *ch = NULL;
 
-/**/	if (p->n_op == LS && DEUNSIGN(p->n_type) == LONGLONG) ch = "ashlti3";
-	else if (p->n_op == LS && DEUNSIGN(p->n_type) == LONG) ch = "ashldi3";
+	if (p->n_op == LS && DEUNSIGN(p->n_type) == LONGLONG) ch = "ashldi3";
+	else if (p->n_op == LS && DEUNSIGN(p->n_type) == LONG) ch = "ashlsi3";
 	else if (p->n_op == LS && DEUNSIGN(p->n_type) == INT) ch = "ashlsi3";
 
-/**/	else if (p->n_op == RS && p->n_type == ULONGLONG) ch = "lshrti3";
-	else if (p->n_op == RS && p->n_type == ULONG) ch = "lshrdi3";
+	else if (p->n_op == RS && p->n_type == ULONGLONG) ch = "lshrdi3";
+	else if (p->n_op == RS && p->n_type == ULONG) ch = "lshrsi3";
 	else if (p->n_op == RS && p->n_type == UNSIGNED) ch = "lshrsi3";
 
-/**/	else if (p->n_op == RS && p->n_type == LONGLONG) ch = "ashrti3";
-	else if (p->n_op == RS && p->n_type == LONG) ch = "ashrdi3";
+	else if (p->n_op == RS && p->n_type == LONGLONG) ch = "ashrdi3";
+	else if (p->n_op == RS && p->n_type == LONG) ch = "ashrsi3";
 	else if (p->n_op == RS && p->n_type == INT) ch = "ashrsi3";
 	
 	else if (p->n_op == DIV && p->n_type == LONGLONG) ch = "divdi3";
-	else if (p->n_op == DIV && p->n_type == LONG) ch = "divdi3";
+	else if (p->n_op == DIV && p->n_type == LONG) ch = "divsi3";
 	else if (p->n_op == DIV && p->n_type == INT) ch = "divsi3";
 
 	else if (p->n_op == DIV && p->n_type == ULONGLONG) ch = "udivdi3";
-	else if (p->n_op == DIV && p->n_type == ULONG) ch = "udivdi3";
+	else if (p->n_op == DIV && p->n_type == ULONG) ch = "udivsi3";
 	else if (p->n_op == DIV && p->n_type == UNSIGNED) ch = "udivsi3";
 
 	else if (p->n_op == MOD && p->n_type == LONGLONG) ch = "moddi3";
-	else if (p->n_op == MOD && p->n_type == LONG) ch = "moddi3";
+	else if (p->n_op == MOD && p->n_type == LONG) ch = "modsi3";
 	else if (p->n_op == MOD && p->n_type == INT) ch = "modsi3";
 
 	else if (p->n_op == MOD && p->n_type == ULONGLONG) ch = "umoddi3";
-	else if (p->n_op == MOD && p->n_type == ULONG) ch = "umoddi3";
+	else if (p->n_op == MOD && p->n_type == ULONG) ch = "umodsi3";
 	else if (p->n_op == MOD && p->n_type == UNSIGNED) ch = "umodsi3";
 
 	else if (p->n_op == MUL && p->n_type == LONGLONG) ch = "muldi3";
-	else if (p->n_op == MUL && p->n_type == LONG) ch = "muldi3";
+	else if (p->n_op == MUL && p->n_type == LONG) ch = "mulsi3";
 	else if (p->n_op == MUL && p->n_type == INT) ch = "mulsi3";
 
-	else if (p->n_op == UMINUS && p->n_type == LONGLONG) ch = "negti2";
-	else if (p->n_op == UMINUS && p->n_type == LONG) ch = "negdi2";
+	else if (p->n_op == UMINUS && p->n_type == LONGLONG) ch = "negdi2";
+	else if (p->n_op == UMINUS && p->n_type == LONG) ch = "negsi2";
+	else if (p->n_op == UMINUS && p->n_type == INT) ch = "negsi2";
 
 	else ch = 0, comperr("ZE");
 	printf("\tbl __%s" COM "emulated operation\n", exname(ch));
@@ -849,7 +807,7 @@ flshape(NODE *p)
 
 	if (o == OREG || o == REG || o == NAME)
 		return SRDIR; /* Direct match */
-	if (o == UMUL && shumul(p->n_left))
+	if (o == UMUL && shumul(p->n_left, SOREG))
 		return SROREG; /* Convert into oreg */
 	return SRREG; /* put it into a register */
 }
@@ -910,7 +868,7 @@ conput(FILE *fp, NODE *p)
 #endif
 #ifdef notdef	/* ICON cannot ever use sp here */
 		/* If it does, it's a giant bug */
-		if (p->n_sp == NULL || (p->n_sp->sclass == ILABEL ||
+		if (p->n_sp == NULL || (
 		   (p->n_sp->sclass == STATIC && p->n_sp->slevel > 0)))
 			s = p->n_name;
 		else
@@ -1105,7 +1063,7 @@ flshlab(void)
 }
 
 static void
-prtaddr(NODE *p)
+prtaddr(NODE *p, void *arg)
 {
 	NODE *l = p->n_left;
 	struct addrsymb *el;
@@ -1186,7 +1144,7 @@ myreader(struct interpass *ipole)
 		case IP_NODE:
 			lineno = ip->lineno;
 			ipbase = ip;
-			walkf(ip->ip_node, prtaddr);
+			walkf(ip->ip_node, prtaddr, 0);
 			break;
 		case IP_EPILOG:
 			ipbase = ip;
@@ -1205,7 +1163,7 @@ myreader(struct interpass *ipole)
  * Remove some PCONVs after OREGs are created.
  */
 static void
-pconv2(NODE *p)
+pconv2(NODE *p, void *arg)
 {
 	NODE *q;
 
@@ -1230,7 +1188,7 @@ pconv2(NODE *p)
 void
 mycanon(NODE *p)
 {
-	walkf(p, pconv2);
+	walkf(p, pconv2, 0);
 }
 
 void
@@ -1527,3 +1485,12 @@ deflab(int label)
 	printf(LABFMT ":\n", label);
 }
 
+/*
+ * Do something target-dependent for xasm arguments.
+ * Supposed to find target-specific constraints and rewrite them.
+ */
+int
+myxasm(struct interpass *ip, NODE *p)
+{
+	return 0;
+}

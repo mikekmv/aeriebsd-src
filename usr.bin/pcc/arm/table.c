@@ -1,3 +1,4 @@
+/*	$Id: table.c,v 1.2 2009/02/13 15:24:58 mickey Exp $	*/
 /*-
  * Copyright (c) 2007 Gregory McGarry <g.mcgarry@ieee.org>
  *
@@ -98,13 +99,13 @@ struct optab table[] = {
 
 { SCONV,	INAREG | FEATURE_EXTEND,
 	SAREG,	TSHORT,
-	SAREG,	TUWORD,
+	SAREG,	TUWORD|TUSHORT,
 		NAREG|NASL,	RESC1,
 		"	uxth A1,AL" COM "convert short to uint\n", },
 
 { SCONV,	INAREG,
 	SAREG,	TSHORT,
-	SAREG,	TUWORD,
+	SAREG,	TUWORD|TUSHORT,
 		NAREG|NASL,	RESC1,
 		"	mov A1,AL,asl #16" COM "convert short to uint\n"
 		"	mov A1,AL,lsr #16\n", },
@@ -655,7 +656,7 @@ struct optab table[] = {
 
 { CALL,		FOREFF,
 	SAREG,	TANY,
-	SANY,		TANY,
+	SANY,	TANY,
 		0,	0,
 		"	mov lr,pc\n"
 		"	mov pc,AL\n"
@@ -663,23 +664,38 @@ struct optab table[] = {
 
 { UCALL,	FOREFF,
 	SAREG,	TANY,
-	SANY,		TANY,
+	SANY,	TANY,
 		0,	0,
 		"	mov lr,pc\n"
 		"	mov pc,AL\n", },
 
 { CALL,		INAREG,
 	SAREG,	TANY,
-	SANY,		TANY,
-		INAREG,	RESC1,
+	SANY,	TANY,
+		NAREG,	RESC1,
 		"	mov lr,pc\n"
 		"	mov pc,AL\n"
 		"ZC", },
 
 { UCALL,	INAREG,
 	SAREG,	TANY,
-	SANY,		TANY,
-		INAREG,	RESC1,
+	SANY,	TANY,
+		NAREG,	RESC1,
+		"	mov lr,pc\n"
+		"	mov pc,AL\n", },
+
+{ CALL,		INBREG,
+	SAREG,	TANY,
+	SANY,	TANY,
+		NBREG,	RESC1,
+		"	mov lr,pc\n"
+		"	mov pc,AL\n"
+		"ZC", },
+
+{ UCALL,	INBREG,
+	SAREG,	TANY,
+	SANY,	TANY,
+		NBREG,	RESC1,
 		"	mov lr,pc\n"
 		"	mov pc,AL\n", },
 
@@ -1134,7 +1150,7 @@ struct optab table[] = {
 
 { STASG,	INAREG|FOREFF,
 	SOREG|SNAME,	TANY,
-	SAREG,	TPTRTO|TANY,
+	SAREG,		TPTRTO|TANY,
 		NSPECIAL,	RRIGHT,
 		"ZQ", },
 

@@ -9,7 +9,7 @@ PREFIX=		/usr/local
 BINDIR=		${PREFIX}/libexec
 MANDIR=		${PREFIX}/man/man
 TARGOS=		openbsd
-CLEANFILES=	external.h external.c mkext
+CLEANFILES=	cgram.h external.h external.c mkext
 
 CFLAGS+=	-DPCC_DEBUG -DGCC_COMPAT
 CFLAGS+=	-Wall -Wmissing-prototypes -Wstrict-prototypes -Werror

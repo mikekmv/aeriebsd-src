@@ -1,3 +1,4 @@
+/*	$Id: local.c,v 1.2 2009/02/13 15:25:02 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -34,8 +35,7 @@
 
 extern int kflag;
 
-static
-void simmod(NODE *p);
+static void simmod(NODE *p);
 
 /*	this file contains code which is dependent on the target machine */
 
@@ -55,10 +55,9 @@ addstub(struct stub *list, char *name)
                         return;
         }
 
-        if ((s = permalloc(sizeof(struct stub))) == NULL)
-                cerror("addstub: malloc");
-        if ((s->name = strdup(name)) == NULL)
-                cerror("addstub: strdup");
+        s = permalloc(sizeof(struct stub));
+        s->name = permalloc(strlen(name) + 1);
+        strcpy(s->name, name);
         DLIST_INSERT_BEFORE(list, s, link);
 }
 
@@ -95,12 +94,12 @@ picext(NODE *p)
 	NODE *q;
 	struct symtab *sp;
 
-	if (strncmp(p->n_sp->soname, "__builtin", 9) == 0)
+	if (strncmp(p->n_sp->sname, "__builtin", 9) == 0)
 		return p;
 
 #if defined(ELFABI)
 
-	sp = picsymtab("", p->n_sp->soname, "@got(31)");
+	sp = picsymtab("", p->n_sp->sname, "@got(31)");
 	q = xbcon(0, sp, PTR+VOID);
 	q = block(UMUL, q, 0, PTR+VOID, 0, MKSUE(VOID));
 
@@ -147,16 +146,18 @@ picstatic(NODE *p)
 {
 	NODE *q;
 	struct symtab *sp;
+	char *n;
 
 #if defined(ELFABI)
 
-	if (p->n_sp->slevel > 0 || p->n_sp->sclass == ILABEL) {
+	if (p->n_sp->slevel > 0) {
 		char buf[64];
 		snprintf(buf, 64, LABFMT, (int)p->n_sp->soffset);
 		sp = picsymtab("", buf, "@got(31)");
 		sp->sflags |= SNOUNDERSCORE;
 	} else  {
-		sp = picsymtab("", p->n_sp->soname, "@got(31)");
+		n = p->n_sp->soname ? p->n_sp->soname : p->n_sp->sname;
+		sp = picsymtab("", n, "@got(31)");
 	}
 	sp->sclass = STATIC;
 	sp->stype = p->n_sp->stype;
@@ -172,7 +173,7 @@ picstatic(NODE *p)
 
 	snprintf(buf2, 64, "-L%s$pb", cftnsp->soname);
 
-	if (p->n_sp->slevel > 0 || p->n_sp->sclass == ILABEL) {
+	if (p->n_sp->slevel > 0) {
 		char buf1[64];
 		snprintf(buf1, 64, LABFMT, (int)p->n_sp->soffset);
 		sp = picsymtab("", buf1, buf2);
@@ -215,8 +216,10 @@ convert_ulltof(NODE *p)
 	t = buildtree(ASSIGN, q, l);
 	ecomp(t);
 
-	//q = tempnode(tmpnr, ULONGLONG, 0, MKSUE(ULONGLONG));
-	//q = block(SCONV, q, NIL, LONGLONG, 0, MKSUE(LONGLONG));
+#if 0
+	q = tempnode(tmpnr, ULONGLONG, 0, MKSUE(ULONGLONG));
+	q = block(SCONV, q, NIL, LONGLONG, 0, MKSUE(LONGLONG));
+#endif
 	q = tempnode(tmpnr, LONGLONG, 0, MKSUE(LONGLONG));
 	r = block(SCONV, q, NIL, ty, 0, MKSUE(ty));
 
@@ -277,6 +280,7 @@ clocal(NODE *p)
 			printf("type: 0x%x\n", p->n_type);
 		}
 #endif
+		/* XXX cannot takes addresses of PARAMs */
 
 		if (kflag == 0 || blevel == 0)
 			break;
@@ -338,11 +342,6 @@ clocal(NODE *p)
 			if (blevel > 0)
 				p = picext(p);
 			break;
-
-		case ILABEL:
-			if (kflag && blevel > 0)
-				p = picstatic(p);
-			break;
 		}
 		break;
 
@@ -383,7 +382,7 @@ clocal(NODE *p)
 		l = p->n_left;
 
 		/*
-		 * Remove unneccessary conversion ops.
+		 * Remove unnecessary conversion ops.
 		 */
 		if (clogop(l->n_op) && l->n_left->n_op == SCONV) {
 			if (coptype(l->n_op) != BITYPE)
@@ -620,7 +619,7 @@ clocal(NODE *p)
  * Change CALL references to either direct (static) or PLT.
  */
 static void
-fixnames(NODE *p)
+fixnames(NODE *p, void *arg)
 {
         struct symtab *sp;
         struct suedef *sue;
@@ -661,10 +660,11 @@ fixnames(NODE *p)
                 if (sp->sclass != STATIC && sp->sclass != EXTERN &&
                     sp->sclass != EXTDEF)
                         cerror("fixnames");
-
+		c = NULL;
 #if defined(ELFABI)
 
-                if ((c = strstr(sp->soname, "@got(31)")) == NULL)
+		if (sp->soname == NULL ||
+                    (c = strstr(sp->soname, "@got(31)")) == NULL)
                         cerror("fixnames2");
                 if (isu) {
                         strcpy(c, "@plt");
@@ -673,8 +673,9 @@ fixnames(NODE *p)
 
 #elif defined(MACHOABI)
 
-		if ((c = strstr(sp->soname, "$non_lazy_ptr")) == NULL &&
-		    (c = strstr(sp->soname, "-L")) == NULL)
+		if (sp->soname == NULL ||
+		    ((c = strstr(sp->soname, "$non_lazy_ptr")) == NULL &&
+		    (c = strstr(sp->soname, "-L")) == NULL))
 				cerror("fixnames2");
 		if (isu) {
 			*c = 0;
@@ -702,7 +703,7 @@ myp2tree(NODE *p)
 	struct symtab *sp;
 
 	if (kflag)
-		walkf(p, fixnames);
+		walkf(p, fixnames, 0);
 	if (o != FCON) 
 		return;
 
@@ -855,7 +856,7 @@ instring(struct symtab *sp)
 	if (lastloc != STRNG)
 		printf("	.cstring\n");
 	lastloc = STRNG;
-	printf("	.p2align 1\n");
+	printf("\t.p2align 2\n");
 	printf(LABFMT ":\n", sp->soffset);
 
 #endif
@@ -886,7 +887,7 @@ inwstring(struct symtab *sp)
 	NODE *p;
 
 	defloc(sp);
-	p = bcon(0);
+	p = xbcon(0, NULL, WCHAR_TYPE);
 	do {
 		if (*s++ == '\\')
 			p->n_lval = esccon(&s);
@@ -1018,7 +1019,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 
 #if defined(ELFABI)
 
-		if ((c = strstr(q->soname, "@got(31)")) != NULL)
+		if (q->soname && (c = strstr(q->soname, "@got(31)")) != NULL)
 			*c = 0; /* ignore GOT ref here */
 
 #elif defined(MACHOABI)
@@ -1066,8 +1067,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 	case UNSIGNED:
 		printf("\t.long %d", (int)p->n_lval);
 		if ((q = p->n_sp) != NULL) {
-			if ((q->sclass == STATIC && q->slevel > 0) ||
-			    q->sclass == ILABEL) {
+			if ((q->sclass == STATIC && q->slevel > 0)) {
 				printf("+" LABFMT, q->soffset);
 			} else {
 
@@ -1185,13 +1185,15 @@ extdec(struct symtab *q)
 void
 defzero(struct symtab *sp)
 {
+	char *n;
 	int off;
 
 	off = tsize(sp->stype, sp->sdf, sp->ssue);
 	off = (off+(SZCHAR-1))/SZCHAR;
 	printf("\t.%scomm ", sp->sclass == STATIC ? "l" : "");
+	n = sp->soname ? sp->soname : exname(sp->sname);
 	if (sp->slevel == 0)
-		printf("%s,%d\n", exname(sp->soname), off);
+		printf("%s,%d\n", n, off);
 	else
 		printf(LABFMT ",%d\n", sp->soffset, off);
 }
@@ -1206,7 +1208,7 @@ commdec(struct symtab *q)
 
 	off = tsize(q->stype, q->sdf, q->ssue);
 	off = (off+(SZCHAR-1))/SZCHAR;
-	printf("\t.comm %s,0%o\n", exname(q->soname), off);
+	printf("\t.comm %s,0%o\n", q->soname ? q->soname : exname(q->sname), off);
 }
 
 /* make a local common declaration for id, if reasonable */
@@ -1218,7 +1220,7 @@ lcommdec(struct symtab *q)
 	off = tsize(q->stype, q->sdf, q->ssue);
 	off = (off+(SZCHAR-1))/SZCHAR;
 	if (q->slevel == 0)
-		printf("\t.lcomm %s,%d\n", exname(q->soname), off);
+		printf("\t.lcomm %s,%d\n", q->soname ? q->soname : exname(q->sname), off);
 	else
 		printf("\t.lcomm " LABFMT ",%d\n", q->soffset, off);
 }
@@ -1266,9 +1268,12 @@ simmod(NODE *p)
 
 	assert(p->n_op == MOD);
 
+	if (!ISUNSIGNED(p->n_type))
+		return;
+
 #define ISPOW2(n) ((n) && (((n)&((n)-1)) == 0))
 
-	// if the right is a constant power of two, then replace with AND
+	/* if the right is a constant power of two, then replace with AND */
 	if (r->n_op == ICON && ISPOW2(r->n_lval)) {
 		p->n_op = AND;
 		r->n_lval--;
@@ -1280,12 +1285,28 @@ simmod(NODE *p)
 	/* other optimizations can go here */
 }
 
+static int constructor;
+static int destructor;
+
 /*
  * Give target the opportunity of handling pragmas.
  */
 int
 mypragma(char **ary)
 {
+	if (strcmp(ary[1], "tls") == 0) {
+		uerror("thread-local storage not supported for this target");
+		return 1;
+	}
+	if (strcmp(ary[1], "constructor") == 0 || strcmp(ary[1], "init") == 0) {
+		constructor = 1;
+		return 1;
+	}
+	if (strcmp(ary[1], "destructor") == 0 || strcmp(ary[1], "fini") == 0) {
+		destructor = 1;
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -1295,6 +1316,25 @@ mypragma(char **ary)
 void
 fixdef(struct symtab *sp)
 {
+	/* may have sanity checks here */
+	if ((constructor || destructor) && (sp->sclass != PARAM)) {
+#ifdef MACHOABI
+		if (kflag) {
+			if (constructor)
+				printf("\t.mod_init_func\n");
+			else
+				printf("\t.mod_term_func\n");
+		} else {
+			if (constructor)
+				printf("\t.constructor\n");
+			else
+				printf("\t.destructor\n");
+		}
+		printf("\t.p2align 2\n");
+		printf("\t.long %s\n", exname(sp->sname));
+		constructor = destructor = 0;
+#endif
+	}
 }
 
 /*
@@ -1438,11 +1478,11 @@ powerpc_builtin_return_address(NODE *f, NODE *a)
 	tfree(f);
 	tfree(a);
 
-	f = block(REG, NIL, NIL, PTR+VOID, 0, MKSUE(PTR+VOID));
+	f = block(REG, NIL, NIL, PTR+VOID, 0, MKSUE(VOID));
 	regno(f) = SPREG;
 
 	do {
-		f = buildtree(UMUL, f, NIL);
+		f = block(UMUL, f, NIL, PTR+VOID, 0, MKSUE(VOID));
 	} while (i++ < nframes);
 
 	f = block(PLUS, f, bcon(8), INCREF(PTR+VOID), 0, MKSUE(VOID));
@@ -1452,4 +1492,42 @@ powerpc_builtin_return_address(NODE *f, NODE *a)
 bad:
         uerror("bad argument to __builtin_return_address");
         return bcon(0);
+}
+
+NODE *
+powerpc_builtin_frame_address(NODE *f, NODE *a)
+{
+	int nframes;
+	int i = 0;
+
+	if (a == NULL || a->n_op != ICON)
+		goto bad;
+
+	nframes = a->n_lval;
+
+	tfree(f);
+	tfree(a);
+
+	if (nframes == 0) {
+		f = block(REG, NIL, NIL, PTR+VOID, 0, MKSUE(VOID));
+		regno(f) = FPREG;
+	} else {
+		f = block(REG, NIL, NIL, PTR+VOID, 0, MKSUE(VOID));
+		regno(f) = SPREG;
+		do {
+			f = block(UMUL, f, NIL, PTR+VOID, 0, MKSUE(VOID));
+		} while (i++ < nframes);
+		f = block(PLUS, f, bcon(24), INCREF(PTR+VOID), 0, MKSUE(VOID));
+		f = buildtree(UMUL, f, NIL);
+	}
+
+	return f;
+bad:
+        uerror("bad argument to __builtin_frame_address");
+        return bcon(0);
+}
+
+void
+pass1_lastchance(struct interpass *ip)
+{
 }
