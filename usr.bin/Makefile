@@ -20,7 +20,7 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	rpcgen rpcinfo rs rsh rup ruptime rusers rwall rwho \
 	sdiff script sectok sed sendbug shar showmount skey \
 	skeyaudit skeyinfo skeyinit sort spell spline split \
-	ssh stat strings strip su sup systat sudo \
+	ssh stat strings strip su systat sudo \
 	tail talk tcopy tcpbench tee telnet tftp tic time tip tn3270 \
 	top touch tput tr true tset tsort tty \
 	usbhidaction usbhidctl ul uname unexpand unifdef uniq units \
