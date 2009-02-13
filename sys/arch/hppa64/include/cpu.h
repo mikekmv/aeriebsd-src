@@ -169,9 +169,9 @@ extern int cpu_hvers;
  * Exported definitions unique to hp700/PA-RISC cpu support.
  */
 
-#define	HPPA_PGALIAS	0x0000000000100000UL
-#define	HPPA_PGAMASK	0xfffffffffff00000UL
-#define	HPPA_PGAOFF	0x00000000000fffffUL
+#define	HPPA_PGALIAS	0x0000000001000000UL
+#define	HPPA_PGAMASK	0xffffffffff000000UL
+#define	HPPA_PGAOFF	0x0000000000ffffffUL
 
 #define	HPPA_PHYSMAP	0x000001ffffffffffUL
 #define	HPPA_IOBEGIN	0xfffffff000000000UL
