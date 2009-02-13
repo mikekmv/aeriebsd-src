@@ -24,6 +24,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _LIBELF_H_
+#define _LIBELF_H_
+
 #define	ELFLIB_STRIPX	0x01
 #define	ELFLIB_STRIPD	0x02
 
@@ -74,3 +77,5 @@ int	elf64_strip(const char *, FILE *, const Elf64_Ehdr *,
 	    struct stat *, off_t *);
 int	elf64_symseed(const char *, FILE *, const Elf64_Ehdr *,
 	    struct stat *, off_t *, int);
+
+#endif /* _LIBELF_H_ */
