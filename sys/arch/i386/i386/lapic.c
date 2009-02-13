@@ -128,6 +128,31 @@ lapic_set_lvt(void)
 	}
 #endif
 
+	if (strcmp(cpu_vendor, "AuthenticAMD") == 0) {
+		/*
+		 * Detect the presence of C1E capability mostly on latest
+		 * dual-cores (or future) k8 family. This mis-feature renders
+		 * the local APIC timer dead, so we disable it by reading
+		 * the Interrupt Pending Message register and clearing both
+		 * C1eOnCmpHalt (bit 28) and SmiOnCmpHalt (bit 27).
+		 * 
+		 * Reference:
+		 *   "BIOS and Kernel Developer's Guide for AMD NPT
+		 *    Family 0Fh Processors"
+		 *   #32559 revision 3.00
+		 */
+		if ((cpu_id & 0x00000f00) == 0x00000f00 &&
+		    (cpu_id & 0x0fff0000) >= 0x00040000) {
+			uint64_t msr;
+
+			msr = rdmsr(MSR_INT_PEN_MSG);
+			if (msr & (IPM_C1E_CMP_HLT|IPM_SMI_CMP_HLT)) {
+				msr &= ~(IPM_C1E_CMP_HLT|IPM_SMI_CMP_HLT);
+				wrmsr(MSR_INT_PEN_MSG, msr);
+			}
+		}
+	}
+
 	for (i = 0; i < mp_nintrs; i++) {
 		mpi = &mp_intrs[i];
 		if (mpi->ioapic == NULL && (mpi->cpu_id == MPS_ALL_APICS

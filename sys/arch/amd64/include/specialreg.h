@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
@@ -286,6 +285,9 @@
 #define MSR_FSBASE	0xc0000100		/* 64bit offset for fs: */
 #define MSR_GSBASE	0xc0000101		/* 64bit offset for gs: */
 #define MSR_KERNELGSBASE 0xc0000102		/* storage for swapgs ins */
+#define MSR_INT_PEN_MSG	0xc0010055		/* Interrupt pending message */
+#define 	IPM_C1E_CMP_HLT	0x10000000
+#define 	IPM_SMI_CMP_HLT	0x08000000
 
 /*
  * These require a 'passcode' for access.  See cpufunc.h.
