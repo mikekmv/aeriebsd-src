@@ -26,7 +26,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.1 2009/02/08 11:11:21 mickey Exp $";
+    "$ABSD: elf.c,v 1.2 2009/02/08 11:51:20 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -686,7 +686,7 @@ elf_strip(const char *name, FILE *fp, Elf_Ehdr *eh, struct stat *sb, off_t *nszp
 	if (!rv && sn) {
 		shdr[sn].sh_type = SHT_NULL;
 		shdr[sn+1].sh_type = SHT_NULL;
-		elf_fix_shdrs(head, shdr);
+		elf_fix_shdrs(eh, shdr);
 		if (elf_save_shdrs(name, fp, 0, eh, shdr))
 			rv = 1;
 		else
