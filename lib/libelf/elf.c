@@ -26,7 +26,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.2 2009/02/08 11:51:20 mickey Exp $";
+    "$ABSD: elf.c,v 1.3 2009/02/13 13:57:39 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -208,17 +208,15 @@ elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head)
 
 int
 elf_save_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head,
-    Elf_Shdr *shdr)
+    const Elf_Shdr *shdr)
 {
 	if (fseeko(fp, foff + head->e_shoff, SEEK_SET)) {
 		warn("%s: fseeko", name);
-		free(shdr);
 		return (1);
 	}
 
 	if (fwrite(shdr, head->e_shentsize, head->e_shnum, fp) != head->e_shnum) {
 		warnx("%s: premature EOF", name);
-		free(shdr);
 		return (1);
 	}
 

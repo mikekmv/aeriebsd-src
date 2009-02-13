@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004 Michael Shalayeff
+ * Copyright (c) 2004-2009 Michael Shalayeff
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@ extern char *stab;
 int	elf32_fix_header(Elf32_Ehdr *eh);
 Elf32_Shdr*elf32_load_shdrs(const char *, FILE *, off_t, const Elf32_Ehdr *);
 int	elf32_save_shdrs(const char *, FILE *, off_t, const Elf32_Ehdr *,
-	    Elf32_Shdr *);
+	    const Elf32_Shdr *);
 Elf32_Phdr*elf32_load_phdrs(const char *, FILE *, off_t, const Elf32_Ehdr *);
 int	elf32_fix_shdrs(const Elf32_Ehdr *eh, Elf32_Shdr *shdr);
 int	elf32_fix_phdrs(const Elf32_Ehdr *eh, Elf32_Phdr *phdr);
@@ -49,7 +49,7 @@ int	elf32_symseed(const char *, FILE *, Elf32_Ehdr *, struct stat *, off_t *);
 int	elf64_fix_header(Elf64_Ehdr *eh);
 Elf64_Shdr*elf64_load_shdrs(const char *, FILE *, off_t, const Elf64_Ehdr *);
 int	elf64_save_shdrs(const char *, FILE *, off_t, const Elf64_Ehdr *,
-	    Elf64_Shdr *);
+	    const Elf64_Shdr *);
 Elf64_Phdr*elf64_load_phdrs(const char *, FILE *, off_t, const Elf64_Ehdr *);
 int	elf64_fix_shdrs(const Elf64_Ehdr *eh, Elf64_Shdr *shdr);
 int	elf64_fix_phdrs(const Elf64_Ehdr *eh, Elf64_Phdr *phdr);
