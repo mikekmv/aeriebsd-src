@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)ktrace.c	8.2 (Berkeley) 4/28/95";
 #endif
-static char *rcsid = "$ABSD$";
+static char *rcsid = "$ABSD: ktrace.c,v 1.1.1.1 2008/08/26 14:42:50 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -74,6 +74,7 @@ main(int argc, char *argv[])
 
 	clear = NOTSET;
 	append = ops = pidset = inherit = 0;
+	pid = 0;
 	trpoints = DEF_POINTS;
 	tracefile = DEF_TRACEFILE;
 	while ((ch = getopt(argc,argv,"aCcdf:g:ip:t:")) != -1)
