@@ -504,13 +504,10 @@ do_changes(DB *db)
 			syslog_r(LOG_ERR, &sdata, "Unrecognized db change");
 			ret = -1;
 		}
-		free(dbc->key);
-		dbc->key = NULL;
-		free(dbc->data);
-		dbc->data = NULL;
-		dbc->act = 0;
-		dbc->dsiz = 0;
 		SLIST_REMOVE_HEAD(&db_changes, entry);
+		free(dbc->key);
+		free(dbc->data);
+		free(dbc);
 
 	}
 	return(ret);
