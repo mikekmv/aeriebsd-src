@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)vmstat.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: vmstat.c,v 1.1.1.1 2008/08/26 14:43:27 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -50,6 +50,7 @@ static const char rcsid[] = "$ABSD$";
 #include <sys/buf.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
+#include <sys/mount.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/sysctl.h>
@@ -92,6 +93,8 @@ struct nlist namelist[] = {
 	{ "_pool_head" },
 #define X_KMPAGESFREE	8		/* sysctl */
 	{ "_uvm_km_pages_free" },
+#define X_BCSTATS	9		/* sysctl */
+	{ "_bcstats" },
 	{ "" },
 };
 
@@ -113,12 +116,14 @@ kvm_t *kd;
 #define	SUMSTAT		0x08
 #define	TIMESTAT	0x10
 #define	VMSTAT		0x20
+#define	BCSTAT		0x40
 
 void	cpustats(void);
 time_t	getuptime(void);
 void	dkstats(void);
 void	dointr(void);
 void	domem(void);
+void	dobufcache(void);
 void	dopool(void);
 void	dosum(void);
 void	dovmstat(u_int, int);
@@ -152,8 +157,11 @@ main(int argc, char *argv[])
 	size_t size;
 	gid_t gid;
 
-	while ((c = getopt(argc, argv, "c:fiM:mN:stw:vz")) != -1) {
+	while ((c = getopt(argc, argv, "bc:fiM:mN:stw:vz")) != -1) {
 		switch (c) {
+		case 'b':
+			todo |= BCSTAT;
+			break;
 		case 'c':
 			reps = atoi(optarg);
 			break;
@@ -275,6 +283,8 @@ main(int argc, char *argv[])
 
 	if (todo & FORKSTAT)
 		doforkst();
+	if (todo & BCSTAT)
+		dobufcache();
 	if (todo & MEMSTAT) {
 		domem();
 		dopool();
@@ -518,6 +528,38 @@ pct(long top, long bot)
 }
 
 #define	PCT(top, bot) pct((long)(top), (long)(bot))
+
+void
+dobufcache(void)
+{
+	struct bcachestats bcstats;
+	size_t size;
+	int mib[3];
+
+	size = sizeof(struct bcachestats);
+	if (nlistf == NULL && memf == NULL) {
+		mib[0] = CTL_VFS;
+		mib[1] = VFS_GENERIC;
+		mib[2] = VFS_BCACHESTAT;
+		if (sysctl(mib, 3, &bcstats, &size, NULL, 0) < 0) {
+			warn("could not read vfs.bcachestat");
+			bzero(&bcstats, sizeof(struct bcachestats));
+		}
+	} else
+		kread(X_BCSTATS, &bcstats, size);
+
+	printf("%20ld buffers allocated\n", bcstats.numbufs);
+	printf("%20ld free buffers\n", bcstats.freebufs);
+	printf("%20ld pages allocated\n", bcstats.numbufpages);
+	printf("%20ld total free pages\n", bcstats.numfreepages);
+	printf("%20ld dirty free pages\n", bcstats.numdirtypages);
+	printf("%20ld clean free pages\n", bcstats.numcleanpages);
+	printf("%20ld pending writes\n", bcstats.pendingwrites);
+	printf("%20ld pending reads\n", bcstats.pendingreads);
+	printf("%20ld started writes\n", bcstats.numwrites);
+	printf("%20ld started reads\n", bcstats.numreads);
+	printf("%20ld total cached reads\n", bcstats.cachehits);
+}
 
 void
 dosum(void)

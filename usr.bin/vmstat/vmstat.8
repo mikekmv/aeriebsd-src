@@ -28,7 +28,7 @@
 .\"
 .\"	@(#)vmstat.8	8.1 (Berkeley) 6/6/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt VMSTAT 8
 .Os
 .Sh NAME
@@ -36,7 +36,7 @@
 .Nd report statistics about kernel activities
 .Sh SYNOPSIS
 .Nm vmstat
-.Op Fl fimstvz
+.Op Fl bfimstvz
 .Nm vmstat
 .Op Fl c Ar count
 .Op Fl M Ar core
@@ -56,6 +56,8 @@ flags may be used to continually report summaries.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl b
+Report the disk buffer cache statistics.
 .It Fl c Ar count
 Repeat the display
 .Ar count
