@@ -13,9 +13,8 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	locate lock logger login logname look lorder \
 	m4 mail make man mesg mg midiplay mixerctl mkdep mklocale \
 	mkstr mktemp modstat msgs \
-	nc netstat newsyslog nfsstat nice nm nohup \
-	oldrdist pagesize passwd paste patch pcc \
-	pctr pkg-config pkill pmdb pr printenv printf \
+	nc netstat newsyslog nfsstat nice nm nohup oldrdist \
+	pagesize passwd paste patch pcc pctr pkill pmdb pr printenv printf \
 	quota radioctl ranlib rcs rdist rdistd readlink renice rev \
 	rpcgen rpcinfo rs rsh rup ruptime rusers rwall rwho \
 	sdiff script sectok sed sendbug shar showmount skey \
