@@ -294,7 +294,7 @@ cddb(const char *host_port, int n, struct cd_toc_entry *e, char *arg)
 	}
 	if (strcmp(line, "211") == 0 || strcmp(line, "212") == 0) {
 		int number = strtonum(arg, 0, INT_MAX, &errstr);
-		if (errstr != NULL && *arg != NULL) {
+		if (errstr != NULL && *arg != '\0') {
 			warnx("cddb: invalid index");
 			goto end;
 		}
