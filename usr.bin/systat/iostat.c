@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)iostat.c   8.1 (Berkeley) 6/6/93";
 #endif
-static const char rcsid[] = "$ABSD: iostat.c,v 1.1.1.1 2008/08/26 14:43:18 root Exp $";
+static const char rcsid[] = "$ABSD: iostat.c,v 1.2 2008/12/26 18:52:12 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,7 +60,7 @@ int select_io(void);
 void showbcache(void);
 
 #define ATIME(x,y) ((double)x[y].tv_sec + \
-        ((double)x[y].tv_usec / (double)1000000))
+	((double)x[y].tv_usec / (double)1000000))
 
 
 field_def fields_io[] = {
@@ -93,19 +93,16 @@ field_def *view_io_0[] = {
 	FLD_IO_WTPS, FLD_IO_SEC, FLD_IO_SVAL, FLD_IO_SSTR, NULL
 };
 
-
 /* Define view managers */
 struct view_manager iostat_mgr = {
 	"Iostat", select_io, read_io, NULL, print_header,
 	print_io, keyboard_callback, NULL, NULL
 };
 
-
 field_view views_io[] = {
 	{view_io_0, "iostat", '2', &iostat_mgr},
 	{NULL, NULL, 0, NULL}
 };
-
 
 int
 select_io(void)
@@ -138,7 +135,6 @@ read_io(void)
 
 	return 0;
 }
-
 
 void
 print_io(void)
@@ -221,10 +217,9 @@ showdrive(int dn)
 	end_line();
 }
 
-
 #define ENDLINE do {					\
 		count++;				\
- 		if (maxprint > 0 && count >= maxprint)	\
+		if (maxprint > 0 && count >= maxprint)	\
 			return;				\
 	} while(0)
 
