@@ -105,6 +105,8 @@ fi
 		echo "Backing up root filesystem:"
 		echo "copying /dev/r$rootdev to /dev/r$rootbak"
 		dd if=/dev/r$rootdev of=/dev/r$rootbak bs=16b seek=1 skip=1 \
+			conv=noerror count=7
+		dd if=/dev/r$rootdev of=/dev/r$rootbak bs=128b seek=1 skip=1 \
 			conv=noerror
 		fsck -y /dev/r$rootbak
 	}
