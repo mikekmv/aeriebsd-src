@@ -23,13 +23,13 @@ CLEANFILES+= ${MAN}
 sudo.8: sudo.pod
 	sed -f ${.CURDIR}/../varsub ${.ALLSRC} | ${POD2MAN} --quotes=none \
 	    --name="SUDO" --section=8 --release="${VERSION}" \
-	    --date="${MANDATE}" --center="OpenBSD Reference Manual" | \
+	    --date="${MANDATE}" --center="AerieBSD Reference Manual" | \
 	    sed '1s/^/.if n .ll 78n /' > $@
 
 sudoers.5: sudoers.pod
 	sed -f ${.CURDIR}/../varsub ${.ALLSRC} | ${POD2MAN} --quotes=none \
 	    --name="SUDOERS" --section=5 --release="${VERSION}" \
-	    --date="${MANDATE}" --center="OpenBSD Reference Manual" | \
+	    --date="${MANDATE}" --center="AerieBSD Reference Manual" | \
 	    sed '1s/^/.if n .ll 78n /' > $@
 
 afterdepend: ${MAN}

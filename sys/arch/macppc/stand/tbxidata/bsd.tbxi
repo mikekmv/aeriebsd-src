@@ -30,10 +30,10 @@
 MacRISC MacRISC3 MacRISC4
 </COMPATIBLE>
 <DESCRIPTION>
-OpenBSD/macppc bootloader
+AerieBSD/macppc bootloader
 </DESCRIPTION>
 <BOOT-SCRIPT>
-boot cd:,ofwboot /4.4/macppc/bsd.rd
+boot cd:,ofwboot /1.0/macppc/bsd.rd
 </BOOT-SCRIPT>
 <OS-BADGE-ICONS>
 201B
