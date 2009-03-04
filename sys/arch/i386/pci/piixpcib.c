@@ -133,6 +133,7 @@ const struct pci_matchid piixpcib_devices[] = {
 void
 piixpcib_int15_gsic_call(struct piixpcib_softc *sc)
 {
+#ifdef KVM86
 	struct kvm86regs regs;
 	int cmd;
 
@@ -154,6 +155,7 @@ piixpcib_int15_gsic_call(struct piixpcib_softc *sc)
 		sc->sc_smi_data = regs.ecx;
 		sc->sc_flags = regs.edx;
 	}
+#endif
 }
 
 int
