@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -39,8 +38,8 @@
 #define BSD4_3	1
 #define BSD4_4	1
 
-#define OpenBSD	200811		/* OpenBSD version (year & month). */
-#define OpenBSD4_4 1		/* OpenBSD 4.4 */
+#define AerieBSD	200902	/* AerieBSD version (year & month). */
+#define AerieBSD1_0 1		/* AerieBSD 4.4 */
 
 #ifndef NULL
 #ifdef 	__GNUG__

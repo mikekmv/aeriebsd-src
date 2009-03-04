@@ -7,9 +7,9 @@
 .endfor
 .endif
 
-unix=		We run OpenBSD.
-OSMAJOR=	4
-OSMINOR=	4
+unix=		We run AerieBSD.
+OSMAJOR=	1
+OSMINOR=	0
 OSREV=		$(OSMAJOR).$(OSMINOR)
 OSrev=		$(OSMAJOR)$(OSMINOR)
 

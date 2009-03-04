@@ -40,10 +40,10 @@ id=`basename ${d}`
 
 # additional things which need version number upgrades:
 #	sys/sys/param.h:
-#		OpenBSD symbol
-#		OpenBSD_X_X symbol
+#		AerieBSD symbol
+#		AerieBSD_X_X symbol
 #	share/tmac/mdoc/doc-common
-#		change	.       ds oS OpenBSD X.X
+#		change	.       ds oS AerieBSD X.X
 #		add	.	if "\\$2"X.X"  .as oS \0X.X
 #	share/mk/sys.mk
 #		OSMAJOR
@@ -60,15 +60,15 @@ id=`basename ${d}`
 #	Right after release unlock, select STATUS "-current"
 #	A month or so before release, select STATUS "-beta"
 
-ost="OpenBSD"
-osr="4.4"
+ost="AerieBSD"
+osr="1.0"
 
 cat >vers.c <<eof
 #if 0
 #define STATUS ""			/* release */
-#define STATUS "-beta"			/* just before a release */
-#endif
 #define STATUS "-current"		/* just after a release */
+#endif
+#define STATUS "-beta"			/* just before a release */
 
 const char ostype[] = "${ost}";
 const char osrelease[] = "${osr}";
