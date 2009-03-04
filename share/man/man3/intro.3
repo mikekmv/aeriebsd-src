@@ -29,7 +29,7 @@
 .\"
 .\"     @(#)intro.3	8.1 (Berkeley) 6/5/93
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt INTRO 3
 .Os
 .Sh NAME
@@ -589,7 +589,6 @@ for more details.
 .Sh FILES
 .Bl -tag -width /usr/lib/libotermcap.a -compact
 .It Pa /usr/lib/libasn1.a
-.It Pa /usr/lib/libbfd.a
 .It Pa /usr/lib/libc.a
 .It Pa /usr/lib/libcom_err.a
 .It Pa /usr/lib/libcompat.a
@@ -597,16 +596,15 @@ for more details.
 .It Pa /usr/lib/libcurses.a
 .It Pa /usr/lib/libdes.a
 .It Pa /usr/lib/libedit.a
+.It Pa /usr/lib/libelf.a
 .It Pa /usr/lib/libevent.a
 .It Pa /usr/lib/libexpat.a
 .It Pa /usr/lib/libfl.a
 .It Pa /usr/lib/libform.a
 .It Pa /usr/lib/libfrtbegin.a
 .It Pa /usr/lib/libg2c.a
-.It Pa /usr/lib/gcc-lib/${ARCH}-unknown-openbsd${OSREV}/${GCCREV}/fpic/libgcc.a
 .It Pa /usr/lib/libgssapi.a
 .It Pa /usr/lib/libhdb.a
-.It Pa /usr/lib/libiberty.a
 .It Pa /usr/lib/libkadm5clnt.a
 .It Pa /usr/lib/libkadm5srv.a
 .It Pa /usr/lib/libkafs.a
@@ -625,15 +623,13 @@ for more details.
 .It Pa /usr/lib/libotermcap.a
 .It Pa /usr/lib/libpanel.a
 .It Pa /usr/lib/libpcap.a
-.It Pa /usr/lib/libperl.a
+.It Pa /usr/lib/libplot.a
 .It Pa /usr/lib/libpthread.a
 .It Pa /usr/lib/libreadline.a
 .It Pa /usr/lib/librpcsvc.a
 .It Pa /usr/lib/libsectok.a
 .It Pa /usr/lib/libskey.a
 .It Pa /usr/lib/libssl.a
-.It Pa /usr/lib/libstdc++.a
-.It Pa /usr/lib/libsupc++.a
 .It Pa /usr/lib/libtermcap.a
 .It Pa /usr/lib/libtermlib.a
 .It Pa /usr/lib/libusbhid.a
@@ -649,10 +645,7 @@ for more details.
 .El
 .Sh SEE ALSO
 .Xr ar 1 ,
-.Xr c++ 1 ,
 .Xr cc 1 ,
-.Xr g77 1 ,
-.Xr gcc-local 1 ,
 .Xr gprof 1 ,
 .Xr ld 1 ,
 .Xr ld.so 1 ,
@@ -678,6 +671,7 @@ for more details.
 .Xr ossaudio 3 ,
 .Xr panel 3 ,
 .Xr pcap 3 ,
+.Xr plot 3 ,
 .Xr pthreads 3 ,
 .Xr readline 3 ,
 .Xr rfc1413 3 ,
