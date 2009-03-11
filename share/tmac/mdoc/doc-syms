@@ -190,6 +190,31 @@
 .	\}
 .\}
 ..
+.\" NS Ax macro - AerieBSD
+.de Ax
+.nr cF \\n(.f
+.nr cZ \\n(.s
+.ds aa \&\f\\n(cF\s\\n(cZ
+.if \\n(aC==0 \{\
+.	ie \\n(.$==0 \&AerieBSD\\*(aa
+.	el .aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.\}
+.if \\n(aC>\\n(aP \{\
+.	nr aP \\n(aP+1
+.	ie \\n(C\\n(aP==2 \{\
+.		as b1 \&AerieBSD\ \&\\*(A\\n(aP\\*(aa
+.		ie \\n(aC>\\n(aP \{\
+.			nr aP \\n(aP+1
+.			nR
+.		\}
+.		el .aZ
+.	\}
+.	el \{\
+.		as b1 \&AerieBSD\\*(aa
+.		nR
+.	\}
+.\}
+..
 .\" NS Fx macro -- FreeBSD
 .de Fx
 .nr cF \\n(.f

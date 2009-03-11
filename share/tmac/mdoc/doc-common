@@ -142,10 +142,10 @@
 .	ds cH \\$2
 .\" .	if "\\$3"" \{\
 .		if \\$2>=1 .if \\$2<=9 \{\
-.			ds vT OpenBSD Reference Manual
-.			if \\$2>1 .if \\$2<6 .ds vT OpenBSD Programmer's Manual
-.			if "\\$2"8" .ds vT OpenBSD System Manager's Manual
-.			if "\\$2"9" .ds vT OpenBSD Kernel Manual
+.			ds vT AerieBSD Reference Manual
+.			if \\$2>1 .if \\$2<6 .ds vT AerieBSD Programmer's Manual
+.			if "\\$2"8" .ds vT AerieBSD System Manager's Manual
+.			if "\\$2"9" .ds vT AerieBSD Kernel Manual
 .			nr sN \\$2
 .		\}
 .		if "\\$2"unass"  .ds vT DRAFT
@@ -154,18 +154,18 @@
 .\" .	\}
 .\}
 .if !"\\$3"" \{\
-.	if "\\$3"USD"   .ds vT OpenBSD User's Supplementary Documents
-.	if "\\$3"PS1"   .ds vT OpenBSD Programmers's Supplementary Documents
-.	if "\\$3"AMD"   .ds vT OpenBSD Ancestral Manual Documents
-.	if "\\$3"SMM"   .ds vT OpenBSD System Manager's Manual
-.	if "\\$3"URM"   .ds vT OpenBSD Reference Manual
-.	if "\\$3"PRM"   .ds vT OpenBSD Programmers's Manual
-.	if "\\$3"KM"    .ds vT OpenBSD Kernel Manual
-.	if "\\$3"IND"   .ds vT OpenBSD Manual Master Index
-.\" .	if "\\$3"CON"   .ds vT OpenBSD Contributed Software Manual
-.\" .	if "\\$3"IMP"	.ds vT OpenBSD Implementation Notes
-.\" .	if "\\$3"HOW"	.ds vT OpenBSD How Pocket Manual
-.	if "\\$3"LOCAL" .ds vT OpenBSD Local Manual
+.	if "\\$3"USD"   .ds vT AerieBSD User's Supplementary Documents
+.	if "\\$3"PS1"   .ds vT AerieBSD Programmers's Supplementary Documents
+.	if "\\$3"AMD"   .ds vT AerieBSD Ancestral Manual Documents
+.	if "\\$3"SMM"   .ds vT AerieBSD System Manager's Manual
+.	if "\\$3"URM"   .ds vT AerieBSD Reference Manual
+.	if "\\$3"PRM"   .ds vT AerieBSD Programmers's Manual
+.	if "\\$3"KM"    .ds vT AerieBSD Kernel Manual
+.	if "\\$3"IND"   .ds vT AerieBSD Manual Master Index
+.\" .	if "\\$3"CON"   .ds vT AerieBSD Contributed Software Manual
+.\" .	if "\\$3"IMP"	.ds vT AerieBSD Implementation Notes
+.\" .	if "\\$3"HOW"	.ds vT AerieBSD How Pocket Manual
+.	if "\\$3"LOCAL" .ds vT AerieBSD Local Manual
 .	if "\\$3"alpha" .as vT \ (Alpha)
 .	if "\\$3"amd64" .as vT \ (AMD64)
 .	if "\\$3"amiga" .as vT \ (Amiga)
@@ -188,6 +188,7 @@
 .	if "\\$3"sparc" .as vT \ (SPARC)
 .	if "\\$3"sparc64" .as vT \ (SPARC64)
 .	if "\\$3"sun3"  .as vT \ (Sun3)
+.	if "\\$3"tahoe"  .as vT \ (Tahoe)
 .	if "\\$3"vax"   .as vT \ (VAX)
 .	if "\\$3"zaurus"  .as vT \ (Zaurus)
 .	if "\\*(vT"LOCAL" .ds vT \\$3
@@ -201,7 +202,7 @@
 .de Os
 .ds oS Null
 .if "\\$1"" \{\
-.	ds oS OpenBSD 4.4
+.	ds oS AerieBSD 1.0
 .\}
 .if "\\$2"" \{\
 .	ds aa Non-Null
@@ -283,6 +284,10 @@
 .	if "\\$2"4.2"  .as oS \04.2
 .	if "\\$2"4.3"  .as oS \04.3
 .	if "\\$2"4.4"  .as oS \04.4
+.\}
+.if "\\$1"AerieBSD" \{\
+.	ds oS AerieBSD
+.	if "\\$2"1.0"  .as oS \01.0
 .\}
 .if "\\*(oS"Null" .ds oS \0\\$1
 .if "\\*(aa"Non-Null" .as oS \0\\$2
