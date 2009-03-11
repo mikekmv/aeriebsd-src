@@ -765,7 +765,7 @@ static /**/const char *const rcsid[] = { (const char *)rcsid, "@(#)" msg }
 #define HAVE_RCMD 1
 
 /* define if you have a function readline */
-#define HAVE_READLINE 1
+/* #undef HAVE_READLINE */
 
 /* Define if you have the function `readv'. */
 #define HAVE_READV 1

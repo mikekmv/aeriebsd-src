@@ -29,7 +29,7 @@ SRCS	= vos.c \
 	  emalloc.c \
 	  estrdup.c
 
-LDADD	+= ${LIBARLA} -lkrb5 -lcrypto -lasn1 -lreadline -lcurses
+LDADD	+= ${LIBARLA} -lkrb5 -lcrypto -lasn1 -lcurses
 DPADD	+= ${LIBARLA}
 
 .PATH: ${AFSSRC}/appl/vos

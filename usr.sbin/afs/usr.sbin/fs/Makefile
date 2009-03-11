@@ -6,7 +6,7 @@ AFSTOPDIR	= ../..
 
 PROG	= fs
 BINDIR	= /usr/sbin
-LDADD	+= ${LIBARLA} -lkrb5 -lcrypto -lasn1 -lreadline -lcurses
+LDADD	+= ${LIBARLA} -lkrb5 -lcrypto -lasn1 -lcurses
 DPADD	+= ${LIBARLA}
 
 CFLAGS	+= -I${AFSSRC}/appl/lib

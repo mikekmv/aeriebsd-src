@@ -7,7 +7,7 @@ AFSTOPDIR	= ../..
 PROG	= pts
 SRCS	= pts.c \
 	  estrdup.c
-LDADD	+= ${LIBARLA} -lkrb5 -lcrypto -lasn1 -lreadline -ldes -lcurses
+LDADD	+= ${LIBARLA} -lkrb5 -lcrypto -lasn1 -ldes -lcurses
 DPADD	+= ${LIBARLA}
 
 .PATH: ${AFSSRCDIR}/appl/pts
