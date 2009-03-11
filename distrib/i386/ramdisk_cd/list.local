@@ -1,6 +1,5 @@
 
 # add local links; use bin/sh since instbin has already been unlinked
-LINK	instbin					sbin/ccdconfig
 LINK	instbin					sbin/ping6
 LINK	instbin					sbin/rtsol
 LINK	instbin					sbin/apm sbin/zzz
