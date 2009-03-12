@@ -1,4 +1,4 @@
-/*	Michael Shalayeff <mickey@openbsd.org>. Public Domain. */
+/*	Michael Shalayeff <mickey@lucifier.net>. Public Domain. */
 
 #include <machine/asm.h>
 #define	_LOCORE

@@ -1,6 +1,6 @@
 
 /*
- * Written by Michael Shalayeff <mickey@openbsd.org> 2003 Public Domain.
+ * Written by Michael Shalayeff <mickey@lucifier.net> 2003 Public Domain.
  */
 
 #include <sys/types.h>

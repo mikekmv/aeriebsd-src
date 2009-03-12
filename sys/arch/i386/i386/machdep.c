@@ -2424,7 +2424,7 @@ haltsys:
 			delay(500000);
 			/*
 			 * It's been reported that the following bit of code
-			 * is required on most systems <mickey@openbsd.org>
+			 * is required on most systems <mickey@lucifier.net>
 			 * but cause powerdown problem on other systems
 			 * <smcho@tsp.korea.ac.kr>.  Use sysctl to set
 			 * apmhalt to a non-zero value to skip the offending
