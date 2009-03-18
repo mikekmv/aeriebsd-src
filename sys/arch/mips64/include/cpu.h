@@ -467,7 +467,9 @@ extern int want_resched;	/* resched() was called */
 #define	MIPS_RM7000	0x27	/* PMCS RM7000 CPU		ISA IV  */
 #define	MIPS_RM52X0	0x28	/* PMCS RM52X0 CPU		ISA IV  */
 #define	MIPS_RM9000	0x34	/* PMCS RM9000 CPU		ISA IV  */
+#define	MIPS_LOONGSON	0x42	/* STC LoongSon CPU		ISA III */
 #define	MIPS_VR5400	0x54	/* NEC Vr5400 CPU		ISA IV+ */
+#define	MIPS_LOONGSON2	0x63	/* STC LoongSon2 CPU		ISA III */
 
 /*
  * MIPS FPU types. Only soft, rest is the same as cpu type.
