@@ -76,6 +76,9 @@
 #define	WG8200			0x0059	/* Willowglen CPU-8200 */
 #define	WG8232			0x005a	/* Willowglen CPU-8232 */
 
+#define	BONITO_CLASS		0x00e0	/* Bonito class */
+#define	BONITO_YEELONG		0x00e1	/* Bonito Yeelong */
+
 #define	MISC_CLASS		0x00F0	/* Misc machines... */
 #define	LAGUNA			0x00F1	/* Heurikon Laguna VME board */
 
