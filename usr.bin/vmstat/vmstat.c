@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)vmstat.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: vmstat.c,v 1.1.1.1 2008/08/26 14:43:27 root Exp $";
+static const char rcsid[] = "$ABSD: vmstat.c,v 1.2 2009/02/26 12:25:20 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -297,7 +297,7 @@ main(int argc, char *argv[])
 		dointr();
 	if (todo & VMSTAT)
 		dovmstat(interval, reps);
-	exit(0);
+	return (0);
 }
 
 char **
@@ -486,6 +486,7 @@ dotimes(void)
 	u_int pgintime, rectime;
 	size_t size;
 	int mib[2];
+	u_int t;
 
 	/* XXX Why are these set to 0 ? This doesn't look right. */
 	pgintime = 0;
@@ -511,9 +512,11 @@ dotimes(void)
 	(void)printf("\n");
 	(void)printf("%u page ins, %u total time (msec)\n",
 	    uvmexp.pageins, pgintime / 10);
-	if (uvmexp.pageins != 0)
-		(void)printf("average: %8.1f msec / page in\n",
-		    pgintime / (uvmexp.pageins * 10.0));
+	if (uvmexp.pageins != 0) {
+		t = (u_int)pgintime / uvmexp.pageins;
+		printf("average: %8u.%u msec / page in\n",
+		    t / 10, t % 10);
+	}
 }
 
 int
@@ -568,6 +571,7 @@ dosum(void)
 	int mib[2], nselcoll;
 	long nchtotal;
 	size_t size;
+	u_int t;
 
 	if (nlistf == NULL && memf == NULL) {
 		size = sizeof(struct uvmexp);
@@ -627,6 +631,10 @@ dosum(void)
 	(void)printf("%11u pages scanned by pagedaemon\n", uvmexp.pdscans);
 	(void)printf("%11u pages reactivated by pagedaemon\n", uvmexp.pdreact);
 	(void)printf("%11u busy pages found by pagedaemon\n", uvmexp.pdbusy);
+	(void)printf("%11u pages zeroed\n", uvmexp.zeropages);
+	(void)printf("%11u zero pages hits\n", uvmexp.pga_zerohit);
+	(void)printf("%11u zero pages misses\n", uvmexp.pga_zeromiss);
+	(void)printf("%11u pages aborted on zero\n", uvmexp.zeroaborts);
 
 	if (nlistf == NULL && memf == NULL) {
 		size = sizeof(nchstats);
@@ -727,19 +735,23 @@ dkstats(void)
 void
 cpustats(void)
 {
-	double percent, total;
 	int state;
+	u_int pct;
+	quad_t total;
 
 	total = 0;
 	for (state = 0; state < CPUSTATES; ++state)
 		total += cur.cp_time[state];
 	if (total)
-		percent = 100 / total;
-	else
-		percent = 0;
-	(void)printf("%2.0f ", (cur.cp_time[CP_USER] + cur.cp_time[CP_NICE]) * percent);
-	(void)printf("%2.0f ", (cur.cp_time[CP_SYS] + cur.cp_time[CP_INTR]) * percent);
-	(void)printf("%2.0f", cur.cp_time[CP_IDLE] * percent);
+		pct = 100;
+	else {
+		pct = 0;
+		total = 1;
+	}
+	printf("%2u %2u %2u",
+	    (u_int)((cur.cp_time[CP_USER] + cur.cp_time[CP_NICE]) * pct / total),
+	    (u_int)((cur.cp_time[CP_SYS] + cur.cp_time[CP_INTR]) * pct / total),
+	    (u_int)(cur.cp_time[CP_IDLE] * pct / total));
 }
 
 void
