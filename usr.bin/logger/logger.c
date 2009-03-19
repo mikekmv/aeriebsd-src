@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)logger.c	8.1 (Berkeley) 6/6/93";
 #endif
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: logger.c,v 1.1.1.1 2008/08/26 14:43:00 root Exp $";
 #endif /* not lint */
 
 #include <errno.h>
@@ -47,6 +47,7 @@ static char rcsid[] = "$ABSD$";
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <err.h>
 
 #define	SYSLOG_NAMES
 #include <syslog.h>
@@ -73,11 +74,8 @@ main(int argc, char *argv[])
 	while ((ch = getopt(argc, argv, "f:ip:st:")) != -1)
 		switch((char)ch) {
 		case 'f':		/* file to log */
-			if (freopen(optarg, "r", stdin) == NULL) {
-				(void)fprintf(stderr, "logger: %s: %s.\n",
-				    optarg, strerror(errno));
-				exit(1);
-			}
+			if (freopen(optarg, "r", stdin) == NULL)
+				err(1, "%s", optarg);
 			break;
 		case 'i':		/* log process id also */
 			logflags |= LOG_PID;
@@ -143,11 +141,8 @@ pencode(char *s)
 	if (*s) {
 		*s = '\0';
 		fac = decode(save, facilitynames);
-		if (fac < 0) {
-			(void)fprintf(stderr,
-			    "logger: unknown facility name: %s.\n", save);
-			exit(1);
-		}
+		if (fac < 0)
+			errx(1, "unknown facility name: %s", save);
 		*s++ = '.';
 	}
 	else {
@@ -155,11 +150,8 @@ pencode(char *s)
 		s = save;
 	}
 	lev = decode(s, prioritynames);
-	if (lev < 0) {
-		(void)fprintf(stderr,
-		    "logger: unknown priority name: %s.\n", save);
-		exit(1);
-	}
+	if (lev < 0)
+		errx(1, "unknown priority name: %s", save);
 	return ((lev & LOG_PRIMASK) | (fac & LOG_FACMASK));
 }
 
