@@ -44,6 +44,8 @@ int	elf32_size(const Elf32_Ehdr *, const Elf32_Shdr *,
 	    u_long *, u_long *, u_long *);
 char	*elf32_shstrload(const char *, FILE *, off_t, const Elf32_Ehdr *,
 	    const Elf32_Shdr *shdr);
+char	*elf32_strload(const char *, FILE *, off_t, const Elf32_Ehdr *,
+	    const Elf32_Shdr *shdr, const char *, const char *, size_t *);
 int	elf32_symloadx(const char *, FILE *, off_t, const Elf32_Ehdr *,
 	    const Elf32_Shdr *, char *, struct nlist **, struct nlist ***,
 	    size_t *, int *, const char *, const char *);
@@ -67,6 +69,8 @@ int	elf64_size(const Elf64_Ehdr *, const Elf64_Shdr *,
 	    u_long *, u_long *, u_long *);
 char	*elf64_shstrload(const char *, FILE *, off_t, const Elf64_Ehdr *,
 	    const Elf64_Shdr *shdr);
+char	*elf64_strload(const char *, FILE *, off_t, const Elf64_Ehdr *,
+	    const Elf64_Shdr *shdr, const char *, const char *, size_t *);
 int	elf64_symloadx(const char *, FILE *, off_t, const Elf64_Ehdr *,
 	    const Elf64_Shdr *, char *, struct nlist **, struct nlist ***,
 	    size_t *, int *, const char *, const char *);
@@ -77,5 +81,20 @@ int	elf64_strip(const char *, FILE *, const Elf64_Ehdr *,
 	    struct stat *, off_t *);
 int	elf64_symseed(const char *, FILE *, const Elf64_Ehdr *,
 	    struct stat *, off_t *, int);
+
+static inline unsigned int
+elf_hash(const unsigned char *name)
+{
+	int hash, v;
+
+	while (*name) {
+		hash = (hash << 4) + *name++;
+		if ((v = hash & 0xf0000000))
+			hash ^= hash >> 24;
+		hash &= ~v;
+	}
+
+	return hash;
+}
 
 #endif /* _LIBELF_H_ */

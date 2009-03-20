@@ -26,7 +26,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.5 2009/02/13 14:05:38 mickey Exp $";
+    "$ABSD: elf.c,v 1.6 2009/02/13 14:15:35 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -62,6 +62,7 @@ static const char rcsid[] =
 #define	elf_fix_sym	elf32_fix_sym
 #define	elf_size	elf32_size
 #define	elf_shstrload	elf32_shstrload
+#define	elf_strload	elf32_strload
 #define	elf_symloadx	elf32_symloadx
 #define	elf_symload	elf32_symload
 #define	elf_symseed	elf32_symseed
@@ -91,6 +92,7 @@ static const char rcsid[] =
 #define	elf_fix_sym	elf64_fix_sym
 #define	elf_size	elf64_size
 #define	elf_shstrload	elf64_shstrload
+#define	elf_strload	elf64_strload
 #define	elf_symloadx	elf64_symloadx
 #define	elf_symload	elf64_symload
 #define	elf_symseed	elf64_symseed
@@ -100,38 +102,6 @@ static const char rcsid[] =
 #else
 #error "Unsupported ELF class"
 #endif
-
-
-/*
- * from usr.bin/nm/util.h:
- * Placed in the public domain by Todd C. Miller <Todd.Miller@courtesan.com>
- * on October 9, 2004.
- */
-
-#define	MMAP(ptr, len, prot, flags, fd, off)	do {		\
-	if ((ptr = mmap(NULL, len, prot, flags, fd, off)) == MAP_FAILED) { \
-		usemmap = 0;						\
-		if (errno != EINVAL)					\
-			warn("mmap");					\
-		else if ((ptr = malloc(len)) == NULL) {			\
-			ptr = MAP_FAILED;				\
-			warn("malloc");					\
-		} else if (pread(fd, ptr, len, off) != len) {		\
-			free(ptr);					\
-			ptr = MAP_FAILED;				\
-			warn("pread");					\
-		}							\
-	}								\
-} while (0)
-
-#define MUNMAP(addr, len)	do {					\
-	if (usemmap)							\
-		munmap(addr, len);					\
-	else								\
-		free(addr);						\
-} while (0)
-
-extern int usemmap;
 
 #define	ELF_SDATA	".sdata"
 #define	ELF_SBSS	".sbss"
@@ -485,6 +455,37 @@ elf_size(const Elf_Ehdr *head, const Elf_Shdr *shdr,
 	return (0);
 }
 
+char *
+elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
+    const Elf_Shdr *shdr, const char *shstr, const char *strtab,
+    size_t *pstabsize)
+{
+	char *ret;
+	int i;
+
+	for (i = 0; i < eh->e_shnum; i++) {
+		if (shdr[i].sh_type == SHT_STRTAB &&
+		    !strcmp(shstr + shdr[i].sh_name, strtab)) {
+			*pstabsize = shdr[i].sh_size;
+			if (*pstabsize > SIZE_T_MAX) {
+				warnx("%s: corrupt file", name);
+				return (NULL);
+			}
+
+			if ((ret = malloc(*pstabsize)) == NULL)
+				warn("malloc");
+			else if (pread(fileno(fp), ret, *pstabsize,
+			    foff + shdr[i].sh_offset) != *pstabsize) {
+				free(ret);
+				ret = NULL;
+				warn("pread");
+			}
+		}
+	}
+
+	return ret;
+}
+
 int
 elf_symloadx(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Shdr *shdr, char *shstr, struct nlist **pnames,
@@ -496,22 +497,8 @@ elf_symloadx(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 	Elf_Sym sbuf;
 	int i;
 
-	for (i = 0; i < eh->e_shnum; i++) {
-		if (shdr[i].sh_type == SHT_STRTAB &&
-		    !strcmp(shstr + shdr[i].sh_name, strtab)) {
-			*pstabsize = shdr[i].sh_size;
-			if (*pstabsize > SIZE_T_MAX) {
-				warnx("%s: corrupt file", name);
-				return (1);
-			}
-
-			MMAP(stab, *pstabsize, PROT_READ, MAP_PRIVATE|MAP_FILE,
-			    fileno(fp), foff + shdr[i].sh_offset);
-			if (stab == MAP_FAILED)
-				return (1);
-		}
-	}
-	if (stab == NULL)
+	if (!(stab = elf_strload(name, fp, foff, eh, shdr, shstr, strtab,
+	    pstabsize)))
 		return (1);
 
 	for (i = 0; i < eh->e_shnum; i++) {
@@ -520,7 +507,7 @@ elf_symloadx(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 			if (fseeko(fp, foff + shdr[i].sh_offset, SEEK_SET)) {
 				warn("%s: fseeko", name);
 				if (stab)
-					MUNMAP(stab, *pstabsize);
+					free(stab);
 				return (1);
 			}
 
@@ -528,23 +515,22 @@ elf_symloadx(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 			if ((*pnames = calloc(*pnrawnames, sizeof(*np))) == NULL) {
 				warn("%s: malloc names", name);
 				if (stab)
-					MUNMAP(stab, *pstabsize);
+					free(stab);
 				return (1);
 			}
 			if ((*psnames = calloc(*pnrawnames, sizeof(np))) == NULL) {
 				warn("%s: malloc snames", name);
 				if (stab)
-					MUNMAP(stab, *pstabsize);
+					free(stab);
 				free(*pnames);
 				return (1);
 			}
 
 			for (np = *pnames; symsize > 0; symsize -= sizeof(sbuf)) {
-				if (fread(&sbuf, 1, sizeof(sbuf),
-				    fp) != sizeof(sbuf)) {
+				if (fread(&sbuf, sizeof(sbuf), 1, fp) != 1) {
 					warn("%s: read symbol", name);
 					if (stab)
-						MUNMAP(stab, *pstabsize);
+						free(stab);
 					free(*pnames);
 					free(*psnames);
 					return (1);
@@ -591,7 +577,7 @@ elf_shstrload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 		return (NULL);
 	}
 
-	if (fread(shstr, 1, shstrsize, fp) != shstrsize) {
+	if (fread(shstr, shstrsize, 1, fp) != 1) {
 		warnx("%s: premature EOF", name);
 		free(shstr);
 		return (NULL);
