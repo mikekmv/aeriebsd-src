@@ -26,7 +26,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.6 2009/02/13 14:15:35 mickey Exp $";
+    "$ABSD: elf.c,v 1.8 2009/03/20 16:28:23 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -429,6 +429,8 @@ elf2nlist(Elf_Sym *sym, const Elf_Ehdr *eh, const Elf_Shdr *shdr,
 			np->n_other = toupper(np->n_other);
 	}
 
+	np->n_value = sym->st_value;
+	np->n_un.n_strx = sym->st_name;
 	return (0);
 }
 
@@ -543,8 +545,6 @@ elf_symloadx(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 					continue;
 
 				elf2nlist(&sbuf, eh, shdr, shstr, np);
-				np->n_value = sbuf.st_value;
-				np->n_un.n_strx = sbuf.st_name;
 				np++;
 			}
 			*pnrawnames = np - *pnames;
