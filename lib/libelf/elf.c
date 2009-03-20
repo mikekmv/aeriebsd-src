@@ -156,7 +156,7 @@ elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head)
 {
 	Elf_Shdr *shdr;
 
-	if ((shdr = calloc(head->e_shentsize, head->e_shnum)) == NULL) {
+	if ((shdr = calloc(head->e_shnum, head->e_shentsize)) == NULL) {
 		warn("%s: malloc shdr", name);
 		return (NULL);
 	}
@@ -198,7 +198,7 @@ elf_load_phdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head)
 {
 	Elf_Phdr *phdr;
 
-	if ((phdr = calloc(head->e_phentsize, head->e_phnum)) == NULL) {
+	if ((phdr = calloc(head->e_phnum, head->e_phentsize)) == NULL) {
 		warn("%s: malloc phdr", name);
 		return (NULL);
 	}
@@ -476,9 +476,9 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 				warn("malloc");
 			else if (pread(fileno(fp), ret, *pstabsize,
 			    foff + shdr[i].sh_offset) != *pstabsize) {
+				warn("pread: %s", name);
 				free(ret);
 				ret = NULL;
-				warn("pread");
 			}
 		}
 	}
