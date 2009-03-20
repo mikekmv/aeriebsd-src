@@ -40,7 +40,7 @@ static const char copyright[] =
 static const char sccsid[] = "@(#)strings.c	8.2 (Berkeley) 1/28/94";
 #endif
 static const char rcsid[] =
-    "$ABSD: strings.c,v 1.2 2008/12/26 18:52:10 mickey Exp $";
+    "$ABSD: strings.c,v 1.3 2009/02/08 11:59:25 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -80,7 +80,6 @@ int asdata, fflg, minlen, maxlen;
 char *offset_format;
 
 char *stab;		/* libelf needs it */
-int usemmap = 1;
 
 void usage(void);
 int getch(void);
