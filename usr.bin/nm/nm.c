@@ -41,7 +41,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #endif
-static const char rcsid[] = "$ABSD: nm.c,v 1.1.1.1 2008/08/26 14:43:04 root Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.2 2009/02/08 11:53:05 mickey Exp $";
 
 #include <sys/param.h>
 #include <sys/mman.h>
@@ -843,7 +843,10 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 
 	free(snames);
 	free(names);
-	MUNMAP(stab, stabsize);
+	if (aout)
+		MUNMAP(stab, stabsize);
+	else
+		free(stab);
 	return(0);
 }
 
