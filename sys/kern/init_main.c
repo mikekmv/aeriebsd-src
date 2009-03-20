@@ -99,7 +99,7 @@ extern void nfs_init(void);
 const char	copyright[] =
 "Copyright (c) 1982, 1986, 1989, 1991, 1993\n"
 "\tThe Regents of the University of California.  All rights reserved.\n"
-"Copyright (c) 1995-2008 OpenBSD. All rights reserved.  http://www.OpenBSD.org\n";
+"Copyright (c) 2009 AerieBSD. All rights reserved.  http://www.AerieBSD.org\n";
 
 /* Components of the first process -- never freed. */
 struct	session session0;
