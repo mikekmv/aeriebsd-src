@@ -7,14 +7,15 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	column comm compile_et compress cpp crontab csplit ctags cut \
 	dc deroff diff diff3 dirname du encrypt env expand \
 	false file file2c find fgen finger fmt fold from fsplit fstat ftp \
-	gencat getcap getconf getent getopt gprof grep gzsig \
+	gencat getcap getconf getent getopt gprof graph grep gzsig \
 	head hexdump id indent infocmp ipcrm ipcs join jot \
 	kdump keynote ktrace lam last lastcomm leave less lex lndir \
 	locate lock logger login logname look lorder \
 	m4 mail make man mesg mg midiplay mixerctl mkdep mklocale \
 	mkstr mktemp modstat msgs \
 	nc netstat newsyslog nfsstat nice nm nohup oldrdist \
-	pagesize passwd paste patch pcc pctr pkill pmdb pr printenv printf \
+	pagesize passwd paste patch pcc pctr pkill plot pmdb pr \
+	printenv printf \
 	quota radioctl ranlib rcs rdist rdistd readlink renice rev \
 	rpcgen rpcinfo rs rsh rup ruptime rusers rwall rwho \
 	sdiff script sectok sed sendbug shar showmount skey \
