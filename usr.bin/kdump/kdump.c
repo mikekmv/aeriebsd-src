@@ -38,7 +38,7 @@ static const char copyright[] =
 #if 0
 static char sccsid[] = "@(#)kdump.c	8.4 (Berkeley) 4/28/95";
 #endif
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: kdump.c,v 1.1.1.1 2008/08/26 14:42:50 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -119,12 +119,12 @@ pid_t pid = -1;
 #undef RTHREADS
 
 struct emulation {
-	char *name;		/* Emulation name */
+	const char *name;	/* Emulation name */
 	char **sysnames;	/* Array of system call names */
 	int  nsysnames;		/* Number of */
 };
 
-static struct emulation emulations[] = {
+const struct emulation emulations[] = {
 	{ "native",	syscallnames,		SYS_MAXSYSCALL },
 #if defined(__hppa__) || defined(__m68k__)
 	{ "hpux",	hpux_syscallnames,	HPUX_SYS_MAXSYSCALL },
@@ -140,10 +140,10 @@ static struct emulation emulations[] = {
 	{ NULL,		NULL,			NULL }
 };
 
-struct emulation *current;
+const struct emulation *current;
 
 
-static char *ptrace_ops[] = {
+const char *ptrace_ops[] = {
 	"PT_TRACE_ME",	"PT_READ_I",	"PT_READ_D",	"PT_READ_U",
 	"PT_WRITE_I",	"PT_WRITE_D",	"PT_WRITE_U",	"PT_CONTINUE",
 	"PT_KILL",	"PT_ATTACH",	"PT_DETACH",	"PT_IO",

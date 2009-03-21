@@ -74,7 +74,6 @@ BEGIN {
 	print "#include <sys/scsiio.h>"
 	print "#include <crypto/cryptodev.h>"
 	print "#include <dev/biovar.h>"
-	print "#include <dev/ccdvar.h>"
 	print "#include <dev/ramdisk.h>"
 	print "#include <dev/rndioctl.h>"
 	print "#include <dev/systrace.h>"
