@@ -30,7 +30,7 @@
 
 #ifndef SMALL
 #ifndef lint
-static const char rcsid[] = "$ABSD: complete.c,v 1.1.1.1 2008/08/26 14:42:47 root Exp $";
+static const char rcsid[] = "$ABSD: complete.c,v 1.2 2008/12/26 18:52:02 mickey Exp $";
 #endif /* not lint */
 
 /*
@@ -123,7 +123,7 @@ complete_ambiguous(char *word, int list, StringList *words)
 static unsigned char
 complete_command(char *word, int list)
 {
-	struct cmd *c;
+	const struct cmd *c;
 	StringList *words;
 	size_t wordlen;
 	unsigned char rv;
@@ -284,7 +284,7 @@ complete(EditLine *el, int ch)
 {
 	static char word[FTPBUFLEN];
 	static int lastc_argc, lastc_argo;
-	struct cmd *c;
+	const struct cmd *c;
 	const LineInfo *lf;
 	int celems, dolist;
 	size_t len;

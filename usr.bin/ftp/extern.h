@@ -93,7 +93,7 @@ char   *dotrans(char *);
 int	foregroundproc(void);
 int	fileindir(const char *, const char *);
 void	get(int, char **);
-struct cmd *getcmd(const char *);
+const struct cmd *getcmd(const char *);
 int	getit(int, char **, int, const char *);
 int	getreply(int);
 int	globulize(char **);
@@ -204,7 +204,7 @@ void	parse_list(char **, char *);
 
 extern jmp_buf	abortprox;
 extern int	abrtflag;
-extern struct	cmd cmdtab[];
+extern const struct	cmd cmdtab[];
 extern FILE    *cout;
 extern int	data;
 extern char    *home;

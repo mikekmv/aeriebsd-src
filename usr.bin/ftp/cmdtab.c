@@ -29,7 +29,7 @@
  */
 
 #if !defined(lint) && !defined(SMALL)
-static const char rcsid[] = "$ABSD: cmdtab.c,v 1.1.1.1 2008/08/26 14:42:47 root Exp $";
+static const char rcsid[] = "$ABSD: cmdtab.c,v 1.2 2008/12/26 18:52:02 mickey Exp $";
 #endif /* not lint and not SMALL */
 
 #include <stdio.h>
@@ -40,83 +40,83 @@ static const char rcsid[] = "$ABSD: cmdtab.c,v 1.1.1.1 2008/08/26 14:42:47 root 
  */
 
 #ifndef SMALL
-char	accounthelp[] =	"send account command to remote server";
-char	appendhelp[] =	"append to a file";
-char	asciihelp[] =	"set ascii transfer type";
-char	beephelp[] =	"beep when command completed";
-char	binaryhelp[] =	"set binary transfer type";
-char	casehelp[] =	"toggle mget upper/lower case id mapping";
-char	cdhelp[] =	"change remote working directory";
-char	cduphelp[] =	"change remote working directory to parent directory";
-char	chmodhelp[] =	"change file permissions of remote file";
-char	connecthelp[] =	"connect to remote ftp server";
-char	crhelp[] =	"toggle carriage return stripping on ascii gets";
-char	debughelp[] =	"toggle/set debugging mode";
-char	deletehelp[] =	"delete remote file";
-char	dirhelp[] =	"list contents of remote directory";
-char	disconhelp[] =	"terminate ftp session";
-char	domachelp[] =	"execute macro";
-char	edithelp[] =	"toggle command line editing";
-char	epsv4help[] =	"toggle use of EPSV/EPRT on IPv4 ftp";
-char	formhelp[] =	"set file transfer format";
-char	gatehelp[] =	"toggle gate-ftp; specify host[:port] to change proxy";
-char	globhelp[] =	"toggle metacharacter expansion of local file names";
-char	hashhelp[] =	"toggle printing `#' marks; specify number to set size";
-char	helphelp[] =	"print local help information";
-char	idlehelp[] =	"get (set) idle timer on remote side";
-char	lcdhelp[] =	"change local working directory";
-char	lpwdhelp[] =	"print local working directory";
-char	lshelp[] =	"list contents of remote directory";
-char	macdefhelp[] =  "define a macro";
-char	mdeletehelp[] =	"delete multiple files";
-char	mdirhelp[] =	"list contents of multiple remote directories";
-char	mgethelp[] =	"get multiple files";
-char	mkdirhelp[] =	"make directory on the remote machine";
-char	mlshelp[] =	"list contents of multiple remote directories";
-char	modehelp[] =	"set file transfer mode";
-char	modtimehelp[] = "show last modification time of remote file";
-char	mputhelp[] =	"send multiple files";
-char	newerhelp[] =	"get file if remote file is newer than local file ";
-char	nlisthelp[] =	"nlist contents of remote directory";
-char	nmaphelp[] =	"set templates for default file name mapping";
-char	ntranshelp[] =	"set translation table for default file name mapping";
-char	pagehelp[] =	"view a remote file through your pager";
-char	passivehelp[] =	"toggle passive transfer mode";
-char	porthelp[] =	"toggle use of PORT/LPRT cmd for each data connection";
-char	preservehelp[] ="toggle preservation of modification time of "
-			"retrieved files";
-char	progresshelp[] ="toggle transfer progress meter";
-char	prompthelp[] =	"toggle interactive prompting on multiple commands";
-char	proxyhelp[] =	"issue command on alternate connection";
-char	pwdhelp[] =	"print working directory on remote machine";
-char	quithelp[] =	"terminate ftp session and exit";
-char	quotehelp[] =	"send arbitrary ftp command";
-char	receivehelp[] =	"receive file";
-char	regethelp[] =	"get file restarting at end of local file";
-char	reputhelp[] =	"put file restarting at end of remote file";
-char	remotehelp[] =	"get help from remote server";
-char	renamehelp[] =	"rename file";
-char	resethelp[] =	"clear queued command replies";
-char	restarthelp[]=	"restart file transfer at bytecount";
-char	rmdirhelp[] =	"remove directory on the remote machine";
-char	rmtstatushelp[]="show status of remote machine";
-char	runiquehelp[] = "toggle store unique for local files";
-char	sendhelp[] =	"send one file";
-char	shellhelp[] =	"escape to the shell";
-char	sitehelp[] =	"send site specific command to remote server\n"
-			"\t\tTry \"rhelp site\" or \"site help\" "
-			"for more information";
-char	sizecmdhelp[] = "show size of remote file";
-char	statushelp[] =	"show current status";
-char	structhelp[] =	"set file transfer structure";
-char	suniquehelp[] = "toggle store unique on remote machine";
-char	systemhelp[] =  "show remote system type";
-char	tenexhelp[] =	"set tenex file transfer type";
-char	tracehelp[] =	"toggle packet tracing";
-char	typehelp[] =	"set file transfer type";
-char	umaskhelp[] =	"get (set) umask on remote side";
-char	userhelp[] =	"send new user information";
-char	verbosehelp[] =	"toggle verbose mode";
+const char accounthelp[] = "send account command to remote server";
+const char appendhelp[] = "append to a file";
+const char asciihelp[] = "set ascii transfer type";
+const char beephelp[] = "beep when command completed";
+const char binaryhelp[] = "set binary transfer type";
+const char casehelp[] =	"toggle mget upper/lower case id mapping";
+const char cdhelp[] = "change remote working directory";
+const char cduphelp[] = "change remote working directory to parent directory";
+const char chmodhelp[] = "change file permissions of remote file";
+const char connecthelp[] = "connect to remote ftp server";
+const char crhelp[] = "toggle carriage return stripping on ascii gets";
+const char debughelp[] = "toggle/set debugging mode";
+const char deletehelp[] = "delete remote file";
+const char dirhelp[] = "list contents of remote directory";
+const char disconhelp[] = "terminate ftp session";
+const char domachelp[] = "execute macro";
+const char edithelp[] = "toggle command line editing";
+const char epsv4help[] = "toggle use of EPSV/EPRT on IPv4 ftp";
+const char formhelp[] = "set file transfer format";
+const char gatehelp[] = "toggle gate-ftp; specify host[:port] to change proxy";
+const char globhelp[] = "toggle metacharacter expansion of local file names";
+const char hashhelp[] = "toggle printing `#' marks; specify number to set size";
+const char helphelp[] = "print local help information";
+const char idlehelp[] = "get (set) idle timer on remote side";
+const char lcdhelp[] = "change local working directory";
+const char lpwdhelp[] = "print local working directory";
+const char lshelp[] = "list contents of remote directory";
+const char macdefhelp[] = "define a macro";
+const char mdeletehelp[] = "delete multiple files";
+const char mdirhelp[] = "list contents of multiple remote directories";
+const char mgethelp[] = "get multiple files";
+const char mkdirhelp[] = "make directory on the remote machine";
+const char mlshelp[] = "list contents of multiple remote directories";
+const char modehelp[] = "set file transfer mode";
+const char modtimehelp[] = "show last modification time of remote file";
+const char mputhelp[] = "send multiple files";
+const char newerhelp[] = "get file if remote file is newer than local file ";
+const char nlisthelp[] = "nlist contents of remote directory";
+const char nmaphelp[] = "set templates for default file name mapping";
+const char ntranshelp[] = "set translation table for default file name mapping";
+const char pagehelp[] = "view a remote file through your pager";
+const char passivehelp[] = "toggle passive transfer mode";
+const char porthelp[] = "toggle use of PORT/LPRT cmd for each data connection";
+const char preservehelp[] =  "toggle preservation of modification time of "
+	"retrieved files";
+const char progresshelp[] = "toggle transfer progress meter";
+const char prompthelp[] = "toggle interactive prompting on multiple commands";
+const char proxyhelp[] = "issue command on alternate connection";
+const char pwdhelp[] = "print working directory on remote machine";
+const char quithelp[] = "terminate ftp session and exit";
+const char quotehelp[] = "send arbitrary ftp command";
+const char receivehelp[] = "receive file";
+const char regethelp[] = "get file restarting at end of local file";
+const char reputhelp[] = "put file restarting at end of remote file";
+const char remotehelp[] = "get help from remote server";
+const char renamehelp[] = "rename file";
+const char resethelp[] = "clear queued command replies";
+const char restarthelp[] = "restart file transfer at bytecount";
+const char rmdirhelp[] = "remove directory on the remote machine";
+const char rmtstatushelp[]= "show status of remote machine";
+const char runiquehelp[] = "toggle store unique for local files";
+const char sendhelp[] = "send one file";
+const char shellhelp[] = "escape to the shell";
+const char sitehelp[] =	"send site specific command to remote server\n"
+		"\t\tTry \"rhelp site\" or \"site help\" "
+		"for more information";
+const char sizecmdhelp[] = "show size of remote file";
+const char statushelp[] = "show current status";
+const char structhelp[] = "set file transfer structure";
+const char suniquehelp[] = "toggle store unique on remote machine";
+const char systemhelp[] = "show remote system type";
+const char tenexhelp[] = "set tenex file transfer type";
+const char tracehelp[] = "toggle packet tracing";
+const char typehelp[] = "set file transfer type";
+const char umaskhelp[] = "get (set) umask on remote side";
+const char userhelp[] = "send new user information";
+const char verbosehelp[] = "toggle verbose mode";
 #endif /* !SMALL */
 
 char	empty[] = "";
@@ -131,7 +131,7 @@ char	empty[] = "";
 #define H(x)	x
 #endif /* SMALL */
 
-struct cmd cmdtab[] = {
+const struct cmd cmdtab[] = {
 	{ "!",		H(shellhelp),	0, 0, 0, CMPL0		shell },
 	{ "$",		H(domachelp),	1, 0, 0, CMPL0		domacro },
 	{ "account",	H(accounthelp),	0, 1, 1, CMPL0		account},

@@ -58,7 +58,7 @@
  */
 
 #if !defined(lint) && !defined(SMALL)
-static const char rcsid[] = "$ABSD: cmds.c,v 1.1.1.1 2008/08/26 14:42:47 root Exp $";
+static const char rcsid[] = "$ABSD: cmds.c,v 1.2 2008/12/26 18:52:01 mickey Exp $";
 #endif /* not lint and not SMALL */
 
 /*
@@ -1737,7 +1737,7 @@ proxabort(int signo)
 void
 doproxy(int argc, char *argv[])
 {
-	struct cmd *c;
+	const struct cmd *c;
 	int cmdpos;
 	sig_t oldintr;
 

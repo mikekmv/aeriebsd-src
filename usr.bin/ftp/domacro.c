@@ -29,7 +29,7 @@
  */
 
 #if !defined(lint) && !defined(SMALL)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: domacro.c,v 1.1.1.1 2008/08/26 14:42:48 root Exp $";
 #endif /* not lint and not SMALL */
 
 #include <ctype.h>
@@ -44,7 +44,7 @@ domacro(int argc, char *argv[])
 {
 	int i, j, count = 2, loopflg = 0;
 	char *cp1, *cp2, line2[FTPBUFLEN];
-	struct cmd *c;
+	const struct cmd *c;
 
 	if (argc < 2 && !another(&argc, &argv, "macro name")) {
 		fprintf(ttyout, "usage: %s macro_name\n", argv[0]);

@@ -64,7 +64,7 @@ static const char copyright[] =
 #endif /* not lint */
 
 #if !defined(lint) && !defined(SMALL)
-static const char rcsid[] = "$ABSD: main.c,v 1.1.1.1 2008/08/26 14:42:48 root Exp $";
+static const char rcsid[] = "$ABSD: main.c,v 1.2 2008/12/26 18:52:02 mickey Exp $";
 #endif /* not lint and not SMALL */
 
 /*
@@ -420,7 +420,7 @@ prompt(void)
 void
 cmdscanner(int top)
 {
-	struct cmd *c;
+	const struct cmd *c;
 	int num;
 #ifndef SMALL
 	HistEvent hev;
@@ -512,11 +512,11 @@ cmdscanner(int top)
 	(void)signal(SIGPIPE, (sig_t)lostpeer);
 }
 
-struct cmd *
+const struct cmd *
 getcmd(const char *name)
 {
 	const char *p, *q;
-	struct cmd *c, *found;
+	const struct cmd *c, *found;
 	int nmatches, longest;
 
 	if (name == NULL)
@@ -727,7 +727,7 @@ OUT:
 void
 help(int argc, char *argv[])
 {
-	struct cmd *c;
+	const struct cmd *c;
 
 	if (argc == 1) {
 		StringList *buf;

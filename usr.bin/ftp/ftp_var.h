@@ -198,7 +198,7 @@ int	options;		/* used during socket creation */
  */
 struct cmd {
 	char	*c_name;	/* name of command */
-	char	*c_help;	/* help string */
+	const char *c_help;	/* help string */
 	char	 c_bell;	/* give bell when command completes */
 	char	 c_conn;	/* must be connected to use command */
 	char	 c_proxy;	/* proxy server may execute */
