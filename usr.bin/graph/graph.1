@@ -1,0 +1,166 @@
+.\"	$OpenBSD$
+.\"
+.\" Copyright (c) 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgment:
+.\"	This product includes software developed by the University of
+.\"	California, Berkeley and its contributors.
+.\" 4. Neither the name of the University nor the names of its contributors
+.\"    may be used to endorse or promote products derived from this software
+.\"    without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\"
+.\" Copyright (C) Caldera International Inc.  2001-2002.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code and documentation must retain the above
+.\"    copyright notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"	This product includes software developed or owned by Caldera
+.\"	International, Inc.
+.\" 4. Neither the name of Caldera International, Inc. nor the names of other
+.\"    contributors may be used to endorse or promote products derived from
+.\"    this software without specific prior written permission.
+.\"
+.\" USE OF THE SOFTWARE PROVIDED FOR UNDER THIS LICENSE BY CALDERA
+.\" INTERNATIONAL, INC. AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL CALDERA INTERNATIONAL, INC. BE LIABLE FOR ANY DIRECT,
+.\" INDIRECT INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+.\" (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+.\" SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+.\" STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+.\" IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+.\" POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\"	@(#)graph.1	8.1 (Berkeley) 6/6/93
+.\"
+.Dd June 6, 1993
+.Dt GRAPH 1
+.Os
+.Sh NAME
+.Nm graph
+.Nd draw a graph
+.Sh SYNOPSIS
+.Nm
+.Op option
+.Ar ...
+.Sh DESCRIPTION
+.Nm
+with no options takes pairs of numbers from the
+standard input as abscissas and ordinates of a graph.
+Successive points are connected by straight lines.
+The graph is encoded on the standard output for display by the
+.Xr plot 1
+filters.
+.Pp
+If the coordinates of a point are followed by a nonnumeric string,
+that string is printed as a label beginning on the point.
+Labels may be surrounded with quotes "...", in
+which case they may be empty or contain blanks and numbers;
+labels never contain newlines.
+.Pp
+The following options are recognized, each as a separate argument.
+.Bl -tag -width flagx
+.It Fl a
+Supply abscissas automatically (they are missing from
+the input); spacing is given by the next argument (default 1).
+A second optional argument is the starting point for
+automatic abscissas (default 0 or lower limit given by
+.Fl x ) .
+.It Fl b
+Break (disconnect) the graph after each label in the input.
+.It Fl c
+Character string given by next argument is default label for each point.
+.It Fl g
+Next argument is grid style,
+0 no grid, 1 frame with ticks, 2 full grid (default).
+.It Fl l
+Next argument is label for graph.
+.It Fl m
+Next argument is mode (style) of connecting lines:
+0 disconnected, 1 connected (default).
+Some devices give distinguishable line styles for other small integers.
+.It Fl s
+Save screen, don't erase before plotting.
+.It Fl x Ns Op Ar l 
+If
+.Ar l
+is present, x axis is logarithmic.
+Next 1 (or 2) arguments are lower (and upper)
+.Ar x
+limits.
+Third argument, if present, is grid spacing on
+.Ar x
+axis.
+Normally these quantities are determined automatically.
+.It Fl y Ns Op Ar l 
+Similarly for
+.Ar y  .
+.It Fl h
+Next argument is fraction of space for height.
+.It Fl w
+Similarly for width.
+.It Fl r
+Next argument is fraction of space to move right before plotting.
+.It Fl u
+Similarly to move up before plotting.
+.It Fl t
+Transpose horizontal and vertical axes.
+(Option
+.Fl x
+now applies to the vertical axis.)
+.El
+.Pp
+A legend indicating grid range is produced with a grid unless the
+.Fl s
+option is present.
+.Pp
+If a specified lower limit exceeds the upper limit, the axis is reversed.
+.Sh SEE ALSO
+.Xr spline 1 ,
+.Xr plot 1
+.Sh HISTORY
+The
+.Nm graph
+command appeared in
+.At v6 .
+.Sh BUGS
+.Nm Graph
+stores all points internally and drops those for which
+there isn't room.
+.Pp
+Segments that run out of bounds are dropped, not windowed.
+.Pp
+Logarithmic axes may not be reversed.
