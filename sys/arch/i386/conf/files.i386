@@ -138,7 +138,7 @@ attach	amdmsr at mainbus
 file	arch/i386/i386/amdmsr.c		amdmsr	needs-flag
 
 # AMD Geode CS5536 Audio
-device	auglx: audio
+device	auglx: audio, auconv, mulaw, ac97
 attach	auglx at pci
 file	arch/i386/pci/auglx.c		auglx
 
