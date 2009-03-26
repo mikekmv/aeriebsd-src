@@ -34,7 +34,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: regexec.c,v 1.1.1.1 2008/08/26 14:38:32 root Exp $";
 #endif
 
 /*
@@ -80,6 +80,7 @@ static const char rcsid[] = "$ABSD$";
 /* function names */
 #define SNAMES			/* engine.c looks after details */
 
+#undef LIBC_SCCS
 #include "engine.c"
 
 /* now undo things */

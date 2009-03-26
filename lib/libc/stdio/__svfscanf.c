@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: __svfscanf.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <sys/cdefs.h>
@@ -25,5 +25,6 @@ static const char rcsid[] = "$ABSD$";
 __indr_reference(vfscanf, __svfscanf);
 #else
 # define VFSCANF __svfscanf
+#undef LIBC_SCCS
 # include "vfscanf.c"
 #endif
