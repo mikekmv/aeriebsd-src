@@ -26,7 +26,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.8 2009/03/20 16:28:23 mickey Exp $";
+    "$ABSD: elf.c,v 1.9 2009/03/20 17:28:40 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -350,7 +350,7 @@ elf_shn2type(const Elf_Ehdr *eh, u_int shn, const char *sn)
  */
 int
 elf2nlist(Elf_Sym *sym, const Elf_Ehdr *eh, const Elf_Shdr *shdr,
-    char *shstr, struct nlist *np)
+    const char *shstr, struct nlist *np)
 {
 	u_char stt;
 	const char *sn;
