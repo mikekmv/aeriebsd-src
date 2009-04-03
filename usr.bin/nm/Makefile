@@ -1,7 +1,5 @@
 
 PROG=	nm
-SRCS=	nm.c
-CPPFLAGS+=-I${.CURDIR}
 LDADD=	-lelf
 DPADD=	${LIBELF}
 LINKS=	${BINDIR}/nm ${BINDIR}/size

@@ -38,10 +38,13 @@ static const char copyright[] =
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
+#ifndef lint
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
+#else
+static const char rcsid[] = "$ABSD: nm.c,v 1.3 2009/03/20 16:25:16 mickey Exp $";
 #endif
-static const char rcsid[] = "$ABSD: nm.c,v 1.2 2009/02/08 11:53:05 mickey Exp $";
+#endif
 
 #include <sys/param.h>
 #include <sys/mman.h>
