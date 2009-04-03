@@ -28,7 +28,7 @@
 .\"
 .\"     from: @(#)ranlib.1	6.7 (Berkeley) 5/9/91
 .\"
-.Dd May 9, 1991
+.Dd $Mdocdate$
 .Dt RANLIB 1
 .Os
 .Sh NAME
@@ -40,10 +40,12 @@
 .Ar file Op Ar ...
 .Sh DESCRIPTION
 .Nm ranlib
-creates a table of external references for archive libraries,
+creates an index of external references for archive libraries,
 normally used by the loader,
 .Xr ld 1 .
-This table is named
+This index file is named
+.Dq /
+or
 .Dq __.SYMDEF
 and is prepended to the archive.
 Files in the archive which are not executable and symbols which are
@@ -52,9 +54,7 @@ uninteresting to the loader are ignored.
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl t
-Set the modification time of the
-.Pa __.SYMDEF
-file.
+Set the modification time of the index file.
 This time is compared by the loader with the modification time of the
 archive to verify that the table is up-to-date with respect to the
 archive.
@@ -65,8 +65,7 @@ the
 .Fl t
 option can be used to
 .Dq touch
-the modification time so that it
-appears that the table is up-to-date.
+the modification time so that it appears that the table is up-to-date.
 This is also useful after using the
 .Fl t
 option of
