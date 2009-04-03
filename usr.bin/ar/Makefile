@@ -1,16 +1,11 @@
 
-.include <bsd.own.mk>
-
-.if (${ELF_TOOLCHAIN:L} == "no")
 PROG=	ar
-CFLAGS+=-I${.CURDIR}
+CPPFLAGS+=-I${.CURDIR} -I${.CURDIR}/../nm
 SRCS=	append.c ar.c archive.c contents.c delete.c extract.c misc.c \
-	move.c print.c replace.c 
-MAN=	ar.1
-.else
-NOPROG=
-.endif
-
-MAN+=	ar.5
+	move.c print.c ranlib.c replace.c
+MAN=	ar.1 ar.5 ranlib.1 ranlib.5
+LINKS=	${BINDIR}/ar ${BINDIR}/ranlib
+LDADD=	-lelf
+DPADD=	${LIBELF}
 
 .include <bsd.prog.mk>

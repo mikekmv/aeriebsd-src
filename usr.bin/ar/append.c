@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -35,7 +34,8 @@
 #if 0
 static char sccsid[] = "@(#)append.c	8.3 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static const char rcsid[] =
+    "$ABSD$";
 #endif
 #endif /* not lint */
 
@@ -67,13 +67,13 @@ append(char **argv)
 
 	afd = open_archive(O_CREAT|O_RDWR);
 	if (lseek(afd, (off_t)0, SEEK_END) == (off_t)-1)
-		error(archive);
+		err(1, "lseek: %s", archive);
 
 	/* Read from disk, write to an archive; pad on write. */
 	SETCF(0, 0, afd, archive, WPAD);
 	for (eval = 0; (file = *argv++);) {
 		if ((fd = open(file, O_RDONLY)) < 0) {
-			warn("%s", file);
+			warn("open: %s", file);
 			eval = 1;
 			continue;
 		}
@@ -85,5 +85,5 @@ append(char **argv)
 		(void)close(fd);
 	}
 	close_archive(afd);
-	return (eval);	
+	return (eval);
 }

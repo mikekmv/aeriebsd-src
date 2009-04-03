@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -35,7 +34,8 @@
 #if 0
 static char sccsid[] = "@(#)misc.c	8.3 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static const char rcsid[] =
+    "$ABSD$";
 #endif
 #endif /* not lint */
 
@@ -75,11 +75,11 @@ tmp(void)
 		    _NAME_ARTMP);
 	else
 		strlcpy(path, _PATH_ARTMP, sizeof(path));
-	
+
 	sigfillset(&set);
 	(void)sigprocmask(SIG_BLOCK, &set, &oset);
 	if ((fd = mkstemp(path)) == -1)
-		error(tname);
+		err(1, "mkstemp: %s", tname);
         (void)unlink(path);
 	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
 	return (fd);
@@ -88,7 +88,7 @@ tmp(void)
 /*
  * files --
  *	See if the current file matches any file in the argument list; if it
- * 	does, remove it from the argument list.
+ *	does, remove it from the argument list.
  */
 char *
 files(char **argv)
@@ -136,11 +136,4 @@ badfmt(void)
 
 	errno = EFTYPE;
 	err(1, "%s", archive);
-}
-
-void
-error(char *name)
-{
-
-	err(1, "%s", name);
 }

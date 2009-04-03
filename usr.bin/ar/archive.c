@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -35,22 +34,22 @@
 #if 0
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static const char rcsid[] =
+    "$ABSD$";
 #endif
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-
-#include <ar.h>
-#include <dirent.h>
-#include <err.h>
-#include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <ar.h>
+#include <dirent.h>
+#include <errno.h>
+#include <err.h>
 
 #include "archive.h"
 #include "extern.h"
@@ -63,7 +62,7 @@ open_archive(int mode)
 {
 	int created, fd, nr;
 	char buf[SARMAG];
-	
+
 	created = 0;
 	if (mode & O_CREAT) {
 		mode |= O_EXCL;
@@ -75,20 +74,20 @@ open_archive(int mode)
 			goto opened;
 		}
 		if (errno != EEXIST)
-			error(archive);
+			err(1, "open: %s", archive);
 		mode &= ~O_EXCL;
 	}
 	if ((fd = open(archive, mode, DEFFILEMODE)) < 0)
-		error(archive);
+		err(1, "open: %s", archive);
 
-	/* 
-	 * Attempt to place a lock on the opened file - if we get an 
+	/*
+	 * Attempt to place a lock on the opened file - if we get an
 	 * error then someone is already working on this library (or
 	 * it's going across NFS).
 	 */
 opened:	if (flock(fd, LOCK_EX|LOCK_NB) && errno != EOPNOTSUPP)
-		error(archive);
-	
+		err(1, "flock: %s", archive);
+
 	/*
 	 * If not created, O_RDONLY|O_RDWR indicates that it has to be
 	 * in archive format.
@@ -98,11 +97,11 @@ opened:	if (flock(fd, LOCK_EX|LOCK_NB) && errno != EOPNOTSUPP)
 		if ((nr = read(fd, buf, SARMAG) != SARMAG)) {
 			if (nr >= 0)
 				badfmt();
-			error(archive);
+			err(1, "read: %s", archive);
 		} else if (bcmp(buf, ARMAG, SARMAG))
 			badfmt();
 	} else if (write(fd, ARMAG, SARMAG) != SARMAG)
-		error(archive);
+		err(1, "write: %s", archive);
 	return (fd);
 }
 
@@ -136,7 +135,7 @@ get_arobj(int fd)
 		if (!nr)
 			return (0);
 		if (nr < 0)
-			error(archive);
+			err(1, "read: %s", archive);
 		badfmt();
 	}
 
@@ -169,7 +168,7 @@ get_arobj(int fd)
 		nr = read(fd, chdr.name, len);
 		if (nr != len) {
 			if (nr < 0)
-				error(archive);
+				err(1, "read: %s", archive);
 			badfmt();
 		}
 		chdr.name[len] = 0;
@@ -258,10 +257,10 @@ put_arobj(CF *cfp, struct stat *sb)
 	}
 
 	if (write(cfp->wfd, hb, sizeof(HDR)) != sizeof(HDR))
-		error(cfp->wname);
+		err(1, "write: %s", cfp->wname);
 	if (lname) {
 		if (write(cfp->wfd, name, lname) != lname)
-			error(cfp->wname);
+			err(1, "write: %s", cfp->wname);
 		already_written = lname;
 	}
 	copy_ar(cfp, size);
@@ -289,7 +288,7 @@ copy_ar(CF *cfp, off_t size)
 	off_t sz;
 	int from, nr, nw, off, to;
 	char buf[8*1024];
-	
+
 	if (!(sz = size))
 		return;
 
@@ -300,35 +299,37 @@ copy_ar(CF *cfp, off_t size)
 		sz -= nr;
 		for (off = 0; off < nr; nr -= off, off += nw)
 			if ((nw = write(to, buf + off, nr)) < 0)
-				error(cfp->wname);
+				err(1, "write: %s", cfp->wname);
 	}
 	if (sz) {
 		if (nr == 0)
 			badfmt();
-		error(cfp->rname);
+		err(1, "read: %s", cfp->rname);
 	}
 
 	if (cfp->flags & RPAD && (size + chdr.lname) & 1 &&
 	    (nr = read(from, buf, 1)) != 1) {
 		if (nr == 0)
 			badfmt();
-		error(cfp->rname);
+		err(1, "read: %s", cfp->rname);
 	}
 	if (cfp->flags & WPAD && (size + already_written) & 1 &&
 	    write(to, &pad, 1) != 1)
-		error(cfp->wname);
+		err(1, "write: %s", cfp->wname);
 }
 
 /*
  * skip_arobj -
  *	Skip over an object -- taking care to skip the pad bytes.
  */
-void
+off_t
 skip_arobj(int fd)
 {
 	off_t len;
 
-	len = chdr.size + (chdr.size + chdr.lname & 1);
+	len = chdr.size + ((chdr.size + chdr.lname) & 1);
 	if (lseek(fd, len, SEEK_CUR) == (off_t)-1)
-		error(archive);
+		err(1, "lseek: %s", archive);
+
+	return len + sizeof(struct ar_hdr);
 }

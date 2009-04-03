@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -35,7 +34,8 @@
 #if 0
 static char sccsid[] = "@(#)delete.c	8.3 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static const char rcsid[] =
+    "$ABSD$";
 #endif
 #endif /* not lint */
 
@@ -93,4 +93,4 @@ delete(char **argv)
 		return (1);
 	}
 	return (0);
-}	
+}

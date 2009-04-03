@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -35,7 +34,8 @@
 #if 0
 static char sccsid[] = "@(#)contents.c	8.3 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static const char rcsid[] =
+    "$ABSD$";
 #endif
 #endif /* not lint */
 
@@ -65,7 +65,7 @@ contents(char **argv)
 	int afd, all;
 	struct tm *tp;
 	char *file, buf[25];
-	
+
 	afd = open_archive(O_RDONLY);
 
 	for (all = !*argv; get_arobj(afd);) {
@@ -85,7 +85,7 @@ contents(char **argv)
 		if (!all && !*argv)
 			break;
 next:		skip_arobj(afd);
-	} 
+	}
 	close_archive(afd);
 
 	if (*argv) {

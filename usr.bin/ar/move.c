@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -35,7 +34,8 @@
 #if 0
 static char sccsid[] = "@(#)move.c	8.3 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static const char rcsid[] =
+    "$ABSD$";
 #endif
 #endif /* not lint */
 
@@ -85,7 +85,7 @@ move(char **argv)
 
 	/* Read and write to an archive; pad on both. */
 	SETCF(afd, archive, 0, tname, RPAD|WPAD);
-	for (curfd = tfd1; get_arobj(afd);) {	
+	for (curfd = tfd1; get_arobj(afd);) {
 		if (*argv && (file = files(argv))) {
 			if (options & AR_V)
 				(void)printf("m - %s\n", file);
@@ -137,4 +137,4 @@ move(char **argv)
 		return (1);
 	}
 	return (0);
-}	
+}

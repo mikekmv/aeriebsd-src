@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -43,12 +42,13 @@
 #define	AR_P	0x0040
 #define	AR_Q	0x0080
 #define	AR_R	0x0100
-#define	AR_T	0x0200
-#define	AR_TR	0x0400
-#define	AR_U	0x0800
-#define	AR_V	0x1000
-#define	AR_X	0x2000
-#define	AR_CC	0x4000
+#define	AR_S	0x0200
+#define	AR_T	0x0400
+#define	AR_TR	0x0800
+#define	AR_U	0x1000
+#define	AR_V	0x2000
+#define	AR_X	0x4000
+#define	AR_CC	0x8000
 extern u_int options;
 
 /* Set up file copy. */
@@ -100,4 +100,4 @@ void	copy_ar(CF *, off_t);
 int	get_arobj(int);
 int	open_archive(int);
 void	put_arobj(CF *, struct stat *);
-void	skip_arobj(int);
+off_t	skip_arobj(int);

@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -35,7 +34,6 @@ void	badfmt(void);
 int	compare(char *);
 int	contents(char **);
 int	delete(char **);
-void	error(char *);
 int	extract(char **);
 char   *files(char **argv);
 int	move(char **);
@@ -44,6 +42,7 @@ int	print(char **);
 int	replace(char **);
 char   *rname(char *);
 int	tmp(void);
+int	ranlib(char **);
 
 extern char *archive;
 extern char *posarg, *posname;		/* positioning file name */

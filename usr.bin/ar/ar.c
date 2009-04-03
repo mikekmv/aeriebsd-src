@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -32,38 +31,41 @@
  */
 
 #ifndef lint
-static char copyright[] =
-"@(#) Copyright (c) 1990, 1993, 1994\n\
-	The Regents of the University of California.  All rights reserved.\n";
+static const char copyright[] =
+"@(#) Copyright (c) 2009 Michael Shalayeff.  All rights reserved.\n"
+"@(#) Copyright (c) 1990, 1993, 1994\n"
+    "\tThe Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)ar.c	8.3 (Berkeley) 4/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static const char rcsid[] =
+    "$ABSD$";
 #endif
 #endif /* not lint */
 
 #include <sys/param.h>
-
-#include <ar.h>
-#include <dirent.h>
-#include <err.h>
-#include <paths.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <paths.h>
+#include <ar.h>
+#include <dirent.h>
+#include <err.h>
 
 #include "archive.h"
 #include "extern.h"
 
 CHDR chdr;
 u_int options;
+char *stab;	/* -lelf */
+
 char *archive, *envtmp, *posarg, *posname;
 static void badoptions(char *);
-static void usage(void);
+void usage(void);
 
 /*
  * main --
@@ -74,93 +76,113 @@ static void usage(void);
 int
 main(int argc, char *argv[])
 {
+	extern char *__progname;
 	int c;
 	char *p;
 	int (*fcall)(char **);
 
-	if (argc < 3)
-		usage();
-
-	/*
-	 * Historic versions didn't require a '-' in front of the options.
-	 * Fix it, if necessary.
-	*/
-	if (*argv[1] != '-') {
-		size_t len;
-
-		len = (u_int)(strlen(argv[1]) + 2);
-		if (!(p = malloc(len)))
-			err(1, NULL);
-		*p = '-';
-		(void)strlcpy(p + 1, argv[1], len - 1);
-		argv[1] = p;
-	}
-
-	while ((c = getopt(argc, argv, "abcCdilmopqrTtuvx")) != -1) {
-		switch(c) {
-		case 'a':
-			options |= AR_A;
-			break;
-		case 'b':
-		case 'i':
-			options |= AR_B;
-			break;
-		case 'c':
-			options |= AR_C;
-			break;
-		case 'C':
-			options |= AR_CC;
-			break;
-		case 'd':
-			options |= AR_D;
-			fcall = delete;
-			break;
-		case 'l':		/* not documented, compatibility only */
-			envtmp = ".";
-			break;
-		case 'm':
-			options |= AR_M;
-			fcall = move;
-			break;
-		case 'o':
-			options |= AR_O;
-			break;
-		case 'p':
-			options |= AR_P;
-			fcall = print;
-			break;
-		case 'q':
-			options |= AR_Q;
-			fcall = append;
-			break;
-		case 'r':
-			options |= AR_R;
-			fcall = replace;
-			break;
-		case 'T':
-			options |= AR_TR;
-			break;
-		case 't':
-			options |= AR_T;
-			fcall = contents;
-			break;
-		case 'u':
-			options |= AR_U;
-			break;
-		case 'v':
-			options |= AR_V;
-			break;
-		case 'x':
-			options |= AR_X;
-			fcall = extract;
-			break;
-		default:
+	fcall = NULL;
+	if (strcmp(__progname, "ranlib") == 0) {
+		if (argc < 2)
 			usage();
+
+		options |= AR_S;
+		while ((c = getopt(argc, argv, "t")) != -1)
+			switch(c) {
+			case 't':
+				options |= AR_T;
+				break;
+			default:
+				usage();
+			}
+	} else {
+		if (argc < 3)
+			usage();
+
+		/*
+		 * Historic versions didn't require a '-' in front of the
+		 * options.  Fix it, if necessary.
+		 */
+		if (*argv[1] != '-') {
+			size_t len;
+
+			len = (u_int)(strlen(argv[1]) + 2);
+			if (!(p = malloc(len)))
+				err(1, NULL);
+			*p = '-';
+			(void)strlcpy(p + 1, argv[1], len - 1);
+			argv[1] = p;
 		}
+		while ((c = getopt(argc, argv, "abcCdimopqrsTtuvx")) != -1)
+			switch(c) {
+			case 'a':
+				options |= AR_A;
+				break;
+			case 'b':
+			case 'i':
+				options |= AR_B;
+				break;
+			case 'c':
+				options |= AR_C;
+				break;
+			case 'C':
+				options |= AR_CC;
+				break;
+			case 'd':
+				options |= AR_D;
+				fcall = delete;
+				break;
+			case 'm':
+				options |= AR_M;
+				fcall = move;
+				break;
+			case 'o':
+				options |= AR_O;
+				break;
+			case 'p':
+				options |= AR_P;
+				fcall = print;
+				break;
+			case 'q':
+				/* TODO optimise symdef generation for -c */
+				options |= AR_Q;
+				fcall = append;
+				break;
+			case 'r':
+				options |= AR_R;
+				fcall = replace;
+				break;
+			case 's':
+				options |= AR_S;
+				break;
+			case 'T':
+				options |= AR_TR;
+				break;
+			case 't':
+				options |= AR_T;
+				fcall = contents;
+				break;
+			case 'u':
+				options |= AR_U;
+				break;
+			case 'v':
+				options |= AR_V;
+				break;
+			case 'x':
+				options |= AR_X;
+				fcall = extract;
+				break;
+			default:
+				usage();
+			}
 	}
 
 	argv += optind;
 	argc -= optind;
+
+	/* single -s is a ranlib for the ar files given */
+	if (fcall == NULL && (options & AR_S))
+		exit(ranlib(argv));
 
 	/* One of -dmpqrtx required. */
 	if (!(options & (AR_D|AR_M|AR_P|AR_Q|AR_R|AR_T|AR_X))) {
@@ -218,18 +240,19 @@ badoptions(char *arg)
 	usage();
 }
 
-static void
+void
 usage(void)
 {
 
-	(void)fprintf(stderr, "usage:  ar -d [-Tv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -m [-Tv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -m [-abiTv] position archive file ...\n");
-	(void)fprintf(stderr, "\tar -p [-Tv] archive [file ...]\n");
-	(void)fprintf(stderr, "\tar -q [-cTv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -r [-cuTv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -r [-abciuTv] position archive file ...\n");
-	(void)fprintf(stderr, "\tar -t [-Tv] archive [file ...]\n");
-	(void)fprintf(stderr, "\tar -x [-CouTv] archive [file ...]\n");
+	fprintf(stderr, "usage:  ar -d [-Tv] archive file ...\n"
+	    "\tar -m [-Tv] archive file ...\n"
+	    "\tar -m [-abiTv] position archive file ...\n"
+	    "\tar -p [-Tv] archive [file ...]\n"
+	    "\tar -q [-cTv] archive file ...\n"
+	    "\tar -r [-cuTv] archive file ...\n"
+	    "\tar -r [-abciuTv] position archive file ...\n"
+	    "\tar -t [-Tv] archive [file ...]\n"
+	    "\tar -x [-CouTv] archive [file ...]\n"
+	    "\tranlib [-t] archive ...\n");
 	exit(1);
-}	
+}

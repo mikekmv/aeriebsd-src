@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -34,8 +33,9 @@
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)extract.c	8.3 (Berkeley) 4/2/94";
-#else 
-static char rcsid[] = "$ABSD$";
+#else
+static const char rcsid[] =
+    "$ABSD$";
 #endif
 #endif /* not lint */
 
@@ -100,7 +100,7 @@ extract(char **argv)
 		} else {
 			if ((tfd = open(file, O_WRONLY|O_CREAT|O_TRUNC,
 			    S_IWUSR)) < 0) {
-				warn("%s", file);
+				warn("open: %s", file);
 				skip_arobj(afd);
 				eval = 1;
 				continue;
@@ -136,4 +136,4 @@ extract(char **argv)
 		return (1);
 	}
 	return (0);
-}	
+}
