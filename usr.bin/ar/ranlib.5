@@ -28,7 +28,7 @@
 .\"
 .\"     from: @(#)ranlib.5.5	5.2 (Berkeley) 5/10/91
 .\"
-.Dd May 10, 1991
+.Dd $Mdocdate$
 .Dt RANLIB 5
 .Os
 .Sh NAME
@@ -45,10 +45,29 @@ be used by the link-editor
 It operates on archives created with the utility
 .Xr ar 1 .
 .Pp
+There are two slightely different formats for the table of contents.
+Traditionally
+.Xr a.out 5
+systems use
+.Dq __.SYMDEF
+format (described later) and
+.Xr elf 5
+systems another, simpler format.
+In this case file name is set to
+.Dq /
+and first integer specifies the number of entries in the first part
+of the archive file.
+Then followed by the array of integer offsets to the archive files
+for each of which there is a corresponding symbol name in the
+second part of the archive file.
+This second part simply has a stream of strings separated by
+the null characters.
+.Pp
 The
 .Nm ranlib
-function
-prepends a new file to the archive which has three separate parts.
+function on
+.Xr a.out 5
+systems prepends a new file to the archive which has three separate parts.
 The first part is a standard archive header, which has a special name
 field,
 .Dq __.SYMDEF .
@@ -69,4 +88,6 @@ followed by a string table.
 The long is the size, in bytes, of the string table.
 .Sh SEE ALSO
 .Xr ar 1 ,
-.Xr ranlib 1
+.Xr ranlib 1 ,
+.Xr a.out 5 ,
+.Xr elf 5
