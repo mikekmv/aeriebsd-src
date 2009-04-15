@@ -33,6 +33,7 @@
 #define	_RANLIB_H_
 
 #define	RANLIBMAG	"__.SYMDEF"	/* archive file name */
+#define	RANLIBMAG2	"/"		/* archive file name sysV */
 #define	RANLIBSKEW	3		/* creation time offset */
 
 struct ranlib {
