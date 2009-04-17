@@ -22,6 +22,12 @@
  * definitions for parsing DWARF2 debugging info
  */
 
+/* elf section nams */
+#define	DWARF_LINES	".dwarf_line"
+#define	DWARF_MACROS	".dwarf_macinfo"
+#define	DWARF_FRAMES	".dwarf_frame"
+
+/* TAG definitions */
 #define	DW_TAG_array_type		0x01
 #define	DW_TAG_class_type		0x02
 #define	DW_TAG_entry_point		0x03
