@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: vfprintf.c,v 1.1.1.1 2008/08/26 14:38:35 root Exp $";
+static const char rcsid[] = "$ABSD: vfprintf.c,v 1.2 2008/12/26 18:50:34 mickey Exp $";
 #endif
 
 /*
@@ -204,7 +204,7 @@ vfprintf(FILE *fp, const char *fmt0, __va_list ap)
 #ifdef FLOATING_POINT
 	char *decimal_point = localeconv()->decimal_point;
 	int softsign;		/* temporary negative sign for floats */
-	double _double;		/* double precision arguments %[eEfgG] */
+	double _double;		/* double precision arguments %[eEfFgG] */
 	int expt;		/* integer value of exponent */
 	int expsize;		/* character count for expstr */
 	int ndig;		/* actual number of digits returned by cvt */
@@ -213,15 +213,15 @@ vfprintf(FILE *fp, const char *fmt0, __va_list ap)
 #endif
 
 	uintmax_t _umax;	/* integer arguments %[diouxX] */
-	enum { OCT, DEC, HEX } base;/* base for [diouxX] conversion */
-	int dprec;		/* a copy of prec if [diouxX], 0 otherwise */
+	enum { OCT, DEC, HEX } base;/* base for %[diouxX] conversion */
+	int dprec;		/* a copy of prec if %[diouxX], 0 otherwise */
 	int realsz;		/* field size expanded by dprec */
 	int size;		/* size of converted field or string */
-	char *xdigs;		/* digits for [xX] conversion */
+	char *xdigs;		/* digits for %[xX] conversion */
 #define NIOV 8
 	struct __suio uio;	/* output information: summary */
 	struct __siov iov[NIOV];/* ... and individual io vectors */
-	char buf[BUF];		/* space for %c, %[diouxX], %[eEfgG] */
+	char buf[BUF];		/* space for %c, %[diouxX], %[eEfFgG] */
 	char ox[2];		/* space for 0x hex-prefix */
 	union arg *argtable;	/* args, built due to positional arg */
 	union arg statargtable[STATIC_ARG_TBL_SIZE];
@@ -526,6 +526,7 @@ reswitch:	switch (ch) {
 		case 'e':
 		case 'E':
 		case 'f':
+		case 'F':
 		case 'g':
 		case 'G':
 			if (prec == -1) {
@@ -544,13 +545,21 @@ reswitch:	switch (ch) {
 			if (isinf(_double)) {
 				if (_double < 0)
 					sign = '-';
-				cp = "Inf";
+				if (ch == 'E' || ch == 'F' || ch == 'G')
+					cp = "INF";
+				else
+					cp = "inf";
 				size = 3;
+				flags &= ~ZEROPAD;
 				break;
 			}
 			if (isnan(_double)) {
-				cp = "NaN";
+				if (ch == 'E' || ch == 'F' || ch == 'G')
+					cp = "NAN";
+				else
+					cp = "nan";
 				size = 3;
+				flags &= ~ZEROPAD;
 				break;
 			}
 
@@ -565,13 +574,14 @@ reswitch:	switch (ch) {
 				else
 					ch = 'g';
 			}
-			if (ch <= 'e') {	/* 'e' or 'E' fmt */
+			if (ch == 'e' || ch == 'E') {	/* 'e' or 'E' fmt */
 				--expt;
 				expsize = exponent(expstr, expt, ch);
 				size = expsize + ndig;
 				if (ndig > 1 || flags & ALT)
 					++size;
-			} else if (ch == 'f') {		/* f fmt */
+			} else if (ch == 'f' || ch == 'F') {
+							/* 'f' or 'F' fmt */
 				if (expt > 0) {
 					size = expt;
 					if (prec || flags & ALT)
@@ -746,7 +756,7 @@ number:			if ((dprec = prec) >= 0)
 		 * first be prefixed by any sign or other prefix; otherwise,
 		 * it should be blank padded before the prefix is emitted.
 		 * After any left-hand padding and prefixing, emit zeroes
-		 * required by a decimal [diouxX] precision, then print the
+		 * required by a decimal %[diouxX] precision, then print the
 		 * string proper, then emit zeroes required by any leftover
 		 * floating precision; finally, if LADJUST, pad with blanks.
 		 *
@@ -784,7 +794,7 @@ number:			if ((dprec = prec) >= 0)
 		if ((flags & FPT) == 0) {
 			PRINT(cp, size);
 		} else {	/* glue together f_p fragments */
-			if (ch >= 'f') {	/* 'f' or 'g' */
+			if (ch >= 'f' || ch == 'F') {	/* 'f', 'g' or 'F' */
 				if (_double == 0) {
 					/* kludge for __dtoa irregularity */
 					PRINT("0", 1);
@@ -1072,6 +1082,7 @@ reswitch:	switch (ch) {
 		case 'e':
 		case 'E':
 		case 'f':
+		case 'F':
 		case 'g':
 		case 'G':
 			if (flags & LONGDBL)
@@ -1266,7 +1277,7 @@ cvt(double value, int ndigits, int flags, int *sign, int *decpt, int ch,
 	int mode;
 	char *digits, *bp, *rve;
 
-	if (ch == 'f') {
+	if (ch == 'f' || ch == 'F') {
 		mode = 3;		/* ndigits after the decimal point */
 	} else {
 		/* To obtain ndigits after the decimal point for the 'e'
@@ -1282,7 +1293,7 @@ cvt(double value, int ndigits, int flags, int *sign, int *decpt, int ch,
 	digits = __dtoa(value, mode, ndigits, decpt, sign, &rve);
 	if ((ch != 'g' && ch != 'G') || flags & ALT) {/* Print trailing zeros */
 		bp = digits + ndigits;
-		if (ch == 'f') {
+		if (ch == 'f' || ch == 'F') {
 			if (*digits == '0' && value)
 				*decpt = -ndigits + 1;
 			bp += *decpt;
