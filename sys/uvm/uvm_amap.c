@@ -65,6 +65,8 @@ struct pool uvm_amap_pool;
 
 LIST_HEAD(, vm_amap) amap_list;
 
+#define MALLOC_SLOT_UNIT (2 * sizeof(int) + sizeof(struct vm_anon *))
+
 /*
  * local functions
  */
@@ -188,8 +190,8 @@ amap_alloc1(int slots, int padslots, int waitf)
 	if (amap == NULL)
 		return(NULL);
 
-	totalslots = malloc_roundup((slots + padslots) * sizeof(int)) /
-	    sizeof(int);
+	totalslots = malloc_roundup((slots + padslots) * MALLOC_SLOT_UNIT) /
+	    MALLOC_SLOT_UNIT;
 	amap->am_ref = 1;
 	amap->am_flags = 0;
 #ifdef UVM_AMAP_PPREF
@@ -199,26 +201,18 @@ amap_alloc1(int slots, int padslots, int waitf)
 	amap->am_nslot = slots;
 	amap->am_nused = 0;
 
-	amap->am_slots = malloc(totalslots * sizeof(int), M_UVMAMAP,
+	amap->am_slots = malloc(totalslots * MALLOC_SLOT_UNIT, M_UVMAMAP,
 	    waitf);
 	if (amap->am_slots == NULL)
 		goto fail1;
 
-	amap->am_bckptr = malloc(totalslots * sizeof(int), M_UVMAMAP, waitf);
-	if (amap->am_bckptr == NULL)
-		goto fail2;
-
-	amap->am_anon = malloc(totalslots * sizeof(struct vm_anon *),
-	    M_UVMAMAP, waitf);
-	if (amap->am_anon == NULL)
-		goto fail3;
+	amap->am_bckptr = (int *)(((char *)amap->am_slots) + totalslots *
+	    sizeof(int));
+	amap->am_anon = (struct vm_anon **)(((char *)amap->am_bckptr) +
+	    totalslots * sizeof(int));
 
 	return(amap);
 
-fail3:
-	free(amap->am_bckptr, M_UVMAMAP);
-fail2:
-	free(amap->am_slots, M_UVMAMAP);
 fail1:
 	pool_put(&uvm_amap_pool, amap);
 	return (NULL);
@@ -269,8 +263,6 @@ amap_free(struct vm_amap *amap)
 	KASSERT((amap->am_flags & AMAP_SWAPOFF) == 0);
 
 	free(amap->am_slots, M_UVMAMAP);
-	free(amap->am_bckptr, M_UVMAMAP);
-	free(amap->am_anon, M_UVMAMAP);
 #ifdef UVM_AMAP_PPREF
 	if (amap->am_ppref && amap->am_ppref != PPREF_NONE)
 		free(amap->am_ppref, M_UVMAMAP);
@@ -367,7 +359,8 @@ amap_extend(struct vm_map_entry *entry, vsize_t addsize)
 	 * XXXCDC: could we take advantage of a kernel realloc()?  
 	 */
 
-	slotalloc = malloc_roundup(slotneed * sizeof(int)) / sizeof(int);
+	slotalloc = malloc_roundup(slotneed * MALLOC_SLOT_UNIT) /
+	    MALLOC_SLOT_UNIT;
 #ifdef UVM_AMAP_PPREF
 	newppref = NULL;
 	if (amap->am_ppref && amap->am_ppref != PPREF_NONE) {
@@ -380,22 +373,9 @@ amap_extend(struct vm_map_entry *entry, vsize_t addsize)
 		}
 	}
 #endif
-	newsl = malloc(slotalloc * sizeof(int), M_UVMAMAP,
+	newsl = malloc(slotalloc * MALLOC_SLOT_UNIT, M_UVMAMAP,
 	    M_WAITOK | M_CANFAIL);
-	newbck = malloc(slotalloc * sizeof(int), M_UVMAMAP,
-	    M_WAITOK | M_CANFAIL);
-	newover = malloc(slotalloc * sizeof(struct vm_anon *), M_UVMAMAP,
-	    M_WAITOK | M_CANFAIL);
-	if (newsl == NULL || newbck == NULL || newover == NULL) {
-		if (newsl != NULL) {
-			free(newsl, M_UVMAMAP);
-		}
-		if (newbck != NULL) {
-			free(newbck, M_UVMAMAP);
-		}
-		if (newover != NULL) {
-			free(newover, M_UVMAMAP);
-		}
+	if (newsl == NULL) {
 #ifdef UVM_AMAP_PPREF
 		if (newppref != NULL) {
 			free(newppref, M_UVMAMAP);
@@ -403,6 +383,9 @@ amap_extend(struct vm_map_entry *entry, vsize_t addsize)
 #endif
 		return (ENOMEM);
 	}
+	newbck = (int *)(((char *)newsl) + slotalloc * sizeof(int));
+	newover = (struct vm_anon **)(((char *)newbck) + slotalloc *
+	    sizeof(int));
 	KASSERT(amap->am_maxslot < slotneed);
 
 	/*
@@ -450,8 +433,6 @@ amap_extend(struct vm_map_entry *entry, vsize_t addsize)
 
 	/* and free */
 	free(oldsl, M_UVMAMAP);
-	free(oldbck, M_UVMAMAP);
-	free(oldover, M_UVMAMAP);
 #ifdef UVM_AMAP_PPREF
 	if (oldppref && oldppref != PPREF_NONE)
 		free(oldppref, M_UVMAMAP);
@@ -459,51 +440,6 @@ amap_extend(struct vm_map_entry *entry, vsize_t addsize)
 	UVMHIST_LOG(maphist,"<- done (case 3), amap = %p, slotneed=%ld", 
 	    amap, slotneed, 0, 0);
 	return (0);
-}
-
-/*
- * amap_share_protect: change protection of anons in a shared amap
- *
- * for shared amaps, given the current data structure layout, it is
- * not possible for us to directly locate all maps referencing the
- * shared anon (to change the protection).  in order to protect data
- * in shared maps we use pmap_page_protect().  [this is useful for IPC
- * mechanisms like map entry passing that may want to write-protect
- * all mappings of a shared amap.]  we traverse am_anon or am_slots
- * depending on the current state of the amap.
- *
- * => entry's map and amap must be locked by the caller
- */
-void
-amap_share_protect(struct vm_map_entry *entry, vm_prot_t prot)
-{
-	struct vm_amap *amap = entry->aref.ar_amap;
-	int slots, lcv, slot, stop;
-
-	AMAP_B2SLOT(slots, (entry->end - entry->start));
-	stop = entry->aref.ar_pageoff + slots;
-
-	if (slots < amap->am_nused) {
-		/* cheaper to traverse am_anon */
-		for (lcv = entry->aref.ar_pageoff ; lcv < stop ; lcv++) {
-			if (amap->am_anon[lcv] == NULL)
-				continue;
-			if (amap->am_anon[lcv]->an_page != NULL)
-				pmap_page_protect(amap->am_anon[lcv]->an_page,
-						  prot);
-		}
-		return;
-	}
-
-	/* cheaper to traverse am_slots */
-	for (lcv = 0 ; lcv < amap->am_nused ; lcv++) {
-		slot = amap->am_slots[lcv];
-		if (slot < entry->aref.ar_pageoff || slot >= stop)
-			continue;
-		if (amap->am_anon[slot]->an_page != NULL)
-			pmap_page_protect(amap->am_anon[slot]->an_page, prot);
-	}
-	return;
 }
 
 /*

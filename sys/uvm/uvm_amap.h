@@ -105,8 +105,6 @@ void		amap_ref(struct vm_amap *, vaddr_t, vsize_t, int);
 					/* get number of references of amap */
 int		amap_refs(struct vm_amap *);
 					/* protect pages in a shared amap */
-void		amap_share_protect(vm_map_entry_t, vm_prot_t);
-					/* split reference to amap into two */
 void		amap_splitref(struct vm_aref *, struct vm_aref *, vaddr_t);
 AMAP_INLINE				/* remove an anon from an amap */
 void		amap_unadd(struct vm_aref *, vaddr_t);
