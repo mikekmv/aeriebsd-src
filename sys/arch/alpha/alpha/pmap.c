@@ -2124,13 +2124,12 @@ pmap_extract(pmap_t pmap, vaddr_t va, paddr_t *pap)
 		if (va < ALPHA_K0SEG_BASE) {
 			/* nothing */
 		} else if (va <= ALPHA_K0SEG_END) {
-			pa = ALPHA_K0SEG_TO_PHYS(va);
+			*pap = pa = ALPHA_K0SEG_TO_PHYS(va);
 			rv = TRUE;
 		} else {
 			l3pte = PMAP_KERNEL_PTE(va);
 			if (pmap_pte_v(l3pte)) {
-				pa = pmap_pte_pa(l3pte) | (va & PGOFSET);
-				*pap = pa;
+				*pap = pa = pmap_pte_pa(l3pte) | (va & PGOFSET);
 				rv = TRUE;
 			}
 		}
