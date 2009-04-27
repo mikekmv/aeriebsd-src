@@ -1,6 +1,6 @@
 PROG=	icbd
 SRCS=	cmd.c icb.c icbd.c
-MAN=
+MAN=	icbd.8
 
 CFLAGS+=-Wall -Werror
 
