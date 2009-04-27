@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.1 2009/04/27 15:41:25 uid1005 Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.2 2009/04/27 16:58:40 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -127,15 +127,12 @@ main(int argc, char *argv[])
 		char *addr, *port;
 		int error, s, on = 1;
 
-		addr = NULL;
-		port = NULL;
+		addr = port = NULL;
 		if (argv[ch] != NULL) {
 			if (argv[ch][0] != ':')
 				addr = argv[ch];
 			if ((port = strrchr(argv[ch], ':')) != NULL)
 				*port++ = '\0';
-			else
-				port = NULL;
 		}
 
 		bzero(&hints, sizeof(hints));
