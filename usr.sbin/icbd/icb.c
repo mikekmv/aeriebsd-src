@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: icb.c,v 1.1 2009/04/27 15:41:25 uid1005 Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -87,9 +87,6 @@ icb_input(struct icb_session *is, char *msg, size_t msglen)
 	char *fields[ICB_MAXFIELDS];
 	char type = msg[1];
 	int i, nf, pos = 0;
-
-	fflush(stdout);
-	printf("icb_input: msg=%*s\n", (int)msglen, msg);
 
 	is->last = getmonotime();
 	if (msglen != (size_t)((unsigned char)msg[0] + 1)) {
@@ -421,6 +418,8 @@ icb_remove(struct icb_session *is, char *reason)
 	char *msg = NULL;
 
 	if (is->group) {
+		if (is->group->moder && is->group->moder == is)
+			is->group->moder = NULL;
 		LIST_REMOVE(is, entry);
 		(void)asprintf(&msg, "%s (%s@%s) just left: %s", is->nick,
 		    is->client, is->host, reason);

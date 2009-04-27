@@ -17,7 +17,6 @@
 #ifndef __ICBD_H__
 #define __ICBD_H__
 
-#define ICBD_PORT	"7326"
 #define ICBD_USER	"_icbd"
 
 #define TCP_BACKLOG	5

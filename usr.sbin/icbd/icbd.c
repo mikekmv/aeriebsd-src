@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.1 2009/04/27 15:41:25 uid1005 Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -128,14 +128,14 @@ main(int argc, char *argv[])
 		int error, s, on = 1;
 
 		addr = NULL;
-		port = ICBD_PORT;
+		port = NULL;
 		if (argv[ch] != NULL) {
 			if (argv[ch][0] != ':')
 				addr = argv[ch];
 			if ((port = strrchr(argv[ch], ':')) != NULL)
 				*port++ = '\0';
 			else
-				port = ICBD_PORT;
+				port = NULL;
 		}
 
 		bzero(&hints, sizeof(hints));
@@ -145,7 +145,8 @@ main(int argc, char *argv[])
 			hints.ai_family = PF_UNSPEC;
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_flags = AI_PASSIVE;
-		if ((error = getaddrinfo(addr, port, &hints, &res0)) != 0) {
+		if ((error = getaddrinfo(addr, port ? port : "icb", &hints,
+		    &res0)) != 0) {
 			syslog(LOG_ERR, "%s", gai_strerror(error));
 			return (EX_UNAVAILABLE);
 		}
