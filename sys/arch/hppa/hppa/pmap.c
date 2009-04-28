@@ -638,7 +638,7 @@ pmap_create()
 	pmap->pm_obj.uo_npages = 0;
 	pmap->pm_obj.uo_refs = 1;
 
-	for (space = 1 + arc4random_uniform(hppa_sid_max);
+	for (space = random() % hppa_sid_max;
 	    pmap_sdir_get(space); space = (space + 1) % hppa_sid_max);
 
 	if ((pmap->pm_pdir_pg = pmap_pagealloc(NULL, 0)) == NULL)
