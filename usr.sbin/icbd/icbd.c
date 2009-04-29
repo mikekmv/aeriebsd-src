@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.4 2009/04/29 15:10:48 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.5 2009/04/29 15:23:29 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -322,8 +322,7 @@ void
 icbd_log(struct icb_session *is, int level, char *msg)
 {
 	char addr[INET6_ADDRSTRLEN];
-	struct sockaddr_storage ss;
-	socklen_t ss_len = sizeof(ss);
+	int port;
 
 	if (!verbose && level == ICB_LOG_DEBUG)
 		return;
@@ -334,32 +333,12 @@ icbd_log(struct icb_session *is, int level, char *msg)
 		level = LOG_NOTICE;
 	else
 		level = LOG_DEBUG;
-	if (!is)
-		goto skipaddr;
-	bzero(addr, sizeof(addr));
-	bzero(&ss, sizeof(ss));
-	if (getpeername(EVBUFFER_FD(GETBEV(is)), (struct sockaddr *)&ss,
-	    &ss_len) != 0)
-		return;
-	switch (ss.ss_family) {
-	case AF_INET:
-		(void)inet_ntop(AF_INET,
-		    &((struct sockaddr_in *)&ss)->sin_addr, addr,
-		    sizeof(addr));
-		syslog(level, "%s:%u: %s", addr,
-		    ntohs(((struct sockaddr_in *)&ss)->sin_port), msg);
-		break;
-	case AF_INET6:
-		(void)inet_ntop(AF_INET6,
-		    &((struct sockaddr_in6 *)&ss)->sin6_addr, addr,
-		    sizeof(addr));
-		syslog(level, "%s:%u: %s", addr,
-		    ntohs(((struct sockaddr_in6 *)&ss)->sin6_port), msg);
-		break;
+	if (is) {
+		getpeerinfo(is, addr, sizeof(addr), &port);
+		syslog(level, "%s:%u: %s", addr, port, msg);
+	} else {
+		syslog(level, "%s", msg);
 	}
-	return;
-skipaddr:
-	syslog(level, "%s", msg);
 }
 
 void
@@ -432,7 +411,7 @@ getmonotime(void)
 }
 
 void
-getpeerhost(struct icb_session *is, char *buf, size_t bufsz)
+getpeerinfo(struct icb_session *is, char *addrbuf, size_t addrsz, int *port)
 {
 	char addr[INET6_ADDRSTRLEN];
 	struct sockaddr_storage ss;
@@ -448,12 +427,16 @@ getpeerhost(struct icb_session *is, char *buf, size_t bufsz)
 		(void)inet_ntop(AF_INET,
 		    &((struct sockaddr_in *)&ss)->sin_addr, addr,
 		    sizeof(addr));
+		if (port)
+			*port = ntohs(((struct sockaddr_in *)&ss)->sin_port);
 		break;
 	case AF_INET6:
 		(void)inet_ntop(AF_INET6,
 		    &((struct sockaddr_in6 *)&ss)->sin6_addr, addr,
 		    sizeof(addr));
+		if (port)
+			*port = ntohs(((struct sockaddr_in6 *)&ss)->sin6_port);
 		break;
 	}
-	strlcpy(buf, addr, bufsz);
+	strlcpy(addrbuf, addr, addrsz);
 }
