@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.3 2009/04/29 15:20:14 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.4 2009/04/29 17:17:34 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -88,6 +88,7 @@ icb_cmd_group(struct icb_cmdarg *ca)
 	char buf[ICB_MSGSIZE];
 	struct icb_group *ig;
 	struct icb_session *is, *s;
+	int changing = 0;
 
 	is = ca->sess;
 	LIST_FOREACH(ig, &groups, entry) {
@@ -120,10 +121,13 @@ icb_cmd_group(struct icb_cmdarg *ca)
 	}
 
 	if (is->group) {
+		changing = 1;
+		if (icb_ismoder(is->group, is))
+			is->group->moder = NULL;
+		LIST_REMOVE(is, entry);
 		(void)snprintf(buf, sizeof(buf), "%s (%s@%s) just left",
 		    is->nick, is->client, is->host);
-		icb_status_group(is->group, is, STATUS_DEPART, buf);
-		LIST_REMOVE(is, entry);
+		icb_status_group(is->group, NULL, STATUS_DEPART, buf);
 	}
 
 	is->group = ig;
@@ -132,7 +136,7 @@ icb_cmd_group(struct icb_cmdarg *ca)
 	/* notify group */
 	(void)snprintf(buf, sizeof(buf), "%s (%s@%s) entered group", is->nick,
 	    is->client, is->host);
-	icb_status_group(ig, is, STATUS_SIGNON, buf);
+	icb_status_group(ig, is, changing ? STATUS_ARRIVE : STATUS_SIGNON, buf);
 
 	/* acknowledge successful join */
 	(void)snprintf(buf, sizeof(buf), "You're now in group %s%s", ig->name,
