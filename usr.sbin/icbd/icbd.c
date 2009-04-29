@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.5 2009/04/29 15:23:29 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.6 2009/04/29 15:33:03 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -287,19 +287,16 @@ void
 icbd_drop(struct icb_session *is, char *reason)
 {
 	struct bufferevent **bev = NULL;
-	char *defstr = "disconnected";
-	char *rstr = NULL;
+	char *msg = "disconnected";
 
 	if (reason && strlen(reason) > 0)
-		(void)asprintf(&rstr, "%s (%s) ", defstr, reason);
-	icbd_log(is, ICB_LOG_NORMAL, rstr ? rstr : defstr);
-	if (rstr)
-		free(rstr);
+		msg = reason;
+	icb_remove(is, msg);
+	icbd_log(is, ICB_LOG_NORMAL, msg);
 	bev = GETBEVP(is);
-	close(EVBUFFER_FD(*bev));
+	evbuffer_write((*bev)->output, EVBUFFER_FD(*bev));
+	(void)close(EVBUFFER_FD(*bev));
 	bufferevent_free(*bev);
-	/* remove from the accociated group */
-	icb_remove(is, rstr ? rstr : defstr);
 	free(is);
 }
 
