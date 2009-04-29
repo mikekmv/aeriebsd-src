@@ -124,6 +124,8 @@ void icb_error(struct icb_session *, char *);
 void icb_init(struct icbd_callbacks *);
 void icb_input(struct icb_session *, char *, size_t);
 int  icb_ismoder(struct icb_group *, struct icb_session *);
+int  icb_passmoder(struct icb_group *, struct icb_session *,
+         struct icb_session *);
 void icb_privmsg(struct icb_session *, char *, char *);
 void icb_remove(struct icb_session *, char *);
 void icb_start(struct icb_session *);

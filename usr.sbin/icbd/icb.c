@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.4 2009/04/29 17:17:34 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.5 2009/04/29 17:36:24 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -420,7 +420,7 @@ icb_remove(struct icb_session *is, char *reason)
 
 	if (is->group) {
 		if (icb_ismoder(is->group, is))
-			is->group->moder = NULL;
+			(void)icb_passmoder(is->group, is, NULL);
 		LIST_REMOVE(is, entry);
 		(void)asprintf(&msg, "%s (%s@%s) just left: %s", is->nick,
 		    is->client, is->host, reason);
@@ -471,7 +471,7 @@ icb_delgroup(struct icb_group *ig)
 }
 
 /*
-*  icb_ismoder: checks whether group is moderated by "is"
+ *  icb_ismoder: checks whether group is moderated by "is"
  */
 int
 icb_ismoder(struct icb_group *ig, struct icb_session *is)
@@ -479,6 +479,44 @@ icb_ismoder(struct icb_group *ig, struct icb_session *is)
 	if (ig->moder && ig->moder == is)
 		return (1);
 	return (0);
+}
+
+/*
+ *  icb_passmoder: passes moderation of group "ig" from "from" to "to",
+ *                 returns -1 if "from" is not a moderator, 1 if passed
+ *                 to "to" and 0 otherwise (no moderator or passed to the
+ *                 internal bot
+ */
+int
+icb_passmoder(struct icb_group *ig, struct icb_session *from,
+    struct icb_session *to)
+{
+	char *msg;
+
+	if (ig->moder && ig->moder != from)
+		return (-1);
+	if (to != NULL && to->group == ig) {
+		ig->moder = to;
+		if (asprintf(&msg, "%s passed moderation of %s to %s",
+		    from ? from->nick : "server", ig->name, to->nick) > 0) {
+			icb_log(NULL, ICB_LOG_NORMAL, msg);
+			icb_status_group(ig, NULL, STATUS_NOTIFY, msg);
+			free(msg);
+		}
+	} else if (from) {
+		/* TODO: pass moderation to the internal bot */
+		ig->moder = NULL;
+		icb_status(from, STATUS_NOTIFY, "You're no longer a moderator");
+		if (asprintf(&msg, "%s dropped moderation of %s",
+		    from->nick, ig->name) > 0) {
+			icb_log(NULL, ICB_LOG_NORMAL, msg);
+			icb_status_group(ig, from, STATUS_NOTIFY, msg);
+			free(msg);
+		}
+		return (0);
+	} else
+		return (-1);
+	return (1);
 }
 
 /*

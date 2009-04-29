@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.5 2009/04/29 17:31:33 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.6 2009/04/29 17:36:24 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -148,7 +148,7 @@ icb_cmd_group(struct icb_cmdarg *ca)
 	if (is->group) {
 		changing = 1;
 		if (icb_ismoder(is->group, is))
-			is->group->moder = NULL;
+			(void)icb_passmoder(is->group, is, NULL);
 		LIST_REMOVE(is, entry);
 		(void)snprintf(buf, sizeof(buf), "%s (%s@%s) just left",
 		    is->nick, is->client, is->host);
