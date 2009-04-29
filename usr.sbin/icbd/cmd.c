@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.4 2009/04/29 17:17:34 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.5 2009/04/29 17:31:33 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -80,6 +80,31 @@ icb_cmd_lookup(char *cmd)
 void
 icb_cmd_boot(struct icb_cmdarg *ca)
 {
+	struct icb_group *ig;
+	struct icb_session *is, *s;
+
+	/* to boot or not to boot, that is the question */
+	is = ca->sess;
+	ig = is->group;
+	if (!icb_ismoder(ig, is)) {
+		icb_status(is, STATUS_NOTIFY, "Sorry, booting is a privilege "
+		    "you don't possess");
+		return;
+	}
+
+	/* who would be a target then? */
+	LIST_FOREACH(s, &ig->sess, entry) {
+		if (strcmp(s->nick, ca->arg) == 0)
+			break;
+	}
+	if (s == NULL) {
+		icb_status(is, STATUS_NOTIFY, "No such user");
+		return;
+	}
+
+	/* okay, here we go, but first, be polite and notify a user */
+	icb_status(s, STATUS_BOOT, "You've just been booted");
+	icb_drop(s, "booted");
 }
 
 void
