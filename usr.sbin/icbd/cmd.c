@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.1 2009/04/27 15:41:25 uid1005 Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -149,8 +149,10 @@ icb_cmd_personal(struct icb_cmdarg *ca)
 {
 	char *p;
 
-	if ((p = strchr(ca->arg, ' ')) == 0)
+	if ((p = strchr(ca->arg, ' ')) == 0) {
 		icb_error(ca->sess, "Empty message");
+		return;
+	}
 	*p = '\0';
 	icb_privmsg(ca->sess, ca->arg, ++p);
 }
