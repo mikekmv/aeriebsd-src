@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.2 2009/04/27 16:58:40 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.3 2009/04/27 18:45:08 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,6 +31,7 @@ static const char rcsid[] = "$ABSD: icbd.c,v 1.2 2009/04/27 16:58:40 mikeb Exp $
 #include <errno.h>
 #include <event.h>
 #include <fcntl.h>
+#include <locale.h>
 #include <netdb.h>
 #include <pwd.h>
 #include <grp.h>
@@ -111,10 +112,12 @@ main(int argc, char *argv[])
 		errx(EX_CONFIG, "Can't specify both -4 and -6");
 
 	tzset();
+	setlocale(LC_ALL, "C");
+
 	if (foreground)
-		openlog(__progname, LOG_PID | LOG_PERROR, LOG_DAEMON);
+		openlog("icbd", LOG_PID | LOG_PERROR | LOG_NDELAY, LOG_DAEMON);
 	else
-		openlog(__progname, LOG_PID, LOG_DAEMON);
+		openlog("icbd", LOG_PID, LOG_DAEMON);
 
 	if (!foreground && daemon(0, 0) < 0)
 		err(EX_OSERR, NULL);
