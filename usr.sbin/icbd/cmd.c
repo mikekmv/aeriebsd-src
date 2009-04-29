@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.2 2009/04/29 15:18:46 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.3 2009/04/29 15:20:14 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -136,7 +136,7 @@ icb_cmd_group(struct icb_cmdarg *ca)
 
 	/* acknowledge successful join */
 	(void)snprintf(buf, sizeof(buf), "You're now in group %s%s", ig->name,
-	    ig->moder == is ? " as moderator" : "");
+	    icb_ismoder(ig, is) ? " as moderator" : "");
 	icb_status(is, STATUS_STATUS, buf);
 }
 

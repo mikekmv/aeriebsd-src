@@ -115,13 +115,14 @@ struct icbd_callbacks {
 /* cmd.c */
 void *icb_cmd_lookup(char *);
 
-/* proto.c */
+/* icb.c */
 struct icb_group *icb_addgroup(struct icb_session *, char *, char *);
 void icb_cmdout(struct icb_session *, int, char *);
 void icb_delgroup(struct icb_group *);
 void icb_error(struct icb_session *, char *);
 void icb_init(struct icbd_callbacks *);
 void icb_input(struct icb_session *, char *, size_t);
+int  icb_ismoder(struct icb_group *, struct icb_session *);
 void icb_privmsg(struct icb_session *, char *, char *);
 void icb_remove(struct icb_session *, char *);
 void icb_start(struct icb_session *);

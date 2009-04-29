@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.2 2009/04/27 16:58:40 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.3 2009/04/29 15:33:03 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -207,7 +207,7 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 
 	/* notify user */
 	(void)snprintf(buf, sizeof(buf), "You're now in group %s%s", ig->name,
-	    ig->moder == is ? " as moderator" : "");
+	    icb_ismoder(ig, is) ? " as moderator" : "");
 	icb_status(is, STATUS_STATUS, buf);
 }
 
@@ -418,7 +418,7 @@ icb_remove(struct icb_session *is, char *reason)
 	char *msg = NULL;
 
 	if (is->group) {
-		if (is->group->moder && is->group->moder == is)
+		if (icb_ismoder(is->group, is))
 			is->group->moder = NULL;
 		LIST_REMOVE(is, entry);
 		(void)asprintf(&msg, "%s (%s@%s) just left: %s", is->nick,
@@ -467,6 +467,17 @@ icb_delgroup(struct icb_group *ig)
 	LIST_REMOVE(ig, entry);
 	bzero(ig, sizeof(ig));	/* paranoic thing, obviously */
 	free(ig);
+}
+
+/*
+*  icb_ismoder: checks whether group is moderated by "is"
+ */
+int
+icb_ismoder(struct icb_group *ig, struct icb_session *is)
+{
+	if (ig->moder && ig->moder == is)
+		return (1);
+	return (0);
 }
 
 /*
