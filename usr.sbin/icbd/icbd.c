@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.3 2009/04/27 18:45:08 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.4 2009/04/29 15:10:48 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -115,9 +115,9 @@ main(int argc, char *argv[])
 	setlocale(LC_ALL, "C");
 
 	if (foreground)
-		openlog("icbd", LOG_PID | LOG_PERROR | LOG_NDELAY, LOG_DAEMON);
+		openlog("icbd", LOG_PID | LOG_PERROR, LOG_DAEMON);
 	else
-		openlog("icbd", LOG_PID, LOG_DAEMON);
+		openlog("icbd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
 	if (!foreground && daemon(0, 0) < 0)
 		err(EX_OSERR, NULL);
