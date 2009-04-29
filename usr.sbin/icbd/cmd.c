@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.1 2009/04/27 15:41:25 uid1005 Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.2 2009/04/29 15:18:46 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -55,6 +55,7 @@ struct icbcmd {
 	{ "g",		icb_cmd_group },
 	{ "help",	icb_cmd_help },
 	{ "m",		icb_cmd_personal },
+	{ "msg",	icb_cmd_personal },
 	{ "motd",	icb_cmd_motd },
 	{ "pass",	icb_cmd_pass },
 	{ "status",	icb_cmd_status },
