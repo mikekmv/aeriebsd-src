@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1983, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,16 +31,16 @@
  */
 
 #ifndef lint
-static char copyright[] =
+static const char copyright[] =
 "@(#) Copyright (c) 1983, 1989, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
 #if 0
-static char sccsid[] = "from: @(#)nfsstat.c	8.1 (Berkeley) 6/6/93";
+static const char sccsid[] = "from: @(#)nfsstat.c	8.1 (Berkeley) 6/6/93";
 #else
-static char *rcsid = "$ABSD: nfsstat.c,v 1.1.1.1 2008/08/26 14:43:04 root Exp $";
+static const char rcsid[] = "$ABSD: nfsstat.c,v 1.2 2008/12/26 18:52:06 mickey Exp $";
 #endif
 #endif /* not lint */
 

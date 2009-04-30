@@ -29,14 +29,14 @@
  */
 
 #ifndef lint
-static char copyright[] =
+static const char copyright[] =
 "@(#) Copyright (c) 1988, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-/*static char sccsid[] = "from: @(#)fstat.c	8.1 (Berkeley) 6/6/93";*/
-static char *rcsid = "$ABSD$";
+/*static const char sccsid[] = "from: @(#)fstat.c	8.1 (Berkeley) 6/6/93";*/
+static const char rcsid[] = "$ABSD: fstat.c,v 1.1.1.1 2008/08/26 14:42:47 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>

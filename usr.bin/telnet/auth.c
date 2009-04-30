@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -30,7 +29,7 @@
 
 #ifndef lint
 /* from: static char sccsid[] = "@(#)auth.c    8.3 (Berkeley) 5/30/95" */
-static char *rcsid = "$ABSD$';
+static const char rcsid[] = "$ABSD: auth.c,v 1.1.1.1 2008/08/26 14:43:19 root Exp $";
 #endif /* not lint */
 
 /*

@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1991 Keith Muller.
  * Copyright (c) 1993
@@ -34,7 +33,7 @@
 
 #ifndef lint
 /* from: static char sccsid[] = "@(#)egetopt.c	8.1 (Berkeley) 6/6/93"; */
-static char *rcsid = "$ABSD$";
+static const char rcsid[] = "$ABSD: egetopt.c,v 1.1.1.1 2008/08/26 14:43:08 root Exp $";
 #endif /* not lint */
 
 #include <ctype.h>

@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -30,9 +29,9 @@
 
 #ifndef lint
 #if 0
-static char sccsid[] = "@(#)proc_compare.c	8.2 (Berkeley) 9/23/93";
+static const char sccsid[] = "@(#)proc_compare.c	8.2 (Berkeley) 9/23/93";
 #else
-static char *rcsid = "$ABSD$";
+static const char rcsid[] = "$ABSD: proc_compare.c,v 1.1.1.1 2008/08/26 14:43:27 root Exp $";
 #endif
 #endif /* not lint */
 

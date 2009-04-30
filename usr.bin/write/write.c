@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,16 +31,16 @@
  */
 
 #ifndef lint
-static char copyright[] =
+static const char copyright[] =
 "@(#) Copyright (c) 1989, 1993\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
 #if 0
-static char sccsid[] = "@(#)write.c	8.2 (Berkeley) 4/27/95";
+static const char sccsid[] = "@(#)write.c	8.2 (Berkeley) 4/27/95";
 #endif
-static char *rcsid = "$ABSD: write.c,v 1.1.1.1 2008/08/26 14:43:28 root Exp $";
+static const char rcsid[] = "$ABSD: write.c,v 1.2 2008/12/26 18:52:14 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
