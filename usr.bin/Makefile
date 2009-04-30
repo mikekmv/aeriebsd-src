@@ -16,7 +16,7 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	nc netstat newsyslog nfsstat nice nm nohup oldrdist \
 	pagesize passwd paste patch pcc pctr pkill plot pmdb pr \
 	printenv printf \
-	quota radioctl ranlib rcs rdist rdistd readlink renice rev \
+	quota radioctl rcs rdist rdistd readlink renice rev \
 	rpcgen rpcinfo rs rsh rup ruptime rusers rwall rwho \
 	sdiff script sectok sed sendbug shar showmount skey \
 	skeyaudit skeyinfo skeyinit sort spell spline split \
