@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.6 2009/04/29 15:33:03 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.7 2009/04/29 17:06:46 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -54,6 +54,7 @@ static int foreground;
 static int verbose;
 
 void usage(void);
+void getpeerinfo(struct icb_session *, char *, size_t, int *);
 void icbd_accept(int, short, void *);
 void icbd_drop(struct icb_session *, char *);
 void icbd_error(struct bufferevent *, short, void *);
@@ -212,6 +213,7 @@ void
 icbd_accept(int fd, short event __attribute__((__unused__)),
     void *arg __attribute__((__unused__)))
 {
+	char host[MAXHOSTNAMELEN];
 	struct bufferevent **bev = NULL;
 	struct sockaddr_storage ss;
 	struct icb_session *is;
@@ -244,6 +246,12 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		return;
 	}
 	icbd_log(is, ICB_LOG_NORMAL, "connected");
+
+	/* save host information */
+	getpeerinfo(is, host, sizeof(host), NULL);
+	if (strlen(host) > 0)
+		strlcpy(is->host, host, sizeof(is->host));
+
 	/* start icb conversation */
 	icb_start(is);
 }

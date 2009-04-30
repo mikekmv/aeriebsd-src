@@ -27,6 +27,5 @@
 
 /* icbd.c */
 time_t getmonotime(void);
-void   getpeerinfo(struct icb_session *, char *, size_t, int *);
 
 #endif	/* __ICBD_H__ */

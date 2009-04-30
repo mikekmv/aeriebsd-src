@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.5 2009/04/29 17:36:24 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.6 2009/04/29 18:13:47 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -155,7 +155,6 @@ void
 icb_login(struct icb_session *is, char *group, char *nick, char *client)
 {
 	char buf[ICB_MSGSIZE];
-	char host[MAXHOSTNAMELEN];
 	struct icb_group *ig;
 	struct icb_session *s;
 
@@ -180,10 +179,7 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 			return;
 		}
 	}
-	/* getpeerinfo is here cause some clients don't send replies to proto */
-	getpeerinfo(is, host, sizeof(host), NULL);
-	if (strlen(host) > 0)
-		strlcpy(is->host, host, sizeof(is->host));
+
 	if (client && strlen(client) > 0)
 		strlcpy(is->client, client, sizeof(is->client));
 	strlcpy(is->nick, nick, sizeof(is->nick));
