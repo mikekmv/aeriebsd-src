@@ -24,6 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -660,7 +661,9 @@ again:	switch (o = p->n_op) {
 
 	case XARG:
 		/* generate code for correct class here */
-//		geninsn(p->n_left, 1 << p->n_label);
+#if 0
+		geninsn(p->n_left, 1 << p->n_label);
+#endif
 		break;
 
 	default:

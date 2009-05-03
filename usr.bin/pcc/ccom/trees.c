@@ -913,10 +913,11 @@ stref(NODE *p)
 	 * it until we know.  Do the bitfield construct here though.
 	 */
 	if ((dsc & FIELD) == 0 && (off % talign(s->stype, s->ssue))) {
-//		int sz = tsize(s->stype, s->sdf, s->ssue);
-//		int al = talign(s->stype, s->ssue);
-//		int sz1 = al - (off % al);
-		
+#if 0
+		int sz = tsize(s->stype, s->sdf, s->ssue);
+		int al = talign(s->stype, s->ssue);
+		int sz1 = al - (off % al);
+#endif
 	}
 #endif
 
@@ -1676,9 +1677,12 @@ tempnode(int nr, TWORD type, union dimfun *df, struct suedef *sue)
 NODE *
 doszof(NODE *p)
 {
+	extern NODE *arrstk[10];
+	extern int arrstkp;
 	union dimfun *df;
 	TWORD ty;
-	NODE *rv;
+	NODE *rv, *q;
+	int astkp;
 
 	if (p->n_op == FLD)
 		uerror("can't apply sizeof to bit-field");
@@ -1690,16 +1694,24 @@ doszof(NODE *p)
 	rv = bcon(1);
 	df = p->n_df;
 	ty = p->n_type;
+	astkp = 0;
 	while (ISARY(ty)) {
 		if (df->ddim == NOOFFSET)
 			uerror("sizeof of incomplete type");
-		rv = buildtree(MUL, rv, df->ddim >= 0 ? bcon(df->ddim) :
-		    tempnode(-df->ddim, INT, 0, MKSUE(INT)));
+		if (df->ddim < 0) {
+			if (arrstkp)
+				q = arrstk[astkp++];
+			else
+				q = tempnode(-df->ddim, INT, 0, MKSUE(INT));
+		} else
+			q = bcon(df->ddim);
+		rv = buildtree(MUL, rv, q);
 		df++;
 		ty = DECREF(ty);
 	}
 	rv = buildtree(MUL, rv, bcon(tsize(ty, p->n_df, p->n_sue)/SZCHAR));
 	tfree(p);
+	arrstkp = 0; /* XXX - may this fail? */
 	return rv;
 }
 
@@ -1853,14 +1865,18 @@ andorbr(NODE *p, int true, int false)
 				nfree(q);
 				if (o == EQ)
 					p->n_op = negrel[p->n_op - EQ];
-//					p->n_op = NE; /* toggla */
+#if 0
+					p->n_op = NE; /* toggla */
+#endif
 			} else if (p->n_right->n_lval == 1) {
 				nfree(p->n_right);
 				*p = *q;
 				nfree(q);
 				if (o == NE)
 					p->n_op = negrel[p->n_op - EQ];
-//					p->n_op = EQ; /* toggla */
+#if 0
+					p->n_op = EQ; /* toggla */
+#endif
 			} else
 				break; /* XXX - should always be false */
 			
@@ -2013,8 +2029,11 @@ rmcops(NODE *p)
 			r = tempnode(tval, p->n_type, p->n_df, p->n_sue);
 			*p = *r;
 			nfree(r);
-		} else
+		} else {
 			p->n_op = ICON;
+			p->n_lval = 0;
+			p->n_sp = NULL;
+		}
 		break;
 
 	case ULE:

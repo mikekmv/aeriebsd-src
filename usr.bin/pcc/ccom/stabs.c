@@ -201,7 +201,7 @@ stabs_line(int line)
 	    N_SLINE, line, stablbl, stablbl);
 #else
 	cprint(1, "\t.stabn %d,0,%d," STABLBL "-%s\n" STABLBL ":\n",
-	    N_SLINE, line, stablbl, exname(curfun), stablbl);
+	    N_SLINE, line, stablbl, curfun, stablbl);
 #endif
 	stablbl++;
 }
@@ -217,7 +217,7 @@ stabs_lbrac(int blklvl)
 	    N_LBRAC, blklvl, stablbl, stablbl);
 #else
 	cprint(1, "\t.stabn %d,0,%d," STABLBL "-%s\n" STABLBL ":\n",
-	    N_LBRAC, blklvl, stablbl, exname(curfun), stablbl);
+	    N_LBRAC, blklvl, stablbl, curfun, stablbl);
 #endif
 	stablbl++;
 }
@@ -233,7 +233,7 @@ stabs_rbrac(int blklvl)
 	    N_RBRAC, blklvl, stablbl, stablbl);
 #else
 	cprint(1, "\t.stabn %d,0,%d," STABLBL "-%s\n" STABLBL ":\n",
-	    N_RBRAC, blklvl, stablbl, exname(curfun), stablbl);
+	    N_RBRAC, blklvl, stablbl, curfun, stablbl);
 #endif
 	stablbl++;
 }
@@ -277,7 +277,7 @@ stabs_func(struct symtab *s)
 	printtype(s, str, sizeof(str));
 	cprint(1, "\t.stabs	\"%s:%c%s\",%d,0,%d,%s\n",
 	    curfun, s->sclass == STATIC ? 'f' : 'F', str,
-	    N_FUN, BIT2BYTE(s->ssue->suesize), exname(curfun));
+	    N_FUN, BIT2BYTE(s->ssue->suesize), curfun);
 }
 
 /*
@@ -363,7 +363,7 @@ stabs_newsym(struct symtab *s)
 			    N_LCSYM, suesize, s->soffset);
 		else
 			cprint(0, "\t.stabs \"%s:S%s\",%d,0,%d,%s\n", sname, ostr,
-			    N_LCSYM, suesize, exname(sname));
+			    N_LCSYM, suesize, sname);
 		break;
 
 	case EXTERN:

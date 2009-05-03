@@ -399,6 +399,12 @@ struct optab table[] = {
  * Subroutine calls.
  */
 
+{ UCALL,	FOREFF,
+	SCON,	TANY,
+	SANY,	TANY,
+		0,	0,
+		"	call CL\n", },
+
 { CALL,		FOREFF,
 	SCON,	TANY,
 	SANY,	TANY,
@@ -566,6 +572,12 @@ struct optab table[] = {
 		0,	RLEFT,
 		"	addl AR,AL\n	adcl UR,UL\n", },
 
+{ PLUS,		INLL|FOREFF,
+	SHLL|SNAME|SOREG,	TLL,
+	SHLL|SCON,		TLL,
+		0,	RLEFT,
+		"	addl AR,AL\n	adcl UR,UL\n", },
+
 /* Special treatment for long long  XXX - fix commutative check */
 { PLUS,		INLL|FOREFF,
 	SHLL|SNAME|SOREG,	TLL,
@@ -643,6 +655,12 @@ struct optab table[] = {
 { MINUS,	INLL|FOREFF,
 	SHLL,	TLL,
 	SHLL|SNAME|SOREG,	TLL,
+		0,	RLEFT,
+		"	subl AR,AL\n	sbbl UR,UL\n", },
+
+{ MINUS,	INLL|FOREFF,
+	SHLL|SNAME|SOREG,	TLL,
+	SHLL|SCON,	TLL,
 		0,	RLEFT,
 		"	subl AR,AL\n	sbbl UR,UL\n", },
 

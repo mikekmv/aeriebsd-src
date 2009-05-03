@@ -115,8 +115,8 @@ static int nparams;
 
 /* defines used for getting things off of the initialization stack */
 
-static NODE *arrstk[10];
-static int arrstkp;
+NODE *arrstk[10];
+int arrstkp;
 static int intcompare;
 static NODE *parlink;
 
@@ -965,7 +965,7 @@ soumemb(NODE *n, char *name, int class)
 	 * "...such a structure shall not be a member of a structure
 	 *  or an element of an array."
 	 */
-	if (rpole->rsou == STNAME && sp->ssue->suem) {
+	if (rpole->rsou == STNAME && sp->ssue->suem && !ISPTR(sp->stype)) {
 		struct symtab *lnk;
 
 		for (lnk = sp->ssue->suem; lnk->snext; lnk = lnk->snext)
@@ -1605,7 +1605,7 @@ typwalk(NODE *p, void *arg)
 				tc->posta = p->n_left;
 			}
 #endif
-			tc->saved = tcopy(p);
+			tc->saved = ccopy(p);
 			break;
 		}
 
@@ -1790,7 +1790,7 @@ tymerge(NODE *typ, NODE *idp)
 
 	if (typ->n_op == CM) {
 		/* has attributes */
-		gcs = tcopy(typ->n_right);
+		gcs = ccopy(typ->n_right);
 		typ = typ->n_left;
 	} else
 		gcs = NULL;
@@ -2082,6 +2082,56 @@ builtin_constant_p(NODE *f, NODE *a)
 	return bcon(isconst);
 }
 
+/*
+ * Take integer absolute value.
+ * Simply does: ((((x)>>(8*sizeof(x)-1))^(x))-((x)>>(8*sizeof(x)-1)))
+ */
+static NODE *
+builtin_abs(NODE *f, NODE *a)
+{
+	NODE *p, *q, *r, *t, *t2, *t3;
+	int tmp1, tmp2, shift;
+
+	if (a == NULL)
+		goto bad;
+
+	if (a->n_type == FLOAT || a->n_type == DOUBLE || a->n_type == LDOUBLE)
+		goto bad;
+
+	tfree(f);
+
+	if (a->n_op == ICON) {
+		if (a->n_lval < 0)
+			a->n_lval = -a->n_lval;
+		p = a;
+	} else {
+		t = tempnode(0, a->n_type, a->n_df, a->n_sue);
+		tmp1 = regno(t);
+		p = buildtree(ASSIGN, t, a);
+
+		t = tempnode(tmp1, a->n_type, a->n_df, a->n_sue);
+		shift = tsize(a->n_type, a->n_df, a->n_sue) - 1;
+		q = buildtree(RS, t, bcon(shift));
+
+		t2 = tempnode(0, a->n_type, a->n_df, a->n_sue);
+		tmp2 = regno(t2);
+		q = buildtree(ASSIGN, t2, q);
+
+		t = tempnode(tmp1, a->n_type, a->n_df, a->n_sue);
+		t2 = tempnode(tmp2, a->n_type, a->n_df, a->n_sue);
+		t3 = tempnode(tmp2, a->n_type, a->n_df, a->n_sue);
+		r = buildtree(MINUS, buildtree(ER, t, t2), t3);
+
+		p = buildtree(COMOP, p, buildtree(COMOP, q, r));
+	}
+
+	return p;
+
+bad:
+	uerror("bad argument to __builtin_abs");
+	return bcon(0);
+}
+
 #ifndef TARGET_STDARGS
 static NODE *
 builtin_stdarg_start(NODE *f, NODE *a)
@@ -2134,7 +2184,7 @@ builtin_va_arg(NODE *f, NODE *a)
 		goto bad;
 
 	/* create a copy to a temp node of current ap */
-	p = tcopy(a->n_left);
+	p = ccopy(a->n_left);
 	q = tempnode(0, p->n_type, p->n_df, p->n_sue);
 	nodnum = regno(q);
 	rv = buildtree(ASSIGN, q, p);
@@ -2190,8 +2240,10 @@ static struct bitable {
 } bitable[] = {
 	{ "__builtin_alloca", builtin_alloca },
 	{ "__builtin_constant_p", builtin_constant_p },
+	{ "__builtin_abs", builtin_abs },
 #ifndef TARGET_STDARGS
 	{ "__builtin_stdarg_start", builtin_stdarg_start },
+	{ "__builtin_va_start", builtin_stdarg_start },
 	{ "__builtin_va_arg", builtin_va_arg },
 	{ "__builtin_va_end", builtin_va_end },
 	{ "__builtin_va_copy", builtin_va_copy },
@@ -2814,18 +2866,22 @@ scnames(int c)
 	}
 #endif
 
+static char *stack_chk_fail = "__stack_chk_fail";
+static char *stack_chk_guard = "__stack_chk_guard";
+static char *stack_chk_canary = "__stack_chk_canary";
+
 void
 sspinit()
 {
 	NODE *p;
 
 	p = block(NAME, NIL, NIL, FTN+VOID, 0, MKSUE(VOID));
-	p->n_sp = lookup("__stack_chk_fail", SNORMAL);
+	p->n_sp = lookup(stack_chk_fail, SNORMAL);
 	defid(p, EXTERN);
 	nfree(p);
 
 	p = block(NAME, NIL, NIL, INT, 0, MKSUE(INT));
-	p->n_sp = lookup("__stack_chk_guard", SNORMAL);
+	p->n_sp = lookup(stack_chk_guard, SNORMAL);
 	defid(p, EXTERN);
 	nfree(p);
 }
@@ -2836,7 +2892,7 @@ sspstart()
 	NODE *p, *q;
 
 	q = block(NAME, NIL, NIL, INT, 0, MKSUE(INT));
- 	q->n_sp = lookup("__stack_chk_guard", SNORMAL);
+ 	q->n_sp = lookup(stack_chk_guard, SNORMAL);
 	q = clocal(q);
 
 	p = block(REG, NIL, NIL, INT, 0, 0);
@@ -2846,7 +2902,7 @@ sspstart()
 	q = clocal(q);
 
 	p = block(NAME, NIL, NIL, INT, 0, MKSUE(INT));
-	p->n_sp = lookup("__stack_chk_canary", SNORMAL);
+	p->n_sp = lookup(stack_chk_canary, SNORMAL);
 	defid(p, AUTO);
 	p = clocal(p);
 
@@ -2879,7 +2935,7 @@ sspend()
 	}
 
 	p = block(NAME, NIL, NIL, INT, 0, MKSUE(INT));
-	p->n_sp = lookup("__stack_chk_canary", SNORMAL);
+	p->n_sp = lookup(stack_chk_canary, SNORMAL);
 	p = clocal(p);
 
 	q = block(REG, NIL, NIL, INT, 0, 0);
@@ -2888,14 +2944,14 @@ sspend()
 	q = block(ER, p, q, INT, 0, MKSUE(INT));
 
 	p = block(NAME, NIL, NIL, INT, 0, MKSUE(INT));
-	p->n_sp = lookup("__stack_chk_guard", SNORMAL);
+	p->n_sp = lookup(stack_chk_guard, SNORMAL);
 	p = clocal(p);
 
 	lab = getlab();
 	cbranch(buildtree(EQ, p, q), bcon(lab));
 
 	p = block(NAME, NIL, NIL, FTN+VOID, 0, MKSUE(VOID));
-	p->n_sp = lookup("__stack_chk_fail", SNORMAL);
+	p->n_sp = lookup(stack_chk_fail, SNORMAL);
 	p = clocal(p);
 
 	ecomp(buildtree(UCALL, p, NIL));

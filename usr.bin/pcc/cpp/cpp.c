@@ -66,14 +66,9 @@
 
 #include "config.h"
 
-#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
-#endif
-
 #include <fcntl.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -81,7 +76,6 @@
 #include <time.h>
 #include <ctype.h>
 
-#include "compat.h"
 #include "cpp.h"
 #include "y.tab.h"
 

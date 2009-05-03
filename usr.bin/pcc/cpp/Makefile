@@ -9,7 +9,7 @@ TARGOS=		openbsd
 
 CFLAGS+=	-DCPP_DEBUG -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
 CFLAGS+=	-DLIBEXECDIR=\"${PREFIX}/libexec\"
-CPPFLAGS+=	-I. -I${.CURDIR}
+CPPFLAGS+=	-I. -I${.CURDIR} -I${.CURDIR}/..
 
 SRCS=cpy.y scanner.l cpp.c
 

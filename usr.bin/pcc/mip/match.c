@@ -24,6 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -265,8 +266,10 @@ expand(NODE *p, int cookie, char *cp)
 {
 	CONSZ val;
 
-//printf("expand\n");
-//fwalk(p, e2print, 0);
+#if 0
+	printf("expand\n");
+	fwalk(p, e2print, 0);
+#endif
 
 	for( ; *cp; ++cp ){
 		switch( *cp ){

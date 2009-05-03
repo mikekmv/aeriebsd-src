@@ -39,7 +39,7 @@ defloc(struct symtab *sp)
 {
 	extern char *nextsect;
 	int weak = 0;
-	char *name;
+	char *name = NULL;
 #if defined(ELFABI) || defined(PECOFFABI)
 	static char *loctbl[] = { "text", "data", "section .rodata" };
 #elif defined(MACHOABI)
@@ -83,8 +83,9 @@ defloc(struct symtab *sp)
 	al = ISFTN(t) ? ALINT : talign(t, sp->ssue);
 	if (al > ALCHAR)
 		printf("	.align %d\n", al/ALCHAR);
-	if ((name = sp->soname) == NULL)
-		name = exname(sp->sname);
+	if (weak || sp->sclass == EXTDEF || sp->slevel == 0 || ISFTN(t))
+		if ((name = sp->soname) == NULL)
+			name = exname(sp->sname);
 	if (weak)
 		printf("	.weak %s\n", name);
 	else if (sp->sclass == EXTDEF)
@@ -150,7 +151,7 @@ bfcode(struct symtab **sp, int cnt)
 	 */
 	argstacksize = 0;
 	if (cftnsp->sflags & SSTDCALL) {
-		char buf[64];
+		char buf[256];
 		char *name;
 		for (i = 0; i < cnt; i++) {
 			TWORD t = sp[i]->stype;
@@ -161,17 +162,19 @@ bfcode(struct symtab **sp, int cnt)
 				argstacksize += szty(t) * SZINT / SZCHAR;
 		}
 		if ((name = cftnsp->soname) == NULL)
-			name = cftnsp->sname; /* XXX exname() ? */
-		snprintf(buf, 64, "%s@%d", name, argstacksize);
-		cftnsp->soname = addname(name);
+			name = exname(cftnsp->sname);
+		snprintf(buf, 256, "%s@%d", name, argstacksize);
+		cftnsp->soname = addname(buf);
 	}
 #endif
 
 	if (kflag) {
-#define	STL	100
+#define	STL	200
 		char *str = inlalloc(STL);
 #if !defined(MACHOABI)
 		int l = getlab();
+#else
+		char *name;
 #endif
 
 		/* Generate extended assembler for PIC prolog */
@@ -180,9 +183,12 @@ bfcode(struct symtab **sp, int cnt)
 		p = block(XARG, p, NIL, INT, 0, MKSUE(INT));
 		p->n_name = "=g";
 		p = block(XASM, p, bcon(0), INT, 0, MKSUE(INT));
+
 #if defined(MACHOABI)
+		if ((name = cftnsp->soname) == NULL)
+			name = cftnsp->sname;
 		if (snprintf(str, STL, "call L%s$pb\nL%s$pb:\n\tpopl %%0\n",
-		    cftnsp->sname, cftnsp->sname) >= STL)
+		    name, name) >= STL)
 			cerror("bfcode");
 #else
 		if (snprintf(str, STL,

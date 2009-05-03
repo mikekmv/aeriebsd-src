@@ -24,6 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -183,6 +184,10 @@ static char * simname(char *s);
 static NODE *tyof(NODE *);	/* COMPAT_GCC */
 static NODE *voidcon(void);	/* COMPAT_GCC */
 #endif
+static void funargs(NODE *p);
+static void oldargs(NODE *p);
+static void bfix(int a);
+
 
 /*
  * State for saving current switch state (when nested switches).
@@ -209,7 +214,7 @@ struct savbc {
 %start ext_def_list
 
 %type <intval> con_e ifelprefix ifprefix whprefix forprefix doprefix switchpart
-		xbegin
+		xbegin incblev
 %type <nodep> e .e term enum_dcl struct_dcl cast_type declarator
 		elist type_sq cf_spec merge_attribs
 		parameter_declaration abstract_declarator initializer
@@ -353,18 +358,34 @@ declarator:	   '*' declarator { $$ = bdty(UMUL, $2); }
 		|  declarator '[' ']' {
 			$$ = biop(LB, $1, bcon(NOOFFSET));
 		}
-		|  declarator '(' parameter_type_list ')' {
-			$$ = bdty(CALL, $1, $3);
+		|  declarator '(' incblev parameter_type_list ')' {
+			$$ = bdty(CALL, $1, $4);
+			bfix($3);
+			if (blevel > 0)
+				symclear(blevel);
 		}
-		|  declarator '(' identifier_list ')' {
-			$$ = bdty(CALL, $1, $3);
-			if (blevel != 0)
+		|  declarator '(' incblev identifier_list ')' {
+			$$ = bdty(CALL, $1, $4);
+			if (blevel != 1)
 				uerror("function declaration in bad context");
 			oldstyle = 1;
+			bfix($3);
 		}
-		|  declarator '(' ')' {
-			ctval = tvaloff;
+		|  declarator '(' incblev ')' {
 			$$ = bdty(UCALL, $1);
+			bfix($3);
+		}
+		;
+
+incblev:	   {
+			++blevel;
+			if (blevel == 1) {
+				ctval = tvaloff;
+				argoff = ARGINIT;
+				$$ = Wshadow;
+				Wshadow = 0;
+			} else if (blevel == 2)
+				$$ = argoff;
 		}
 		;
 
@@ -388,8 +409,8 @@ type_qualifier_list:
 		}
 		;
 
-identifier_list:   C_NAME { $$ = bdty(NAME, $1); }
-		|  identifier_list ',' C_NAME { $$ = cmop($1, bdty(NAME, $3)); }
+identifier_list:   C_NAME { $$ = bdty(NAME, $1); oldargs($$); }
+		|  identifier_list ',' C_NAME { $$ = cmop($1, bdty(NAME, $3)); oldargs($$->n_right); }
 		;
 
 /*
@@ -428,7 +449,7 @@ parameter_declaration:
 					werror("unhandled parameter_declaration attribute");
 				tfree($3);
 			}
-		
+			funargs($$);
 		}
 		|  declaration_specifiers abstract_declarator { 
 			$2->n_sue = NULL; /* no attributes */
@@ -457,8 +478,8 @@ abstract_declarator:
 			$$ = biop(LB, bdty(NAME, NULL), bcon(NOOFFSET));
 			if ($3) tfree($3);
 		}
-		|  '[' con_e ']' attr_var {
-			$$ = bdty(LB, bdty(NAME, NULL), $2);
+		|  '[' nocon_e ']' attr_var {
+			$$ = biop(LB, bdty(NAME, NULL), $2);
 			if ($4) {
 				if (attrwarn)
 					werror("unhandled abstract_declarator attribute");
@@ -473,8 +494,8 @@ abstract_declarator:
 				tfree($4);
 			}
 		}
-		|  abstract_declarator '[' con_e ']' attr_var {
-			$$ = bdty(LB, $1, $3);
+		|  abstract_declarator '[' nocon_e ']' attr_var {
+			$$ = biop(LB, $1, $3);
 			if ($5) {
 				if (attrwarn)
 					werror("unhandled abstract_declarator3 attribute");
@@ -857,7 +878,7 @@ statement:	   e ';' { ecomp(eve($1)); symclear(blevel); }
 					cftnod = tempnode(0, p->n_type,
 					    p->n_df, p->n_sue);
 				ecomp(buildtree(ASSIGN,
-				    tcopy(cftnod), p->n_right));
+				    ccopy(cftnod), p->n_right));
 			}
 			tfree(p->n_left);
 			nfree(p);
@@ -961,7 +982,7 @@ forprefix:	  C_FOR  '('  .e  ';' .e  ';' {
 			else
 				flostat |= FLOOP;
 		}
-		|  C_FOR '(' incblev declaration .e ';' {
+		|  C_FOR '(' { ++blevel; } declaration .e ';' {
 			blevel--;
 			savebc();
 			contlab = getlab();
@@ -973,9 +994,6 @@ forprefix:	  C_FOR  '('  .e  ';' .e  ';' {
 			else
 				flostat |= FLOOP;
 		}
-		;
-
-incblev:	   { blevel++; }
 		;
 
 switchpart:	   C_SWITCH  '('  e ')' {
@@ -1462,13 +1480,21 @@ funargs(NODE *p)
 {
 	if (p->n_op == ELLIPSIS)
 		return;
-	if (oldstyle) {
-		p->n_op = TYPE;
-		p->n_type = FARG;
-	}
 	p->n_sp = lookup((char *)p->n_sp, 0);/* XXX */
 	if (ISFTN(p->n_type))
 		p->n_type = INCREF(p->n_type);
+	defid(p, PARAM);
+}
+
+/*
+ * Declare old-stype function arguments.
+ */
+static void
+oldargs(NODE *p)
+{
+	p->n_op = TYPE;
+	p->n_type = FARG;
+	p->n_sp = lookup((char *)p->n_sp, 0);/* XXX */
 	defid(p, PARAM);
 }
 
@@ -1496,17 +1522,16 @@ fundef(NODE *tp, NODE *p)
 		p = bdty(UCALL, p);
 	}
 
-	argoff = ARGINIT;
-	ctval = tvaloff;
-	blevel++;
-
 	if (q->n_op == CALL && q->n_right->n_type != VOID) {
 		/* declare function arguments */
-		listf(q->n_right, funargs);
 		ftnarg(q);
 	}
 
-	blevel--;
+#ifdef PCC_DEBUG
+	if (blevel)
+		cerror("blevel != 0");
+#endif
+
 	p = typ = tymerge(tp, p);
 #ifdef GCC_COMPAT
 	if (p->n_op == CM) {
@@ -1998,3 +2023,14 @@ eve(NODE *p)
 	nfree(p);
 	return r;
 }
+
+void
+bfix(int a)
+{
+        if (blevel == 1) {
+                Wshadow = a;
+        } else if (blevel == 2)
+                argoff = a;
+        blevel--;
+}
+

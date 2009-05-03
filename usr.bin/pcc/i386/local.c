@@ -83,7 +83,6 @@ addstub(struct stub *list, char *name)
 
 #define	IALLOC(sz)	(isinlining ? permalloc(sz) : tmpalloc(sz))
 
-#ifndef os_win32
 /*
  * Make a symtab entry for PIC use.
  */
@@ -100,6 +99,27 @@ picsymtab(char *p, char *s, char *s2)
 	sp->sclass = EXTERN;
 	sp->sflags = sp->slevel = 0;
 	return sp;
+}
+
+#ifdef os_win32
+static NODE *
+import(NODE *p)
+{
+	NODE *q;
+	char *name;
+	struct symtab *sp;
+
+	if ((name = p->n_sp->soname) == NULL)
+		name = exname(p->n_sp->sname);
+
+	sp = picsymtab("__imp_", name, "");
+	q = xbcon(0, sp, PTR+VOID);
+	q = block(UMUL, q, 0, PTR|VOID, 0, MKSUE(VOID));
+	q = block(UMUL, q, 0, p->n_type, p->n_df, p->n_sue);
+	q->n_sp = p->n_sp; /* for init */
+	nfree(p);
+
+	return q;
 }
 #endif
 
@@ -135,17 +155,17 @@ picext(NODE *p)
 
 	NODE *q, *r;
 	struct symtab *sp;
-	char buf2[64], *name, *pspn;
+	char buf2[256], *name, *pspn;
 
 	if ((name = cftnsp->soname) == NULL)
 		name = cftnsp->sname;
 	if ((pspn = p->n_sp->soname) == NULL)
 		pspn = exname(p->n_sp->sname);
 	if (p->n_sp->sclass == EXTDEF) {
-		snprintf(buf2, 64, "-L%s$pb", name);
+		snprintf(buf2, 256, "-L%s$pb", name);
 		sp = picsymtab("", pspn, buf2);
 	} else {
-		snprintf(buf2, 64, "$non_lazy_ptr-L%s$pb", name);
+		snprintf(buf2, 256, "$non_lazy_ptr-L%s$pb", name);
 		sp = picsymtab("L", pspn, buf2);
 		addstub(&nlplist, pspn);
 	}
@@ -205,16 +225,15 @@ picstatic(NODE *p)
 
 	NODE *q, *r;
 	struct symtab *sp;
-	char buf2[64];
+	char buf2[256];
 
-	snprintf(buf2, 64, "-L%s$pb",
+	snprintf(buf2, 256, "-L%s$pb",
 	    cftnsp->soname ? cftnsp->soname : cftnsp->sname);
 
 	if (p->n_sp->slevel > 0) {
-		char buf1[64];
-		snprintf(buf1, 64, LABFMT, (int)p->n_sp->soffset);
+		char buf1[32];
+		snprintf(buf1, 32, LABFMT, (int)p->n_sp->soffset);
 		sp = picsymtab("", buf1, buf2);
-		sp->sflags |= SNOUNDERSCORE;
 	} else  {
 		char *name;
 		if ((name = p->n_sp->soname) == NULL)
@@ -399,6 +418,11 @@ clocal(NODE *p)
 				p = tlsref(p);
 				break;
 			}
+#endif
+
+#ifdef os_win32
+			if (q->sflags & SDLLINDIRECT)
+				p = import(p);
 #endif
 			if (kflag == 0)
 				break;
@@ -1073,13 +1097,8 @@ ninval(CONSZ off, int fsz, NODE *p)
 			} else {
 				char *name;
 				if ((name = q->soname) == NULL)
-					name = q->sname;
-#if defined(MACHOABI)
-				if ((q->sflags & SNOUNDERSCORE) != 0)
-					printf("+%s", name);
-				else
-#endif
-					printf("+%s", exname(name));
+					name = exname(q->sname);
+				printf("+%s", name);
 			}
 		}
 		printf("\n");
@@ -1209,8 +1228,10 @@ defzero(struct symtab *sp)
 		    sp->soname ? sp->soname : exname(sp->sname), off);
 	else
 		printf(LABFMT ",0%o", sp->soffset, off);
+#if !defined(PECOFFABI)
 	if (sp->sclass != STATIC)
 		printf(",%d", al);
+#endif
 	printf("\n");
 }
 
@@ -1422,21 +1443,15 @@ mangle(NODE *p, void *arg)
 	NODE *l, *r;
 	TWORD t;
 	int size = 0;
-	char buf[64];
-
-	if ((p->n_op == NAME || p->n_op == ICON) && 
-	    p->n_sp && (p->n_sp->sflags & SDLLINDIRECT) && p->n_name) {
-		snprintf(buf, 64, "__imp_%s", p->n_name);
-	        p->n_name = IALLOC(strlen(buf) + 1);
-		strcpy(p->n_name, buf);
-		return;
-	}
+	char buf[256];
 
 	if (p->n_op != CALL && p->n_op != STCALL &&
 	    p->n_op != UCALL && p->n_op != USTCALL)
 		return;
 
 	l = p->n_left;
+	if (l->n_op == TEMP)
+		return;
 	if (l->n_op == ADDROF)
 		l = l->n_left;
 	if (l->n_sp == NULL)
@@ -1458,7 +1473,7 @@ mangle(NODE *p, void *arg)
 				else
 					size += szty(t) * SZINT / SZCHAR;
 			}
-			snprintf(buf, 64, "%s@%d", l->n_name, size);
+			snprintf(buf, 256, "%s@%d", l->n_name, size);
 	        	l->n_name = IALLOC(strlen(buf) + 1);
 			strcpy(l->n_name, buf);
 		}

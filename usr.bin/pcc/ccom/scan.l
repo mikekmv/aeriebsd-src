@@ -268,7 +268,7 @@ f2(char *str)
 	char *eptr;
 	int imag = 0;
 
-	dc = strtold(str, &eptr); /* XXX - avoid strtod() */
+	dc = strtod(str, &eptr); /* XXX - avoid strtod() */
 	tw = DOUBLE;
 	for (; *eptr; eptr++) {
 		switch (*eptr) {

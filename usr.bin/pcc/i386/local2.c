@@ -335,17 +335,27 @@ starg(NODE *p)
 	FILE *fp = stdout;
 
 	fprintf(fp, "	subl $%d,%%esp\n", p->n_stsize);
+#if defined(MACHOABI)
+	fprintf(fp, "	subl $4,%%esp\n");
+	fprintf(fp, "	pushl $%d\n", p->n_stsize);
+	expand(p, 0, "	pushl AL\n");
+	expand(p, 0, "	leal 12(%esp),A1\n");
+	expand(p, 0, "	pushl A1\n");
+	if (kflag) {
+		fprintf(fp, "	call L%s$stub\n", EXPREFIX "memcpy");
+		addstub(&stublist, EXPREFIX "memcpy");
+	} else {
+		fprintf(fp, "	call %s\n", EXPREFIX "memcpy");
+	}
+	fprintf(fp, "	addl $16,%%esp\n");
+#else
 	fprintf(fp, "	pushl $%d\n", p->n_stsize);
 	expand(p, 0, "	pushl AL\n");
 	expand(p, 0, "	leal 8(%esp),A1\n");
 	expand(p, 0, "	pushl A1\n");
-#if defined(MACHOABI)
-	fprintf(fp, "	call L%s$stub\n", EXPREFIX "memcpy");
-	addstub(&stublist, EXPREFIX "memcpy");
-#else
 	fprintf(fp, "	call %s\n", EXPREFIX "memcpy");
-#endif
 	fprintf(fp, "	addl $12,%%esp\n");
+#endif
 }
 
 /*
@@ -362,7 +372,7 @@ fcomp(NODE *p)
 	} else if (p->n_left->n_type == DOUBLE)
 		expand(p, 0, "	fcompl AL\n");	/* emit compare insn  */
 	else if (p->n_left->n_type == FLOAT)
-		expand(p, 0, "	fcomp AL\n");	/* emit compare insn  */
+		expand(p, 0, "	fcomps AL\n");	/* emit compare insn  */
 	else
 		comperr("bad compare %p\n", p);
 	expand(p, 0, "	fnstsw %ax\n");	/* move status reg to ax */
@@ -534,16 +544,24 @@ zzzcode(NODE *p, int c)
 
 	case 'Q': /* emit struct assign */
 		/* XXX - optimize for small structs */
+#if defined(MACHOABI)
+		printf("\tsubl $4,%%esp\n");
+#endif
 		printf("\tpushl $%d\n", p->n_stsize);
 		expand(p, INAREG, "\tpushl AR\n");
 		expand(p, INAREG, "\tleal AL,%eax\n\tpushl %eax\n");
 #if defined(MACHOABI)
-		printf("\tcall L%s$stub\n", EXPREFIX "memcpy");
-		addstub(&stublist, EXPREFIX "memcpy");
+		if (kflag) {
+			printf("\tcall L%s$stub\n", EXPREFIX "memcpy");
+			addstub(&stublist, EXPREFIX "memcpy");
+		} else {
+			printf("\tcall %s\n", EXPREFIX "memcpy");
+		}
+		printf("\taddl $16,%%esp\n");
 #else
 		printf("\tcall %s\n", EXPREFIX "memcpy");
-#endif
 		printf("\taddl $12,%%esp\n");
+#endif
 		break;
 
 	case 'S': /* emit eventual move after cast from longlong */
@@ -1277,6 +1295,13 @@ static struct {
 int xasmconstregs(char *s)
 {
 	int i;
+
+	if (strncmp(s, "st", 2) == 0) {
+		int off =0;
+		if (s[2] == '(' && s[4] == ')')
+			off = s[3] - '0';
+		return ESIEDI + 1 + off;
+	}
 
 	for (i = 0; xcr[i].name; i++)
 		if (strcmp(xcr[i].name, s) == 0)
