@@ -423,7 +423,7 @@ key_fingerprint(const Key *k, enum fp_type dgst_type, enum fp_rep dgst_rep)
 		retval = key_fingerprint_randomart(dgst_raw, dgst_raw_len, k);
 		break;
 	default:
-		fatal("key_fingerprint_ex: bad digest representation %d",
+		fatal("key_fingerprint: bad digest representation %d",
 		    dgst_rep);
 		break;
 	}

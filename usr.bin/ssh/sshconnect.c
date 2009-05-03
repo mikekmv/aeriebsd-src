@@ -723,8 +723,8 @@ check_host_key(char *hostname, struct sockaddr *hostaddr, u_short port,
 		if (options.host_key_alias == NULL && port != 0 &&
 		    port != SSH_DEFAULT_PORT) {
 			debug("checking without port identifier");
-			if (check_host_key(hostname, hostaddr, 0, host_key, 2,
-			    user_hostfile, system_hostfile) == 0) {
+			if (check_host_key(hostname, hostaddr, 0, host_key,
+			    ROQUIET, user_hostfile, system_hostfile) == 0) {
 				debug("found matching key w/out port");
 				break;
 			}

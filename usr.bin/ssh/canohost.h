@@ -22,3 +22,5 @@ char		*get_local_name(int);
 
 int		 get_remote_port(void);
 int		 get_local_port(void);
+int		 get_sock_port(int, int);
+

@@ -39,7 +39,8 @@ main(int argc, char **argv)
 	sanitise_stdfd();
 
 	if ((user_pw = getpwuid(getuid())) == NULL) {
-		fprintf(stderr, "No user found for uid %lu", (u_long)getuid());
+		fprintf(stderr, "No user found for uid %lu\n",
+		    (u_long)getuid());
 		return 1;
 	}
 

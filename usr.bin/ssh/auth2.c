@@ -66,12 +66,18 @@ extern Authmethod method_hostbased;
 #ifdef GSSAPI
 extern Authmethod method_gssapi;
 #endif
+#ifdef JPAKE
+extern Authmethod method_jpake;
+#endif
 
 Authmethod *authmethods[] = {
 	&method_none,
 	&method_pubkey,
 #ifdef GSSAPI
 	&method_gssapi,
+#endif
+#ifdef JPAKE
+	&method_jpake,
 #endif
 	&method_passwd,
 	&method_kbdint,
@@ -236,8 +242,12 @@ input_userauth_request(int type, u_int32_t seq, void *ctxt)
 	}
 	/* reset state */
 	auth2_challenge_stop(authctxt);
+#ifdef JPAKE
+	auth2_jpake_stop(authctxt);
+#endif
 
 #ifdef GSSAPI
+	/* XXX move to auth2_gssapi_stop() */
 	dispatch_set(SSH2_MSG_USERAUTH_GSSAPI_TOKEN, NULL);
 	dispatch_set(SSH2_MSG_USERAUTH_GSSAPI_EXCHANGE_COMPLETE, NULL);
 #endif

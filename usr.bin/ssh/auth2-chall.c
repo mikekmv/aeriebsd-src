@@ -235,7 +235,7 @@ input_userauth_info_response(int type, u_int32_t seq, void *ctxt)
 {
 	Authctxt *authctxt = ctxt;
 	KbdintAuthctxt *kbdintctxt;
-	int authenticated = 0, res, len;
+	int authenticated = 0, res;
 	u_int i, nresp;
 	char **response = NULL, *method;
 
@@ -284,11 +284,7 @@ input_userauth_info_response(int type, u_int32_t seq, void *ctxt)
 		break;
 	}
 
-	len = strlen("keyboard-interactive") + 2 +
-		strlen(kbdintctxt->device->name);
-	method = xmalloc(len);
-	snprintf(method, len, "keyboard-interactive/%s",
-	    kbdintctxt->device->name);
+	xasprintf(&method, "keyboard-interactive/%s", kbdintctxt->device->name);
 
 	if (!authctxt->postponed) {
 		if (authenticated) {

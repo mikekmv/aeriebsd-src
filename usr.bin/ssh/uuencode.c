@@ -30,6 +30,12 @@
 #include "xmalloc.h"
 #include "uuencode.h"
 
+/*
+ * Encode binary 'src' of length 'srclength', writing base64-encoded text
+ * to 'target' of size 'targsize'. Will always nul-terminate 'target'.
+ * Returns the number of bytes stored in 'target' or -1 on error (inc.
+ * 'targsize' too small).
+ */
 int
 uuencode(const u_char *src, u_int srclength,
     char *target, size_t targsize)
@@ -37,6 +43,11 @@ uuencode(const u_char *src, u_int srclength,
 	return __b64_ntop(src, srclength, target, targsize);
 }
 
+/*
+ * Decode base64-encoded 'src' into buffer 'target' of 'targsize' bytes.
+ * Will skip leading and trailing whitespace. Returns the number of bytes
+ * stored in 'target' or -1 on error (inc. targsize too small).
+ */
 int
 uudecode(const char *src, u_char *target, size_t targsize)
 {

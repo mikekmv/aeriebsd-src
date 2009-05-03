@@ -27,6 +27,7 @@
 
 #include "match.h"
 #include "log.h"
+#include "xmalloc.h"
 
 struct xaddr {
 	sa_family_t	af;
@@ -411,7 +412,7 @@ addr_match_list(const char *addr, const char *_list)
 				goto foundit;
 		}
 	}
-	free(o);
+	xfree(o);
 
 	return ret;
 }

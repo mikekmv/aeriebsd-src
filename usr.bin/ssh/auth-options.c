@@ -10,6 +10,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/queue.h>
 
 #include <netdb.h>
 #include <pwd.h>
@@ -251,7 +252,7 @@ auth_parse_options(struct passwd *pw, char *opts, char *file, u_long linenum)
 		cp = "permitopen=\"";
 		if (strncasecmp(opts, cp, strlen(cp)) == 0) {
 			char *host, *p;
-			u_short port;
+			int port;
 			char *patterns = xmalloc(strlen(opts) + 1);
 
 			opts += strlen(cp);
@@ -289,7 +290,7 @@ auth_parse_options(struct passwd *pw, char *opts, char *file, u_long linenum)
 				goto bad_option;
 			}
 			host = cleanhostname(host);
-			if (p == NULL || (port = a2port(p)) == 0) {
+			if (p == NULL || (port = a2port(p)) <= 0) {
 				debug("%.100s, line %lu: Bad permitopen port "
 				    "<%.100s>", file, linenum, p ? p : "");
 				auth_debug_add("%.100s, line %lu: "

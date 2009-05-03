@@ -34,7 +34,7 @@
 .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt SSH 1
 .Os
 .Sh NAME
@@ -42,7 +42,7 @@
 .Nd OpenSSH SSH client (remote login program)
 .Sh SYNOPSIS
 .Nm ssh
-.Op Fl 1246AaCfgKkMNnqsTtVvXxY
+.Op Fl 1246AaCfgKkMNnqsTtVvXxYy
 .Op Fl b Ar bind_address
 .Op Fl c Ar cipher_spec
 .Oo Fl D\ \&
@@ -190,26 +190,9 @@ For protocol version 2,
 .Ar cipher_spec
 is a comma-separated list of ciphers
 listed in order of preference.
-The supported ciphers are:
-3des-cbc,
-aes128-cbc,
-aes192-cbc,
-aes256-cbc,
-aes128-ctr,
-aes192-ctr,
-aes256-ctr,
-arcfour128,
-arcfour256,
-arcfour,
-blowfish-cbc,
-and
-cast128-cbc.
-The default is:
-.Bd -literal -offset indent
-aes128-cbc,3des-cbc,blowfish-cbc,cast128-cbc,arcfour128,
-arcfour256,arcfour,aes192-cbc,aes256-cbc,aes128-ctr,
-aes192-ctr,aes256-ctr
-.Ed
+See the
+.Cm Ciphers
+keyword for more information.
 .It Fl D Xo
 .Sm off
 .Oo Ar bind_address : Oc
@@ -549,7 +532,7 @@ using an alternative syntax:
 .Pp
 By default, the listening socket on the server will be bound to the loopback
 interface only.
-This may be overriden by specifying a
+This may be overridden by specifying a
 .Ar bind_address .
 An empty
 .Ar bind_address ,
@@ -562,6 +545,13 @@ will only succeed if the server's
 .Cm GatewayPorts
 option is enabled (see
 .Xr sshd_config 5 ) .
+.Pp
+If the
+.Ar port
+argument is
+.Ql 0 ,
+the listen port will be dynamically allocated on the server and reported
+to the client at run time.
 .It Fl S Ar ctl_path
 Specifies the location of a control socket for connection sharing.
 Refer to the description of
@@ -657,6 +647,11 @@ Disables X11 forwarding.
 Enables trusted X11 forwarding.
 Trusted X11 forwardings are not subjected to the X11 SECURITY extension
 controls.
+.It Fl y
+Send log information using the
+.Xr syslog 3
+system module.
+By default this information is sent to stderr.
 .El
 .Pp
 .Nm
@@ -807,7 +802,7 @@ protocol 1 is restricted to just one challenge/response.
 Examples of challenge-response authentication include
 BSD Authentication (see
 .Xr login.conf 5 )
-and PAM (some non-ABSD systems).
+and PAM (some non-AerieBSD systems).
 .Pp
 Finally, if other authentication methods fail,
 .Nm
@@ -892,9 +887,10 @@ Send a BREAK to the remote system
 .It Cm ~C
 Open command line.
 Currently this allows the addition of port forwardings using the
-.Fl L
-and
+.Fl L ,
 .Fl R
+and
+.Fl D
 options (see above).
 It also allows the cancellation of existing remote port-forwardings
 using

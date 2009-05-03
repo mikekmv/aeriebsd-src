@@ -47,8 +47,6 @@
 
 #define KEX_COOKIE_LEN	16
 
-extern const EVP_MD *evp_ssh_sha256(void);
-
 /* prototype */
 static void kex_kexinit_finish(Kex *);
 static void kex_choose_conf(Kex *);
@@ -314,7 +312,7 @@ choose_kex(Kex *k, char *client, char *server)
 		k->evp_md = EVP_sha1();
 	} else if (strcmp(k->name, KEX_DHGEX_SHA256) == 0) {
 		k->kex_type = KEX_DH_GEX_SHA256;
-		k->evp_md = evp_ssh_sha256();
+		k->evp_md = EVP_sha256();
 	} else
 		fatal("bad kex alg %s", k->name);
 }

@@ -34,7 +34,6 @@
 #include "packet.h"
 #include "compat.h"
 
-#define DISPATCH_MIN	0
 #define DISPATCH_MAX	255
 
 dispatch_fn *dispatch[DISPATCH_MAX];

@@ -299,7 +299,7 @@ get_remote_name_or_ip(u_int utmp_len, int use_dns)
 
 /* Returns the local/remote port for the socket. */
 
-static int
+int
 get_sock_port(int sock, int local)
 {
 	struct sockaddr_storage from;

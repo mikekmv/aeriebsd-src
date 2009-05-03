@@ -14,6 +14,8 @@ CDIAGFLAGS+=	-Wshadow
 
 #DEBUG=-g
 
+#CFLAGS+=	-DJPAKE
+
 #CFLAGS+=	-DSMARTCARD
 #LDADD+=	-lsectok
 

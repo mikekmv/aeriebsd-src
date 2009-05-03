@@ -43,6 +43,7 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/queue.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -289,6 +290,7 @@ channel_new(char *ctype, int type, int rfd, int wfd, int efd,
 	buffer_init(&c->input);
 	buffer_init(&c->output);
 	buffer_init(&c->extended);
+	c->path = NULL;
 	c->ostate = CHAN_OUTPUT_OPEN;
 	c->istate = CHAN_INPUT_OPEN;
 	c->flags = 0;
@@ -394,6 +396,10 @@ channel_free(Channel *c)
 	if (c->remote_name) {
 		xfree(c->remote_name);
 		c->remote_name = NULL;
+	}
+	if (c->path) {
+		xfree(c->path);
+		c->path = NULL;
 	}
 	while ((cc = TAILQ_FIRST(&c->status_confirms)) != NULL) {
 		if (cc->abandon_cb != NULL)
@@ -684,7 +690,7 @@ channel_register_open_confirm(int id, channel_callback_fn *fn, void *ctx)
 	Channel *c = channel_lookup(id);
 
 	if (c == NULL) {
-		logit("channel_register_open_comfirm: %d: bad id", id);
+		logit("channel_register_open_confirm: %d: bad id", id);
 		return;
 	}
 	c->open_confirm = fn;
@@ -809,7 +815,7 @@ channel_pre_open(Channel *c, fd_set *readset, fd_set *writeset)
 		}
 	}
 	/** XXX check close conditions, too */
-	if (compat20 && c->efd != -1 &&
+	if (compat20 && c->efd != -1 && 
 	    !(c->istate == CHAN_INPUT_CLOSED && c->ostate == CHAN_OUTPUT_CLOSED)) {
 		if (c->extended_usage == CHAN_EXTENDED_WRITE &&
 		    buffer_len(&c->extended) > 0)
@@ -973,7 +979,7 @@ static int
 channel_decode_socks4(Channel *c, fd_set *readset, fd_set *writeset)
 {
 	char *p, *host;
-	u_int len, have, i, found;
+	u_int len, have, i, found, need;
 	char username[256];
 	struct {
 		u_int8_t version;
@@ -989,10 +995,20 @@ channel_decode_socks4(Channel *c, fd_set *readset, fd_set *writeset)
 	if (have < len)
 		return 0;
 	p = buffer_ptr(&c->input);
+
+	need = 1;
+	/* SOCKS4A uses an invalid IP address 0.0.0.x */
+	if (p[4] == 0 && p[5] == 0 && p[6] == 0 && p[7] != 0) {
+		debug2("channel %d: socks4a request", c->self);
+		/* ... and needs an extra string (the hostname) */
+		need = 2;
+	}
+	/* Check for terminating NUL on the string(s) */
 	for (found = 0, i = len; i < have; i++) {
 		if (p[i] == '\0') {
-			found = 1;
-			break;
+			found++;
+			if (found == need)
+				break;
 		}
 		if (i > 1024) {
 			/* the peer is probably sending garbage */
@@ -1001,7 +1017,7 @@ channel_decode_socks4(Channel *c, fd_set *readset, fd_set *writeset)
 			return -1;
 		}
 	}
-	if (!found)
+	if (found < need)
 		return 0;
 	buffer_get(&c->input, (char *)&s4_req.version, 1);
 	buffer_get(&c->input, (char *)&s4_req.command, 1);
@@ -1011,23 +1027,46 @@ channel_decode_socks4(Channel *c, fd_set *readset, fd_set *writeset)
 	p = buffer_ptr(&c->input);
 	len = strlen(p);
 	debug2("channel %d: decode socks4: user %s/%d", c->self, p, len);
+	len++;					/* trailing '\0' */
 	if (len > have)
 		fatal("channel %d: decode socks4: len %d > have %d",
 		    c->self, len, have);
 	strlcpy(username, p, sizeof(username));
 	buffer_consume(&c->input, len);
-	buffer_consume(&c->input, 1);		/* trailing '\0' */
 
-	host = inet_ntoa(s4_req.dest_addr);
-	strlcpy(c->path, host, sizeof(c->path));
+	if (c->path != NULL) {
+		xfree(c->path);
+		c->path = NULL;
+	}
+	if (need == 1) {			/* SOCKS4: one string */
+		host = inet_ntoa(s4_req.dest_addr);
+		c->path = xstrdup(host);
+	} else {				/* SOCKS4A: two strings */
+		have = buffer_len(&c->input);
+		p = buffer_ptr(&c->input);
+		len = strlen(p);
+		debug2("channel %d: decode socks4a: host %s/%d",
+		    c->self, p, len);
+		len++;				/* trailing '\0' */
+		if (len > have)
+			fatal("channel %d: decode socks4a: len %d > have %d",
+			    c->self, len, have);
+		if (len > NI_MAXHOST) {
+			error("channel %d: hostname \"%.100s\" too long",
+			    c->self, p);
+			return -1;
+		}
+		c->path = xstrdup(p);
+		buffer_consume(&c->input, len);
+	}
 	c->host_port = ntohs(s4_req.dest_port);
 
 	debug2("channel %d: dynamic request: socks4 host %s port %u command %u",
-	    c->self, host, c->host_port, s4_req.command);
+	    c->self, c->path, c->host_port, s4_req.command);
 
 	if (s4_req.command != 1) {
-		debug("channel %d: cannot handle: socks4 cn %d",
-		    c->self, s4_req.command);
+		debug("channel %d: cannot handle: %s cn %d",
+		    c->self, need == 1 ? "SOCKS4" : "SOCKS4A", s4_req.command);
 		return -1;
 	}
 	s4_rsp.version = 0;			/* vn: 0 for reply */
@@ -1058,7 +1097,7 @@ channel_decode_socks5(Channel *c, fd_set *readset, fd_set *writeset)
 		u_int8_t atyp;
 	} s5_req, s5_rsp;
 	u_int16_t dest_port;
-	u_char *p, dest_addr[255+1];
+	u_char *p, dest_addr[255+1], ntop[INET6_ADDRSTRLEN];
 	u_int have, need, i, found, nmethods, addrlen, af;
 
 	debug2("channel %d: decode socks5", c->self);
@@ -1131,10 +1170,22 @@ channel_decode_socks5(Channel *c, fd_set *readset, fd_set *writeset)
 	buffer_get(&c->input, (char *)&dest_addr, addrlen);
 	buffer_get(&c->input, (char *)&dest_port, 2);
 	dest_addr[addrlen] = '\0';
-	if (s5_req.atyp == SSH_SOCKS5_DOMAIN)
-		strlcpy(c->path, (char *)dest_addr, sizeof(c->path));
-	else if (inet_ntop(af, dest_addr, c->path, sizeof(c->path)) == NULL)
-		return -1;
+	if (c->path != NULL) {
+		xfree(c->path);
+		c->path = NULL;
+	}
+	if (s5_req.atyp == SSH_SOCKS5_DOMAIN) {
+		if (addrlen >= NI_MAXHOST) {
+			error("channel %d: dynamic request: socks5 hostname "
+			    "\"%.100s\" too long", c->self, dest_addr);
+			return -1;
+		}
+		c->path = xstrdup(dest_addr);
+	} else {
+		if (inet_ntop(af, dest_addr, ntop, sizeof(ntop)) == NULL)
+			return -1;
+		c->path = xstrdup(ntop);
+	}
 	c->host_port = ntohs(dest_port);
 
 	debug2("channel %d: dynamic request: socks5 host %s port %u command %u",
@@ -1363,7 +1414,8 @@ channel_post_port_listener(Channel *c, fd_set *readset, fd_set *writeset)
 		    c->local_window_max, c->local_maxpacket, 0, rtype, 1);
 		nc->listening_port = c->listening_port;
 		nc->host_port = c->host_port;
-		strlcpy(nc->path, c->path, sizeof(nc->path));
+		if (c->path != NULL)
+			nc->path = xstrdup(c->path);
 
 		if (nextstate == SSH_CHANNEL_DYNAMIC) {
 			/*
@@ -2287,8 +2339,8 @@ channel_input_open_failure(int type, u_int32_t seq, void *ctxt)
 			xfree(lang);
 	}
 	packet_check_eom();
-	/* Free the channel.  This will also close the socket. */
-	channel_free(c);
+	/* Schedule the channel for cleanup/deletion. */
+	chan_mark_dead(c);
 }
 
 /* ARGSUSED */
@@ -2353,18 +2405,18 @@ channel_input_status_confirm(int type, u_int32_t seq, void *ctxt)
 {
 	Channel *c;
 	struct channel_confirm *cc;
-	int remote_id;
+	int id;
 
 	/* Reset keepalive timeout */
 	keep_alive_timeouts = 0;
 
-	remote_id = packet_get_int();
+	id = packet_get_int();
 	packet_check_eom();
 
-	debug2("channel_input_confirm: type %d id %d", type, remote_id);
+	debug2("channel_input_status_confirm: type %d id %d", type, id);
 
-	if ((c = channel_lookup(remote_id)) == NULL) {
-		logit("channel_input_success_failure: %d: unknown", remote_id);
+	if ((c = channel_lookup(id)) == NULL) {
+		logit("channel_input_status_confirm: %d: unknown", id);
 		return;
 	}	
 	;
@@ -2385,7 +2437,8 @@ channel_set_af(int af)
 }
 
 static int
-channel_setup_fwd_listener(int type, const char *listen_addr, u_short listen_port,
+channel_setup_fwd_listener(int type, const char *listen_addr,
+    u_short listen_port, int *allocated_listen_port,
     const char *host_to_connect, u_short port_to_connect, int gateway_ports)
 {
 	Channel *c;
@@ -2393,6 +2446,7 @@ channel_setup_fwd_listener(int type, const char *listen_addr, u_short listen_por
 	struct addrinfo hints, *ai, *aitop;
 	const char *host, *addr;
 	char ntop[NI_MAXHOST], strport[NI_MAXSERV];
+	in_port_t *lport_p;
 
 	host = (type == SSH_CHANNEL_RPORT_LISTENER) ?
 	    listen_addr : host_to_connect;
@@ -2402,7 +2456,7 @@ channel_setup_fwd_listener(int type, const char *listen_addr, u_short listen_por
 		error("No forward host name.");
 		return 0;
 	}
-	if (strlen(host) > SSH_CHANNEL_PATH_LEN - 1) {
+	if (strlen(host) >= NI_MAXHOST) {
 		error("Forward host name too long.");
 		return 0;
 	}
@@ -2461,10 +2515,29 @@ channel_setup_fwd_listener(int type, const char *listen_addr, u_short listen_por
 		}
 		return 0;
 	}
-
+	if (allocated_listen_port != NULL)
+		*allocated_listen_port = 0;
 	for (ai = aitop; ai; ai = ai->ai_next) {
-		if (ai->ai_family != AF_INET && ai->ai_family != AF_INET6)
+		switch (ai->ai_family) {
+		case AF_INET:
+			lport_p = &((struct sockaddr_in *)ai->ai_addr)->
+			    sin_port;
+			break;
+		case AF_INET6:
+			lport_p = &((struct sockaddr_in6 *)ai->ai_addr)->
+			    sin6_port;
+			break;
+		default:
 			continue;
+		}
+		/*
+		 * If allocating a port for -R forwards, then use the
+		 * same port for all address families.
+		 */
+		if (type == SSH_CHANNEL_RPORT_LISTENER && listen_port == 0 &&
+		    allocated_listen_port != NULL && *allocated_listen_port > 0)
+			*lport_p = htons(*allocated_listen_port);
+
 		if (getnameinfo(ai->ai_addr, ai->ai_addrlen, ntop, sizeof(ntop),
 		    strport, sizeof(strport), NI_NUMERICHOST|NI_NUMERICSERV) != 0) {
 			error("channel_setup_fwd_listener: getnameinfo failed");
@@ -2480,7 +2553,8 @@ channel_setup_fwd_listener(int type, const char *listen_addr, u_short listen_por
 
 		channel_set_reuseaddr(sock);
 
-		debug("Local forwarding listening on %s port %s.", ntop, strport);
+		debug("Local forwarding listening on %s port %s.",
+		    ntop, strport);
 
 		/* Bind the socket to the address. */
 		if (bind(sock, ai->ai_addr, ai->ai_addrlen) < 0) {
@@ -2495,11 +2569,24 @@ channel_setup_fwd_listener(int type, const char *listen_addr, u_short listen_por
 			close(sock);
 			continue;
 		}
+
+		/*
+		 * listen_port == 0 requests a dynamically allocated port -
+		 * record what we got.
+		 */
+		if (type == SSH_CHANNEL_RPORT_LISTENER && listen_port == 0 &&
+		    allocated_listen_port != NULL &&
+		    *allocated_listen_port == 0) {
+			*allocated_listen_port = get_sock_port(sock, 1);
+			debug("Allocated listen port %d",
+			    *allocated_listen_port);
+		}
+
 		/* Allocate a channel number for the socket. */
 		c = channel_new("port listener", type, sock, sock, -1,
 		    CHAN_TCP_WINDOW_DEFAULT, CHAN_TCP_PACKET_DEFAULT,
 		    0, "port listener", 1);
-		strlcpy(c->path, host, sizeof(c->path));
+		c->path = xstrdup(host);
 		c->host_port = port_to_connect;
 		c->listening_port = listen_port;
 		success = 1;
@@ -2521,8 +2608,7 @@ channel_cancel_rport_listener(const char *host, u_short port)
 		Channel *c = channels[i];
 
 		if (c != NULL && c->type == SSH_CHANNEL_RPORT_LISTENER &&
-		    strncmp(c->path, host, sizeof(c->path)) == 0 &&
-		    c->listening_port == port) {
+		    strcmp(c->path, host) == 0 && c->listening_port == port) {
 			debug2("%s: close channel %d", __func__, i);
 			channel_free(c);
 			found = 1;
@@ -2538,17 +2624,18 @@ channel_setup_local_fwd_listener(const char *listen_host, u_short listen_port,
     const char *host_to_connect, u_short port_to_connect, int gateway_ports)
 {
 	return channel_setup_fwd_listener(SSH_CHANNEL_PORT_LISTENER,
-	    listen_host, listen_port, host_to_connect, port_to_connect,
+	    listen_host, listen_port, NULL, host_to_connect, port_to_connect,
 	    gateway_ports);
 }
 
 /* protocol v2 remote port fwd, used by sshd */
 int
 channel_setup_remote_fwd_listener(const char *listen_address,
-    u_short listen_port, int gateway_ports)
+    u_short listen_port, int *allocated_listen_port, int gateway_ports)
 {
 	return channel_setup_fwd_listener(SSH_CHANNEL_RPORT_LISTENER,
-	    listen_address, listen_port, NULL, 0, gateway_ports);
+	    listen_address, listen_port, allocated_listen_port,
+	    NULL, 0, gateway_ports);
 }
 
 /*
@@ -2761,10 +2848,16 @@ channel_print_adm_permitted_opens(void)
 {
 	int i;
 
+	printf("permitopen");
+	if (num_adm_permitted_opens == 0) {
+		printf(" any\n");
+		return;
+	}
 	for (i = 0; i < num_adm_permitted_opens; i++)
 		if (permitted_adm_opens[i].host_to_connect != NULL)
 			printf(" %s:%d", permitted_adm_opens[i].host_to_connect,
 			    permitted_adm_opens[i].port_to_connect);
+	printf("\n");
 }
 
 /* Try to start non-blocking connect to next host in cctx list */

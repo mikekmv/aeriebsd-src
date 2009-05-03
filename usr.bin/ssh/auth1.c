@@ -10,6 +10,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/queue.h>
 
 #include <stdio.h>
 #include <string.h>

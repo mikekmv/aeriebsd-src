@@ -28,11 +28,12 @@
 	"diffie-hellman-group14-sha1," \
 	"diffie-hellman-group1-sha1"
 #define	KEX_DEFAULT_PK_ALG	"ssh-rsa,ssh-dss"
+
 #define	KEX_DEFAULT_ENCRYPT \
+	"aes128-ctr,aes192-ctr,aes256-ctr," \
+	"arcfour256,arcfour128," \
 	"aes128-cbc,3des-cbc,blowfish-cbc,cast128-cbc," \
-	"arcfour128,arcfour256,arcfour," \
-	"aes192-cbc,aes256-cbc,rijndael-cbc@lysator.liu.se," \
-	"aes128-ctr,aes192-ctr,aes256-ctr"
+	"aes192-cbc,aes256-cbc,arcfour,rijndael-cbc@lysator.liu.se"
 #define	KEX_DEFAULT_MAC \
 	"hmac-md5,hmac-sha1,umac-64@openssh.com,hmac-ripemd160," \
 	"hmac-ripemd160@openssh.com," \

@@ -1041,6 +1041,7 @@ main(int ac, char **av)
 	pid_t pid;
 	char pidstrbuf[1 + 3 * sizeof pid];
 	struct timeval *tvp = NULL;
+	size_t len;
 
 	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */
 	sanitise_stdfd();
@@ -1092,8 +1093,8 @@ main(int ac, char **av)
 
 	if (ac == 0 && !c_flag && !s_flag) {
 		shell = getenv("SHELL");
-		if (shell != NULL &&
-		    strncmp(shell + strlen(shell) - 3, "csh", 3) == 0)
+		if (shell != NULL && (len = strlen(shell)) > 2 &&
+		    strncmp(shell + len - 3, "csh", 3) == 0)
 			c_flag = 1;
 	}
 	if (k_flag) {

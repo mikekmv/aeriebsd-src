@@ -45,7 +45,7 @@
 #define _PATH_SSH_DAEMON_PID_FILE	_PATH_SSH_PIDDIR "/sshd.pid"
 
 /*
- * The directory in user\'s home directory in which the files reside. The
+ * The directory in user's home directory in which the files reside. The
  * directory should be world-readable (though not all files are).
  */
 #define _PATH_SSH_USER_DIR		".ssh"
@@ -68,9 +68,9 @@
 #define _PATH_SSH_CLIENT_ID_RSA		".ssh/id_rsa"
 
 /*
- * Configuration file in user\'s home directory.  This file need not be
+ * Configuration file in user's home directory.  This file need not be
  * readable by anyone but the user him/herself, but does not contain anything
- * particularly secret.  If the user\'s home directory resides on an NFS
+ * particularly secret.  If the user's home directory resides on an NFS
  * volume where root is mapped to nobody, this may need to be world-readable.
  */
 #define _PATH_SSH_USER_CONFFILE		".ssh/config"
@@ -78,7 +78,7 @@
 /*
  * File containing a list of those rsa keys that permit logging in as this
  * user.  This file need not be readable by anyone but the user him/herself,
- * but does not contain anything particularly secret.  If the user\'s home
+ * but does not contain anything particularly secret.  If the user's home
  * directory resides on an NFS volume where root is mapped to nobody, this
  * may need to be world-readable.  (This file is read by the daemon which is
  * running as root.)

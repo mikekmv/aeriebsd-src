@@ -207,23 +207,19 @@ pwcopy(struct passwd *pw)
 
 /*
  * Convert ASCII string to TCP/IP port number.
- * Port must be >0 and <=65535.
- * Return 0 if invalid.
+ * Port must be >=0 and <=65535.
+ * Return -1 if invalid.
  */
 int
 a2port(const char *s)
 {
-	long port;
-	char *endp;
+	long long port;
+	const char *errstr;
 
-	errno = 0;
-	port = strtol(s, &endp, 0);
-	if (s == endp || *endp != '\0' ||
-	    (errno == ERANGE && (port == LONG_MIN || port == LONG_MAX)) ||
-	    port <= 0 || port > 65535)
-		return 0;
-
-	return port;
+	port = strtonum(s, 0, 65535, &errstr);
+	if (errstr != NULL)
+		return -1;
+	return (int)port;
 }
 
 int
@@ -697,7 +693,8 @@ sanitise_stdfd(void)
 	int nullfd, dupfd;
 
 	if ((nullfd = dupfd = open(_PATH_DEVNULL, O_RDWR)) == -1) {
-		fprintf(stderr, "Couldn't open /dev/null: %s", strerror(errno));
+		fprintf(stderr, "Couldn't open /dev/null: %s\n",
+		    strerror(errno));
 		exit(1);
 	}
 	while (++dupfd <= 2) {
@@ -705,7 +702,7 @@ sanitise_stdfd(void)
 		if (fcntl(dupfd, F_GETFL, 0) >= 0)
 			continue;
 		if (dup2(nullfd, dupfd) == -1) {
-			fprintf(stderr, "dup2: %s", strerror(errno));
+			fprintf(stderr, "dup2: %s\n", strerror(errno));
 			exit(1);
 		}
 	}

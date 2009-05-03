@@ -1311,7 +1311,7 @@ sftp_server_main(int argc, char **argv, struct passwd *user_pw)
 
 	log_init(__progname, log_level, log_facility, log_stderr);
 
-	while (!skipargs && (ch = getopt(argc, argv, "C:f:l:che")) != -1) {
+	while (!skipargs && (ch = getopt(argc, argv, "f:l:che")) != -1) {
 		switch (ch) {
 		case 'c':
 			/*

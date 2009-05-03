@@ -48,6 +48,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/queue.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -99,7 +100,6 @@
 #include "ssh-gss.h"
 #endif
 #include "monitor_wrap.h"
-#include "monitor_fdpass.h"
 #include "version.h"
 
 #ifdef LIBWRAP
@@ -1272,7 +1272,7 @@ main(int ac, char **av)
 				exit(1);
 			}
 			options.ports[options.num_ports++] = a2port(optarg);
-			if (options.ports[options.num_ports-1] == 0) {
+			if (options.ports[options.num_ports-1] <= 0) {
 				fprintf(stderr, "Bad port number.\n");
 				exit(1);
 			}

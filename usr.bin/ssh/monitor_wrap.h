@@ -85,6 +85,26 @@ int mm_bsdauth_respond(void *, u_int, char **);
 int mm_skey_query(void *, char **, char **, u_int *, char ***, u_int **);
 int mm_skey_respond(void *, u_int, char **);
 
+/* jpake */
+struct modp_group;
+void mm_auth2_jpake_get_pwdata(struct Authctxt *, BIGNUM **, char **, char **);
+void mm_jpake_step1(struct modp_group *, u_char **, u_int *,
+    BIGNUM **, BIGNUM **, BIGNUM **, BIGNUM **,
+    u_char **, u_int *, u_char **, u_int *);
+void mm_jpake_step2(struct modp_group *, BIGNUM *,
+    BIGNUM *, BIGNUM *, BIGNUM *, BIGNUM *,
+    const u_char *, u_int, const u_char *, u_int,
+    const u_char *, u_int, const u_char *, u_int,
+    BIGNUM **, u_char **, u_int *);
+void mm_jpake_key_confirm(struct modp_group *, BIGNUM *, BIGNUM *,
+    BIGNUM *, BIGNUM *, BIGNUM *, BIGNUM *, BIGNUM *,
+    const u_char *, u_int, const u_char *, u_int,
+    const u_char *, u_int, const u_char *, u_int,
+    BIGNUM **, u_char **, u_int *);
+int mm_jpake_check_confirm(const BIGNUM *,
+    const u_char *, u_int, const u_char *, u_int, const u_char *, u_int);
+
+
 /* zlib allocation hooks */
 
 void *mm_zalloc(struct mm_master *, u_int, u_int);

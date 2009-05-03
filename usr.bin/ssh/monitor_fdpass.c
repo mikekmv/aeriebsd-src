@@ -61,7 +61,10 @@ mm_send_fd(int sock, int fd)
 	msg.msg_iov = &vec;
 	msg.msg_iovlen = 1;
 
-	if ((n = sendmsg(sock, &msg, 0)) == -1) {
+	while ((n = sendmsg(sock, &msg, 0)) == -1 && (errno == EAGAIN ||
+	    errno == EINTR))
+		debug3("%s: sendmsg(%d): %s", __func__, fd, strerror(errno));
+	if (n == -1) {
 		error("%s: sendmsg(%d): %s", __func__, fd,
 		    strerror(errno));
 		return -1;
@@ -97,7 +100,10 @@ mm_receive_fd(int sock)
 	msg.msg_control = &cmsgbuf.buf;
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 
-	if ((n = recvmsg(sock, &msg, 0)) == -1) {
+	while ((n = recvmsg(sock, &msg, 0)) == -1 && (errno == EAGAIN ||
+	    errno == EINTR))
+		debug3("%s: recvmsg: %s", __func__, strerror(errno));
+	if (n == -1) {
 		error("%s: recvmsg: %s", __func__, strerror(errno));
 		return -1;
 	}

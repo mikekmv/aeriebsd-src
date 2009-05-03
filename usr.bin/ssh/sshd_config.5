@@ -34,7 +34,7 @@
 .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt SSHD_CONFIG 5
 .Os
 .Sh NAME
@@ -187,6 +187,9 @@ Specifies a path to
 to after authentication.
 This path, and all its components, must be root-owned directories that are
 not writable by any other user or group.
+After the chroot,
+.Xr sshd 8
+changes the working directory to the user's home directory.
 .Pp
 The path may contain the following tokens that are expanded at runtime once
 the connecting user has been authenticated: %% is replaced by a literal '%',
@@ -196,7 +199,7 @@ the connecting user has been authenticated: %% is replaced by a literal '%',
 The
 .Cm ChrootDirectory
 must contain the necessary files and directories to support the
-users' session.
+user's session.
 For an interactive session this requires at least a shell, typically
 .Xr sh 1 ,
 and basic
@@ -214,8 +217,11 @@ devices.
 For file transfer sessions using
 .Dq sftp ,
 no additional configuration of the environment is necessary if the
-in-process sftp server is used (see
-.Cm Subsystem
+in-process sftp server is used,
+though sessions which use logging do require
+.Pa /dev/log
+inside the chroot directory (see
+.Xr sftp-server 8
 for details).
 .Pp
 The default is not to
@@ -239,9 +245,9 @@ and
 .Dq cast128-cbc .
 The default is:
 .Bd -literal -offset 3n
-aes128-cbc,3des-cbc,blowfish-cbc,cast128-cbc,arcfour128,
-arcfour256,arcfour,aes192-cbc,aes256-cbc,aes128-ctr,
-aes192-ctr,aes256-ctr
+aes128-ctr,aes192-ctr,aes256-ctr,arcfour256,arcfour128,
+aes128-cbc,3des-cbc,blowfish-cbc,cast128-cbc,aes192-cbc,
+aes256-cbc,arcfour
 .Ed
 .It Cm ClientAliveCountMax
 Sets the number of client alive messages (see below) which may be
@@ -592,6 +598,7 @@ Only a subset of keywords may be used on the lines following a
 .Cm Match
 keyword.
 Available keywords are
+.Cm AllowAgentForwarding ,
 .Cm AllowTcpForwarding ,
 .Cm Banner ,
 .Cm ChrootDirectory ,
@@ -604,12 +611,13 @@ Available keywords are
 .Cm MaxAuthTries ,
 .Cm MaxSessions ,
 .Cm PasswordAuthentication ,
+.Cm PermitEmptyPasswords ,
 .Cm PermitOpen ,
 .Cm PermitRootLogin ,
 .Cm RhostsRSAAuthentication ,
 .Cm RSAAuthentication ,
 .Cm X11DisplayOffset ,
-.Cm X11Forwarding ,
+.Cm X11Forwarding
 and
 .Cm X11UseLocalHost .
 .It Cm MaxAuthTries
