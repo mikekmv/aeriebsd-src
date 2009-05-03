@@ -30,10 +30,10 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: pfctl.c,v 1.1.1.1 2008/08/26 14:40:27 root Exp $";
+static const char rcsid[] = "$ABSD: pfctl.c,v 1.2 2008/12/26 18:50:52 mickey Exp $";
 #endif
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>

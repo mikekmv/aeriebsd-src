@@ -1,3 +1,4 @@
+/*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
  * All rights reserved.
@@ -33,7 +34,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: conf.c,v 1.1.1.1 2008/08/26 14:40:26 root Exp $";
 #endif
 
 #include <sys/param.h>
