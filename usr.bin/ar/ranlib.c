@@ -1,4 +1,5 @@
 /*-
+ * Copyright (c) 2009 Michael Shalayeff
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
@@ -35,7 +36,7 @@
 static char sccsid[] = "@(#)build.c	5.3 (Berkeley) 3/12/91";
 static char sccsid[] = "@(#)touch.c	5.3 (Berkeley) 3/12/91";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ranlib.c,v 1.1 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -128,7 +129,7 @@ do_ranlib(void)
 			if (current_mid == -1)
 				current_mid = new_mid;
 			else if (new_mid != current_mid)
-				errx(1, "Mixed object format archive: %d / %d",
+				errx(1, "mixed object format archive: %x / %x",
 					new_mid, current_mid);
 		}
 		put_arobj(&cf, NULL);
