@@ -1,4 +1,3 @@
-
 /*
  * (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -29,7 +28,8 @@
  */
 
 #ifndef lint
-stattic const char rcsid[] = "$ABSD: print-mobile.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
+static const char rcsid[] =
+    "$ABSD: print-mobile.c,v 1.2 2008/12/26 18:52:31 mickey Exp $";
 #endif
 
 #include <sys/param.h>
