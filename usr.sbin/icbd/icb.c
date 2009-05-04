@@ -15,14 +15,12 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.6 2009/04/29 18:13:47 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.7 2009/04/30 09:24:36 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/queue.h>
 
-#include <err.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -167,10 +165,13 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 			icb_error(is, "Invalid group");
 			return;
 		} else {
-			ig = icb_addgroup(is, group, NULL);
+			if ((ig = icb_addgroup(is, group, NULL)) == NULL) {
+				icb_error(is, "Can't create group");
+				return;
+			}
 			(void)snprintf(buf, sizeof(buf), "%s created group %s",
 			    nick, group);
-			icb_log(is, ICB_LOG_NORMAL, buf);
+			icb_log(NULL, ICB_LOG_DEBUG, buf);
 		}
 	}
 	LIST_FOREACH(s, &ig->sess, entry) {
@@ -184,7 +185,8 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 		strlcpy(is->client, client, sizeof(is->client));
 	strlcpy(is->nick, nick, sizeof(is->nick));
 	is->group = ig;
-	is->login = is->last = getmonotime();
+	is->login = time(NULL);
+	is->last = getmonotime();
 
 	/* notify group */
 	(void)snprintf(buf, sizeof(buf), "%s (%s@%s) entered group", is->nick,
@@ -299,11 +301,11 @@ icb_command(struct icb_session *is, char *cmd, char *arg, char *mid)
 	struct icb_cmdarg ca = { is, cmd, arg, mid };
 
 	if ((handler = icb_cmd_lookup(cmd)) == NULL) {
-		icb_error(is, "No handler found, sorry");
+		icb_error(is, "Unsupported command");
 		return;
 	}
 	handler(&ca);
-}	
+}
 
 /*
  *  icb_cmdout: sends out command output ('i') packets, called from the
@@ -369,7 +371,6 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 	buflen = snprintf(buf, sizeof(buf), "%c%c%s%c%s", '?', ICB_M_STATUS,
 	    statmsgtab[type].msg, ICB_M_SEP, statmsg);
 	buf[0] = buflen;
-	icb_log(is, ICB_LOG_DEBUG, statmsg);
 	icb_send(is, buf, buflen + 1);
 }
 
@@ -388,6 +389,7 @@ icb_status_group(struct icb_group *ig, struct icb_session *ex, int type,
 			continue;
 		icb_status(s, type, statmsg);
 	}
+	icb_log(NULL, ICB_LOG_DEBUG, statmsg);
 }
 
 /*
@@ -436,7 +438,7 @@ icb_addgroup(struct icb_session *is, char *name, char *mpass)
 	struct icb_group *ig;
 
 	if ((ig = calloc(1, sizeof(*ig))) == NULL)
-		err(1, NULL);
+		return (NULL);
 	strlcpy(ig->name, name, sizeof(ig->name));
 	if (mpass)
 		strlcpy(ig->mpass, mpass, sizeof(ig->mpass));
@@ -495,7 +497,7 @@ icb_passmoder(struct icb_group *ig, struct icb_session *from,
 		ig->moder = to;
 		if (asprintf(&msg, "%s passed moderation of %s to %s",
 		    from ? from->nick : "server", ig->name, to->nick) > 0) {
-			icb_log(NULL, ICB_LOG_NORMAL, msg);
+			icb_log(NULL, ICB_LOG_DEBUG, msg);
 			icb_status_group(ig, NULL, STATUS_NOTIFY, msg);
 			free(msg);
 		}
@@ -505,7 +507,7 @@ icb_passmoder(struct icb_group *ig, struct icb_session *from,
 		icb_status(from, STATUS_NOTIFY, "You're no longer a moderator");
 		if (asprintf(&msg, "%s dropped moderation of %s",
 		    from->nick, ig->name) > 0) {
-			icb_log(NULL, ICB_LOG_NORMAL, msg);
+			icb_log(NULL, ICB_LOG_DEBUG, msg);
 			icb_status_group(ig, from, STATUS_NOTIFY, msg);
 			free(msg);
 		}

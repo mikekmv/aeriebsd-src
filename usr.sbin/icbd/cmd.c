@@ -15,14 +15,12 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.6 2009/04/29 17:36:24 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.7 2009/04/29 18:13:47 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/queue.h>
 
-#include <err.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -125,10 +123,13 @@ icb_cmd_group(struct icb_cmdarg *ca)
 			icb_error(is, "Invalid group");
 			return;
 		} else {
-			ig = icb_addgroup(is, ca->arg, NULL);
+			if ((ig = icb_addgroup(is, ca->arg, NULL)) == NULL) {
+				icb_error(is, "Can't create group");
+				return;
+			}
 			(void)snprintf(buf, sizeof(buf), "%s created group %s",
 			    is->nick, ca->arg);
-			icb_log(is, ICB_LOG_NORMAL, buf);
+			icb_log(NULL, ICB_LOG_DEBUG, buf);
 		}
 	}
 

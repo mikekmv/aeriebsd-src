@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.7 2009/04/29 17:06:46 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.8 2009/04/30 09:24:36 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -57,7 +57,7 @@ void usage(void);
 void getpeerinfo(struct icb_session *, char *, size_t, int *);
 void icbd_accept(int, short, void *);
 void icbd_drop(struct icb_session *, char *);
-void icbd_error(struct bufferevent *, short, void *);
+void icbd_ioerr(struct bufferevent *, short, void *);
 void icbd_dispatch(struct bufferevent *, void *);
 void icbd_log(struct icb_session *, int, char *);
 void icbd_grplist(char *);
@@ -102,9 +102,9 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	/* XXX: add group "1" by default */
-	if (!creategroups)
-		icb_addgroup(NULL, "1", NULL);
+	/* add group "1" as it's a login group for most of the clients */
+	if (icb_addgroup(NULL, "1", NULL) == NULL)
+		err(EX_UNAVAILABLE, NULL);
 
 	if (argc == 0)
 		argc++;
@@ -231,7 +231,7 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		return;
 	}
 	bev = GETBEVP(is);
-	if ((*bev = bufferevent_new(s, icbd_dispatch, NULL, icbd_error,
+	if ((*bev = bufferevent_new(s, icbd_dispatch, NULL, icbd_ioerr,
 	    is)) == NULL) {
 		syslog(LOG_ERR, "bufferevent_new: %m");
 		(void)close(s);
@@ -245,7 +245,7 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		free(is);
 		return;
 	}
-	icbd_log(is, ICB_LOG_NORMAL, "connected");
+	icbd_log(is, ICB_LOG_DEBUG, "connected");
 
 	/* save host information */
 	getpeerinfo(is, host, sizeof(host), NULL);
@@ -300,7 +300,7 @@ icbd_drop(struct icb_session *is, char *reason)
 	if (reason && strlen(reason) > 0)
 		msg = reason;
 	icb_remove(is, msg);
-	icbd_log(is, ICB_LOG_NORMAL, msg);
+	icbd_log(is, ICB_LOG_DEBUG, msg);
 	bev = GETBEVP(is);
 	evbuffer_write((*bev)->output, EVBUFFER_FD(*bev));
 	(void)close(EVBUFFER_FD(*bev));
@@ -309,7 +309,7 @@ icbd_drop(struct icb_session *is, char *reason)
 }
 
 void
-icbd_error(struct bufferevent *bev __attribute__((__unused__)), short what,
+icbd_ioerr(struct bufferevent *bev __attribute__((__unused__)), short what,
     void *arg)
 {
 	struct icb_session *is = (struct icb_session *)arg;
@@ -317,7 +317,7 @@ icbd_error(struct bufferevent *bev __attribute__((__unused__)), short what,
 	if (what & EVBUFFER_TIMEOUT)
 		icbd_drop(is, "timeout");
 	else if (what & EVBUFFER_EOF)
-		icbd_drop(is, "client hung up");
+		icbd_drop(is, "client exited");
 	else if (what & EVBUFFER_ERROR)
 		icbd_drop(is, (what & EVBUFFER_READ) ? "read error" :
 		    "write error");	
@@ -397,7 +397,8 @@ icbd_grplist(char *list)
 		}
 		if ((s2 = strchr(s, ':')) != NULL)
 			*s2 = '\0';
-		icb_addgroup(NULL, s, s2 ? ++s2 : NULL);
+		if (icb_addgroup(NULL, s, s2 ? ++s2 : NULL) == NULL)
+			err(EX_UNAVAILABLE, NULL);
 		s = ++s1;
 		s1 = s2 = NULL;
 	}
