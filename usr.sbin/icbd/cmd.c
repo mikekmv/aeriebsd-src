@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.8 2009/05/04 12:00:16 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.9 2009/05/04 12:07:33 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -183,6 +183,13 @@ icb_cmd_group(struct icb_cmdarg *ca)
 	(void)snprintf(buf, sizeof(buf), "You're now in group %s%s", ig->name,
 	    icb_ismoder(ig, is) ? " as moderator" : "");
 	icb_status(is, STATUS_STATUS, buf);
+
+	/* send user a topic name */
+	if (strlen(ig->topic) > 0) {
+		(void)snprintf(buf, sizeof(buf), "Topic for %s is \"%s\"",
+		    ig->name, ig->topic);
+		icb_status(is, STATUS_TOPIC, buf);
+	}
 }
 
 void
@@ -232,6 +239,19 @@ icb_cmd_status(struct icb_cmdarg *ca)
 void
 icb_cmd_topic(struct icb_cmdarg *ca)
 {
+	char buf[ICB_MSGSIZE];
+	struct icb_group *ig = ca->sess->group;
+
+	if (strlen(ca->arg) == 0) {
+		(void)snprintf(buf, sizeof(buf), "Topic for %s is \"%s\"",
+		    ig->name, ig->topic);
+		icb_status(ca->sess, STATUS_TOPIC, buf);
+		return;
+	}
+	strlcpy(ig->topic, ca->arg, sizeof(ig->topic));
+	(void)snprintf(buf, sizeof(buf), "%s has changed topic to \"%s\"",
+	    ca->sess->nick, ig->topic);
+	icb_status_group(ig, NULL, STATUS_TOPIC, buf);
 }
 
 void

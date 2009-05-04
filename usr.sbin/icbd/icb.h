@@ -22,6 +22,7 @@
 #define ICB_MAXGRPLEN		 32
 #define ICB_MAXNICKLEN		 32
 #define ICB_MAXPASSLEN		 32
+#define ICB_MAXTOPICLEN		 160
 
 #define ICB_LOG_ERROR		 0
 #define ICB_LOG_NORMAL		 1
@@ -41,6 +42,7 @@ enum {
 	 STATUS_SIGNON,
 	 STATUS_SIGNOFF,
 	 STATUS_STATUS,
+	 STATUS_TOPIC,
 	 STATUS_WARNING
 };
 #define ICB_M_ERROR		 'e'
@@ -92,6 +94,7 @@ struct icb_group {
 	LIST_HEAD(, icb_session) sess;
 	char			 name[ICB_MAXGRPLEN];
 	char			 mpass[ICB_MAXPASSLEN];
+	char			 topic[ICB_MAXTOPICLEN];
 	struct icb_session	*moder;
 };
 

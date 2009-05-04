@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.8 2009/05/04 12:00:16 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.9 2009/05/04 12:07:33 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -207,6 +207,13 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	(void)snprintf(buf, sizeof(buf), "You're now in group %s%s", ig->name,
 	    icb_ismoder(ig, is) ? " as moderator" : "");
 	icb_status(is, STATUS_STATUS, buf);
+
+	/* send user a topic name */
+	if (strlen(ig->topic) > 0) {
+		(void)snprintf(buf, sizeof(buf), "Topic for %s is \"%s\"",
+		    ig->name, ig->topic);
+		icb_status(is, STATUS_TOPIC, buf);
+	}
 }
 
 /*
@@ -362,6 +369,7 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 		{ STATUS_SIGNON,	"Sign-on" },
 		{ STATUS_SIGNOFF,	"Sign-off" },
 		{ STATUS_STATUS,	"Status" },
+		{ STATUS_TOPIC,		"Topic" },
 		{ STATUS_WARNING,	"Warning" },
 		{ NULL,			NULL }
 	};
