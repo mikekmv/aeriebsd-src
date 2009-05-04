@@ -24,7 +24,8 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] =
+    "@(#) $ABSD: print-ntp.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -51,7 +52,6 @@ struct rtentry;
 
 static void p_sfix(const struct s_fixedpt *);
 static void p_ntp_time(const struct l_fixedpt *);
-static void p_ntp_delta(const struct l_fixedpt *, const struct l_fixedpt *);
 
 /*
  * Print ntp requests
@@ -183,11 +183,11 @@ ntp_print(register const u_char *cp, u_int length)
 
 	TCHECK(bp->rec);
 	fputs(" rec ", stdout);
-	p_ntp_delta(&(bp->org), &(bp->rec));
+	p_ntp_time(&(bp->rec));
 
 	TCHECK(bp->xmt);
 	fputs(" xmt ", stdout);
-	p_ntp_delta(&(bp->org), &(bp->xmt));
+	p_ntp_time(&(bp->xmt));
 
 	return;
 
@@ -227,54 +227,4 @@ p_ntp_time(register const struct l_fixedpt *lfp)
 	ff = ff / FMAXINT;	/* shift radix point by 32 bits */
 	f = ff * 1000000000.0;	/* treat fraction as parts per billion */
 	printf("%u.%09d", i, f);
-}
-
-/* Prints time difference between *lfp and *olfp */
-static void
-p_ntp_delta(register const struct l_fixedpt *olfp,
-	    register const struct l_fixedpt *lfp)
-{
-	register int32_t i;
-	register u_int32_t uf;
-	register u_int32_t ouf;
-	register u_int32_t f;
-	register float ff;
-	int signbit;
-
-	i = ntohl(lfp->int_part) - ntohl(olfp->int_part);
-
-	uf = ntohl(lfp->fraction);
-	ouf = ntohl(olfp->fraction);
-
-	if (i > 0) {		/* new is definitely greater than old */
-		signbit = 0;
-		f = uf - ouf;
-		if (ouf > uf)	/* must borrow from high-order bits */
-			i -= 1;
-	} else if (i < 0) {	/* new is definitely less than old */
-		signbit = 1;
-		f = ouf - uf;
-		if (uf > ouf)	/* must carry into the high-order bits */
-			i += 1;
-		i = -i;
-	} else {		/* int_part is zero */
-		if (uf > ouf) {
-			signbit = 0;
-			f = uf - ouf;
-		} else {
-			signbit = 1;
-			f = ouf - uf;
-		}
-	}
-
-	ff = f;
-	if (ff < 0.0)		/* some compilers are buggy */
-		ff += FMAXINT;
-	ff = ff / FMAXINT;	/* shift radix point by 32 bits */
-	f = ff * 1000000000.0;	/* treat fraction as parts per billion */
-	if (signbit)
-		putchar('-');
-	else
-		putchar('+');
-	printf("%d.%09d", i, f);
 }
