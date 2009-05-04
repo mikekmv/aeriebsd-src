@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.7 2009/04/30 09:24:36 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.8 2009/05/04 12:00:16 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -357,6 +357,7 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 		{ STATUS_ARRIVE,	"Arrive" },
 		{ STATUS_BOOT,		"Boot" },
 		{ STATUS_DEPART,	"Depart" },
+		{ STATUS_NOAWAY,	"NoAway" },
 		{ STATUS_NOTIFY,	"Notify" },
 		{ STATUS_SIGNON,	"Sign-on" },
 		{ STATUS_SIGNOFF,	"Sign-off" },

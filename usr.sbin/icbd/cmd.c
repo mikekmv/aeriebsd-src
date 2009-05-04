@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.7 2009/04/29 18:13:47 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.8 2009/05/04 12:00:16 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,11 +30,13 @@ static const char rcsid[] = "$ABSD: cmd.c,v 1.7 2009/04/29 18:13:47 mikeb Exp $"
 
 extern int creategroups;
 
+void icb_cmd_away(struct icb_cmdarg *);
 void icb_cmd_boot(struct icb_cmdarg *);
 void icb_cmd_group(struct icb_cmdarg *);
 void icb_cmd_help(struct icb_cmdarg *);
 void icb_cmd_personal(struct icb_cmdarg *);
 void icb_cmd_motd(struct icb_cmdarg *);
+void icb_cmd_noaway(struct icb_cmdarg *);
 void icb_cmd_pass(struct icb_cmdarg *);
 void icb_cmd_status(struct icb_cmdarg *);
 void icb_cmd_topic(struct icb_cmdarg *);
@@ -49,12 +51,14 @@ struct icbcmd {
 	const char	*cmd;
 	void		(*handler)(struct icb_cmdarg *);
 } cmdtab[] = {
+	{ "away",	icb_cmd_away },
 	{ "boot",	icb_cmd_boot },
 	{ "g",		icb_cmd_group },
 	{ "help",	icb_cmd_help },
 	{ "m",		icb_cmd_personal },
 	{ "msg",	icb_cmd_personal },
 	{ "motd",	icb_cmd_motd },
+	{ "noaway",	icb_cmd_noaway },
 	{ "pass",	icb_cmd_pass },
 	{ "status",	icb_cmd_status },
 	{ "topic",	icb_cmd_topic },
@@ -73,6 +77,17 @@ icb_cmd_lookup(char *cmd)
 		if (strcasecmp(ic->cmd, cmd) == 0)
 			return (ic->handler);
 	return (NULL);
+}
+
+void
+icb_cmd_away(struct icb_cmdarg *ca)
+{
+	char buf[ICB_MSGSIZE];
+
+	SETF(ca->sess->flags, ICB_SF_AWAY);
+	icb_status(ca->sess, STATUS_AWAY, "You've been marked as away");        
+	snprintf(buf, sizeof(buf), "%s is away now", ca->sess->nick);
+	icb_status_group(ca->sess->group, ca->sess, STATUS_AWAY, buf);
 }
 
 void
@@ -191,6 +206,17 @@ icb_cmd_personal(struct icb_cmdarg *ca)
 void
 icb_cmd_motd(struct icb_cmdarg *ca)
 {
+}
+
+void
+icb_cmd_noaway(struct icb_cmdarg *ca)
+{
+	char buf[ICB_MSGSIZE];
+
+	CLRF(ca->sess->flags, ICB_SF_AWAY);
+	icb_status(ca->sess, STATUS_NOAWAY, "You're no longer marked as away"); 
+	(void)snprintf(buf, sizeof(buf), "%s is back", ca->sess->nick);
+	icb_status_group(ca->sess->group, ca->sess, STATUS_NOAWAY, buf);
 }
 
 void
