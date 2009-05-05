@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996, 1997 by N.M. Maclaren. All rights reserved.
  * Copyright (c) 1996, 1997 by University of Cambridge. All rights reserved.
@@ -28,10 +27,18 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef lint
+static const char rcsid[] =
+    "$ABSD$";
+#endif
+
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/uio.h>
 #include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
 #include <arpa/inet.h>
 
 #include <ctype.h>
@@ -111,12 +118,13 @@ int	read_packet(int, struct ntp_data *, double *, double *);
 void	unpack_ntp(struct ntp_data *, u_char *);
 double	current_time(double);
 void	create_timeval(double, struct timeval *, struct timeval *);
+double	tv2double(struct timeval *, double);
 
 #ifdef DEBUG
 void	print_packet(const struct ntp_data *);
 #endif
 
-int	corrleaps;
+int	corrleaps, tstamp;
 
 void
 ntp_client(const char *hostname, int family, struct timeval *new,
@@ -124,7 +132,7 @@ ntp_client(const char *hostname, int family, struct timeval *new,
 {
 	struct addrinfo hints, *res0, *res;
 	double offset, error;
-	int accept = 0, ret, s, ierror;
+	int accept = 0, ret, s, ierror, val;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = family;
@@ -145,6 +153,19 @@ ntp_client(const char *hostname, int family, struct timeval *new,
 		if (s < 0)
 			continue;
 
+		val = IPTOS_LOWDELAY;
+		if (res->ai_family == AF_INET &&
+		    setsockopt(s, IPPROTO_IP, IP_TOS, &val, sizeof(val)) < 0)
+			warn("setsockopt IPTOS_LOWDELAY");
+
+#ifdef SO_TIMESTAMP
+		val = 1;
+		if (setsockopt(s, SOL_SOCKET, SO_TIMESTAMP,
+		    &val, sizeof(val)) < 0)
+			warn("setsockopt SO_TIMESTAMP");
+		else
+			tstamp = 1;
+#endif
 		ret = sync_ntp(s, res->ai_addr, &offset, &error);
 		if (ret < 0) {
 #ifdef DEBUG
@@ -309,6 +330,15 @@ read_packet(int fd, struct ntp_data *data, double *off, double *error)
 	double	x, y;
 	int	length, r;
 	fd_set	*rfds;
+#ifdef SO_TIMESTAMP
+	struct msghdr	somsg;
+	struct iovec	iov[1];
+	union {
+		struct cmsghdr hdr;
+		char buf[CMSG_SPACE(sizeof tv)];
+	} cmsgbuf;
+	struct cmsghdr	*cmsg;
+#endif
 
 	rfds = calloc(howmany(fd + 1, NFDBITS), sizeof(fd_mask));
 	if (rfds == NULL)
@@ -339,7 +369,53 @@ retry:
 
 	free(rfds);
 
-	length = read(fd, receive, NTP_PACKET_MAX);
+#ifdef SO_TIMESTAMP
+	if (tstamp) {
+		somsg.msg_name = NULL;
+		somsg.msg_namelen = 0;
+		somsg.msg_iov = iov;
+		iov[0].iov_base = receive;
+		iov[0].iov_len = sizeof receive;
+		somsg.msg_iovlen = 1;
+		somsg.msg_control = cmsgbuf.buf;
+		somsg.msg_controllen = sizeof cmsgbuf.buf;
+		somsg.msg_flags = 0;
+
+		if ((length = recvmsg(fd, &somsg, 0)) < 0) {
+			warn("Unable to recvmsg NTP packet from server");
+			return (-1);
+		}
+
+		if (somsg.msg_flags & MSG_TRUNC) {
+			warnx("NTP packet received is too large");
+			return (-1);
+		}
+
+		if (somsg.msg_flags & MSG_CTRUNC) {
+			warnx("NTP control data is too large");
+			return (-1);
+		}
+
+		data->current = 0;
+		for (cmsg = CMSG_FIRSTHDR(&somsg); cmsg != NULL;
+		    cmsg = CMSG_NXTHDR(&somsg, cmsg)) {
+			if (cmsg->cmsg_level == SOL_SOCKET &&
+			    cmsg->cmsg_type == SCM_TIMESTAMP) {
+				memcpy(&tv, CMSG_DATA(cmsg), sizeof tv);
+				data->current = tv2double(&tv, JAN_1970);
+			}
+		}
+
+		if (data->current == 0) {
+			warnx("no timestamp on received packet");
+			return (-1);
+		}
+	} else
+#endif
+	{
+		length = read(fd, receive, NTP_PACKET_MAX);
+		data->current = current_time(JAN_1970);
+	}
 
 	if (length < 0) {
 		warn("Unable to receive NTP packet from server");
@@ -405,8 +481,6 @@ unpack_ntp(struct ntp_data *data, u_char *packet)
 	int i;
 	double d;
 
-	data->current = current_time(JAN_1970);
-
 	data->status = (packet[0] >> 6);
 	data->version = (packet[0] >> 3) & 0x07;
 	data->mode = packet[0] & 0x07;
@@ -434,21 +508,28 @@ double
 current_time(double offset)
 {
 	struct timeval current;
-	u_int64_t t;
 
 	if (gettimeofday(&current, NULL))
 		err(1, "Could not get local time of day");
+
+	return tv2double(&current, offset);
+}
+
+double
+tv2double(struct timeval *tv, double offset)
+{
+	u_int64_t	t;
 
 	/*
 	 * At this point, current has the current TAI time.
 	 * Now subtract leap seconds to set the posix tick.
 	 */
 
-	t = SEC_TO_TAI64(current.tv_sec);
+	t = SEC_TO_TAI64(tv->tv_sec);
 	if (corrleaps)
 		ntpleaps_sub(&t);
 
-	return (offset + TAI64_TO_SEC(t) + 1.0e-6 * current.tv_usec);
+	return (offset + TAI64_TO_SEC(t) + 1.0e-6 * tv->tv_usec);
 }
 
 /*
