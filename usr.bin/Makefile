@@ -9,10 +9,10 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	false file file2c find fgen finger fmt fold from fsplit fstat ftp \
 	gencat getcap getconf getent getopt gprof graph grep gzsig \
 	head hexdump id indent infocmp ipcrm ipcs join jot \
-	kdump keynote ktrace lam last lastcomm leave less lex lndir \
+	kdump keynote ktrace lam last lastcomm leave lex lndir \
 	locate lock logger login logname look lorder \
 	m4 mail make man mesg mg midiplay mixerctl mkdep mklocale \
-	mkstr mktemp modstat msgs \
+	mkstr mktemp modstat more msgs \
 	nc netstat newsyslog nfsstat nice nm nohup oldrdist \
 	pagesize passwd paste patch pcc pctr pkill plot pmdb pr \
 	printenv printf \
