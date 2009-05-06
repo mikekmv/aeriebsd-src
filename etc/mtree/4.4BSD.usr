@@ -79,54 +79,6 @@ tibmacs         type=dir mode=0775
 ..
 
 
-# ./contrib/lib/emacs
-/set type=file gname=wheel uname=root mode=0755
-emacs           type=dir mode=0777
-
-# ./contrib/lib/emacs/etc
-/set type=file gname=wsrc uname=root mode=0664
-etc             type=dir uname=root gname=wheel mode=0755
-# ./contrib/lib/emacs/etc
-..
-
-
-# ./contrib/lib/emacs/info
-/set type=file gname=wsrc uname=root mode=0664
-info            type=dir uname=root gname=wheel mode=0755
-# ./contrib/lib/emacs/info
-..
-
-
-# ./contrib/lib/emacs/lisp
-/set type=file gname=wsrc uname=root mode=0664
-lisp            type=dir uname=root gname=wheel mode=0755
-
-# ./contrib/lib/emacs/lisp/term
-/set type=file gname=wsrc uname=root mode=0666
-term            type=dir uname=root gname=wheel mode=0755
-# ./contrib/lib/emacs/lisp/term
-..
-
-# ./contrib/lib/emacs/lisp
-..
-
-# ./contrib/lib/emacs
-..
-
-
-# ./contrib/lib/jove
-/set type=file gname=wheel uname=root mode=0755
-jove            type=dir
-# ./contrib/lib/jove
-..
-
-
-# ./contrib/lib/perl
-/set type=file gname=obin uname=root mode=0644
-perl            type=dir mode=0755
-# ./contrib/lib/perl
-..
-
 # ./contrib/lib
 ..
 
@@ -1006,6 +958,12 @@ vax             type=dir uname=root gname=wheel mode=0775
 /set type=file gname=bin uname=root mode=0444
 18.net          type=dir uname=root gname=wheel mode=0775
 # ./share/doc/smm/18.net
+..
+
+# ./share/doc/smm/19.ntpd
+/set type=file gname=bin uname=root mode=0444
+19.ntpd         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/19.ntpd
 ..
 
 # ./share/doc/smm

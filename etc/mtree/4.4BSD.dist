@@ -323,17 +323,6 @@ lint
 # ./usr/libdata/lint
 ..
 
-# ./usr/libdata/perl5
-perl5
-
-# ./usr/libdata/perl5/site_perl
-site_perl
-# ./usr/libdata/perl5/site_perl
-..
-
-# ./usr/libdata/perl5
-..
-
 # ./usr/libdata/ssh
 ssh
 # ./usr/libdata/ssh
@@ -388,18 +377,6 @@ lib
 
 # ./usr/local/libdata
 libdata
-
-# ./usr/local/libdata/perl5
-perl5
-
-# ./usr/local/libdata/perl5/site_perl
-site_perl
-# ./usr/local/libdata/perl5/site_perl
-..
-
-# ./usr/local/libdata/perl5
-..
-
 # ./usr/local/libdata
 ..
 
@@ -841,6 +818,11 @@ smm
 # ./usr/share/doc/smm/18.net
 ..
 
+# ./usr/share/doc/smm/19.ntpd
+19.ntpd
+# ./usr/share/doc/smm/19.ntpd
+..
+
 # ./usr/share/doc/smm
 ..
 
@@ -1090,11 +1072,6 @@ generate
 ..
 
 # ./usr/share/groff_font
-..
-
-# ./usr/share/info
-info
-# ./usr/share/info
 ..
 
 # ./usr/share/lkm
