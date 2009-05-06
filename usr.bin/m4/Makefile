@@ -13,6 +13,11 @@ DPADD= ${LIBY} ${LIBL}
 SRCS=	eval.c expr.c look.c main.c misc.c gnum4.c trace.c tokenizer.l parser.y
 MAN=	m4.1
 
+# This just gets installed verbatim
+.if make(install)
+SUBDIR+= PSD.doc
+.endif
+
 parser.c parser.h: parser.y
 	${YACC} -d ${.ALLSRC} && mv y.tab.c parser.c && mv y.tab.h parser.h
 
