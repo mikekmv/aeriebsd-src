@@ -24,7 +24,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: arch.c,v 1.1.1.1 2008/08/26 14:42:37 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -78,7 +78,7 @@ main(int argc, char *argv[])
 		/* NOTREACHED */
 	}
 	if (!short_form) {
-		fputs("ABSD", stdout);
+		fputs("AerieBSD", stdout);
 		fputc('.', stdout);
 	}
 	fputs(arch, stdout);
