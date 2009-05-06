@@ -128,7 +128,7 @@ main(int argc, char *argv[])
 
 			case 'f':	/* line mode */
 			case 't':	/* label */
-				for (q = buf; q < &buf[STRBUFSZ] &&
+				for (ch2 = 0, q = buf; q < &buf[STRBUFSZ] &&
 				    (ch2 = getchar()) != EOF &&
 				    ch2 != '\n'; *q++ = ch2)
 					;

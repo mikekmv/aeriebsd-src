@@ -1,6 +1,6 @@
 
 PROG=	plot
-CFLAGS+=-Wall -g
+CFLAGS+=-Wall
 DPADD=	${LIBPLOT}
 LDADD=	-lplot
 
