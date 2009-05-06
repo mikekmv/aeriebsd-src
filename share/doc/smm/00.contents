@@ -39,12 +39,12 @@ UNIX System Manager's Manual (SMM)
 .sp
 \s-24.4 Berkeley Software Distribution\s+2
 .sp
-\fRJune, 1993\fR
+\fRJune, 2009\fR
 .PP
 This volume contains manual pages and supplementary documents useful to system
 administrators.
 The information in these documents applies to
-the 4.4BSD system as distributed by U.C. Berkeley.
+the AerieBSD system.
 .SH
 Reference Manual \- Section 8
 .tl '''(8)'
@@ -60,7 +60,7 @@ The definitive reference document for those occasions when
 you find you need to start over again.
 
 .IP
-.tl 'Building 4.4BSD Kernels with \fIConfig\fP''SMM:2'
+.tl 'Building Kernels with \fIConfig\fP''SMM:2'
 .QP
 In-depth discussions of the use and operation of the \fIconfig\fP
 program, and how to build your very own Unix kernel.
@@ -156,7 +156,6 @@ A concise description of the system interfaces used within the
 networking subsystem.
 
 .IP
-.tl 'The PERL Programming Language''SMM:19'
+.tl 'Network Time Protocol daemon Manual''SMM:19'
 .QP
-The Practical Extraction and Report Language is ideal for
-writing those pesky adminitration scripts.
+Describes local clock synchronisation using \fINTPD\fP.
