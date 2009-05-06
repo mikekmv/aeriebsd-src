@@ -3541,9 +3541,54 @@ bge_link_upd(struct bge_softc *sc)
 	if (sc->bge_flags & BGE_PHY_FIBER_TBI) {
 		status = CSR_READ_4(sc, BGE_MAC_STS);
 		if (status & BGE_MACSTAT_TBI_PCS_SYNCHED) {
+			if ((BGE_ASICREV(sc->bge_chipid) ==
+			    BGE_ASICREV_BCM5703) &&
+			    (status & BGE_MACSTAT_RX_CFG)) {
+				u_int32_t cfg;
+
+				CSR_WRITE_4(sc, BGE_TX_TBI_AUTONEG, 0);
+				BGE_SETBIT(sc, BGE_MAC_MODE,
+				    BGE_MACMODE_TBI_SEND_CFGS);
+				DELAY(9000);
+
+				/* Send a set of autonegotiation options */
+				cfg = BGE_AUTONEG_ASYMP | BGE_AUTONEG_SYMP |
+				    BGE_AUTONEG_FDUP;
+				CSR_WRITE_4(sc, BGE_TX_TBI_AUTONEG, cfg);
+				BGE_SETBIT(sc, BGE_MAC_MODE,
+				    BGE_MACMODE_TBI_SEND_CFGS);
+				DELAY(9000);
+
+				if (!(CSR_READ_4(sc, BGE_MAC_STS) &
+				    BGE_MACSTAT_RX_CFG))
+					goto an_out;
+
+				/* Send ACK & read the result */
+				cfg |= BGE_AUTONEG_CFGACK;
+				CSR_WRITE_4(sc, BGE_TX_TBI_AUTONEG, cfg);
+				BGE_SETBIT(sc, BGE_MAC_MODE,
+				    BGE_MACMODE_TBI_SEND_CFGS);
+				DELAY(9000);
+
+				/* Read the result... */
+				cfg = CSR_READ_4(sc, BGE_RX_TBI_AUTONEG);
+				if ((cfg & BGE_AUTONEG_CFGFAIL) ||
+				    !(cfg & BGE_AUTONEG_CFGACK))
+					goto an_out;
+
+				BGE_SETBIT(sc, BGE_MAC_STS,
+				    BGE_MACSTAT_CFG_CHANGED |
+				    BGE_MACSTAT_SYNC_CHANGED);
+
+				BGE_STS_CLRBIT(sc, BGE_STS_LINK);
+			}
+an_out:
 			if (!BGE_STS_BIT(sc, BGE_STS_LINK)) {
 				BGE_STS_SETBIT(sc, BGE_STS_LINK);
-				if (BGE_ASICREV(sc->bge_chipid) == BGE_ASICREV_BCM5704)
+				if (BGE_ASICREV(sc->bge_chipid) ==
+				    BGE_ASICREV_BCM5703 ||
+				    BGE_ASICREV(sc->bge_chipid) ==
+				    BGE_ASICREV_BCM5704)
 					BGE_CLRBIT(sc, BGE_MAC_MODE,
 					    BGE_MACMODE_TBI_SEND_CFGS);
 				CSR_WRITE_4(sc, BGE_MAC_STS, 0xFFFFFFFF);

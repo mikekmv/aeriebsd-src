@@ -657,6 +657,13 @@
 #define BGE_EVTENB_RXSTAT_OFLOW		0x04000000
 #define BGE_EVTENB_TXSTAT_OFLOW		0x08000000
 
+/* Autonegotiation registers */
+#define BGE_AUTONEG_CFGACK		0x0040	/* Config Acknowledgement */
+#define BGE_AUTONEG_CFGFAIL		0x1f06	/* Autoneg has failed */
+#define BGE_AUTONEG_ASYMP		0x0001	/* Asym Pause */
+#define BGE_AUTONEG_FDUP		0x2000	/* Full Duplex */
+#define BGE_AUTONEG_SYMP		0x8000	/* Sym Pause */
+
 /* LED Control Register */
 #define BGE_LEDCTL_LINKLED_OVERRIDE	0x00000001
 #define BGE_LEDCTL_1000MBPS_LED		0x00000002
