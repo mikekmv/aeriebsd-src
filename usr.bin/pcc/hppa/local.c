@@ -1,5 +1,3 @@
-/*	$OpenBSD: local.c,v 1.2 2007/11/18 17:39:55 ragge Exp $	*/
-
 /*
  * Copyright (c) 2007 Michael Shalayeff
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
@@ -713,27 +711,6 @@ instring(struct symtab *sp)
 	}
 	fwrite(str, 1, s - str, stdout);
 	printf("\\0\"\n");
-}
-
-/*
- * Print out a wide string by calling ninval().
- */
-void
-inwstring(struct symtab *sp)
-{
-	char *s = sp->sname;
-	NODE *p;
-
-	defloc(sp);
-	p = bcon(0);
-	do { 
-		if (*s++ == '\\')
-			p->n_lval = esccon(&s);
-		else
-			p->n_lval = (unsigned char)s[-1];
-		ninval(0, (MKSUE(WCHAR_TYPE))->suesize, p);
-	} while (s[-1] != 0);
-	nfree(p);
 }
 
 static int inbits, inval;

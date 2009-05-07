@@ -1,5 +1,3 @@
-/*	$OpenBSD: code.c,v 1.2 2007/11/22 15:06:43 stefan Exp $	*/
-
 /*
  * Copyright (c) 2007 Michael Shalayeff
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).

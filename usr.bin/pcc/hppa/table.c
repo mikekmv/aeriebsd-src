@@ -1,5 +1,3 @@
-/*	$OpenBSD: table.c,v 1.2 2007/12/19 20:19:54 otto Exp $	*/
-
 /*
  * Copyright (c) 2007 Michael Shalayeff
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
