@@ -22,4 +22,8 @@ CFLAGS+=-Wsign-compare
 DEBUG=	-g -ggdb
 YFLAGS=
 
+.if make(install)
+SUBDIR+= PSD.doc
+.endif
+
 .include <bsd.prog.mk>
