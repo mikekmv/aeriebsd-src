@@ -8,7 +8,7 @@ MAN=		ccom.1
 PREFIX=		/usr/local
 BINDIR=		${PREFIX}/libexec
 MANDIR=		${PREFIX}/man/man
-TARGOS=		openbsd
+TARGOS=		aeriebsd
 CLEANFILES=	cgram.h external.h external.c mkext
 
 CFLAGS+=	-DPCC_DEBUG -DGCC_COMPAT

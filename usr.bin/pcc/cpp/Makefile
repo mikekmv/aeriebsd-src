@@ -5,7 +5,7 @@ PROG=   	cpp
 PREFIX=		/usr/local
 BINDIR=		${PREFIX}/libexec
 MANDIR=		${PREFIX}/man/man
-TARGOS=		openbsd
+TARGOS=		aeriebsd
 
 CFLAGS+=	-DCPP_DEBUG -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
 CFLAGS+=	-DLIBEXECDIR=\"${PREFIX}/libexec\"

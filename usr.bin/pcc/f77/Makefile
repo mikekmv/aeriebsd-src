@@ -5,7 +5,7 @@ PROG=   	f77
 PREFIX=		/usr/local
 BINDIR=		${PREFIX}/bin
 MANDIR=		${PREFIX}/man/man
-TARGOS=		openbsd
+TARGOS=		aeriebsd
 TARGMACH=       ${MACHINE_ARCH}
 
 CPPFLAGS+=	-DLIBEXECDIR=\"${PREFIX}/libexec\"
