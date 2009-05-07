@@ -12,7 +12,6 @@
 #define HAVE_CLOSEFROM 1
 #define HAVE_DIRENT_H 1
 #define HAVE_DIRFD 1
-#define HAVE_ERR_H 1
 #define HAVE_EXTENDED_GLOB 1
 #define HAVE_FNMATCH 1
 #define HAVE_FREEIFADDRS 1
@@ -33,7 +32,6 @@
 #define HAVE_LOCKF 1
 #define HAVE_LOGIN_CAP_H 1
 #define HAVE_LONG_LONG 1
-#define HAVE_LSEARCH 1
 #define HAVE_MALLOC_H 1
 #define HAVE_MEMCHR 1
 #define HAVE_MEMCPY 1
@@ -44,6 +42,7 @@
 #define HAVE_NETGROUP_H 1
 #define HAVE_PATHS_H 1
 #define HAVE_SA_LEN 1
+#define HAVE_SETENV 1
 #define HAVE_SETEUID 1
 #define HAVE_SETLOCALE 1
 #define HAVE_SETRESUID 1
@@ -73,6 +72,7 @@
 #define HAVE_TIMESPEC 1
 #define HAVE_TZSET 1
 #define HAVE_UNISTD_H 1
+#define HAVE_UNSETENV 1
 #define HAVE_UTIMES 1
 #define HAVE_UTIME_H 1
 #define HAVE_VASPRINTF 1
@@ -98,6 +98,7 @@
 #define PASSWORD_TIMEOUT 5
 #define PRI_FAILURE "alert"
 #define PRI_SUCCESS "notice"
+#define PUTENV_CONST 1
 #define RETSIGTYPE void
 #define RUNAS_DEFAULT "root"
 #define SEND_MAIL_WHEN_NO_USER 1
@@ -109,6 +110,7 @@
 #define TIMEOUT 5
 #define TIME_WITH_SYS_TIME 1
 #define TRIES_FOR_PASSWORD 3
+#define UNSETENV_VOID 1
 #define USE_INSULTS 1
 #define VOID void
 #define WITHOUT_PASSWD 1

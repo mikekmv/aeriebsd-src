@@ -2,7 +2,9 @@
 .PATH:		${.CURDIR}/..
 
 PROG=	visudo
+SRCS=	pwutil.c visudo.c
 BINDIR=	/usr/sbin
+CPPFLAGS+=	-I..
 
 POD2MAN=/usr/bin/pod2man
 MAN=	visudo.8

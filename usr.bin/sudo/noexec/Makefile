@@ -4,7 +4,6 @@
 LIB=	noexec
 NOMAN=	yes
 SRCS=	sudo_noexec.c
-CPPFLAGS+=	-I.
 LIBDIR=	/usr/libexec
 
 DEBUGLIBS= no

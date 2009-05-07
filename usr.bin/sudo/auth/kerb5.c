@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999-2005 Todd C. Miller <Todd.Miller@courtesan.com>
+ * Copyright (c) 1999-2005, 2007-2008 Todd C. Miller <Todd.Miller@courtesan.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -54,7 +54,7 @@
 #include "sudo_auth.h"
 
 #ifndef lint
-__unused static const char rcsid[] = "$Sudo: kerb5.c,v 1.23.2.8 2008/02/13 22:17:41 millert Exp $";
+__unused static const char rcsid[] = "$Sudo: kerb5.c,v 1.36 2008/11/09 14:13:13 millert Exp $";
 #endif /* lint */
 
 #ifdef HAVE_HEIMDAL
@@ -74,6 +74,24 @@ static struct _sudo_krb5_data {
 } sudo_krb5_data = { NULL, NULL, NULL };
 typedef struct _sudo_krb5_data *sudo_krb5_datap;
 
+#ifndef HAVE_KRB5_GET_INIT_CREDS_OPT_ALLOC
+static krb5_error_code
+krb5_get_init_creds_opt_alloc(context, opts)
+    krb5_context		context;
+    krb5_get_init_creds_opt   **opts;
+{
+    *opts = emalloc(sizeof(krb5_get_init_creds_opt));
+    return 0;
+}
+
+static void
+krb5_get_init_creds_opt_free(opts)
+    krb5_get_init_creds_opt *opts;
+{
+    free(opts);
+}
+#endif
+
 int
 kerb5_init(pw, promptp, auth)
     struct passwd *pw;
@@ -87,7 +105,7 @@ kerb5_init(pw, promptp, auth)
     char		cache_name[64];
     char		*pname;
 
-    auth->data = (VOID *) &sudo_krb5_data; /* Stash all our data here */
+    auth->data = (void *) &sudo_krb5_data; /* Stash all our data here */
 
 #ifdef HAVE_KRB5_INIT_SECURE_CONTEXT
     error = krb5_init_secure_context(&(sudo_krb5_data.sudo_context));
@@ -220,10 +238,10 @@ kerb5_verify(pw, pass, auth)
 
 done:
     if (opts) {
-#ifdef HAVE_HEIMDAL
-	krb5_get_init_creds_opt_free(opts);
-#else
+#ifdef HAVE_KRB5_GET_INIT_CREDS_OPT_FREE_TWO_ARGS
 	krb5_get_init_creds_opt_free(sudo_context, opts);
+#else
+	krb5_get_init_creds_opt_free(opts);
 #endif
     }
     if (creds)

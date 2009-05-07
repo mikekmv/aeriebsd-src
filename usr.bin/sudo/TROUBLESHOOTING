@@ -158,9 +158,12 @@ A) "cd" is a shell built-in command, you can't run it as a command
 
 Q) When I try to use "cd" with sudo the command completes without
    errors but nothing happens.
-A) Some SVR4-derived OS's include a /usr/bin/cd command for reasons
-   unfathomable.  A "cd" command is totally useless since a child process
-   cannot affect the current working directory of the parent (your shell).
+A) Even though "cd" is a shell built-in command, some operating systems
+   include a /usr/bin/cd command for some reason.  A standalone
+   "cd" command is totally useless since a child process (cd) cannot
+   affect the current working directory of the parent (your shell).
+   Thus, "sudo cd /foo" will start a child process, change the
+   directory and immediately exit without doing anything useful.
 
 Q) When I run sudo it says I am not allowed to run the command as root
    but I don't want to run it as root, I want to run it as another user.
@@ -173,6 +176,14 @@ A) The default user sudo tries to run things as is always root, even if
    For example:
     Defaults:bob	runas_default=oracle
    would achieve the desired result ofr the preceding sudoers fragment.
+
+Q) When I try to run sudo via ssh, I get the error:
+    sudo: no tty present and no askpass program specified
+A) ssh does not allocate a tty by default when running a remote command.
+   Without a tty, sudo cannot disable echo when prompting for a password.
+   You can use ssh's "-t" option to force it to allocate a tty.
+   Alternately, if you do not mind your password being echoed to the
+   screen, you can use the "visiblepw" sudoers option to allow this.
 
 Q) How do you pronounce `sudo'?
 A) The official pronunciation is soo-doo (for su "do").  However, an
