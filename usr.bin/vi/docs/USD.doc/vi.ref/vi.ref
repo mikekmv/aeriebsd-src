@@ -548,7 +548,7 @@ not yet have this bit set.
 This is due to the method in which the files are created.)
 Such files are deleted when the system reboots.
 .pp
-Most of the recovery process is automated on ABSD.
+Most of the recovery process is automated.
 When the system boots, the shell script
 .LI /etc/rc
 executes the vi recovery script
@@ -1211,8 +1211,7 @@ version 5.002 or later.
 See the
 .QB "Building Nvi"
 section for more information.)
-Note that the Tcl/Tk interface is not supported in the current version
-of ABSD.
+Note that the Tcl/Tk interface is not supported.
 .pp
 The scripting language interface is still being worked on,
 therefore the following information is probably incomplete,

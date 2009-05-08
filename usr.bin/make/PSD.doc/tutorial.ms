@@ -140,12 +140,12 @@ they were last modified). Make takes these dependencies, which you
 must specify, and uses them to build whatever it is you want it to
 build.
 .LP
-ABSD's Make is based upon PMake, a parallel make originally developed
+This Make is based upon PMake, a parallel make originally developed
 for the distributed operating system called Sprite. PMake departs from
 usual Make practices in several ways. A large number of those quirks
 are not relevant in a modern POSIX world, and hence development of 
-ABSD's make has aimed at removing unwanted differences.
-Useful features of ABSD's Make which are not POSIX compliant will
+this Make has aimed at removing unwanted differences.
+Its useful features which are not POSIX compliant will
 be flagged with a little sign in the left margin, like this:
 .No
 Also note that this tutorial was originally written for PMake, and hence
@@ -668,7 +668,7 @@ and contain such things as the target's name, all of its sources (from
 all its dependency lines), those sources that were out-of-date, etc.
 .No
 POSIX defines short names for these variables, which should be used for
-portability.  ABSD's Make has longer synonyms, which will be used
+portability.  This Make has longer synonyms, which will be used
 in the rest of this tutorial for clarity.
 .LP
 Four local variables are defined for all targets. They are:
@@ -1230,7 +1230,7 @@ appear to have been updated.
 .IP \fB\-B\fP
 .Ix 0 ref compatibility
 .Ix 0 def flags -B
-Forces ABSD Make to be as POSIX-compatible as possible.
+Forces Make to be as POSIX-compatible as possible.
 This includes:
 .RS
 .IP \(bu 2

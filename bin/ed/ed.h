@@ -1,4 +1,3 @@
-
 /* ed.h: type and constant definitions for the ed editor. */
 /*
  * Copyright (c) 1993 Andrew Moore
@@ -30,7 +29,7 @@
 
 #include <sys/param.h>
 #include <errno.h>
-#if defined(sun) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__ABSD__)
+#if defined(sun) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__AerieBSD__)
 # include <limits.h>
 #endif
 #include <regex.h>

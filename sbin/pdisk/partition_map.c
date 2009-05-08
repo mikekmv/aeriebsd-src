@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: partition_map.c,v 1.1.1.1 2008/08/26 14:40:27 root Exp $";
 #endif
 
 // for *printf()
@@ -768,7 +768,7 @@ dpme_init_flags(DPME *data)
 }
 
 /* These bits are appropriate for Apple_UNIX_SVR2 partitions
- * used by ABSD.  They may be ok for A/UX, but have not been
+ * used by AerieBSD.  They may be ok for A/UX, but have not been
  * tested.
  */
 void
@@ -806,7 +806,7 @@ bzb_init_slice(BZB *bp, int slice)
 	bzb_usr_set(bp,1);
 	break;
     }
-    bzb_slice_set(bp,0);  // XXX ABSD disksubr.c ignores slice
+    bzb_slice_set(bp,0);  // XXX AerieBSD disksubr.c ignores slice
     //	bzb_slice_set(bp,slice-'a'+1);
     bp->bzb_magic = BZBMAGIC;
 }

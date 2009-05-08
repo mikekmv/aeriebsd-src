@@ -1,5 +1,5 @@
 /*
- * ABSD S/Key (skey.c)
+ * S/Key (skey.c)
  *
  * Authors:
  *          Neil M. Haller <nmh@thumper.bellcore.com>

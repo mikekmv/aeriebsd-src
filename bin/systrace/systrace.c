@@ -53,13 +53,13 @@
 #include "util.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: systrace.c,v 1.1.1.1 2008/08/26 14:36:31 root Exp $";
 #endif
 
 #define CRADLE_SERVER "cradle_server"
 #define CRADLE_UI     "cradle_ui"
 
-#define VERSION "1.6d (ABSD)"
+#define VERSION "1.6d (AerieBSD)"
 
 pid_t trpid;
 int trfd;

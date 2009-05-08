@@ -68,7 +68,7 @@ The BSD mail program was called
 .i Mail
 to differentiate it from the older mail program.
 .i /bin/mail
-is not included in ABSD so there is no ambiguity and the BSD
+is not included so there is no ambiguity and the BSD
 mail program is installed as
 .i /usr/bin/mail ;
 .i /usr/bin/Mail
@@ -89,7 +89,7 @@ When you log in, the system notifies you if there are any messages
 waiting in your system mailbox.  If you are a
 .i csh
 user, you will be notified when new mail arrives if you inform
-the shell of the location of your mailbox.  On ABSD,
+the shell of the location of your mailbox.  On AerieBSD,
 your system mailbox is located in the directory /var/mail
 in a file with your login name.  If your login name is
 .q sam,

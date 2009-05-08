@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1987, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -38,7 +37,7 @@ static const char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: disklabel.c,v 1.1.1.1 2008/08/26 14:40:21 root Exp $";
+static const char rcsid[] = "$ABSD: disklabel.c,v 1.2 2008/12/26 18:50:48 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -241,7 +240,7 @@ main(int argc, char *argv[])
 #ifdef DOSLABEL
 	/*
 	 * Check for presence of DOS partition table in
-	 * master boot record. Return pointer to ABSD
+	 * master boot record. Return pointer to AerieBSD
 	 * partition, if present. If no valid partition table,
 	 * return NULL. If valid partition table present, but no
 	 * partition to use, return a pointer to a non-386bsd

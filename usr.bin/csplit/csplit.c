@@ -255,7 +255,7 @@ cleanup(void)
 
 	/*
 	 * NOTE: One cannot portably assume to be able to call snprintf() from
-	 * inside a signal handler.  It is, however, safe to do on ABSD.
+	 * inside a signal handler.  It is, however, safe to do on AerieBSD.
 	 */
 	for (i = 0; i < nfiles; i++) {
 		snprintf(fnbuf, sizeof(fnbuf), "%s%0*ld", prefix,

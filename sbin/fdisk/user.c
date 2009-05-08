@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997 Tobias Weingartner
  * All rights reserved.
@@ -25,7 +24,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: user.c,v 1.1.1.1 2008/08/26 14:40:22 root Exp $";
 #endif
 
 #include <err.h>
@@ -49,7 +48,7 @@ static const char rcsid[] = "$ABSD$";
 /* Our command table */
 static cmd_table_t cmd_table[] = {
 	{"help",   Xhelp,	"Command help list"},
-	{"manual", Xmanual,	"Show entire ABSD man page for fdisk"},
+	{"manual", Xmanual,	"Show entire man page for fdisk"},
 	{"reinit", Xreinit,	"Re-initialize loaded MBR (to defaults)"},
 	{"setpid", Xsetpid,	"Set the identifier of a given table entry"},
 	{"disk",   Xdisk,	"Edit current drive stats"},

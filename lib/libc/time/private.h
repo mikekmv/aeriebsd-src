@@ -7,7 +7,7 @@
 ** 1996-06-05 by Arthur David Olson.
 */
 
-/* ABSD defaults */
+/* AerieBSD defaults */
 #define TM_GMTOFF		tm_gmtoff
 #define TM_ZONE			tm_zone
 #define PCTS			1

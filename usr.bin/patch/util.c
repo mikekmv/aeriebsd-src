@@ -1,4 +1,3 @@
-
 /*
  * patch - a program to apply diffs to original files
  * 
@@ -26,7 +25,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: util.c,v 1.1.1.1 2008/08/26 14:43:05 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -403,7 +402,7 @@ checked_in(char *file)
 void
 version(void)
 {
-	fprintf(stderr, "Patch version 2.0-12u8-ABSD\n");
+	fprintf(stderr, "Patch version 2.0-12u8-AerieBSD\n");
 	my_exit(EXIT_SUCCESS);
 }
 

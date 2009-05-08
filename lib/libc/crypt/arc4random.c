@@ -16,11 +16,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: arc4random.c,v 1.1.1.1 2008/08/26 14:38:26 root Exp $";
+static const char rcsid[] = "$ABSD: arc4random.c,v 1.2 2008/12/26 18:50:32 mickey Exp $";
 #endif
 
 /*
- * Arc4 random number generator for ABSD.
+ * Arc4 random number generator.
  *
  * This code is derived from section 17.1 of Applied Cryptography,
  * second edition, which describes a stream cipher allegedly

@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD: editor.c,v 1.1.1.1 2008/08/26 14:40:21 root Exp $";
+static char rcsid[] = "$ABSD: editor.c,v 1.2 2008/12/26 18:50:48 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -123,7 +123,7 @@ editor(struct disklabel *lp, int f, char *dev, char *fstabfile)
 	/* Get the on-disk geometries if possible */
 	get_geometry(f, &disk_geop);
 
-	/* How big is the ABSD portion of the disk?  */
+	/* How big is the AerieBSD portion of the disk?  */
 	find_bounds(&label);
 
 	/* Make sure there is no partition overlap. */

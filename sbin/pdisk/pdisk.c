@@ -28,7 +28,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: pdisk.c,v 1.1.1.1 2008/08/26 14:40:27 root Exp $";
 #endif
 
 // for printf()
@@ -440,7 +440,7 @@ edit(char *name, int ask_logical_size)
 	case 'h':
 	    printf("Commands are:\n");
 	    printf("  C    (create with type also specified)\n");
-	    printf("  c    create new partition (standard ABSD root)\n");
+	    printf("  c    create new partition (standard AerieBSD root)\n");
 	    printf("  d    delete a partition\n");
 	    printf("  h    help\n");
 	    printf("  i    initialize partition map\n");

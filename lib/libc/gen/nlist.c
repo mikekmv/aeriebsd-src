@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: nlist.c,v 1.1.1.1 2008/08/26 14:38:28 root Exp $";
+static const char rcsid[] = "$ABSD: nlist.c,v 1.2 2008/12/26 18:50:32 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -91,7 +91,7 @@ __aout_fdnlist(int fd, struct nlist *list)
 
 	/*
 	 * Read in the string table.  We try mmap, but that will fail
-	 * for /dev/ksyms so fall back on malloc.  Since ABSD's malloc(3)
+	 * for /dev/ksyms so fall back on malloc.  Since malloc(3)
 	 * may return memory to the system on free this does not cause bloat.
 	 */
 	strsize -= sizeof(strsize);

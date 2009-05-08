@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 1997 and 1998 WIDE Project.
  * All rights reserved.
@@ -86,7 +85,7 @@ int fclose(FILE *);
 #define	FTP_PORT	21	/* default if ! getservbyname("ftp/tcp") */
 #define	HTTP_PORT	80	/* default if ! getservbyname("http/tcp") */
 #define	HTTPS_PORT	443	/* default if ! getservbyname("https/tcp") */
-#define	HTTP_USER_AGENT	"User-Agent: ABSD ftp"	/* User-Agent string sent to web server */
+#define	HTTP_USER_AGENT	"User-Agent: AerieBSD ftp" /* User-Agent string sent to web server */
 #ifndef	GATE_PORT
 #define	GATE_PORT	21	/* default if ! getservbyname("ftpgate/tcp") */
 #endif
