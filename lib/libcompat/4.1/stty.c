@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994 Christopher G. Demetriou
  * All rights reserved.
@@ -30,7 +29,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD4";
+static const char rcsid[] = "$ABSD$";
 #endif /* not lint */
 
 #include <sgtty.h>
