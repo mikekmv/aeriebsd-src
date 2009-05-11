@@ -15,13 +15,16 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef lint
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: addr2line.c,v 1.1 2009/04/15 12:43:22 mickey Exp $";
+#endif
 
 #include <sys/param.h>
 #include <a.out.h>
 #include <elf_abi.h>
 #include <stab.h>
+#include <dwarf.h>
 #include <ar.h>
 #include <ranlib.h>
 #include <unistd.h>
@@ -45,7 +48,7 @@ static const char rcsid[] =
 #define	A2LBASENAME	2
 
 void usage(void);
-int addr2line(const char *, FILE *, long, char **, char **, int *);
+int addr2line(const char *, FILE *, long long, char **, char **, int *);
 void a2lprintf(const char *, const char *, int, int);
 
 /* a funky nlist overload for reading 32bit a.out on 64bit toys */
@@ -68,7 +71,7 @@ main(int argc, char *argv[])
 	const char *fn;
 	FILE *fp;
 	char *ep, *fname, *funame;
-	long ptr;
+	long long ptr;
 	int ch, flags, ln;
 
 	fn = "a.out";
@@ -99,17 +102,17 @@ main(int argc, char *argv[])
 	if (*argv)
 		for (; *argv; argv++) {
 			errno = 0;
-			ptr = strtoul(*argv, &ep, 0);
+			ptr = strtoull(*argv, &ep, 0);
 			if (*argv[0] == '\0' || *ep != '\0')
 				errx(1, "\'%s\' is ain't no number", *argv);
-			if (errno == ERANGE && ptr == ULONG_MAX)
+			if (errno == ERANGE && ptr == ULLONG_MAX)
 				errx(1, "\'%s\' address's out of there", *argv);
 
 			if (!addr2line(fn, fp, ptr, &fname, &funame, &ln))
 				a2lprintf(fname, funame, ln, flags);
 		}
 	else
-		while (scanf("%p", &ptr) != EOF)
+		while (scanf("%ll", &ptr) != EOF)
 			if (!addr2line(fn, fp, ptr, &fname, &funame, &ln))
 				a2lprintf(fname, funame, ln, flags);
 
@@ -141,13 +144,15 @@ usage(void)
 }
 
 int
-addr2line(const char *name, FILE *fp,long addr,char **pfn,char **pfun,int *pln)
+addr2line(const char *name, FILE *fp, long long addr, char **pfn, char **pfun,
+    int *pln)
 {
 	union hdr {
 		struct exec aout;
 		Elf32_Ehdr elf32;
 		Elf64_Ehdr elf64;
 	} head;
+	struct dwarf_nebula *dn;
 	size_t bytes;
 	int rv;
 
@@ -162,6 +167,7 @@ addr2line(const char *name, FILE *fp,long addr,char **pfn,char **pfun,int *pln)
 	if (IS_ELF(head.elf32) &&
 	    head.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
 	    head.elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
+		struct dwarf_nebula *dn;
 		Elf32_Shdr *shdr;
 		char *shstr;
 		int i;
@@ -175,7 +181,7 @@ addr2line(const char *name, FILE *fp,long addr,char **pfn,char **pfun,int *pln)
 			return 1;
 
 		for (i = 0; i < head.elf32.e_shnum; i++)
-			if (!strcmp(shstr + shdr[i].sh_name, ".debug_line"))
+			if (!strcmp(shstr + shdr[i].sh_name, DWARF_LINES))
 				break;
 
 		if (i < head.elf32.e_shnum) {
@@ -186,7 +192,15 @@ addr2line(const char *name, FILE *fp,long addr,char **pfn,char **pfun,int *pln)
 				return 1;
 			}
 
-			rv = elf32_addr2line(name, fp, addr, pfn, pfun, pln);
+			if (!(dn = elf_dwarfnebula(head.elf32.e_ident[EI_DATA],
+			    name, fp))) {
+				warn("dwarfnebula");
+				free(shstr);
+				free(shdr);
+				return 1;
+			}
+
+			rv = dwarf_addr2line(dn, name, fp, addr, pfn,pfun,pln);
 		}
 
 		free(shstr);
@@ -208,7 +222,7 @@ addr2line(const char *name, FILE *fp,long addr,char **pfn,char **pfun,int *pln)
 			return 1;
 
 		for (i = 0; i < head.elf64.e_shnum; i++)
-			if (!strcmp(shstr + shdr[i].sh_name, ".debug_line"))
+			if (!strcmp(shstr + shdr[i].sh_name, DWARF_LINES))
 				break;
 
 		if (i < head.elf64.e_shnum) {
@@ -219,7 +233,15 @@ addr2line(const char *name, FILE *fp,long addr,char **pfn,char **pfun,int *pln)
 				return 1;
 			}
 
-			rv = elf64_addr2line(name, fp, addr, pfn, pfun, pln);
+			if (!(dn = elf_dwarfnebula(head.elf32.e_ident[EI_DATA],
+			    name, fp))) {
+				warn("dwarfnebula");
+				free(shstr);
+				free(shdr);
+				return 1;
+			}
+
+			rv = dwarf_addr2line(dn, name, fp, addr, pfn,pfun,pln);
 		}
 
 		free(shstr);
