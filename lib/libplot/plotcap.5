@@ -1,16 +1,97 @@
-/*
- * Copyright (c) 2005 Michael Shalayeff
- * All rights reserved.
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF MIND, USE, DATA OR PROFITS, WHETHER IN
- * AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
- * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+.\"
+.\" Copyright (c) 2009 Michael Shalayeff
+.\" All rights reserved.
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF MIND, USE, DATA OR PROFITS, WHETHER IN
+.\" AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+.\" OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt PLOTCAP 5
+.Os
+.Sh NAME
+.Nm plotcap
+.Nd plotter description file format
+.Sh SYNOPSIS
+.Nm
+.Sh DESCRIPTION
+The
+.Nm
+file is used to describe various capabilities of plotter deveices
+for use by the
+.Xr plot 1
+and
+.Xr graph 1
+programs.
+.Pp
+.Bl -tag -width xxx -compact
+.It be
+big endian (default)
+.It cl
+set colour
+.It ci
+circle (curpt is the centre, %x, %y, %r(adius))
+.It co
+continue a line from the curpt
+.It em
+emulation mode (dumb, tek, default)
+.It er
+erase screen
+.It fi
+finish sequence
+.It in
+init sequence
+.It lb
+draw a label (if none, just out)
+.It le
+little endian
+.It lmN
+line mode (a mask is passed):
+.Bl -tag -width xxx -compact
+.It 0
+solid
+.It 1
+short dash
+.It 2
+dotted
+.It 3
+dotdashed
+.It 4
+longdashed
+.El
+.It mv
+move there
+.It pt
+pin a point (gets a colour ?, if none, just out a '.')
+.It rc
+draw an arc (curpt is a center, %x, %y, %X, %Y, %a(ngle))
+.It sp
+scale
+.It tc
+fetch the rest from the given entry
+.El
+.Sh FILES
+.Pa /usr/share/misc/plotcap
+.Sh SEE ALSO
+.Xr plot 1 ,
+.Xr graph 1 ,
+.Xr plot 3
+.Sh HISTORY
+The
+.Nm
+file first appeared in
+.Ax 1.0 .
+.Sh BUGS
+Any oter plotter descriptions except for
+.Sq ps
+and
+.Sq tek
+are not tested.
