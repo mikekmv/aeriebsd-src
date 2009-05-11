@@ -23,9 +23,9 @@
  */
 
 /* elf section nams */
-#define	DWARF_LINES	".dwarf_line"
-#define	DWARF_MACROS	".dwarf_macinfo"
-#define	DWARF_FRAMES	".dwarf_frame"
+#define	DWARF_LINES	".debug_line"
+#define	DWARF_MACROS	".debug_macinfo"
+#define	DWARF_FRAMES	".debug_frame"
 
 /* TAG definitions */
 #define	DW_TAG_array_type		0x01
