@@ -33,7 +33,7 @@
 static char sccsid[] = "@(#)screen.c	8.2 (Berkeley) 4/20/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: screen.c,v 1.1 2009/05/06 12:14:23 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -206,12 +206,16 @@ get_term(void)
 	if (sc_pad != NULL)
 		PC = *sc_pad;
 
+#if 0
 	sc_init = tgetstr("ti", &sp);
 	if (sc_init == NULL)
+#endif
 		sc_init = "";
 
+#if 0
 	sc_deinit= tgetstr("te", &sp);
 	if (sc_deinit == NULL)
+#endif
 		sc_deinit = "";
 
 	sc_eol_clear = tgetstr("ce", &sp);
