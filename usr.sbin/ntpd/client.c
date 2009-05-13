@@ -19,6 +19,7 @@
 #include <sys/param.h>
 #include <errno.h>
 #include <md5.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -217,10 +218,21 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 
 	if ((msg.status & LI_ALARM) == LI_ALARM || msg.stratum == 0 ||
 	    msg.stratum > NTP_MAXSTRATUM) {
+		char s[16];
+
+		if ((msg.status & LI_ALARM) == LI_ALARM) {
+			strlcpy(s, "alarm", sizeof(s));
+		} else if (msg.stratum == 0) {
+			/* Kiss-o'-Death (KoD) packet */
+			strlcpy(s, "KoD", sizeof(s));
+		} else if (msg.stratum > NTP_MAXSTRATUM) {
+			snprintf(s, sizeof(s), "stratum %d", msg.stratum);
+		}
 		interval = error_interval();
 		set_next(p, interval);
-		log_info("reply from %s: not synced, next query %ds",
-		    log_sockaddr((struct sockaddr *)&p->addr->ss), interval);
+		log_info("reply from %s: not synced (%s), next query %ds",
+		    log_sockaddr((struct sockaddr *)&p->addr->ss), s,
+			interval);
 		return (0);
 	}
 
@@ -243,6 +255,16 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 	T2 = lfp_to_d(msg.rectime);
 	T3 = lfp_to_d(msg.xmttime);
 
+	/*
+	 * XXX workaround: time_t / tv_sec must never wrap.
+	 * around 2020 we will need a solution (64bit time_t / tv_sec).
+	 * consider every answer with a timestamp beyond january 2030 bogus.
+	 */
+	if (T2 > JAN_2030 || T3 > JAN_2030) {
+		set_next(p, error_interval());
+		return (0);
+	}
+
 	p->reply[p->shift].offset = ((T2 - T1) + (T3 - T4)) / 2;
 	p->reply[p->shift].delay = (T4 - T1) - (T3 - T2);
 	if (p->reply[p->shift].delay < 0) {
@@ -262,7 +284,7 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 	p->reply[p->shift].status.precision = msg.precision;
 	p->reply[p->shift].status.rootdelay = sfp_to_d(msg.rootdelay);
 	p->reply[p->shift].status.rootdispersion = sfp_to_d(msg.dispersion);
-	p->reply[p->shift].status.refid = ntohl(msg.refid);
+	p->reply[p->shift].status.refid = msg.refid;
 	p->reply[p->shift].status.reftime = lfp_to_d(msg.reftime);
 	p->reply[p->shift].status.poll = msg.ppoll;
 	p->reply[p->shift].status.stratum = msg.stratum;

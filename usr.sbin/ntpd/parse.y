@@ -418,11 +418,13 @@ findeol(void)
 	int	c;
 
 	parsebuf = NULL;
-	pushback_index = 0;
 
 	/* skip to either EOF or the first real EOL */
 	while (1) {
-		c = lgetc(0);
+		if (pushback_index)
+			c = pushback_buffer[--pushback_index];
+		else
+			c = lgetc(0);
 		if (c == '\n') {
 			file->lineno++;
 			break;
@@ -556,9 +558,13 @@ pushfile(const char *name)
 {
 	struct file	*nfile;
 
-	if ((nfile = calloc(1, sizeof(struct file))) == NULL ||
-	    (nfile->name = strdup(name)) == NULL) {
+	if ((nfile = calloc(1, sizeof(struct file))) == NULL) {
 		log_warn("malloc");
+		return (NULL);
+	}
+	if ((nfile->name = strdup(name)) == NULL) {
+		log_warn("malloc");
+		free(nfile);
 		return (NULL);
 	}
 	if ((nfile->stream = fopen(nfile->name, "r")) == NULL) {

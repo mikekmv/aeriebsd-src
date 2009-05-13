@@ -361,8 +361,8 @@ ntpd_adjtime(double d)
 	static int	firstadj = 1;
 
 	d += getoffset();
-	if (d >= (double)LOG_NEGLIGEE / 1000 ||
-	    d <= -1 * (double)LOG_NEGLIGEE / 1000)
+	if (d >= (double)LOG_NEGLIGIBLE_ADJTIME / 1000 ||
+	    d <= -1 * (double)LOG_NEGLIGIBLE_ADJTIME / 1000)
 		log_info("adjusting local clock by %fs", d);
 	else
 		log_debug("adjusting local clock by %fs", d);
@@ -379,6 +379,7 @@ void
 ntpd_adjfreq(double relfreq, int wrlog)
 {
 	int64_t curfreq;
+	double ppmfreq;
 	int r;
 
 	if (adjfreq(NULL, &curfreq) == -1) {
@@ -392,10 +393,18 @@ ntpd_adjfreq(double relfreq, int wrlog)
 	 */
 	curfreq += relfreq * 1e9 * (1LL << 32);
 	r = writefreq(curfreq / 1e9 / (1LL << 32));
-	if (wrlog)
-		log_info("adjusting clock frequency by %f to %fppm%s",
-		    relfreq * 1e6, curfreq / 1e3 / (1LL << 32),
-		    r ? "" : " (no drift file)");
+	ppmfreq = relfreq * 1e6;
+	if (wrlog) {
+		if (ppmfreq >= LOG_NEGLIGIBLE_ADJFREQ ||
+		    ppmfreq <= -LOG_NEGLIGIBLE_ADJFREQ)
+			log_info("adjusting clock frequency by %f to %fppm%s",
+			    ppmfreq, curfreq / 1e3 / (1LL << 32),
+			    r ? "" : " (no drift file)");
+		else
+			log_debug("adjusting clock frequency by %f to %fppm%s",
+			    ppmfreq, curfreq / 1e3 / (1LL << 32),
+			    r ? "" : " (no drift file)");
+	}
 
 	if (adjfreq(&curfreq, NULL) == -1)
 		log_warn("adjfreq failed");
@@ -449,6 +458,8 @@ readfreq(void)
 	else if (current == 0) {
 		if (fscanf(fp, "%le", &d) == 1)
 			ntpd_adjfreq(d, 0);
+		else
+			log_warnx("can't read %s", DRIFTFILE);
 	}
 	fclose(fp);
 }

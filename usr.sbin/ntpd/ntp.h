@@ -140,6 +140,7 @@ struct ntp_query {
 #define	MODE_RES2	7	/* reserved for private use */
 
 #define	JAN_1970	2208988800UL	/* 1970 - 1900 in seconds */
+#define	JAN_2030	1893456000UL + JAN_1970	/* 1. 1. 2030 00:00:00 */
 
 #define	NTP_VERSION	4
 #define	NTP_MAXSTRATUM	15

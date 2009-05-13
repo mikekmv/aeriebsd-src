@@ -54,16 +54,18 @@
 #define	OFFSET_ARRAY_SIZE	8
 #define	SENSOR_OFFSETS		7
 #define	SETTIME_TIMEOUT		15	/* max seconds to wait with -s */
-#define	LOG_NEGLIGEE		32	/* negligible drift to not log (ms) */
+#define	LOG_NEGLIGIBLE_ADJTIME	32	/* negligible drift to not log (ms) */
+#define	LOG_NEGLIGIBLE_ADJFREQ	0.05	/* negligible rate to not log (ppm) */
 #define	FREQUENCY_SAMPLES	8	/* samples for est. of permanent drift */
 #define	MAX_FREQUENCY_ADJUST	128e-5	/* max correction per iteration */
 #define REPORT_INTERVAL		(24*60*60) /* interval between status reports */
 #define MAX_SEND_ERRORS		3	/* max send errors before reconnect */
 
 
-#define	SENSOR_DATA_MAXAGE	(15*60)
-#define	SENSOR_QUERY_INTERVAL	30
-#define	SENSOR_SCAN_INTERVAL	(5*60)
+#define	SENSOR_DATA_MAXAGE		(15*60)
+#define	SENSOR_QUERY_INTERVAL		30
+#define	SENSOR_QUERY_INTERVAL_SETTIME	(SETTIME_TIMEOUT/3)
+#define	SENSOR_SCAN_INTERVAL		(5*60)
 
 enum client_state {
 	STATE_NONE,
@@ -266,6 +268,9 @@ int	 priv_adjtime(void);
 void	 priv_settime(double);
 void	 priv_host_dns(char *, u_int32_t);
 int	 offset_compare(const void *, const void *);
+void	 update_scale(double);
+time_t	 scale_interval(time_t);
+time_t	 error_interval(void);
 extern struct ntpd_conf *conf;
 
 /* parse.y */
@@ -293,9 +298,6 @@ int	client_nextaddr(struct ntp_peer *);
 int	client_query(struct ntp_peer *);
 int	client_dispatch(struct ntp_peer *, u_int8_t);
 void	client_log_error(struct ntp_peer *, const char *, int);
-void	update_scale(double);
-time_t	scale_interval(time_t);
-time_t	error_interval(void);
 void	set_next(struct ntp_peer *, time_t);
 
 /* util.c */
@@ -315,3 +317,6 @@ int			sensor_scan(void);
 void			sensor_query(struct ntp_sensor *);
 int			sensor_hotplugfd(void);
 void			sensor_hotplugevent(int);
+
+/* ntp_dns.c */
+pid_t	ntp_dns(int[2], struct ntpd_conf *, struct passwd *);

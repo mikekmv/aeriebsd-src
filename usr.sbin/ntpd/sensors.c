@@ -103,7 +103,7 @@ sensor_add(int sensordev, char *dxname)
 	struct ntp_sensor	*s;
 	struct ntp_conf_sensor	*cs;
 
-	/* check wether it is already there */
+	/* check whether it is already there */
 	TAILQ_FOREACH(s, &conf->ntp_sensors, entry)
 		if (!strcmp(s->device, dxname))
 			return;
@@ -135,9 +135,8 @@ sensor_add(int sensordev, char *dxname)
 
 	TAILQ_INSERT_TAIL(&conf->ntp_sensors, s, entry);
 
-	log_debug("sensor %s added (weight %d, correction %.6f, refstr %-4s)",
+	log_debug("sensor %s added (weight %d, correction %.6f, refstr %.4s)",
 	    s->device, s->weight, s->correction / 1e6, &s->refid);
-	s->refid = htonl(s->refid);
 }
 
 void
@@ -154,7 +153,10 @@ sensor_query(struct ntp_sensor *s)
 	char		 dxname[MAXDEVNAMLEN];
 	struct sensor	 sensor;
 
-	s->next = getmonotime() + SENSOR_QUERY_INTERVAL;
+	if (conf->settime)
+		s->next = getmonotime() + SENSOR_QUERY_INTERVAL_SETTIME;
+	else
+		s->next = getmonotime() + SENSOR_QUERY_INTERVAL;
 
 	/* rcvd is walltime here, monotime in client.c. not used elsewhere */
 	if (s->update.rcvd < time(NULL) - SENSOR_DATA_MAXAGE)
@@ -189,7 +191,7 @@ sensor_query(struct ntp_sensor *s)
 	s->offsets[s->shift].rcvd = sensor.tv.tv_sec;
 	s->offsets[s->shift].good = 1;
 
-	s->offsets[s->shift].status.refid = s->refid;
+	s->offsets[s->shift].status.send_refid = s->refid;
 	s->offsets[s->shift].status.stratum = 0;	/* increased when sent out */
 	s->offsets[s->shift].status.rootdelay = 0;
 	s->offsets[s->shift].status.rootdispersion = 0;

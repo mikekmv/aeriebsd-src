@@ -74,9 +74,7 @@ setup_listeners(struct servent *se, struct ntpd_conf *lconf, u_int *cnt)
 		freeifaddrs(ifa);
 	}
 
-	TAILQ_FOREACH(la, &lconf->listen_addrs, entry) {
-		new_cnt++;
-
+	for (la = TAILQ_FIRST(&lconf->listen_addrs); la; ) {
 		switch (la->sa.ss_family) {
 		case AF_INET:
 			if (((struct sockaddr_in *)&la->sa)->sin_port == 0)
@@ -103,8 +101,20 @@ setup_listeners(struct servent *se, struct ntpd_conf *lconf, u_int *cnt)
 			log_warn("setsockopt IPTOS_LOWDELAY");
 
 		if (bind(la->fd, (struct sockaddr *)&la->sa,
-		    SA_LEN((struct sockaddr *)&la->sa)) == -1)
-			fatal("bind");
+		    SA_LEN((struct sockaddr *)&la->sa)) == -1) {
+			struct listen_addr	*nla;
+
+			log_warn("bind on %s failed, skipping",
+			    log_sockaddr((struct sockaddr *)&la->sa));
+			close(la->fd);
+			nla = TAILQ_NEXT(la, entry);
+			TAILQ_REMOVE(&lconf->listen_addrs, la, entry);
+			free(la);
+			la = nla;
+			continue;
+		}
+		new_cnt++;
+		la = TAILQ_NEXT(la, entry);
 	}
 
 	*cnt = new_cnt;
