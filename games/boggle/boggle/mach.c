@@ -35,7 +35,7 @@
 #if 0
 static char sccsid[] = "@(#)mach.c	8.1 (Berkeley) 6/11/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: mach.c,v 1.1.1.1 2008/08/26 14:36:42 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -172,7 +172,7 @@ results(void)
 	denom2 = tnpwords + tnmwords;
  
 	move(SCORE_LINE, SCORE_COL);
-	printw("Score: %d out of %d\n", npwords, nmwords);
+	printw("Score: %d out of %d\n", npwords, npwords + nmwords);
 	move(SCORE_LINE + 1, SCORE_COL);
 	printw("Percentage: %0.2f%% (%0.2f%% over %d game%s)\n",
 	denom1 ? (100.0 * npwords) / (double) (npwords + nmwords) : 0.0,
