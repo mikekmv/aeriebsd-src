@@ -33,7 +33,7 @@
 static char sccsid[] = "@(#)prim.c	8.1 (Berkeley) 6/6/93";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: prim.c,v 1.1 2009/05/06 12:14:23 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -553,6 +553,8 @@ get_back_scroll(void)
 	return (sc_height - 1);
 }
 
+regex_t regex_store, *regex;
+
 /*
  * Search for the n-th occurence of a specified pattern, 
  * either forward or backward.
@@ -560,7 +562,6 @@ get_back_scroll(void)
 int
 search(int search_forward, char *pattern, int n, int wantmatch)
 {
-	regex_t regex;
 	char *p, *q;
 	off_t pos, linepos;
 	int linenum, linematch, err;
@@ -573,16 +574,28 @@ search(int search_forward, char *pattern, int n, int wantmatch)
 		for (p = pattern;  *p;  p++)
 			if (isupper(*p))
 				*p = tolower(*p);
+
+	if (regex && pattern) {
+		regfree(regex);
+		regex = NULL;
+	}
+
+	if (!regex && !pattern) {
+		error("No previous regular expression.");
+		return (0);
+	}
+
 	/*
 	 * (regcomp handles a null pattern internally, 
 	 *  so there is no need to check for a null pattern here.)
 	 */
-	if ((err = regcomp(&regex, pattern, REG_BASIC))) {
+	if (!regex && (err = regcomp(&regex_store, pattern, REG_BASIC))) {
 		char buf[40];
-		regerror(err, &regex, buf, sizeof(buf));
+		regerror(err, regex, buf, sizeof(buf));
 		error(buf);
 		return (0);
 	}
+	regex = &regex_store;
 
 	/*
 	 * Figure out where to start the search.
@@ -609,7 +622,8 @@ search(int search_forward, char *pattern, int n, int wantmatch)
 		 * Can't find anyplace to start searching from.
 		 */
 		error("Nothing to search");
-		regfree(&regex);
+		regfree(regex);
+		regex = NULL;
 		return(0);
 	}
 
@@ -622,7 +636,6 @@ search(int search_forward, char *pattern, int n, int wantmatch)
 		 */
 		if (sigs) {
 			/* A signal aborts the search */
-			regfree(&regex);
 			return(0);
 		}
 
@@ -651,7 +664,6 @@ search(int search_forward, char *pattern, int n, int wantmatch)
 			 * We hit EOF/BOF without a match.
 			 */
 			error("Pattern not found");
-			regfree(&regex);
 			return(0);
 		}
 
@@ -689,7 +701,7 @@ search(int search_forward, char *pattern, int n, int wantmatch)
 		 * This is done in a variety of ways, depending
 		 * on what pattern matching functions are available.
 		 */
-		linematch = (regexec(&regex, line, 0, NULL, 0) == 0);
+		linematch = (regexec(regex, line, 0, NULL, 0) == 0);
 
 		/*
 		 * We are successful if wantmatch and linematch are
@@ -702,7 +714,6 @@ search(int search_forward, char *pattern, int n, int wantmatch)
 			break;
 	}
 
-	regfree(&regex);
 	jump_loc(linepos);
 	return(1);
 }
