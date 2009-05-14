@@ -1,0 +1,54 @@
+.\"
+.\" Copyright (c) 2009 Michael Shalayeff
+.\" All rights reserved.
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF MIND, USE, DATA OR PROFITS, WHETHER IN
+.\" AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+.\" OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt HIMEM 4
+.Os
+.Sh NAME
+.Nm himem.sys
+.Nd access for high memory on i386 platforms
+.Sh SYNOPSIS
+.Cd "himem* at root"
+.Cd "scsibus* at himem?"
+.Sh DESCRIPTION
+The
+.Nm
+driver provides access to the high (above 4G boundary) memory
+and represents it as
+.Xr sd 4 .
+.Pp
+This drive then can be labeled using
+.Xr disklabel 8
+and formatted for your favourite file system.
+.Pp
+.Nm
+does not require any support for PAE (Physical Address Extension)
+in the kernel virtual memory system and does all the work of
+accessing the higher memory all by itself.
+.Sh SEE ALSO
+.Xr intro 4 ,
+.Xr scsi 4 ,
+.Xr sd 4
+.Sh HISTORY
+The
+.Nm
+driver first appeared in
+.Ax 1.0 .
+.Sh AUTHORS
+The
+.Nm
+driver was written by
+.An Michael Shalayeff Aq mickey@lucifier.net .
