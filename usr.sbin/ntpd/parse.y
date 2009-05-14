@@ -99,7 +99,7 @@ main		: LISTEN ON address	{
 			struct ntp_addr		*h, *next;
 
 			if ((h = $3->a) == NULL &&
-			    (host_dns($3->name, &h) == -1 || !h)) {
+			    (host_dns($3->name, &h, conf) == -1 || !h)) {
 				yyerror("could not resolve \"%s\"", $3->name);
 				free($3->name);
 				free($3);

@@ -73,7 +73,7 @@ usage(void)
 {
 	extern char *__progname;
 
-	fprintf(stderr, "usage: %s [-dnSsv] [-f file]\n", __progname);
+	fprintf(stderr, "usage: %s [-46dnSsv] [-f file]\n", __progname);
 	exit(1);
 }
 
@@ -98,8 +98,15 @@ main(int argc, char *argv[])
 	log_init(1);		/* log to stderr until daemonized */
 	res_init();		/* XXX */
 
-	while ((ch = getopt(argc, argv, "df:nsSv")) != -1) {
+	lconf.family = PF_UNSPEC;
+	while ((ch = getopt(argc, argv, "46df:nsSv")) != -1) {
 		switch (ch) {
+		case '4':
+			lconf.family = PF_INET;
+			break;
+		case '6':
+			lconf.family = PF_INET6;
+			break;
 		case 'd':
 			lconf.debug = 1;
 			break;
@@ -321,7 +328,7 @@ dispatch_imsg(struct ntpd_conf *lconf)
 			if (name[imsg.hdr.len] != '\0' ||
 			    strlen(name) != imsg.hdr.len)
 				fatalx("invalid IMSG_HOST_DNS received");
-			if ((cnt = host_dns(name, &hn)) == -1)
+			if ((cnt = host_dns(name, &hn, lconf)) == -1)
 				break;
 			buf = imsg_create(ibuf, IMSG_HOST_DNS,
 			    imsg.hdr.peerid, 0,

@@ -111,7 +111,7 @@ host_v6(const char *s)
 }
 
 int
-host_dns(const char *s, struct ntp_addr **hn)
+host_dns(const char *s, struct ntp_addr **hn, struct ntpd_conf *lconf)
 {
 	struct addrinfo		 hints, *res0, *res;
 	int			 error, cnt = 0;
@@ -120,7 +120,7 @@ host_dns(const char *s, struct ntp_addr **hn)
 	struct ntp_addr		*h, *hh = NULL;
 
 	bzero(&hints, sizeof(hints));
-	hints.ai_family = PF_UNSPEC;
+	hints.ai_family = lconf->family;
 	hints.ai_socktype = SOCK_DGRAM; /* DUMMY */
 	error = getaddrinfo(s, NULL, &hints, &res0);
 	if (error == EAI_AGAIN || error == EAI_NODATA || error == EAI_NONAME)

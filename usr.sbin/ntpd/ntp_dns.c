@@ -145,7 +145,7 @@ dns_dispatch_imsg(void)
 			if (name[imsg.hdr.len] != '\0' ||
 			    strlen(name) != imsg.hdr.len)
 				fatalx("invalid IMSG_HOST_DNS received");
-			if ((cnt = host_dns(name, &hn)) == -1)
+			if ((cnt = host_dns(name, &hn, conf)) == -1)
 				break;
 			buf = imsg_create(ibuf_dns, IMSG_HOST_DNS,
 			    imsg.hdr.peerid, 0,

@@ -175,6 +175,7 @@ struct ntpd_conf {
 	u_int8_t					debug;
 	u_int32_t					scale;
 	u_int8_t					noaction;
+	u_int8_t					family;
 };
 
 struct buf {
@@ -277,8 +278,8 @@ extern struct ntpd_conf *conf;
 int	 parse_config(const char *, struct ntpd_conf *);
 
 /* config.c */
-int			 host(const char *, struct ntp_addr **);
-int			 host_dns(const char *, struct ntp_addr **);
+int	 host(const char *, struct ntp_addr **);
+int	 host_dns(const char *, struct ntp_addr **, struct ntpd_conf *);
 struct ntp_peer		*new_peer(void);
 struct ntp_conf_sensor	*new_sensor(char *);
 
