@@ -5,6 +5,7 @@ SRCS=	plot_open.c plot_close.c plot_erase.c plot_space.c \
 	plot_move.c plot_point.c plot_dot.c plot_cont.c plot_line.c \
 	plot_circle.c plot_arc.c plot_label.c plot_linemod.c \
 	plotsubr.c
+WANTLINT=
 MAN=	plot.3 plotcap.5
 MLINKS+=plot.3 plot_arc.3 plot.3 plot_circle.3 plot.3 plot_close.3 \
 	plot.3 plot_cont.3 plot.3 plot_erase.3 plot.3 plot_label.3 \
