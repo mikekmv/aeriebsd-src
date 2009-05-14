@@ -96,7 +96,7 @@
 
 #include "isadma.h"
 
-extern	paddr_t avail_end;
+extern	u_int64_t avail_end;
 
 #define	IDTVEC(name)	__CONCAT(X,name)
 /* default interrupt vector table entries */

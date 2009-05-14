@@ -78,7 +78,7 @@ int	pciaddr_device_is_agp(pci_chipset_tag_t, pcitag_t);
 void
 pci_addr_fixup(struct pcibios_softc *sc, pci_chipset_tag_t pc, int maxbus)
 {
-	extern paddr_t avail_end;
+	extern u_int64_t avail_end;
 	const char *verbose_header = 
 		"[%s]-----------------------\n"
 		"  device vendor product\n"
@@ -134,8 +134,9 @@ pci_addr_fixup(struct pcibios_softc *sc, pci_chipset_tag_t pc, int maxbus)
 		start = PCIADDR_ISAMEM_RESERVE;
 	sc->mem_alloc_start = (start + 0x100000 + 1) & ~(0x100000 - 1);
 	sc->port_alloc_start = PCIADDR_ISAPORT_RESERVE;
-	PCIBIOS_PRINTV((" Physical memory end: 0x%08x\n PCI memory mapped I/O "
-	    "space start: 0x%08x\n", avail_end, sc->mem_alloc_start));
+	PCIBIOS_PRINTV((" Physical memory end: 0x%08llx\n"
+	    "  PCI memory mapped I/O space start: 0x%08x\n",
+	    avail_end, sc->mem_alloc_start));
 
 	/* 
 	 * 4. do fixup 

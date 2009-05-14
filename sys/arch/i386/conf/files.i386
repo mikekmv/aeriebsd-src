@@ -435,6 +435,10 @@ device	esm
 attach	esm at mainbus
 file	arch/i386/i386/esm.c			esm needs-flag
 
+device	himem: scsi
+attach	himem at root
+file    arch/i386/i386/himem.c			himem needs-flag
+
 #
 # VESA
 #

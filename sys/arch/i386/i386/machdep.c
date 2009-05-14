@@ -221,7 +221,7 @@ int	i386_has_sse2;
 int	i386_has_xcrypt;
 
 bootarg_t *bootargp;
-paddr_t avail_end;
+u_int64_t avail_end, avail_end2;
 
 struct vm_map *exec_map = NULL;
 struct vm_map *phys_map = NULL;
@@ -2970,7 +2970,7 @@ init386(paddr_t first_avail)
 	 * account all the memory passed in the map from /boot
 	 * calculate avail_end and count the physmem.
 	 */
-	avail_end = 0;
+	avail_end = avail_end2 = 0;
 	physmem = 0;
 #ifdef DEBUG
 	printf("memmap:");
@@ -2986,6 +2986,8 @@ init386(paddr_t first_avail)
 #ifdef DEBUG
 				printf("-H");
 #endif
+				avail_end2 = MAX(avail_end2,
+				    trunc_page(im->addr + im->size));
 				continue;
 			}
 

@@ -69,6 +69,7 @@
 #include <dev/cons.h>
 
 #include "ioapic.h"
+#include "himem.h"
 
 #if NIOAPIC > 0
 #include <machine/i82093var.h>
@@ -115,6 +116,10 @@ cpu_configure(void)
 
 	if (config_rootfound("mainbus", NULL) == NULL)
 		panic("cpu_configure: mainbus not configured");
+
+#if NHIMEM > 0
+	config_rootfound("himem", NULL);
+#endif
 
 #if NIOAPIC > 0
 	if (nioapics > 0)

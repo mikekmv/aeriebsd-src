@@ -36,6 +36,8 @@ option		PROCFS		# /proc
 config		bsd	swap generic
 
 mainbus0 at root
+himem0	at root		# himem.sys
+scsibus* at himem?
 
 cpu0	at mainbus?
 bios0	at mainbus0

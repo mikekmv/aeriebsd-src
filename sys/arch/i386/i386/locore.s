@@ -42,6 +42,7 @@
 #include "pctr.h"
 #include "ksyms.h"
 #include "acpi.h"
+#include "himem.h"
 
 #include <sys/errno.h>
 #include <sys/syscall.h>
@@ -1819,6 +1820,70 @@ ENTRY(i686_pagezero)
 
 	popl	%ebx
 	popl	%edi
+	ret
+#endif
+
+#if NHIMEM > 0
+/*
+ * void
+ * himem_zefix(vaddr_t pdir, void *src, void *dst, int len)
+ *
+ * switch to PAE mode and copy some pages. come back before xmas.
+ * hafta be some serious splipi() or bad shitz would happenz.
+ *
+ */
+ENTRY(himem_zefix)
+#ifdef DDB
+	pushl	%ebp
+	movl	%esp,%ebp
+#endif
+	pushf
+	cli
+	pushl	%esi
+	pushl	%edi
+	movl	8(%ebp), %edi
+	movl	%cr3, %esi
+	addl	$KERNBASE, %esi
+	addl	$4*8, %edi	/* save current PD content */
+	movl	$8, %ecx
+	cld
+	rep
+	movsl
+	movl	8(%ebp), %esi	/* install our PDI */
+	movl	%cr3, %edi
+	addl	$KERNBASE, %edi
+	movl	$8, %ecx
+	cld
+	rep
+	movsl
+	movl	12(%ebp), %esi
+	movl	16(%ebp), %edi
+	movl	20(%ebp), %ecx
+	shrl	$2, %ecx
+	movl	%cr4, %eax
+	orl	$(CR4_PAE|CR4_PSE), %eax
+	movl	%eax, %cr4	/* also flushes the hell out of TLBs */
+	cld
+	rep
+	movsl
+	movl	%cr4, %eax
+	andl	$~(CR4_PAE|CR4_PSE), %eax
+	movl	%eax, %cr4	/* again flushes the hell out of TLBs */
+	xorl	%eax, %eax
+	movl	8(%ebp), %esi	/* restore original PD contents */
+	movl	%cr3, %edi
+	addl	$KERNBASE, %edi
+	addl	$4*8, %esi
+	movl	$8, %ecx
+	cld
+	rep
+	movsl
+	popl	%edi
+	popl	%esi
+	popf
+#ifdef DDB
+	leave
+#endif
 	ret
 #endif
 
