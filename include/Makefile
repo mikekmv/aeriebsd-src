@@ -37,12 +37,12 @@ LDIRS=	altq crypto ddb dev isofs miscfs net netatalk netinet netinet6 \
 
 # Directories with an includes target
 RDIRS=	../lib/libpthread ../lib/libcompat ../lib/libcurses \
-	../lib/libform ../lib/libssl ../lib/libmenu \
+	../lib/libelf ../lib/libform ../lib/libssl ../lib/libmenu \
 	../lib/libocurses ../lib/libossaudio ../lib/libpanel ../lib/librpcsvc \
 	../lib/libskey ../lib/libsectok ../lib/libedit ../lib/libexpat \
-	../lib/libpcap ../lib/libutil ../lib/libusbhid ../lib/libwrap \
-	../lib/libz ../lib/libkeynote ../lib/libevent ../usr.bin/lex \
-	../sys/arch/${MACHINE}
+	../lib/libpcap ../lib/libplot ../lib/libutil ../lib/libusbhid \
+	../lib/libwrap ../lib/libz ../lib/libkeynote ../lib/libevent \
+	../usr.bin/lex ../sys/arch/${MACHINE}
 
 # Places using Makefile that needs a prerequisite target met before includes
 PRDIRS=
