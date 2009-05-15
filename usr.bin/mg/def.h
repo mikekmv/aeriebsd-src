@@ -271,7 +271,8 @@ struct buffer {
 #endif
 #define BFOVERWRITE 0x08		/* overwrite mode		 */
 #define BFREADONLY  0x10		/* read only mode		 */
-
+#define BFDIRTY     0x20		/* Buffer was modified elsewhere */
+#define BFIGNDIRTY  0x40		/* Ignore modifications */
 /*
  * This structure holds information about recent actions for the Undo command.
  */
@@ -403,6 +404,7 @@ int		 usebuffer(int, int);
 int		 notmodified(int, int);
 int		 popbuftop(struct buffer *);
 int		 getbufcwd(char *, size_t);
+int		 checkdirty(struct buffer *);
 
 /* display.c */
 int		vtresize(int, int, int);
@@ -423,6 +425,7 @@ void		 free_file_list(struct list *);
 
 /* fileio.c */
 int		 ffropen(const char *, struct buffer *);
+void		 ffstat(struct buffer *);
 int		 ffwopen(const char *, struct buffer *);
 int		 ffclose(struct buffer *);
 int		 ffputbuf(struct buffer *);
@@ -433,6 +436,8 @@ char		*startupfile(char *);
 int		 copy(char *, char *);
 struct list	*make_file_list(char *);
 int		 fisdir(const char *);
+int		 fchecktime(struct buffer *);
+int		 fupdstat(struct buffer *);
 
 /* kbd.c X */
 int		 do_meta(int, int);
@@ -603,12 +608,12 @@ int		 cntnonmatchlines(int, int);
 void		 free_undo_record(struct undo_rec *);
 int		 undo_dump(int, int);
 int		 undo_enabled(void);
-int		 undo_enable(int);
-void		 undo_add_boundary(void);
+int		 undo_enable(int, int);
+int		 undo_add_boundary(int, int);
 void		 undo_add_modified(void);
 int		 undo_add_insert(struct line *, int, int);
 int		 undo_add_delete(struct line *, int, int);
-void		 undo_boundary_enable(int);
+int		 undo_boundary_enable(int, int);
 int		 undo_add_change(struct line *, int, int);
 int		 undo(int, int);
 

@@ -97,6 +97,8 @@ lowerregion(int f, int n)
 	struct region	 region;
 	int	 loffs, c, s;
 
+	if ((s = checkdirty(curbp)) != TRUE)
+		return (s);
 	if (curbp->b_flag & BFREADONLY) {
 		ewprintf("Buffer is read-only");
 		return (FALSE);
@@ -138,6 +140,8 @@ upperregion(int f, int n)
 	struct region	  region;
 	int	  loffs, c, s;
 
+	if ((s = checkdirty(curbp)) != TRUE)
+		return (s);
 	if (curbp->b_flag & BFREADONLY) {
 		ewprintf("Buffer is read-only");
 		return (FALSE);
@@ -260,6 +264,8 @@ prefixregion(int f, int n)
 	int	 nline;
 	int	 s;
 
+	if ((s = checkdirty(curbp)) != TRUE)
+		return (s);
 	if (curbp->b_flag & BFREADONLY) {
 		ewprintf("Buffer is read-only");
 		return (FALSE);

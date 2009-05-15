@@ -1,6 +1,6 @@
 .\" This file is in the public domain.
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt MG 1
 .Os
 .Sh NAME
@@ -324,6 +324,8 @@ parenthesis, brackets, and braces, the character itself
 is used as its own match.
 .It bsmap-mode
 Toggle bsmap mode, where DEL and c-H are swapped.
+.It c-mode
+Toggle a KNF-compliant mode for editing C program files.
 .It call-last-kbd-macro
 Invoke the keyboard macro.
 .It capitalize-word
@@ -735,6 +737,15 @@ make this work.
 Undo the most recent action.
 If invoked again without an intervening command,
 move the undo pointer to the previous action and undo it.
+.It undo-boundary
+Add an undo boundary.
+This is not usually done interactively.
+.It undo-boundary-toggle
+Toggle whether undo boundaries are generated.
+Undo boundaries are often disabled before operations that should
+be considered atomically undoable.
+.It undo-enable
+Toggle whether undo information is kept.
 .It undo-list
 Show the undo records for the current buffer in a new buffer.
 .It universal-argument

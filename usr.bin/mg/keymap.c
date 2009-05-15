@@ -40,6 +40,18 @@ struct KEYMAPE (2 + IMAPEXT) helpmap = {
 };
 #endif /* !NO_HELP */
 
+struct KEYMAPE (1 + IMAPEXT) ccmap = {
+	1,
+	1 + IMAPEXT,
+	rescan,
+	{
+		{
+			CCHR('@'), CCHR('@'), (PF[]){ rescan }, NULL
+		}
+	}
+};
+
+
 static PF cX4cF[] = {
 	poptofile,		/* ^f */
 	ctrlg			/* ^g */
@@ -303,17 +315,21 @@ static PF fund_at[] = {
 	setmark,		/* ^@ */
 	gotobol,		/* ^A */
 	backchar,		/* ^B */
-	rescan,			/* ^C */
+	NULL,			/* ^C */
 	forwdel,		/* ^D */
 	gotoeol,		/* ^E */
 	forwchar,		/* ^F */
 	ctrlg,			/* ^G */
+};
+
+static PF fund_h[] = {
 #ifndef NO_HELP
 	NULL,			/* ^H */
 #else /* !NO_HELP */
 	rescan,			/* ^H */
 #endif /* !NO_HELP */
 };
+
 
 /* ^I is selfinsert */
 static PF fund_CJ[] = {
@@ -356,18 +372,21 @@ static PF fund_cb[] = {
 #define NFUND_XMAPS	0	/* extra map sections after normal ones */
 #endif
 
-static struct KEYMAPE (5 + NFUND_XMAPS + IMAPEXT) fundmap = {
-	5 + NFUND_XMAPS,
-	5 + NFUND_XMAPS + IMAPEXT,
+static struct KEYMAPE (6 + NFUND_XMAPS + IMAPEXT) fundmap = {
+	6 + NFUND_XMAPS,
+	6 + NFUND_XMAPS + IMAPEXT,
 	selfinsert,
 	{
+		{
+			CCHR('@'), CCHR('G'), fund_at, (KEYMAP *) & ccmap
+		},
 #ifndef NO_HELP
 		{
-			CCHR('@'), CCHR('H'), fund_at, (KEYMAP *) & helpmap
+			CCHR('H'), CCHR('H'), fund_h, (KEYMAP *) & helpmap
 		},
 #else /* !NO_HELP */
 		{
-			CCHR('@'), CCHR('H'), fund_at, NULL
+			CCHR('@'), CCHR('H'), fund_h, NULL
 		},
 #endif /* !NO_HELP */
 		{

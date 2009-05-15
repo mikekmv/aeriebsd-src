@@ -221,8 +221,7 @@ yank(int f, int n)
 	/* newline counting */
 	nline = 0;
 
-	undo_add_boundary();
-	undo_boundary_enable(FALSE);
+	undo_boundary_enable(FFRAND, 0);
 	while (n--) {
 		/* mark around last yank */
 		isetmark();
@@ -250,8 +249,7 @@ yank(int f, int n)
 		curwp->w_linep = lp;
 		curwp->w_flag |= WFFULL;
 	}
-	undo_boundary_enable(TRUE);
-	undo_add_boundary();
+	undo_boundary_enable(FFRAND, 1);
 	return (TRUE);
 }
 

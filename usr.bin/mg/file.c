@@ -211,7 +211,7 @@ readin(char *fname)
 	if (bclear(curbp) != TRUE)
 		return (TRUE);
 	/* Clear readonly. May be set by autoexec path */
-	curbp->b_flag &=~ BFREADONLY;
+	curbp->b_flag &= ~BFREADONLY;
 	if ((status = insertfile(fname, fname, TRUE)) != TRUE) {
 		ewprintf("File is not readable: %s", fname);
 		return (FALSE);
@@ -292,7 +292,7 @@ insertfile(char *fname, char *newname, int replacebuf)
 	char *dp;
 
 	if (replacebuf == TRUE)
-		x = undo_enable(FALSE);
+		x = undo_enable(FFRAND, 0);
 	else
 		x = undo_enabled();
 
@@ -334,7 +334,7 @@ insertfile(char *fname, char *newname, int replacebuf)
 		killbuffer(bp);
 		if ((bp = dired_(fname)) == NULL)
 			return (FALSE);
-		undo_enable(x);
+		undo_enable(FFRAND, x);
 		curbp = bp;
 		return (showbuffer(bp, curwp, WFFULL | WFMODE));
 	} else {
@@ -350,10 +350,10 @@ insertfile(char *fname, char *newname, int replacebuf)
 	 * We will delete this newline after insertion.
 	 * Disable undo, as we create the undo record manually.
 	 */
-	x2 = undo_enable(FALSE);
+	x2 = undo_enable(FFRAND, 0);
 	(void)lnewline();
 	olp = lback(curwp->w_dotp);
-	undo_enable(x2);
+	undo_enable(FFRAND, x2);
 
 	nline = 0;
 	siz = 0;
@@ -476,7 +476,7 @@ out:		lp2 = NULL;
 	}
 	bp->b_lines += nline;
 cleanup:
-	undo_enable(x);
+	undo_enable(FFRAND, x);
 
 	/* return FALSE if error */
 	return (s != FIOERR);
@@ -565,6 +565,14 @@ buffsave(struct buffer *bp)
 		return (FALSE);
 	}
 
+	/* Ensure file has not been modified elsewhere */
+	/* We don't use the ignore flag here */
+	if (fchecktime(bp) != TRUE) {
+		if ((s = eyesno("File has changed on disk since last save. "
+		    "Save anyway")) != TRUE)
+			return (s);
+	}
+	
 	if (makebackup && (bp->b_flag & BFBAK)) {
 		s = fbackupfile(bp->b_fname);
 		/* hard error */
@@ -631,6 +639,7 @@ writeout(struct buffer *bp, char *fn)
 	} else
 		/* ignore close error if it is a write error */
 		(void)ffclose(bp);
+	(void)fupdstat(bp);
 	return (s == FIOSUC);
 }
 

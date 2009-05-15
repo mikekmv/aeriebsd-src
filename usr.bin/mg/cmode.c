@@ -91,7 +91,7 @@ cmode_init(void)
 	funmap_add(cc_tab, "c-tab-or-indent");
 	funmap_add(cc_indent, "c-indent");
 	funmap_add(cc_lfindent, "c-indent-and-newline");
-	maps_add((KEYMAP *)&cmodemap, "c-mode");
+	maps_add((KEYMAP *)&cmodemap, "c");
 }
 
 /*
@@ -100,7 +100,7 @@ cmode_init(void)
 int
 cmode(int f, int n)
 {
-	return(changemode(f, n, "c-mode"));
+	return(changemode(f, n, "c"));
 }
 
 /*
@@ -163,8 +163,7 @@ cc_indent(int f, int n)
 	if (n < 0)
 		return (FALSE);
 
-	undo_add_boundary();
-	undo_boundary_enable(FALSE);
+	undo_boundary_enable(FFRAND, 0);
 	if (cc_strip_trailp)
 		deltrailwhite(FFRAND, 1);
 
@@ -187,8 +186,7 @@ cc_indent(int f, int n)
 	else
 		ret = indent(FFOTHARG, pi + ci);
 	
-	undo_boundary_enable(TRUE);
-	undo_add_boundary();
+	undo_boundary_enable(FFRAND, 1);
 	
 	return (ret);
 }
