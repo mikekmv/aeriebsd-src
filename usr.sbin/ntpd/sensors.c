@@ -121,7 +121,7 @@ sensor_add(int sensordev, char *dxname)
 
 	s->next = getmonotime();
 	s->weight = cs->weight;
-	s->correction = cs->correction;
+	s->correction = us2int64(cs->correction);
 	if ((s->device = strdup(dxname)) == NULL)
 		fatal("sensor_add strdup");
 	s->sensordevid = sensordev;
@@ -135,8 +135,10 @@ sensor_add(int sensordev, char *dxname)
 
 	TAILQ_INSERT_TAIL(&conf->ntp_sensors, s, entry);
 
-	log_debug("sensor %s added (weight %d, correction %.6f, refstr %.4s)",
-	    s->device, s->weight, s->correction / 1e6, &s->refid);
+	log_debug(
+	    "sensor %s added (weight %d, correction %d.%06u, refstr %-4s)",
+	    s->device, s->weight,
+	    cs->correction / 1000000, cs->correction % 1000000, &s->refid);
 }
 
 void
@@ -152,6 +154,7 @@ sensor_query(struct ntp_sensor *s)
 {
 	char		 dxname[MAXDEVNAMLEN];
 	struct sensor	 sensor;
+	struct timeval	 tv;
 
 	if (conf->settime)
 		s->next = getmonotime() + SENSOR_QUERY_INTERVAL_SETTIME;
@@ -186,16 +189,17 @@ sensor_query(struct ntp_sensor *s)
 	 * sensor.value = TS - TD in ns
 	 * if value is positive, system time is ahead
 	 */
-	s->offsets[s->shift].offset = (sensor.value / -1e9) - getoffset() +
-	    (s->correction / 1e6);
+	getoffset(&tv);
+	s->offsets[s->shift].offset = s->correction +
+	    us2int64(sensor.value / 1000) - timeval2int64(&tv);
 	s->offsets[s->shift].rcvd = sensor.tv.tv_sec;
 	s->offsets[s->shift].good = 1;
 
 	s->offsets[s->shift].status.send_refid = s->refid;
-	s->offsets[s->shift].status.stratum = 0;	/* increased when sent out */
+	s->offsets[s->shift].status.stratum = 0;  /* increased when sent out */
 	s->offsets[s->shift].status.rootdelay = 0;
 	s->offsets[s->shift].status.rootdispersion = 0;
-	s->offsets[s->shift].status.reftime = sensor.tv.tv_sec;
+	s->offsets[s->shift].status.reftime = timeval2int64(&sensor.tv);
 	s->offsets[s->shift].status.synced = 1;
 
 	log_debug("sensor %s: offset %f", s->device,
@@ -226,10 +230,9 @@ sensor_update(struct ntp_sensor *s)
 
 	i = SENSOR_OFFSETS / 2;
 	memcpy(&s->update, offsets[i], sizeof(s->update));
-	if (SENSOR_OFFSETS % 2 == 0) {
+	if (SENSOR_OFFSETS % 2 == 0)
 		s->update.offset =
 		    (offsets[i - 1]->offset + offsets[i]->offset) / 2;
-	}
 	free(offsets);
 
 	log_debug("sensor update %s: offset %f", s->device, s->update.offset);

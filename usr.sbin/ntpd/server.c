@@ -127,11 +127,11 @@ server_dispatch(int fd, struct ntpd_conf *lconf)
 {
 	ssize_t			 size;
 	u_int8_t		 version;
-	double			 rectime;
 	struct sockaddr_storage	 fsa;
 	socklen_t		 fsa_len;
 	struct ntp_msg		 query, reply;
 	char			 buf[NTP_MSGSIZE];
+	int64_t			 rectime;
 
 	fsa_len = sizeof(fsa);
 	if ((size = recvfrom(fd, &buf, sizeof(buf), 0,
@@ -146,7 +146,6 @@ server_dispatch(int fd, struct ntpd_conf *lconf)
 	}
 
 	rectime = gettime_corrected();
-
 	if (ntp_getmsg((struct sockaddr *)&fsa, buf, size, &query) == -1)
 		return (0);
 
@@ -163,15 +162,16 @@ server_dispatch(int fd, struct ntpd_conf *lconf)
 	else
 		reply.status |= MODE_SYM_PAS;
 
+	reply.refid = lconf->status.refid;
 	reply.stratum =	lconf->status.stratum;
 	reply.ppoll = query.ppoll;
 	reply.precision = lconf->status.precision;
-	reply.rectime = d_to_lfp(rectime);
-	reply.reftime = d_to_lfp(lconf->status.reftime);
-	reply.xmttime = d_to_lfp(gettime_corrected());
 	reply.orgtime = query.xmttime;
-	reply.rootdelay = d_to_sfp(lconf->status.rootdelay);
-	reply.refid = lconf->status.refid;
+	int642lfxt(rectime, &reply.rectime);
+	int642lfxt(lconf->status.reftime, &reply.reftime);
+	int642sfxt(lconf->status.rootdelay, &reply.rootdelay);
+	rectime = gettime_corrected();
+	int642lfxt(rectime, &reply.xmttime);  
 
 	ntp_sendmsg(fd, (struct sockaddr *)&fsa, &reply, size, 0);
 	return (0);

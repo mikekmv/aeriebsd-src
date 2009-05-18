@@ -43,10 +43,40 @@ struct l_fixedpt {
 	u_int32_t fractionl;
 };
 
+	/* 2147 = 2^31 / 1000000 */
+#define	timeval2int64(tv)					\
+    (((int64_t)(tv)->tv_sec << 31) + (2147U * (tv)->tv_usec))
+
+#define	int64init(s,u)	(((int64_t)(s) << 31) + (2147U * (u)))
+
+#define	int642timeval(i,tv) do {				\
+	(tv)->tv_sec = (i) >> 31;				\
+	(tv)->tv_usec = ((i) & 0x7fffffff) / 2148;		\
+} while (0)
+
+#define	lfxt2int64(lf)						\
+    (((int64_t)ntohl((lf)->int_partl) << 31) + (ntohl((lf)->fractionl) >> 1))
+
+#define	int642lfxt(i,lf) do {					\
+	(lf)->int_partl = htonl((i) >> 31);			\
+	(lf)->fractionl = htonl((i) << 1);			\
+} while (0)
+
+#define	us2int64(us)	(2147ULL * (us))
+
 struct s_fixedpt {
 	u_int16_t int_parts;
 	u_int16_t fractions;
 };
+
+#define	int642sfxt(i,lf) do {					\
+	(lf)->int_parts = htons((i) >> 31);			\
+	(lf)->fractions = htons((i & 0x7fffffff) >> 15);	\
+} while (0)
+
+#define	sfxt2int64(lf)				\
+    (((int64_t)ntohs((lf)->int_parts) << 31) +	\
+    ((u_int)ntohs((lf)->fractions) << 15))
 
 /* RFC Section 4
  *
@@ -107,9 +137,9 @@ struct ntp_msg {
 } __packed;
 
 struct ntp_query {
-	int			fd;
-	struct ntp_msg		msg;
-	double			xmttime;
+	struct ntp_msg	msg;
+	int64_t		xmttime;
+	int		fd;
 };
 
 /*
@@ -139,8 +169,8 @@ struct ntp_query {
 #define	MODE_RES1	6	/* reserved for NTP control message */
 #define	MODE_RES2	7	/* reserved for private use */
 
-#define	JAN_1970	2208988800UL	/* 1970 - 1900 in seconds */
-#define	JAN_2030	1893456000UL + JAN_1970	/* 1. 1. 2030 00:00:00 */
+#define	JAN_1970 2208988800LL	/* 1970 - 1900 in seconds */
+#define	JAN_2030 ((JAN_1970 + 1893456000LL) << 31) /* 1. 1. 2030 00:00:00 */
 
 #define	NTP_VERSION	4
 #define	NTP_MAXSTRATUM	15

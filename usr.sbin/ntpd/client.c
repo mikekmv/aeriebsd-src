@@ -195,19 +195,21 @@ client_query(struct ntp_peer *p)
 int
 client_dispatch(struct ntp_peer *p, u_int8_t settime)
 {
-	struct ntp_msg		 msg;
-	struct msghdr		 somsg;
-	struct iovec		 iov[1];   
-	struct timeval		 tv1;
-	char			 buf[NTP_MSGSIZE];
+	extern int debug; /* from log.c */
+	struct ntp_msg	msg;
+	struct msghdr	somsg;
+	struct iovec	iov[1];
+	struct timeval	tv1, tv2;
+	char		buf[NTP_MSGSIZE];
 	union {
 		struct cmsghdr hdr;
 		char buf[CMSG_SPACE(sizeof tv1)];
 	} cmsgbuf;
-	struct cmsghdr		*cmsg;
-	ssize_t			 size;
-	double			 T1, T2, T3, T4;
-	time_t			 interval;
+	int64_t		T1, T2, T3, T4;
+	struct cmsghdr	*cmsg;
+	struct ntp_offset *reply;
+	ssize_t		size;
+	time_t		interval;
 
 	somsg.msg_name = NULL;
 	somsg.msg_namelen = 0;
@@ -219,7 +221,7 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 	somsg.msg_controllen = sizeof cmsgbuf.buf;
 	somsg.msg_flags = 0;
 
-	T4 = getoffset();
+	getoffset(&tv2);
 	if ((size = recvmsg(p->query->fd, &somsg, 0)) < 0) {
 		if (errno == EHOSTUNREACH || errno == EHOSTDOWN ||
 		    errno == ENETUNREACH || errno == ENETDOWN ||
@@ -243,17 +245,20 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 		return (0);
 	}
 
+	T4 = 0;
 	for (cmsg = CMSG_FIRSTHDR(&somsg); cmsg != NULL;
 	    cmsg = CMSG_NXTHDR(&somsg, cmsg)) {
 		if (cmsg->cmsg_level == SOL_SOCKET &&
 		    cmsg->cmsg_type == SCM_TIMESTAMP) {
 			memcpy(&tv1, CMSG_DATA(cmsg), sizeof tv1);
-			T4 += tv1.tv_sec + JAN_1970 + 1.0e-6 * tv1.tv_usec;
+			T4 = timeval2int64(&tv1);
+			T4 += (int64_t)JAN_1970 << 31;
+			T4 += timeval2int64(&tv2);
 			break;
 		}
 	}
 
-	if (T4 < JAN_1970) {
+	if (T4 == 0) {
 		client_log_error(p, "recvmsg control format", EBADF);
 		set_next(p, error_interval());
 		return (0);
@@ -301,8 +306,8 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 	 */
 
 	T1 = p->query->xmttime;
-	T2 = lfp_to_d(msg.rectime);
-	T3 = lfp_to_d(msg.xmttime);
+	T2 = lfxt2int64(&msg.rectime);
+	T3 = lfxt2int64(&msg.xmttime);
 
 	/*
 	 * XXX workaround: time_t / tv_sec must never wrap.
@@ -314,32 +319,51 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 		return (0);
 	}
 
-	p->reply[p->shift].offset = ((T2 - T1) + (T3 - T4)) / 2;
-	p->reply[p->shift].delay = (T4 - T1) - (T3 - T2);
-	if (p->reply[p->shift].delay < 0) {
+	if (T4 <= T1) {
 		interval = error_interval();
 		set_next(p, interval);
-		log_info("reply from %s: negative delay %fs, "
-		    "next query %ds",
-		    log_sockaddr((struct sockaddr *)&p->addr->ss),
-		    p->reply[p->shift].delay, interval);
+		log_info("local clock is not monotonic");
 		return (0);
 	}
-	p->reply[p->shift].error = (T2 - T1) - (T3 - T4);
-	p->reply[p->shift].rcvd = getmonotime();
-	p->reply[p->shift].good = 1;
 
-	p->reply[p->shift].status.leap = (msg.status & LIMASK);
-	p->reply[p->shift].status.precision = msg.precision;
-	p->reply[p->shift].status.rootdelay = sfp_to_d(msg.rootdelay);
-	p->reply[p->shift].status.rootdispersion = sfp_to_d(msg.dispersion);
-	p->reply[p->shift].status.refid = msg.refid;
-	p->reply[p->shift].status.reftime = lfp_to_d(msg.reftime);
-	p->reply[p->shift].status.poll = msg.ppoll;
-	p->reply[p->shift].status.stratum = msg.stratum;
+	reply = &p->reply[p->shift];
+
+	reply->offset = ((T2 - T1) + (T3 - T4)) / 2;
+	reply->delay = (T4 - T1) - (T3 - T2);
+	if (reply->delay < 0) {
+		char *s = "";
+		int64_t val = reply->delay;
+		if (val < 0) {
+			s = "-";
+			val = -val;
+		}
+		int642timeval(val, &tv2);
+		interval = error_interval();
+		set_next(p, interval);
+		log_info("reply from %s: negative delay %s%ld.%06lus "
+		    "next query %ds",
+		    log_sockaddr((struct sockaddr *)&p->addr->ss),
+		    s, tv2.tv_sec, tv2.tv_usec, interval);
+		return (0);
+	}
+
+	p->shift = (p->shift + 1) % OFFSET_ARRAY_SIZE;
+
+	reply->error = (T2 - T1) - (T3 - T4);
+	reply->rcvd = getmonotime();
+	reply->good = 1;
+
+	reply->status.leap = msg.status & LIMASK;
+	reply->status.precision = msg.precision;
+	reply->status.refid = ntohl(msg.refid);
+	reply->status.poll = msg.ppoll;
+	reply->status.stratum = msg.stratum;
+	reply->status.rootdelay = sfxt2int64(&msg.rootdelay);
+	reply->status.rootdispersion = sfxt2int64(&msg.dispersion);
+	reply->status.reftime = lfxt2int64(&msg.reftime);
 
 	if (p->addr->ss.ss_family == AF_INET) {
-		p->reply[p->shift].status.send_refid =
+		reply->status.send_refid =
 		    ((struct sockaddr_in *)&p->addr->ss)->sin_addr.s_addr;
 	} else if (p->addr->ss.ss_family == AF_INET6) {
 		MD5_CTX		context;
@@ -349,10 +373,10 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 		MD5Update(&context, ((struct sockaddr_in6 *)&p->addr->ss)->
 		    sin6_addr.s6_addr, sizeof(struct in6_addr));
 		MD5Final(digest, &context);
-		memcpy((char *)&p->reply[p->shift].status.send_refid, digest,
+		memcpy((char *)&reply->status.send_refid, digest,
 		    sizeof(u_int32_t));
 	} else
-		p->reply[p->shift].status.send_refid = msg.xmttime.fractionl;
+		reply->status.send_refid = msg.xmttime.fractionl;
 
 	if (p->trustlevel < TRUSTLEVEL_PATHETIC)
 		interval = scale_interval(INTERVAL_QUERY_PATHETIC);
@@ -373,16 +397,25 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 		p->trustlevel++;
 	}
 
-	log_debug("reply from %s: offset %f delay %f, "
-	    "next query %ds", log_sockaddr((struct sockaddr *)&p->addr->ss),
-	    p->reply[p->shift].offset, p->reply[p->shift].delay, interval);
+	if (debug) {
+		char *s = "";
+		int64_t val = reply->offset;
+		if (val < 0) {
+			s = "-";
+			val = -val;
+		}
+		int642timeval(val, &tv1);
+		int642timeval(reply->delay, &tv2);
+		log_debug("reply from %s: "
+		    "offset %s%ld.%06lus delay %ld.%06lus, next query %ds",
+		    log_sockaddr((struct sockaddr *)&p->addr->ss),
+		    s, tv1.tv_sec, tv1.tv_usec, tv2.tv_sec, tv2.tv_usec,
+		    interval);
+	}
 
 	client_update(p);
 	if (settime)
-		priv_settime(p->reply[p->shift].offset);
-
-	if (++p->shift >= OFFSET_ARRAY_SIZE)
-		p->shift = 0;
+		priv_settime(reply->offset);
 
 	return (0);
 }
@@ -390,7 +423,8 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 int
 client_update(struct ntp_peer *p)
 {
-	int	i, best = 0, good = 0;
+	struct ntp_offset	*reply, *best, *last;
+	int	good;
 
 	/*
 	 * clock filter
@@ -399,28 +433,26 @@ client_update(struct ntp_peer *p)
 	 * invalidate it and all older ones
 	 */
 
-	for (i = 0; good == 0 && i < OFFSET_ARRAY_SIZE; i++)
-		if (p->reply[i].good) {
-			good++;
-			best = i;
-		}
+	for (good = 0, best = NULL, reply = &p->reply[0],
+	    last = &p->reply[OFFSET_ARRAY_SIZE]; reply < last; reply++) {
+		if (!reply->good)
+			continue;
+		good++;
+		if (!best)
+			best = reply;
+		if (reply->delay < best->delay)
+			best = reply;
+	}
 
-	for (; i < OFFSET_ARRAY_SIZE; i++)
-		if (p->reply[i].good) {
-			good++;
-			if (p->reply[i].delay < p->reply[best].delay)
-				best = i;
-		}
-
-	if (good < 8)
+	if (good < OFFSET_ARRAY_SIZE)
 		return (-1);
 
-	memcpy(&p->update, &p->reply[best], sizeof(p->update));
-	if (priv_adjtime() == 0) {
-		for (i = 0; i < OFFSET_ARRAY_SIZE; i++)
-			if (p->reply[i].rcvd <= p->reply[best].rcvd)
-				p->reply[i].good = 0;
-	}
+	memcpy(&p->update, best, sizeof(p->update));
+	if (priv_adjtime() == 0)
+		for (reply = &p->reply[0], last = &p->reply[OFFSET_ARRAY_SIZE];
+		    reply < last; reply++)
+			if (reply->rcvd <= best->rcvd)
+				reply->good = 0;
 	return (0);
 }
 

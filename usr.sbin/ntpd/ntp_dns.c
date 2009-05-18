@@ -147,14 +147,15 @@ dns_dispatch_imsg(void)
 				fatalx("invalid IMSG_HOST_DNS received");
 			if ((cnt = host_dns(name, &hn, conf)) == -1)
 				break;
+			if (cnt > MAX_SERVERS_DNS)
+				cnt = MAX_SERVERS_DNS;
 			buf = imsg_create(ibuf_dns, IMSG_HOST_DNS,
 			    imsg.hdr.peerid, 0,
 			    cnt * sizeof(struct sockaddr_storage));
 			if (buf == NULL)
 				break;
-			if (cnt > 0)
-				for (h = hn; h != NULL; h = h->next)
-					imsg_add(buf, &h->ss, sizeof(h->ss));
+			for (h = hn; cnt-- && h != NULL; h = h->next)
+				imsg_add(buf, &h->ss, sizeof(h->ss));
 
 			imsg_close(ibuf_dns, buf);
 			break;

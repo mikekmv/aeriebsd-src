@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2003, 2004 Henning Brauer <henning@openbsd.org>
  * Copyright (c) 2004 Alexander Guy <alexander.guy@andern.org>
@@ -168,7 +167,7 @@ ntp_main(int pipe_prnt[2], struct ntpd_conf *nconf, struct passwd *pw)
 	conf->freq.xx = 0.0;
 	conf->freq.xy = 0.0;
 	conf->freq.y = 0.0;
-	conf->freq.overall_offset = 0.0;
+	conf->freq.overall_offset = 0;
 
 	conf->status.synced = 0;
 	clock_getres(CLOCK_REALTIME, &tp);
@@ -522,9 +521,10 @@ peer_remove(struct ntp_peer *p)
 }
 
 static void
-priv_adjfreq(double offset)
+priv_adjfreq(int64_t offset)
 {
-	double curtime, freq;
+	double curtime, freq, doff;
+	int64_t relfreq;
 
 	if (!conf->status.synced)
 		return;
@@ -535,12 +535,12 @@ priv_adjfreq(double offset)
 		return;
 
 	conf->freq.overall_offset += offset;
-	offset = conf->freq.overall_offset;
 
 	curtime = gettime_corrected();
-	conf->freq.xy += offset * curtime;
+	doff = conf->freq.overall_offset;
+	conf->freq.xy += doff * curtime;
 	conf->freq.x += curtime;
-	conf->freq.y += offset;
+	conf->freq.y += doff;
 	conf->freq.xx += curtime * curtime;
 
 	if (conf->freq.samples % FREQUENCY_SAMPLES != 0)
@@ -556,13 +556,14 @@ priv_adjfreq(double offset)
 	else if (freq < -MAX_FREQUENCY_ADJUST)
 		freq = -MAX_FREQUENCY_ADJUST;
 
-	imsg_compose(ibuf_main, IMSG_ADJFREQ, 0, 0, &freq, sizeof(freq));
+	relfreq = freq * 1e9 * (1LL << 32);
+	imsg_compose(ibuf_main, IMSG_ADJFREQ, 0, 0, &relfreq, sizeof(relfreq));
 	conf->freq.xy = 0.0;
 	conf->freq.x = 0.0;
 	conf->freq.y = 0.0;
 	conf->freq.xx = 0.0;
 	conf->freq.samples = 0;
-	conf->freq.overall_offset = 0.0;
+	conf->freq.overall_offset = 0;
 	conf->freq.num++;
 }
 
@@ -573,7 +574,7 @@ priv_adjtime(void)
 	struct ntp_sensor	 *s;
 	int			  offset_cnt = 0, i = 0, j;
 	struct ntp_offset	**offsets;
-	double			  offset_median;
+	int64_t			  offset_median;
 
 	TAILQ_FOREACH(p, &conf->ntp_peers, entry) {
 		if (p->trustlevel < TRUSTLEVEL_BADPEER)
@@ -626,8 +627,8 @@ priv_adjtime(void)
 	}
 	conf->status.leap = offsets[i]->status.leap;
 
-	imsg_compose(ibuf_main, IMSG_ADJTIME, 0, 0,
-	    &offset_median, sizeof(offset_median));
+	imsg_compose(ibuf_main, IMSG_ADJTIME, 0, 0, &offset_median,
+	    sizeof(offset_median));
 
 	priv_adjfreq(offset_median);
 
@@ -671,9 +672,12 @@ offset_compare(const void *aa, const void *bb)
 }
 
 void
-priv_settime(double offset)
+priv_settime(int64_t offset)
 {
-	imsg_compose(ibuf_main, IMSG_SETTIME, 0, 0, &offset, sizeof(offset));
+	struct timeval tv;
+
+	int642timeval(offset, &tv);
+	imsg_compose(ibuf_main, IMSG_SETTIME, 0, 0, &tv, sizeof(tv));
 	conf->settime = 0;
 }
 
@@ -687,19 +691,25 @@ priv_host_dns(char *name, u_int32_t peerid)
 }
 
 void
-update_scale(double offset)
+update_scale(int64_t offset)
 {
-	offset += getoffset();
-	if (offset < 0)
-		offset = -offset;
+	struct timeval tv;
+	int64_t qsmax, qsmin;
 
-	if (offset > QSCALE_OFF_MAX || !conf->status.synced ||
-	    conf->freq.num < 3)
+	getoffset(&tv);
+	offset += timeval2int64(&tv);
+	if (offset < 0)
+		offset = (-offset);
+
+	qsmax = int64init(QSCALE_OFF_MAX / 1000000, QSCALE_OFF_MAX % 1000000);
+	qsmin = int64init(QSCALE_OFF_MIN / 1000000, QSCALE_OFF_MIN % 1000000);
+	if (offset > qsmax || !conf->status.synced || conf->freq.num < 3)
 		conf->scale = 1;
-	else if (offset < QSCALE_OFF_MIN)
+	else if (offset < qsmin)
 		conf->scale = QSCALE_OFF_MAX / QSCALE_OFF_MIN;
 	else
-		conf->scale = QSCALE_OFF_MAX / offset;
+		conf->scale = qsmax / offset;
+	log_debug("poll scale %d", conf->scale);
 }
 
 time_t
@@ -776,4 +786,41 @@ report_peers(int always)
 				log_warnx("bad sensor %s", s->device);
 		}
 	}
+}
+
+int64_t
+gettime_corrected()
+{
+	struct timeval tv;
+	getoffset(&tv);
+	return gettime() + timeval2int64(&tv);
+}
+
+void
+getoffset(struct timeval *tv)
+{
+	if (adjtime(NULL, tv) == -1)
+		memset(tv, 0, sizeof(*tv));
+}
+
+int64_t
+gettime()
+{
+	struct timeval	tv;
+
+	if (gettimeofday(&tv, NULL) == -1)
+		fatal("gettimeofday");
+
+	return timeval2int64(&tv) + ((int64_t)JAN_1970 << 31);
+}
+
+time_t
+getmonotime(void)
+{
+	struct timespec	ts;
+
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0)
+		fatal("clock_gettime");
+
+	return (ts.tv_sec);
 }

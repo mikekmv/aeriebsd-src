@@ -38,11 +38,11 @@ int		main(int, char *[]);
 int		check_child(pid_t, const char *);
 int		dispatch_imsg(struct ntpd_conf *);
 void		reset_adjtime(void);
-int		ntpd_adjtime(double);
-void		ntpd_adjfreq(double, int);
-void		ntpd_settime(double);
+int		ntpd_adjtime(int64_t);
+void		ntpd_adjfreq(int64_t, int);
+void		ntpd_settime(struct timeval *);
 void		readfreq(void);
-int		writefreq(double);
+int		writefreq(int64_t);
 
 volatile sig_atomic_t	 quit = 0;
 volatile sig_atomic_t	 reconfig = 0;
@@ -271,10 +271,11 @@ dispatch_imsg(struct ntpd_conf *lconf)
 {
 	struct imsg		 imsg;
 	int			 n, cnt;
-	double			 d;
+	struct timeval		 tv;
 	char			*name;
 	struct ntp_addr		*h, *hn;
 	struct buf		*buf;
+	int64_t			 d;
 
 	if ((n = imsg_read(ibuf)) == -1)
 		return (-1);
@@ -306,13 +307,13 @@ dispatch_imsg(struct ntpd_conf *lconf)
 			ntpd_adjfreq(d, 1);
 			break;
 		case IMSG_SETTIME:
-			if (imsg.hdr.len != IMSG_HEADER_SIZE + sizeof(d))
+			if (imsg.hdr.len != IMSG_HEADER_SIZE + sizeof(tv))
 				fatalx("invalid IMSG_SETTIME received");
 			if (!lconf->settime)
 				break;
 			log_init(lconf->debug);
-			memcpy(&d, imsg.data, sizeof(d));
-			ntpd_settime(d);
+			memcpy(&tv, imsg.data, sizeof(tv));
+			ntpd_settime(&tv);
 			/* daemonize now */
 			if (!lconf->debug)
 				if (daemon(1, 0))
@@ -361,19 +362,30 @@ reset_adjtime(void)
 }
 
 int
-ntpd_adjtime(double d)
+ntpd_adjtime(int64_t d)
 {
-	struct timeval	tv, olddelta;
-	int		synced = 0;
 	static int	firstadj = 1;
+	struct timeval	tv, tv1, olddelta;
+	char		*s = "";
+	int		synced = 0;
 
-	d += getoffset();
-	if (d >= (double)LOG_NEGLIGIBLE_ADJTIME / 1000 ||
-	    d <= -1 * (double)LOG_NEGLIGIBLE_ADJTIME / 1000)
-		log_info("adjusting local clock by %fs", d);
+	getoffset(&olddelta);
+	int642timeval(d, &tv);
+	timeradd(&tv, &olddelta, &tv);
+
+	if (d < 0) {
+		s = "-";
+		d = -d;
+	}
+
+	int642timeval(d, &tv1);
+	if (tv1.tv_sec || tv1.tv_usec >= LOG_NEGLIGEE * 1000)
+		log_info("adjusting local clock by %s%ld.%06lus",
+		    s, tv1.tv_sec, tv1.tv_usec);
 	else
-		log_debug("adjusting local clock by %fs", d);
-	d_to_tv(d, &tv);
+		log_debug("adjusting local clock by %s%ld.%06lus",
+		    s, tv1.tv_sec, tv1.tv_usec);
+
 	if (adjtime(&tv, &olddelta) == -1)
 		log_warn("adjtime failed");
 	else if (!firstadj && olddelta.tv_sec == 0 && olddelta.tv_usec == 0)
@@ -383,44 +395,48 @@ ntpd_adjtime(double d)
 }
 
 void
-ntpd_adjfreq(double relfreq, int wrlog)
+ntpd_adjfreq(int64_t relfreq, int wrlog)
 {
 	int64_t curfreq;
-	double ppmfreq;
 	int r;
 
 	if (adjfreq(NULL, &curfreq) == -1) {
 		log_warn("adjfreq failed");
 		return;
 	}
-
-	/*
-	 * adjfreq's unit is ns/s shifted left 32; convert relfreq to
-	 * that unit before adding. We log values in part per million.
-	 */
-	curfreq += relfreq * 1e9 * (1LL << 32);
-	r = writefreq(curfreq / 1e9 / (1LL << 32));
-	ppmfreq = relfreq * 1e6;
-	if (wrlog) {
-		if (ppmfreq >= LOG_NEGLIGIBLE_ADJFREQ ||
-		    ppmfreq <= -LOG_NEGLIGIBLE_ADJFREQ)
-			log_info("adjusting clock frequency by %f to %fppm%s",
-			    ppmfreq, curfreq / 1e3 / (1LL << 32),
-			    r ? "" : " (no drift file)");
-		else
-			log_debug("adjusting clock frequency by %f to %fppm%s",
-			    ppmfreq, curfreq / 1e3 / (1LL << 32),
-			    r ? "" : " (no drift file)");
-	}
-
+	curfreq += relfreq;
 	if (adjfreq(&curfreq, NULL) == -1)
 		log_warn("adjfreq failed");
+
+	/*
+	 * adjfreq's unit is ns/s shifted left 32.
+	 * We log values in part per million.
+	 */
+	r = writefreq(curfreq);
+	if (wrlog) {
+		char *s1 = "", *s2 = "";
+
+		if (relfreq < 0) {
+			relfreq = -relfreq;
+			s1 = "-";
+		}
+		if (curfreq < 0) {
+			curfreq = -curfreq;
+			s2 = "-";
+		}
+		log_info("adjusting clock frequency by %s0.%06d to "
+		    "%s%d.%06dppm%s",
+		    s1, (int)(relfreq >> 32) % 1000000,
+		    s2, (int)(curfreq >> 32) / 1000000,
+		    (int)(curfreq >> 32) % 1000000,
+		    r ? " (no drift file)" : "");
+	}
 }
 
 void
-ntpd_settime(double d)
+ntpd_settime(struct timeval *tv)
 {
-	struct timeval	tv, curtime;
+	struct timeval	curtime;
 	char		buf[80];
 	time_t		tval;
 
@@ -428,9 +444,8 @@ ntpd_settime(double d)
 		log_warn("gettimeofday");
 		return;
 	}
-	d_to_tv(d, &tv);
-	curtime.tv_usec += tv.tv_usec + 1000000;
-	curtime.tv_sec += tv.tv_sec - 1 + (curtime.tv_usec / 1000000);
+	curtime.tv_usec += tv->tv_usec + 1000000;
+	curtime.tv_sec += tv->tv_sec - 1 + (curtime.tv_usec / 1000000);
 	curtime.tv_usec %= 1000000;
 
 	if (settimeofday(&curtime, NULL) == -1) {
@@ -440,15 +455,15 @@ ntpd_settime(double d)
 	tval = curtime.tv_sec;
 	strftime(buf, sizeof(buf), "%a %b %e %H:%M:%S %Z %Y",
 	    localtime(&tval));
-	log_info("set local clock to %s (offset %fs)", buf, d);
+	log_info("set local clock to %s (offset %ld.%06lus)", buf,
+	    tv->tv_sec, tv->tv_usec);
 }
 
 void
 readfreq(void)
 {
+	int64_t current, d;
 	FILE *fp;
-	int64_t current;
-	double d;
 
 	fp = fopen(DRIFTFILE, "r");
 	if (fp == NULL) {
@@ -463,7 +478,7 @@ readfreq(void)
 	if (adjfreq(NULL, &current) == -1)
 		log_warn("adjfreq failed");
 	else if (current == 0) {
-		if (fscanf(fp, "%le", &d) == 1)
+		if (fscanf(fp, "%lld", &d) == 1)
 			ntpd_adjfreq(d, 0);
 		else
 			log_warnx("can't read %s", DRIFTFILE);
@@ -472,7 +487,7 @@ readfreq(void)
 }
 
 int
-writefreq(double d)
+writefreq(int64_t d)
 {
 	int r;
 	FILE *fp;
@@ -484,10 +499,10 @@ writefreq(double d)
 			log_warn("can't open %s", DRIFTFILE);
 			warnonce = 0;
 		}
-		return 0;
+		return -1;
 	}
 
-	fprintf(fp, "%e\n", d);
+	fprintf(fp, "%lld\n", d);
 	r = ferror(fp);
 	if (fclose(fp) != 0 || r != 0) {
 		if (warnonce) {
@@ -495,7 +510,7 @@ writefreq(double d)
 			warnonce = 0;
 		}
 		unlink(DRIFTFILE);
-		return 0;
+		return -1;
 	}
-	return 1;
+	return 0;
 }
