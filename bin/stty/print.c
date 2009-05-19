@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)print.c	8.6 (Berkeley) 4/16/94";
 #else
-static char rcsid[] = "$ABSD: print.c,v 1.1.1.1 2008/08/26 14:36:31 root Exp $";
+static char rcsid[] = "$ABSD: print.c,v 1.2 2009/05/19 15:37:23 uid1008 Exp $";
 #endif
 #endif /* not lint */
 
@@ -63,9 +63,6 @@ print(struct termios *tp, struct winsize *wp, int ldisc, enum FMT fmt)
 	/* Line discipline. */
 	if (ldisc != TTYDISC) {
 		switch(ldisc) {
-		case TABLDISC:
-			cnt += printf("tablet disc; ");
-			break;
 		case SLIPDISC:
 			cnt += printf("slip disc; ");
 			break;

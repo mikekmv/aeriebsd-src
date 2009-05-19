@@ -136,7 +136,6 @@ struct tstamps {
 #define	TIOCMODS	TIOCMSET
 
 #define	TTYDISC		0		/* termios tty line discipline */
-#define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 #define	PPPDISC		5		/* ppp discipline */
 #define	NMEADISC	7		/* NMEA0183 discipline */

@@ -558,10 +558,6 @@ linux_ioctl_termios(p, v, retval)
 		case PPPDISC:
 			idat = LINUX_N_PPP;
 			break;
-		/*
-		 * Linux does not have the tablet line discipline.
-		 */
-		case TABLDISC:
 		default:
 			idat = -1;	/* XXX What should this be? */
 			break;
