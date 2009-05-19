@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1982, 1986, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -72,16 +71,6 @@ int	pppread(struct tty *tp, struct uio *uio, int flag);
 int	pppwrite(struct tty *tp, struct uio *uio, int flag);
 #endif
 
-#include "strip.h"
-#if NSTRIP > 0
-int	stripopen(dev_t dev, struct tty *tp);
-int	stripclose(struct tty *tp, int flags);
-int	striptioctl(struct tty *tp, u_long cmd, caddr_t data,
-			int flag, struct proc *p);
-int	stripinput(int c, struct tty *tp);
-int	stripstart(struct tty *tp);
-#endif
-
 #include "nmea.h"
 #if NNMEA > 0
 int	nmeaopen(dev_t, struct tty *);
@@ -132,13 +121,8 @@ struct	linesw linesw[] =
 	  ttyerrinput, ttyerrstart, nullmodem },
 #endif
 
-#if NSTRIP > 0
-	{ stripopen, stripclose, ttyerrio, ttyerrio, striptioctl,
-	  stripinput, stripstart, nullmodem },		/* 6- STRIPDISC */
-#else
 	{ ttynodisc, ttyerrclose, ttyerrio, ttyerrio, nullioctl,
 	  ttyerrinput, ttyerrstart, nullmodem },
-#endif
 
 #if NNMEA > 0
 	{ nmeaopen, nmeaclose, ttread, ttwrite, nullioctl,
