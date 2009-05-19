@@ -175,7 +175,7 @@ umbg_attach(struct device *parent, struct device *self, void *aux)
 	struct umbg_softc *sc = (struct umbg_softc *)self;
 	struct usb_attach_arg *uaa = aux;
 	usbd_device_handle dev = uaa->device;
-	usbd_interface_handle iface = uaa->iface;
+	usbd_interface_handle iface;
 	struct timeval t;
 	struct mbg_time tframe;
 	usb_endpoint_descriptor_t *ed;
