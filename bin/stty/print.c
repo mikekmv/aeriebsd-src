@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)print.c	8.6 (Berkeley) 4/16/94";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: print.c,v 1.1.1.1 2008/08/26 14:36:31 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -72,11 +72,11 @@ print(struct termios *tp, struct winsize *wp, int ldisc, enum FMT fmt)
 		case PPPDISC:
 			cnt += printf("ppp disc; ");
 			break;
-		case STRIPDISC:
-			cnt += printf("strip disc; ");
-			break;
 		case NMEADISC:
 			cnt += printf("nmea disc; ");
+			break;
+		case MSTSDISC:
+			cnt += printf("msts disc; ");
 			break;
 		default:
 			cnt += printf("#%d disc; ", ldisc);

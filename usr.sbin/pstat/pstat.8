@@ -28,7 +28,7 @@
 .\"
 .\"     from: @(#)pstat.8	8.4 (Berkeley) 4/19/94
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt PSTAT 8
 .Os
 .Sh NAME
@@ -206,14 +206,13 @@ for SLIPDISC (see
 .Ql ppp
 for PPPDISC (see
 .Xr ppp 4 ) ,
-.Ql strip
-for STRIPDISC,
-.\" (see
-.\" .Xr strip 4 ) .
-and
-.Ql nmea
+.Ql nmea ,
 for NMEADISC (see
 .Xr nmea 4 ) .
+and
+.Ql msts ,
+for MSTSDISC (see
+.Xr msts 4 ) .
 .El
 .It Fl v
 Print the active vnodes.

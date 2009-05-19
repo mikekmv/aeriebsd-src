@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 from: static char sccsid[] = "@(#)pstat.c	8.9 (Berkeley) 2/16/94";
 #else
-static char *rcsid = "$ABSD$";
+static char *rcsid = "$ABSD: pstat.c,v 1.1.1.1 2008/08/26 14:44:31 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -974,11 +974,11 @@ ttyprt(struct itty *tp)
 	case PPPDISC:
 		(void)printf("ppp\n");
 		break;
-	case STRIPDISC:
-		(void)printf("strip\n");
-		break;
 	case NMEADISC:
 		(void)printf("nmea\n");
+		break;
+	case MSTSDISC:
+		(void)printf("msts\n");
 		break;
 	default:
 		(void)printf("%d\n", tp->t_line);

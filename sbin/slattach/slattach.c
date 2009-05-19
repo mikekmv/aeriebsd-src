@@ -40,7 +40,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)slattach.c	8.2 (Berkeley) 1/7/94";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: slattach.c,v 1.1.1.1 2008/08/26 14:40:29 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -191,10 +191,6 @@ ttydisc(char *name)
 {
 	if (strcmp(name, "slip") == 0)
 		return(SLIPDISC);
-#ifdef STRIPDISC
-	else if (strcmp(name, "strip") == 0)
-		return(STRIPDISC);
-#endif
 	else
 		usage();
 }

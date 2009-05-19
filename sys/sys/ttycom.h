@@ -139,7 +139,6 @@ struct tstamps {
 #define	TABLDISC	3		/* tablet discipline */
 #define	SLIPDISC	4		/* serial IP discipline */
 #define	PPPDISC		5		/* ppp discipline */
-#define	STRIPDISC	6		/* metricom wireless IP discipline */
 #define	NMEADISC	7		/* NMEA0183 discipline */
 #define	MSTSDISC	8		/* Meinberg time string discipline */
 
