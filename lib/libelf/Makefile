@@ -2,7 +2,7 @@
 LIB=	elf
 SRCS=	elf32.c elf64.c
 CLEANFILES+=elf32.c elf64.c
-WANTLINT=
+WANTLINT=no
 
 elf32.c: ${.CURDIR}/elf.c
 	echo '#define ELFSIZE 32' | cat - $> > ${.TARGET}
