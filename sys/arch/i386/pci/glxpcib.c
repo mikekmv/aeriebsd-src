@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2007 Marc Balmer <mbalmer@openbsd.org>
+ * Copyright (c) 2007 Marc Balmer <marc@msys.ch>
  * Copyright (c) 2007 Michael Shalayeff
  * All rights reserved.
  *

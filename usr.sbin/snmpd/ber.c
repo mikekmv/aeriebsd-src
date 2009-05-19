@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2007 Reyk Floeter <reyk@vantronix.net>
  * Copyright (c) 2006, 2007 Claudio Jeker <claudio@openbsd.org>
- * Copyright (c) 2006, 2007 Marc Balmer <mbalmer@openbsd.org>
+ * Copyright (c) 2006, 2007 Marc Balmer <marc@msys.ch>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above

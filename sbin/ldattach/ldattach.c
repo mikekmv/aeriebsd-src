@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2007, 2008 Marc Balmer <mbalmer@openbsd.org>
+ * Copyright (c) 2007, 2008 Marc Balmer <marc@msys.ch>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -22,7 +22,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ldattach.c,v 1.1.1.1 2008/08/26 14:40:25 root Exp $";
+static const char rcsid[] = "$ABSD: ldattach.c,v 1.2 2008/12/26 18:50:51 mickey Exp $";
 #endif
 
 #include <sys/param.h>

@@ -1,7 +1,7 @@
-/*      $OpenBSD$	*/
+/*      $ABSD$	*/
 
 /*
- * Copyright (c) 2008 Marc Balmer <mbalmer@openbsd.org>
+ * Copyright (c) 2008 Marc Balmer <marc@msys.ch>
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
