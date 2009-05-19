@@ -37,7 +37,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)csh.c	8.2 (Berkeley) 10/12/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: csh.c,v 1.1.1.1 2008/08/26 14:36:26 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -1339,3 +1339,4 @@ printprompt(void)
 	 */
 	(void) fprintf(cshout, "? ");
     (void) fflush(cshout);
+}
