@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD: editor.c,v 1.2 2008/12/26 18:50:48 mickey Exp $";
+static char rcsid[] = "$ABSD: editor.c,v 1.3 2009/05/08 16:37:15 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -577,8 +577,7 @@ editor_name(struct disklabel *lp, char **mp, char *p)
 
 	/* Not all fstypes can be named */
 	if (pp->p_fstype == FS_UNUSED || pp->p_fstype == FS_SWAP ||
-	    pp->p_fstype == FS_BOOT || pp->p_fstype == FS_OTHER ||
-	    pp->p_fstype == FS_RAID) {
+	    pp->p_fstype == FS_BOOT || pp->p_fstype == FS_OTHER) {
 		fprintf(stderr, "You cannot name a filesystem of type %s.\n",
 		    fstypenames[lp->d_partitions[partno].p_fstype]);
 		return;
