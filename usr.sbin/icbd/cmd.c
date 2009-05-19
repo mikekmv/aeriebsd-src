@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.9 2009/05/04 12:07:33 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.10 2009/05/04 12:21:25 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -82,11 +82,11 @@ icb_cmd_lookup(char *cmd)
 void
 icb_cmd_away(struct icb_cmdarg *ca)
 {
-	char buf[ICB_MSGSIZE];
+	char buf[ICB_MAXNICKLEN + 13];
 
 	SETF(ca->sess->flags, ICB_SF_AWAY);
 	icb_status(ca->sess, STATUS_AWAY, "You've been marked as away");        
-	snprintf(buf, sizeof(buf), "%s is away now", ca->sess->nick);
+	snprintf(buf, sizeof buf, "%s is away now", ca->sess->nick);
 	icb_status_group(ca->sess->group, ca->sess, STATUS_AWAY, buf);
 }
 
@@ -142,7 +142,7 @@ icb_cmd_group(struct icb_cmdarg *ca)
 				icb_error(is, "Can't create group");
 				return;
 			}
-			(void)snprintf(buf, sizeof(buf), "%s created group %s",
+			(void)snprintf(buf, sizeof buf, "%s created group %s",
 			    is->nick, ca->arg);
 			icb_log(NULL, ICB_LOG_DEBUG, buf);
 		}
@@ -166,7 +166,7 @@ icb_cmd_group(struct icb_cmdarg *ca)
 		if (icb_ismoder(is->group, is))
 			(void)icb_passmoder(is->group, is, NULL);
 		LIST_REMOVE(is, entry);
-		(void)snprintf(buf, sizeof(buf), "%s (%s@%s) just left",
+		(void)snprintf(buf, sizeof buf, "%s (%s@%s) just left",
 		    is->nick, is->client, is->host);
 		icb_status_group(is->group, NULL, STATUS_DEPART, buf);
 	}
@@ -175,18 +175,18 @@ icb_cmd_group(struct icb_cmdarg *ca)
 	LIST_INSERT_HEAD(&ig->sess, is, entry);
 
 	/* notify group */
-	(void)snprintf(buf, sizeof(buf), "%s (%s@%s) entered group", is->nick,
+	(void)snprintf(buf, sizeof buf, "%s (%s@%s) entered group", is->nick,
 	    is->client, is->host);
 	icb_status_group(ig, is, changing ? STATUS_ARRIVE : STATUS_SIGNON, buf);
 
 	/* acknowledge successful join */
-	(void)snprintf(buf, sizeof(buf), "You're now in group %s%s", ig->name,
+	(void)snprintf(buf, sizeof buf, "You're now in group %s%s", ig->name,
 	    icb_ismoder(ig, is) ? " as moderator" : "");
 	icb_status(is, STATUS_STATUS, buf);
 
 	/* send user a topic name */
 	if (strlen(ig->topic) > 0) {
-		(void)snprintf(buf, sizeof(buf), "Topic for %s is \"%s\"",
+		(void)snprintf(buf, sizeof buf, "Topic for %s is \"%s\"",
 		    ig->name, ig->topic);
 		icb_status(is, STATUS_TOPIC, buf);
 	}
@@ -218,11 +218,11 @@ icb_cmd_motd(struct icb_cmdarg *ca)
 void
 icb_cmd_noaway(struct icb_cmdarg *ca)
 {
-	char buf[ICB_MSGSIZE];
+	char buf[ICB_MAXNICKLEN + 9];
 
 	CLRF(ca->sess->flags, ICB_SF_AWAY);
 	icb_status(ca->sess, STATUS_NOAWAY, "You're no longer marked as away"); 
-	(void)snprintf(buf, sizeof(buf), "%s is back", ca->sess->nick);
+	(void)snprintf(buf, sizeof buf, "%s is back", ca->sess->nick);
 	icb_status_group(ca->sess->group, ca->sess, STATUS_NOAWAY, buf);
 }
 
@@ -239,17 +239,17 @@ icb_cmd_status(struct icb_cmdarg *ca)
 void
 icb_cmd_topic(struct icb_cmdarg *ca)
 {
-	char buf[ICB_MSGSIZE];
+	char buf[ICB_MAXGRPLEN + ICB_MAXTOPICLEN + 25];
 	struct icb_group *ig = ca->sess->group;
 
 	if (strlen(ca->arg) == 0) {
-		(void)snprintf(buf, sizeof(buf), "Topic for %s is \"%s\"",
+		(void)snprintf(buf, sizeof buf, "Topic for %s is \"%s\"",
 		    ig->name, ig->topic);
 		icb_status(ca->sess, STATUS_TOPIC, buf);
 		return;
 	}
-	strlcpy(ig->topic, ca->arg, sizeof(ig->topic));
-	(void)snprintf(buf, sizeof(buf), "%s has changed topic to \"%s\"",
+	strlcpy(ig->topic, ca->arg, sizeof ig->topic);
+	(void)snprintf(buf, sizeof buf, "%s has changed topic to \"%s\"",
 	    ca->sess->nick, ig->topic);
 	icb_status_group(ig, NULL, STATUS_TOPIC, buf);
 }

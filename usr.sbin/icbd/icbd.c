@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.8 2009/04/30 09:24:36 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.9 2009/05/04 12:00:16 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -139,7 +139,7 @@ main(int argc, char *argv[])
 				*port++ = '\0';
 		}
 
-		bzero(&hints, sizeof(hints));
+		bzero(&hints, sizeof hints);
 		if (inet4 || inet6)
 			hints.ai_family = inet4 ? PF_INET : PF_INET6;
 		else
@@ -161,7 +161,7 @@ main(int argc, char *argv[])
 			}
 
 			if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on,
-			    sizeof(on)) < 0) {
+			    sizeof on) < 0) {
 				cause = "SO_REUSEADDR";
 				save_errno = errno;
 				(void)close(s);
@@ -177,7 +177,7 @@ main(int argc, char *argv[])
 
 			(void)listen(s, TCP_BACKLOG);
 
-			if ((ev = calloc(1, sizeof(*ev))) == NULL)
+			if ((ev = calloc(1, sizeof *ev)) == NULL)
 				err(EX_UNAVAILABLE, NULL);
 			event_set(ev, s, EV_READ | EV_PERSIST, icbd_accept, ev);
 			if (event_add(ev, NULL) < 0) {
@@ -217,7 +217,7 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 	struct bufferevent **bev = NULL;
 	struct sockaddr_storage ss;
 	struct icb_session *is;
-	socklen_t ss_len = sizeof(ss);
+	socklen_t ss_len = sizeof ss;
 	int s;
 
 	ss.ss_len = ss_len;
@@ -225,7 +225,7 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		syslog(LOG_ERR, "accept: %m");
 		return;
 	}
-	if ((is = calloc(1, sizeof(*is))) == NULL) {
+	if ((is = calloc(1, sizeof *is)) == NULL) {
 		syslog(LOG_ERR, "calloc: %m");
 		(void)close(s);
 		return;
@@ -248,9 +248,9 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 	icbd_log(is, ICB_LOG_DEBUG, "connected");
 
 	/* save host information */
-	getpeerinfo(is, host, sizeof(host), NULL);
+	getpeerinfo(is, host, sizeof host, NULL);
 	if (strlen(host) > 0)
-		strlcpy(is->host, host, sizeof(is->host));
+		strlcpy(is->host, host, sizeof is->host);
 
 	/* start icb conversation */
 	icb_start(is);
@@ -276,7 +276,7 @@ icbd_dispatch(struct bufferevent *bev, void *arg)
 	size_t len;
 
 	bzero(buf, sizeof(buf));
-	len = bufferevent_read(bev, buf, sizeof(buf)-1);
+	len = bufferevent_read(bev, buf, sizeof buf -1);
 	if (len <= 0) {
 		icbd_drop(is, "short read");
 		return;
@@ -339,7 +339,7 @@ icbd_log(struct icb_session *is, int level, char *msg)
 	else
 		level = LOG_DEBUG;
 	if (is) {
-		getpeerinfo(is, addr, sizeof(addr), &port);
+		getpeerinfo(is, addr, sizeof addr, &port);
 		syslog(level, "%s:%u: %s", addr, port, msg);
 	} else {
 		syslog(level, "%s", msg);
@@ -421,10 +421,10 @@ getpeerinfo(struct icb_session *is, char *addrbuf, size_t addrsz, int *port)
 {
 	char addr[INET6_ADDRSTRLEN];
 	struct sockaddr_storage ss;
-	socklen_t ss_len = sizeof(ss);
+	socklen_t ss_len = sizeof ss;
 
-	bzero(addr, sizeof(addr));
-	bzero(&ss, sizeof(ss));
+	bzero(addr, sizeof addr);
+	bzero(&ss, sizeof ss);
 	if (getpeername(EVBUFFER_FD(GETBEV(is)), (struct sockaddr *)&ss,
 	    &ss_len) != 0)
 		return;
@@ -432,14 +432,14 @@ getpeerinfo(struct icb_session *is, char *addrbuf, size_t addrsz, int *port)
 	case AF_INET:
 		(void)inet_ntop(AF_INET,
 		    &((struct sockaddr_in *)&ss)->sin_addr, addr,
-		    sizeof(addr));
+		    sizeof addr);
 		if (port)
 			*port = ntohs(((struct sockaddr_in *)&ss)->sin_port);
 		break;
 	case AF_INET6:
 		(void)inet_ntop(AF_INET6,
 		    &((struct sockaddr_in6 *)&ss)->sin6_addr, addr,
-		    sizeof(addr));
+		    sizeof addr);
 		if (port)
 			*port = ntohs(((struct sockaddr_in6 *)&ss)->sin6_port);
 		break;

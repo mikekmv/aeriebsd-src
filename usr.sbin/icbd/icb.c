@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.9 2009/05/04 12:07:33 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.10 2009/05/04 12:21:25 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -63,15 +63,15 @@ icb_init(struct icbd_callbacks *ic)
 void
 icb_start(struct icb_session *is)
 {
-	char buf[ICB_MSGSIZE];
+	char buf[MAXHOSTNAMELEN + 9 + 1];
 	char hname[MAXHOSTNAMELEN];
-	unsigned char buflen;
+	int buflen;
 
-	bzero(hname, sizeof(hname));
-	(void)gethostname(hname, sizeof(hname));
-	buflen = snprintf(buf, sizeof(buf), "%c%c%c%c%s%c%s", '?', ICB_M_PROTO,
+	bzero(hname, sizeof hname);
+	(void)gethostname(hname, sizeof hname);
+	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%c%c%s%c%s", ICB_M_PROTO,
 	    '1', ICB_M_SEP, hname, ICB_M_SEP, "icbd");
-	buf[0] = buflen;
+	buf[0] = (unsigned char) ++buflen;
 	icb_send(is, buf, buflen + 1);
 	SETF(is->flags, ICB_SF_PROTOSENT);
 }
@@ -99,7 +99,7 @@ icb_input(struct icb_session *is, char *msg, size_t msglen)
 		icb_error(is, "Too much fields in the packet");
 		return;
 	}
-	bzero(fields, sizeof(fields));
+	bzero(fields, sizeof fields);
 	for (i = 0; i < nf; i++)
 		fields[i] = icb_parse(msg+2, msglen-2, &pos);
 	switch (type) {
@@ -169,7 +169,7 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 				icb_error(is, "Can't create group");
 				return;
 			}
-			(void)snprintf(buf, sizeof(buf), "%s created group %s",
+			(void)snprintf(buf, sizeof buf, "%s created group %s",
 			    nick, group);
 			icb_log(NULL, ICB_LOG_DEBUG, buf);
 		}
@@ -182,14 +182,14 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	}
 
 	if (client && strlen(client) > 0)
-		strlcpy(is->client, client, sizeof(is->client));
-	strlcpy(is->nick, nick, sizeof(is->nick));
+		strlcpy(is->client, client, sizeof is->client);
+	strlcpy(is->nick, nick, sizeof is->nick);
 	is->group = ig;
 	is->login = time(NULL);
 	is->last = getmonotime();
 
 	/* notify group */
-	(void)snprintf(buf, sizeof(buf), "%s (%s@%s) entered group", is->nick,
+	(void)snprintf(buf, sizeof buf, "%s (%s@%s) entered group", is->nick,
 	    is->client, is->host);
 	icb_status_group(ig, NULL, STATUS_SIGNON, buf);
 
@@ -204,13 +204,13 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	icb_send(is, buf, 2);
 
 	/* notify user */
-	(void)snprintf(buf, sizeof(buf), "You're now in group %s%s", ig->name,
+	(void)snprintf(buf, sizeof buf, "You're now in group %s%s", ig->name,
 	    icb_ismoder(ig, is) ? " as moderator" : "");
 	icb_status(is, STATUS_STATUS, buf);
 
 	/* send user a topic name */
 	if (strlen(ig->topic) > 0) {
-		(void)snprintf(buf, sizeof(buf), "Topic for %s is \"%s\"",
+		(void)snprintf(buf, sizeof buf, "Topic for %s is \"%s\"",
 		    ig->name, ig->topic);
 		icb_status(is, STATUS_TOPIC, buf);
 	}
@@ -235,11 +235,11 @@ icb_groupmsg(struct icb_session *is, char *msg)
 	char buf[ICB_MSGSIZE];
 	struct icb_group *ig = is->group;
 	struct icb_session *s;
-	unsigned char buflen;
+	int buflen;
 
-	buflen = snprintf(buf, sizeof(buf), "%c%c%s%c%s", '?', ICB_M_OPEN,
+	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_OPEN,
 	    is->nick, ICB_M_SEP, msg);
-	buf[0] = buflen;
+	buf[0] = (unsigned char) ++buflen;
 
 	LIST_FOREACH(s, &ig->sess, entry) {
 		if (s == is)
@@ -257,7 +257,7 @@ icb_privmsg(struct icb_session *is, char *whom, char *msg)
 	char buf[ICB_MSGSIZE];
 	struct icb_group *ig = is->group;
 	struct icb_session *s;
-	unsigned char buflen;
+	int buflen;
 
 	LIST_FOREACH(s, &ig->sess, entry) {
 		if (strcmp(s->nick, whom) == 0)
@@ -267,9 +267,9 @@ icb_privmsg(struct icb_session *is, char *whom, char *msg)
 		icb_error(is, "No such user");
 		return;
 	}
-	buflen = snprintf(buf, sizeof(buf), "%c%c%s%c%s", '?', ICB_M_PERSONAL,
+	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_PERSONAL,
 	    is->nick, ICB_M_SEP, msg);
-	buf[0] = buflen;
+	buf[0] = (unsigned char) ++buflen;
 	icb_send(s, buf, buflen + 1);
 }
 
@@ -280,10 +280,10 @@ void
 icb_pong(struct icb_session *is, char *mid)
 {
 	char buf[ICB_MSGSIZE];
-	unsigned char buflen;
+	int buflen;
 
-	buflen = snprintf(buf, sizeof(buf), "%c%c%s", '?', ICB_M_PONG, mid);
-	buf[0] = buflen;
+	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s", ICB_M_PONG, mid);
+	buf[0] = (unsigned char) ++buflen;
 	icb_send(is, buf, buflen + 1);
 }
 
@@ -295,7 +295,7 @@ icb_exit(struct icb_session *is)
 {
 	char buf[] = { 1, ICB_M_EXIT };
 
-	icb_send(is, buf, sizeof(buf));
+	icb_send(is, buf, sizeof buf);
 }
 
 /*
@@ -322,7 +322,7 @@ void
 icb_cmdout(struct icb_session *is, int type, char *outmsg)
 {
 	char buf[ICB_MSGSIZE];
-	unsigned char buflen;
+	int buflen;
 	char *otype = NULL;
 
 	switch (type) {
@@ -342,9 +342,9 @@ icb_cmdout(struct icb_session *is, int type, char *outmsg)
 		icb_log(is, ICB_LOG_ERROR, "icb_cmdout: unknown cmdout type");
 		return;
 	}
-	buflen = snprintf(buf, sizeof(buf), "%c%c%s%c%s", '?', ICB_M_CMDOUT,
+	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_CMDOUT,
 	    otype, ICB_M_SEP, outmsg);
-	buf[0] = buflen;
+	buf[0] = (unsigned char) ++buflen;
 	icb_send(is, buf, buflen + 1);
 }
 
@@ -355,8 +355,8 @@ void
 icb_status(struct icb_session *is, int type, char *statmsg)
 {
 	char buf[ICB_MSGSIZE];
-	unsigned char buflen;
-	struct /*icb_statmsg*/ {
+	int buflen;
+	static struct /*icb_statmsg*/ {
 		int		 type;
 		const char	*msg;
 	} statmsgtab[] = {
@@ -377,9 +377,9 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 	if (type < 0 || type > (int)nitems(statmsgtab) - 1)
 		return;
 
-	buflen = snprintf(buf, sizeof(buf), "%c%c%s%c%s", '?', ICB_M_STATUS,
+	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_STATUS,
 	    statmsgtab[type].msg, ICB_M_SEP, statmsg);
-	buf[0] = buflen;
+	buf[0] = (unsigned char) ++buflen;
 	icb_send(is, buf, buflen + 1);
 }
 
@@ -408,11 +408,11 @@ void
 icb_error(struct icb_session *is, char *errmsg)
 {
 	char buf[ICB_MSGSIZE];
-	unsigned char buflen;
+	int buflen;
 
-	buflen = snprintf(buf, sizeof(buf), "%c%c%s", '?', ICB_M_ERROR,
+	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s", ICB_M_ERROR,
 	    errmsg);
-	buf[0] = buflen;
+	buf[0] = (unsigned char) ++buflen;
 	icb_log(is, ICB_LOG_DEBUG, errmsg);
 	icb_send(is, buf, buflen + 1);
 }
@@ -446,11 +446,11 @@ icb_addgroup(struct icb_session *is, char *name, char *mpass)
 {
 	struct icb_group *ig;
 
-	if ((ig = calloc(1, sizeof(*ig))) == NULL)
+	if ((ig = calloc(1, sizeof *ig)) == NULL)
 		return (NULL);
-	strlcpy(ig->name, name, sizeof(ig->name));
+	strlcpy(ig->name, name, sizeof ig->name);
 	if (mpass)
-		strlcpy(ig->mpass, mpass, sizeof(ig->mpass));
+		strlcpy(ig->mpass, mpass, sizeof ig->mpass);
 	if (is)
 		ig->moder = is;
 	LIST_INIT(&ig->sess);
@@ -473,7 +473,7 @@ icb_delgroup(struct icb_group *ig)
 		s->group = NULL;
 	}
 	LIST_REMOVE(ig, entry);
-	bzero(ig, sizeof(ig));	/* paranoic thing, obviously */
+	bzero(ig, sizeof ig);	/* paranoic thing, obviously */
 	free(ig);
 }
 
