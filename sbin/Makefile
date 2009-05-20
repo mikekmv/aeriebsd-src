@@ -7,7 +7,7 @@ SUBDIR=	atactl badsect bioctl brconfig clri dhclient \
 	mount_vnd mount_xfs mountd ncheck_ffs newfs newfs_msdos \
 	nfsd nologin pdisk pfctl pflogd ping ping6 quotacheck \
 	reboot restore route rtsol savecore scan_ffs \
-	scsi shutdown slattach swapctl sysctl ttyflags tunefs \
+	scsi shutdown swapctl sysctl ttyflags tunefs \
 	umount wpa-psk wsconsctl
 
 .include <bsd.subdir.mk>
