@@ -468,11 +468,7 @@ udcf_ft232r_init_hw(struct udcf_softc *sc)
 	return 0;
 }
 
-/*
- * return 1 during high-power-, 0 during low-power-emission
- * If bit 0 is set, the transmitter emits at full power.
- * During the low-power emission we decode a zero bit.
- */
+/* return 1 during high-power-, 0 during low-power-emission */
 int
 udcf_nc_signal(struct udcf_softc *sc)
 {
