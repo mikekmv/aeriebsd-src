@@ -155,7 +155,6 @@
 ./sbin/scan_ffs
 ./sbin/scsi
 ./sbin/shutdown
-./sbin/slattach
 ./sbin/swapctl
 ./sbin/swapon
 ./sbin/sysctl

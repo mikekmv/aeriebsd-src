@@ -40,7 +40,6 @@ LINK	instbin					sbin/reboot
 LINK	instbin					sbin/route
 LINK	instbin					sbin/rtsol
 LINK	instbin					sbin/shutdown
-LINK	instbin					sbin/slattach
 LINK	instbin					sbin/umount
 LINK	instbin					usr/bin/awk
 LINK	instbin					usr/bin/ftp
