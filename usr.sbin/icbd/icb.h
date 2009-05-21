@@ -135,5 +135,6 @@ void icb_remove(struct icb_session *, char *);
 void icb_start(struct icb_session *);
 void icb_status(struct icb_session *, int , char *);
 void icb_status_group(struct icb_group *, struct icb_session *, int , char *);
+void icb_who(struct icb_session *, struct icb_group *);
 
 #endif	/* __ICB_H__ */

@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.11 2009/05/19 09:06:14 uid1007 Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.12 2009/05/21 12:21:43 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -117,24 +117,12 @@ icb_input(struct icb_session *is, char *msg, size_t msglen)
  		icb_command(is, fields[0], fields[1], fields[2]);
 		break;
 	case ICB_M_PROTO:
-		/* ignore */
-		break;
 	case ICB_M_NOOP:
 		/* ignore */
 		break;
-	/* NOT VALID */
-	case ICB_M_PING:
-	case ICB_M_PERSONAL:
-	case ICB_M_STATUS:
-	case ICB_M_ERROR:
-	case ICB_M_IMPORTANT:
-	case ICB_M_EXIT:
-	case ICB_M_CMDOUT:
-	case ICB_M_BEEP:
-	case ICB_M_PONG:
 	default:
+		/* everything else is not valid */
 		icb_error(is, "Bummer. This is a bummer, man.");
-		return;
 	}
 	return;
 inputerr:
@@ -148,9 +136,12 @@ void
 icb_login(struct icb_session *is, char *group, char *nick, char *client)
 {
 	char buf[ICB_MSGSIZE];
+	char *defgrp = "1";
 	struct icb_group *ig;
 	struct icb_session *s;
 
+	if (strlen(group) == 0)
+		group = defgrp;
 	LIST_FOREACH(ig, &groups, entry) {
 		if (strcmp(ig->name, group) == 0)
 			break;
@@ -209,6 +200,8 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 		    ig->name, ig->topic);
 		icb_status(is, STATUS_TOPIC, buf);
 	}
+	/* and a list of users */
+	icb_who(is, NULL);
 }
 
 /*
@@ -446,6 +439,30 @@ icb_delgroup(struct icb_group *ig)
 	LIST_REMOVE(ig, entry);
 	bzero(ig, sizeof ig);	/* paranoic thing, obviously */
 	free(ig);
+}
+
+/*
+ *  icb_who: sends a list of users of the specified group (or the current
+ *           one otherwise) in the "wl" format
+ */
+void
+icb_who(struct icb_session *is, struct icb_group *ig)
+{
+	char buf[ICB_MSGSIZE];
+	struct icb_session *s;
+
+	if (!ig)
+		ig = is->group;
+	LIST_FOREACH(s, &ig->sess, entry) {
+		(void)snprintf(buf, sizeof buf,
+		    "%c%c%s%c%d%c0%c%d%c%s%c%s%c%c",
+		    icb_ismoder(ig, s) ? '*' : ' ', ICB_M_SEP,
+		    s->nick, ICB_M_SEP, getmonotime() - s->last,
+		    ICB_M_SEP, ICB_M_SEP, s->login, ICB_M_SEP,
+		    s->client, ICB_M_SEP, s->host, ICB_M_SEP,
+		    ISSETF(s->flags, ICB_SF_AWAY) ? '-' : '+');
+		icb_cmdout(is, CMDOUT_WL, buf);
+	}
 }
 
 /*

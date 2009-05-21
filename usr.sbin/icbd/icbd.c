@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.10 2009/05/19 09:06:14 uid1007 Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.11 2009/05/21 12:21:43 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -275,7 +275,7 @@ icbd_dispatch(struct bufferevent *bev, void *arg)
 	struct icb_session *is = (struct icb_session *)arg;
 	size_t len;
 
-	bzero(buf, sizeof(buf));
+	bzero(buf, sizeof buf);
 	len = bufferevent_read(bev, buf, sizeof buf -1);
 	if (len == 0)
 		return;

@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.12 2009/05/21 12:21:43 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.13 2009/05/21 12:29:18 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -186,6 +186,8 @@ icb_cmd_group(struct icb_cmdarg *ca)
 		    ig->name, ig->topic);
 		icb_status(is, STATUS_TOPIC, buf);
 	}
+	/* and a list of users */
+	icb_who(is, NULL);
 }
 
 void
@@ -242,4 +244,5 @@ icb_cmd_topic(struct icb_cmdarg *ca)
 void
 icb_cmd_who(struct icb_cmdarg *ca)
 {
+	icb_who(ca->sess, NULL);
 }

@@ -2,7 +2,7 @@ PROG=	icbd
 SRCS=	cmd.c icb.c icbd.c
 MAN=	icbd.8
 
-CFLAGS+=-Wall -Werror
+CFLAGS+=-W -Wall -Werror
 
 DPADD=	${LIBEVENT}
 LDADD=	-levent
