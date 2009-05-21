@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.10 2009/05/04 12:21:25 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.11 2009/05/19 09:06:14 uid1007 Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -54,15 +54,11 @@ struct icbcmd {
 	{ "away",	icb_cmd_away },
 	{ "boot",	icb_cmd_boot },
 	{ "g",		icb_cmd_group },
-	{ "help",	icb_cmd_help },
 	{ "m",		icb_cmd_personal },
 	{ "msg",	icb_cmd_personal },
-	{ "motd",	icb_cmd_motd },
 	{ "noaway",	icb_cmd_noaway },
 	{ "pass",	icb_cmd_pass },
-	{ "status",	icb_cmd_status },
 	{ "topic",	icb_cmd_topic },
-	{ "wall",	icb_cmd_wall },
 	{ "w",		icb_cmd_who },
 	{ NULL,		NULL }
 };
@@ -193,11 +189,6 @@ icb_cmd_group(struct icb_cmdarg *ca)
 }
 
 void
-icb_cmd_help(struct icb_cmdarg *ca)
-{
-}
-
-void
 icb_cmd_personal(struct icb_cmdarg *ca)
 {
 	char *p;
@@ -208,11 +199,6 @@ icb_cmd_personal(struct icb_cmdarg *ca)
 	}
 	*p = '\0';
 	icb_privmsg(ca->sess, ca->arg, ++p);
-}
-
-void
-icb_cmd_motd(struct icb_cmdarg *ca)
-{
 }
 
 void
@@ -232,11 +218,6 @@ icb_cmd_pass(struct icb_cmdarg *ca)
 }
 
 void
-icb_cmd_status(struct icb_cmdarg *ca)
-{
-}
-
-void
 icb_cmd_topic(struct icb_cmdarg *ca)
 {
 	char buf[ICB_MAXGRPLEN + ICB_MAXTOPICLEN + 25];
@@ -252,11 +233,6 @@ icb_cmd_topic(struct icb_cmdarg *ca)
 	(void)snprintf(buf, sizeof buf, "%s has changed topic to \"%s\"",
 	    ca->sess->nick, ig->topic);
 	icb_status_group(ig, NULL, STATUS_TOPIC, buf);
-}
-
-void
-icb_cmd_wall(struct icb_cmdarg *ca)
-{
 }
 
 void

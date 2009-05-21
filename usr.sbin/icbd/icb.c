@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.10 2009/05/04 12:21:25 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.11 2009/05/19 09:06:14 uid1007 Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,8 +37,6 @@ int    icb_fields(char *, size_t);
 void   icb_groupmsg(struct icb_session *, char *);
 void   icb_login(struct icb_session *, char *, char *, char *);
 char  *icb_parse(char *, size_t, int *);
-void   icb_pong(struct icb_session *, char *);
-void   icb_who(struct icb_session *);
 /* pointers to upper level functions */
 void (*icb_drop)(struct icb_session *, char *);
 void (*icb_log)(struct icb_session *, int, char *);
@@ -83,14 +81,15 @@ void
 icb_input(struct icb_session *is, char *msg, size_t msglen)
 {
 	char *fields[ICB_MAXFIELDS];
-	char type = msg[1];
+	char type;
 	int i, nf, pos = 0;
 
 	is->last = getmonotime();
-	if (msglen != (size_t)((unsigned char)msg[0] + 1)) {
+	if (msglen < 2 || msglen != ((size_t)(unsigned char)msg[0]) + 1) {
 		icb_error(is, "Invalid packet length");
 		return;
 	}
+	type = msg[1];
 	if (!ISSETF(is->flags, ICB_SF_LOGGEDIN) && type != ICB_M_LOGIN) {
 		icb_error(is, "Not logged in");
 		return;
@@ -108,8 +107,6 @@ icb_input(struct icb_session *is, char *msg, size_t msglen)
 			goto inputerr;
 		if (strcmp(fields[3], "login") == 0)
 			icb_login(is, fields[2], fields[1], fields[0]);
-		else if (fields[3][0] == 'w')
-			icb_who(is);
 		else
 			goto inputerr;
 		break;
@@ -122,13 +119,11 @@ icb_input(struct icb_session *is, char *msg, size_t msglen)
 	case ICB_M_PROTO:
 		/* ignore */
 		break;
-	case ICB_M_PING:
-		icb_pong(is, fields[0]);
-		break;
 	case ICB_M_NOOP:
 		/* ignore */
 		break;
 	/* NOT VALID */
+	case ICB_M_PING:
 	case ICB_M_PERSONAL:
 	case ICB_M_STATUS:
 	case ICB_M_ERROR:
@@ -217,16 +212,6 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 }
 
 /*
- *  icb_who: sends back the list of users
- */
-void
-icb_who(struct icb_session *is)
-{
-	icb_error(is, "Who is not implemented");
-	icb_exit(is);
-}
-
-/*
  *  icb_groupmsg: handles open message ('b') packets
  */
 void
@@ -271,20 +256,6 @@ icb_privmsg(struct icb_session *is, char *whom, char *msg)
 	    is->nick, ICB_M_SEP, msg);
 	buf[0] = (unsigned char) ++buflen;
 	icb_send(s, buf, buflen + 1);
-}
-
-/*
- *  icb_pong: replies to the ping ('l') packets
- */
-void
-icb_pong(struct icb_session *is, char *mid)
-{
-	char buf[ICB_MSGSIZE];
-	int buflen;
-
-	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s", ICB_M_PONG, mid);
-	buf[0] = (unsigned char) ++buflen;
-	icb_send(is, buf, buflen + 1);
 }
 
 /*
