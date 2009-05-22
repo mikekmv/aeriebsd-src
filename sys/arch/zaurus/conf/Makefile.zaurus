@@ -201,10 +201,10 @@ MACHINE_NAME!=  uname -n
 install: install-kernel-${MACHINE_NAME}
 .if !target(install-kernel-${MACHINE_NAME}})
 install-kernel-${MACHINE_NAME}:
-	rm -f /oabsd
-	ln /absd /oabsd
+	rm -f /obsd
+	ln /bsd /obsd
 	cp bsd /nbsd
-	mv /nbsd /absd
+	mv /nbsd /bsd
 .endif
 
 %RULES
