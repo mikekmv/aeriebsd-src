@@ -29,8 +29,8 @@
  */
 
 #if defined(LIBC_SCCS)
-	.rodata
-	.asciz "$ABSD: bzero.S,v 1.1.1.1 2008/08/26 14:38:17 root Exp $"
+	.section	.rodata
+	.asciz "$ABSD: bzero.S,v 1.2 2008/12/26 18:50:29 mickey Exp $"
 #endif /* LIBC_SCCS */
 
 #include <machine/asm.h>

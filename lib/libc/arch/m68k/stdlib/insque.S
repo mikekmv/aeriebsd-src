@@ -34,8 +34,8 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.rodata
-	.asciz "$ABSD$"
+	.section	.rodata
+	.asciz "$ABSD: insque.S,v 1.1.1.1 2008/08/26 14:38:20 root Exp $"
 #endif /* LIBC_SCCS and not lint */
 
 /* insque(new, pred) */

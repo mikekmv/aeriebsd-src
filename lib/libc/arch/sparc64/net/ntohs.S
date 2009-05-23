@@ -35,11 +35,11 @@
 
 #include <machine/asm.h>
 #if defined(LIBC_SCCS) && !defined(lint)
-	.rodata
+	.section	.rodata
 #if 0
 	.asciz "@(#)ntohs.s	8.1 (Berkeley) 6/4/93"
 #else
-	.asciz "$ABSD$"
+	.asciz "$ABSD: ntohs.S,v 1.1.1.1 2008/08/26 14:38:24 root Exp $"
 #endif
 #endif /* LIBC_SCCS and not lint */
 

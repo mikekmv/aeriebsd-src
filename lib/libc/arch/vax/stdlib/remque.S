@@ -31,8 +31,8 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.rodata
-	.asciz "$ABSD$"
+	.section	.rodata
+	.asciz "$ABSD: remque.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS and not lint */
 
 /* remque(entry) */

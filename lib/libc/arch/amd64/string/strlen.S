@@ -5,8 +5,8 @@
  */
 
 #if defined(LIBC_SCCS)
-	.rodata
-	.asciz "$ABSD$"
+	.section	.rodata
+	.asciz "$ABSD: strlen.S,v 1.1.1.1 2008/08/26 14:38:16 root Exp $"
 #endif /* LIBC_SCCS */
 
 #include <machine/asm.h>

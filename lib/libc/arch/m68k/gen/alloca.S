@@ -34,8 +34,8 @@
 /* like alloc, but automatic free in return */
 
 #if defined(LIBC_SCCS)
-	.rodata
-	.asciz "$ABSD$"
+	.section	.rodata
+	.asciz "$ABSD: alloca.S,v 1.1.1.1 2008/08/26 14:38:20 root Exp $"
 #endif /* LIBC_SCCS */
 
 #include "DEFS.h"

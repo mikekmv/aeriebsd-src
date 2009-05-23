@@ -28,8 +28,8 @@
  */
 
 #if defined(LIBC_SCCS)
-	.rodata
-	.asciz "$ABSD$"
+	.section	.rodata
+	.asciz "$ABSD: memcmp.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
 #endif /* LIBC_SCCS */
 
 /* int memcmp(s1, s2, n) */
