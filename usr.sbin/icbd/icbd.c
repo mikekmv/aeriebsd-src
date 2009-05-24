@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.11 2009/05/21 12:21:43 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.12 2009/05/21 14:02:21 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -59,7 +59,7 @@ void icbd_accept(int, short, void *);
 void icbd_drop(struct icb_session *, char *);
 void icbd_ioerr(struct bufferevent *, short, void *);
 void icbd_dispatch(struct bufferevent *, void *);
-void icbd_log(struct icb_session *, int, char *);
+void icbd_log(struct icb_session *, int, const char *, ...);
 void icbd_grplist(char *);
 void icbd_restrict(void);
 void icbd_write(struct icb_session *, char *, size_t);
@@ -300,7 +300,7 @@ icbd_drop(struct icb_session *is, char *reason)
 	icb_remove(is, msg);
 	icbd_log(is, ICB_LOG_DEBUG, msg);
 	bev = GETBEVP(is);
-	evbuffer_write((*bev)->output, EVBUFFER_FD(*bev));
+	evbuffer_write(EVBUFFER_OUTPUT(*bev), EVBUFFER_FD(*bev));
 	(void)close(EVBUFFER_FD(*bev));
 	bufferevent_free(*bev);
 	free(is);
@@ -322,9 +322,11 @@ icbd_ioerr(struct bufferevent *bev __attribute__((__unused__)), short what,
 }
 
 void
-icbd_log(struct icb_session *is, int level, char *msg)
+icbd_log(struct icb_session *is, int level, const char *fmt, ...)
 {
 	char addr[INET6_ADDRSTRLEN];
+	char buf[512];
+	va_list ap;
 	int port;
 
 	if (!verbose && level == ICB_LOG_DEBUG)
@@ -336,11 +338,14 @@ icbd_log(struct icb_session *is, int level, char *msg)
 		level = LOG_NOTICE;
 	else
 		level = LOG_DEBUG;
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof buf, fmt, ap);
+	va_end(ap);
 	if (is) {
 		getpeerinfo(is, addr, sizeof addr, &port);
-		syslog(level, "%s:%u: %s", addr, port, msg);
+		syslog(level, "%s:%u: %s", addr, port, buf);
 	} else {
-		syslog(level, "%s", msg);
+		syslog(level, "%s", buf);
 	}
 }
 
@@ -410,7 +415,7 @@ getmonotime(void)
 	if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
 		syslog(LOG_ERR, "%m");
 		exit(EX_OSERR);
-	}	
+	}
 	return (ts.tv_sec);
 }
 

@@ -15,12 +15,13 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.13 2009/05/21 14:02:21 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.14 2009/05/21 14:56:38 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/queue.h>
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +40,7 @@ void   icb_login(struct icb_session *, char *, char *, char *);
 char  *icb_parse(char *, size_t, int *);
 /* pointers to upper level functions */
 void (*icb_drop)(struct icb_session *, char *);
-void (*icb_log)(struct icb_session *, int, char *);
+void (*icb_log)(struct icb_session *, int, const char *, ...);
 void (*icb_send)(struct icb_session *, char *, size_t);
 
 /*
@@ -148,16 +149,15 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	}
 	if (ig == NULL) {
 		if (!creategroups) {
-			icb_error(is, "Invalid group");
+			icb_error(is, "Invalid group %s", group);
 			return;
 		} else {
 			if ((ig = icb_addgroup(is, group, NULL)) == NULL) {
-				icb_error(is, "Can't create group");
+				icb_error(is, "Can't create group %s", group);
 				return;
 			}
-			(void)snprintf(buf, sizeof buf, "%s created group %s",
+			icb_log(NULL, ICB_LOG_DEBUG, "%s created group %s",
 			    nick, group);
-			icb_log(NULL, ICB_LOG_DEBUG, buf);
 		}
 	}
 	LIST_FOREACH(s, &ig->sess, entry) {
@@ -301,7 +301,7 @@ icb_cmdout(struct icb_session *is, int type, char *outmsg)
 		otype = "wg";
 		break;
 	default:
-		icb_log(is, ICB_LOG_ERROR, "icb_cmdout: unknown cmdout type");
+		icb_log(is, ICB_LOG_ERROR, "unknown cmdout type");
 		return;
 	}
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_CMDOUT,
@@ -318,10 +318,10 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 {
 	char buf[ICB_MSGSIZE];
 	int buflen;
-	static struct /*icb_statmsg*/ {
+	static struct {
 		int		 type;
 		const char	*msg;
-	} statmsgtab[] = {
+	} msgtab[] = {
 		{ STATUS_AWAY,		"Away" },
 		{ STATUS_ARRIVE,	"Arrive" },
 		{ STATUS_BOOT,		"Boot" },
@@ -336,11 +336,11 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 		{ NULL,			NULL }
 	};
 
-	if (type < 0 || type > (int)nitems(statmsgtab) - 1)
+	if (type < 0 || type > (int)nitems(msgtab) - 1)
 		return;
 
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_STATUS,
-	    statmsgtab[type].msg, ICB_M_SEP, statmsg);
+	    msgtab[type].msg, ICB_M_SEP, statmsg);
 	buf[0] = (unsigned char) ++buflen;
 	icb_send(is, buf, buflen + 1);
 }
@@ -360,23 +360,29 @@ icb_status_group(struct icb_group *ig, struct icb_session *ex, int type,
 			continue;
 		icb_status(s, type, statmsg);
 	}
-	icb_log(NULL, ICB_LOG_DEBUG, statmsg);
+	icb_log(NULL, ICB_LOG_DEBUG, "%s", statmsg);
 }
 
 /*
  *  icb_error: sends an error message ('e') to the client
  */
 void
-icb_error(struct icb_session *is, char *errmsg)
+icb_error(struct icb_session *is, const char *fmt, ...)
 {
 	char buf[ICB_MSGSIZE];
+	char errmsg[512];
+	va_list ap;
 	int buflen;
 
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s", ICB_M_ERROR,
 	    errmsg);
 	buf[0] = (unsigned char) ++buflen;
-	icb_log(is, ICB_LOG_DEBUG, errmsg);
 	icb_send(is, buf, buflen + 1);
+
+	va_start(ap, fmt);
+	vsnprintf(errmsg, sizeof errmsg, fmt, ap);
+	va_end(ap);
+	icb_log(is, ICB_LOG_DEBUG, "%s", errmsg);
 }
 
 /*
@@ -397,7 +403,7 @@ icb_remove(struct icb_session *is, char *reason)
 		free(msg);
 	} else
 		icb_log(is, ICB_LOG_ERROR,
-		    "icb_remove: session isn't attached to any group");
+		    "session isn't attached to any group");
 }
 
 /*
@@ -492,7 +498,7 @@ icb_passmoder(struct icb_group *ig, struct icb_session *from,
 		ig->moder = to;
 		if (asprintf(&msg, "%s passed moderation of %s to %s",
 		    from ? from->nick : "server", ig->name, to->nick) > 0) {
-			icb_log(NULL, ICB_LOG_DEBUG, msg);
+			icb_log(NULL, ICB_LOG_DEBUG, "%s", msg);
 			icb_status_group(ig, NULL, STATUS_NOTIFY, msg);
 			free(msg);
 		}
@@ -502,7 +508,7 @@ icb_passmoder(struct icb_group *ig, struct icb_session *from,
 		icb_status(from, STATUS_NOTIFY, "You're no longer a moderator");
 		if (asprintf(&msg, "%s dropped moderation of %s",
 		    from->nick, ig->name) > 0) {
-			icb_log(NULL, ICB_LOG_DEBUG, msg);
+			icb_log(NULL, ICB_LOG_DEBUG, "%s", msg);
 			icb_status_group(ig, from, STATUS_NOTIFY, msg);
 			free(msg);
 		}

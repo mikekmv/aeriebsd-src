@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.14 2009/05/21 14:02:21 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.15 2009/05/21 14:56:38 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -44,34 +44,32 @@ void icb_cmd_wall(struct icb_cmdarg *);
 void icb_cmd_who(struct icb_cmdarg *);
 
 extern void (*icb_drop)(struct icb_session *, char *);
-extern void (*icb_log)(struct icb_session *, int, char *);
-extern void (*icb_write)(struct icb_session *, char *, size_t);
-
-struct icbcmd {
-	const char	*cmd;
-	void		(*handler)(struct icb_cmdarg *);
-} cmdtab[] = {
-	{ "away",	icb_cmd_away },
-	{ "boot",	icb_cmd_boot },
-	{ "g",		icb_cmd_group },
-	{ "m",		icb_cmd_personal },
-	{ "msg",	icb_cmd_personal },
-	{ "noaway",	icb_cmd_noaway },
-	{ "pass",	icb_cmd_pass },
-	{ "topic",	icb_cmd_topic },
-	{ "w",		icb_cmd_who },
-	{ NULL,		NULL }
-};
+extern void (*icb_log)(struct icb_session *, int, const char *, ...);
+extern void (*icb_send)(struct icb_session *, char *, size_t);
 
 void *
 icb_cmd_lookup(char *cmd)
 {
-	struct icbcmd *ic = cmdtab;
+	struct {
+		const char	*cmd;
+		void		(*handler)(struct icb_cmdarg *);
+	} cmdtab[] = {
+		{ "away",	icb_cmd_away },
+		{ "boot",	icb_cmd_boot },
+		{ "g",		icb_cmd_group },
+		{ "m",		icb_cmd_personal },
+		{ "msg",	icb_cmd_personal },
+		{ "noaway",	icb_cmd_noaway },
+		{ "pass",	icb_cmd_pass },
+		{ "topic",	icb_cmd_topic },
+		{ "w",		icb_cmd_who },
+		{ NULL,		NULL }
+	};
 	int i;
 
-	for (i = 0; ic->cmd != NULL; ic = &cmdtab[++i])
-		if (strcasecmp(ic->cmd, cmd) == 0)
-			return (ic->handler);
+	for (i = 0; cmdtab[i].cmd != NULL; i++)
+		if (strcasecmp(cmdtab[i].cmd, cmd) == 0)
+			return (cmdtab[i].handler);
 	return (NULL);
 }
 
@@ -138,9 +136,8 @@ icb_cmd_group(struct icb_cmdarg *ca)
 				icb_error(is, "Can't create group");
 				return;
 			}
-			(void)snprintf(buf, sizeof buf, "%s created group %s",
+			icb_log(NULL, ICB_LOG_DEBUG, "%s created group %s",
 			    is->nick, ca->arg);
-			icb_log(NULL, ICB_LOG_DEBUG, buf);
 		}
 	}
 
