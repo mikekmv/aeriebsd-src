@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: bioctl.c,v 1.1.1.1 2008/08/26 14:40:20 root Exp $";
+static const char rcsid[] = "$ABSD: bioctl.c,v 1.2 2008/12/26 18:50:47 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -36,7 +36,6 @@ static const char rcsid[] = "$ABSD: bioctl.c,v 1.1.1.1 2008/08/26 14:40:20 root 
 #include <scsi/scsi_disk.h>
 #include <scsi/scsi_all.h>
 #include <dev/biovar.h>
-#include <dev/softraidvar.h>
 
 #include <errno.h>
 #include <err.h>
@@ -63,9 +62,11 @@ void			usage(void);
 const char 		*str2locator(const char *, struct locator *);
 void			cleanup(void);
 int			bio_parse_devlist(char *, dev_t *);
+#if 0
 void			bio_kdf_derive(struct sr_crypto_kdfinfo *,
 			    struct sr_crypto_kdf_pbkdf2 *);
 void			bio_kdf_generate(struct sr_crypto_kdfinfo *);
+#endif
 void			derive_key_pkcs(int, u_int8_t *, size_t, u_int8_t *,
 			    size_t, int);
 
@@ -620,8 +621,10 @@ void
 bio_createraid(u_int16_t level, char *dev_list)
 {
 	struct bioc_createraid	create;
+#if 0
 	struct sr_crypto_kdfinfo kdfinfo;
 	struct sr_crypto_kdf_pbkdf2 kdfhint;
+#endif
 	int			rv, no_dev;
 	dev_t			*dt;
 	u_int16_t		min_disks = 0;
@@ -668,6 +671,7 @@ bio_createraid(u_int16_t level, char *dev_list)
 	create.bc_dev_list = dt;
 	create.bc_flags = BIOC_SCDEVT | cflags;
 
+#if 0
 	if (level == 'C') {
 		memset(&kdfinfo, 0, sizeof(kdfinfo));
 		memset(&kdfhint, 0, sizeof(kdfhint));
@@ -693,9 +697,11 @@ bio_createraid(u_int16_t level, char *dev_list)
 		create.bc_opaque_size = sizeof(kdfinfo);
 		create.bc_opaque_flags = BIOC_SOIN;
 	}
-
+#endif
 	rv = ioctl(devh, BIOCCREATERAID, &create);
+#if 0
 	memset(&kdfinfo, 0, sizeof(kdfinfo));
+#endif
 	memset(&create, 0, sizeof(create));
 	if (rv == -1) {
 		if (errno == EPERM)
@@ -706,6 +712,7 @@ bio_createraid(u_int16_t level, char *dev_list)
 	free(dt);
 }
 
+#if 0
 void
 bio_kdf_derive(struct sr_crypto_kdfinfo *kdfinfo, struct sr_crypto_kdf_pbkdf2
     *kdfhint)
@@ -749,7 +756,7 @@ bio_kdf_generate(struct sr_crypto_kdfinfo *kdfinfo)
 	    kdfinfo->maskkey, sizeof(kdfinfo->maskkey),
 	    kdfinfo->pbkdf2.salt, sizeof(kdfinfo->pbkdf2.salt), 1);
 }
-
+#endif
 int
 bio_parse_devlist(char *lst, dev_t *dt)
 {
