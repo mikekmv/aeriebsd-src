@@ -302,9 +302,10 @@ dino_maxdevs(void *v, int bus)
 pcitag_t
 dino_make_tag(void *v, int bus, int dev, int func)
 {
+#ifdef DIAGNOSTIC
 	if (bus > 255 || dev > 31 || func > 7)
 		panic("dino_make_tag: bad request");
-
+#endif
 	return ((bus << 16) | (dev << 11) | (func << 8));
 }
 
