@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2002 Michael Shalayeff. All rights reserved.
  * Copyright (c) 2003 Ryan McBride. All rights reserved.
@@ -36,13 +35,11 @@
 #include "ether.h"
 
 #include <sys/param.h>
-#include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/socketvar.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
 #include <sys/device.h>
 #include <sys/kernel.h>
 #include <sys/sysctl.h>

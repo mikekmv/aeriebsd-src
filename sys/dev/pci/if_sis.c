@@ -31,7 +31,6 @@
  *
  * $FreeBSD: src/sys/pci/if_sis.c,v 1.30 2001/02/06 10:11:47 phk Exp $
  */
-
 /*
  * SiS 900/SiS 7016 fast ethernet PCI NIC driver. Datasheets are
  * available from http://www.sis.com.tw.
@@ -43,7 +42,6 @@
  * Electrical Engineering Department
  * Columbia University, New York City
  */
-
 /*
  * The SiS 900 is a fairly simple chip. It uses bus master DMA with
  * simple TX and RX descriptors of 3 longwords in size. The receiver
@@ -62,11 +60,8 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
-#include <sys/protosw.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
-#include <sys/malloc.h>
+#include <sys/sockio.h>
 #include <sys/kernel.h>
 #include <sys/timeout.h>
 

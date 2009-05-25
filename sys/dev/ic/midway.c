@@ -1,5 +1,3 @@
-/*	(sync'd to midway.c 1.68)	*/
-
 /*
  *
  * Copyright (c) 1996 Charles D. Cranor and Washington University.
@@ -120,13 +118,9 @@
 #if defined(__NetBSD__) || defined(__OpenBSD__) || defined(__bsdi__)
 #include <sys/device.h>
 #endif
-#if defined(__FreeBSD__)
-#include <sys/sockio.h>
-#else
-#include <sys/ioctl.h>
-#endif
 #include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/socketvar.h>
 
 #include <net/if.h>

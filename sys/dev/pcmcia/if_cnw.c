@@ -26,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * This is a driver for the Xircom CreditCard Netwave (also known as
  * the Netwave Airsurfer) wireless LAN PCMCIA adapter.
@@ -55,8 +54,8 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/mbuf.h>
-#include <sys/ioctl.h>
 
 #include <dev/pcmcia/if_cnwreg.h>
 

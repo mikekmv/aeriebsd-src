@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2000 Network Security Technologies, Inc. http://www.netsec.net
  *

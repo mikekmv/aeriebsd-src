@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1988, 1992 The University of Utah and the Center
  *	for Software Science (CSS).
@@ -43,12 +42,12 @@
 
 #ifndef lint
 /*static char sccsid[] = "@(#)bpf.c	8.1 (Berkeley) 6/4/93";*/
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: bpf.c,v 1.1.1.1 2008/08/26 14:44:31 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 
 #include <net/if.h>
 #include <net/bpf.h>

@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1994-1997 Matt Thomas (matt@3am-software.com)
  * All rights reserved.
@@ -25,7 +24,6 @@
  * Id: if_de.c,v 1.89 1997/06/03 19:19:55 thomas Exp
  *
  */
-
 /*
  * DEC 21040 PCI Ethernet Controller
  *
@@ -39,13 +37,9 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
-#include <sys/protosw.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
-#include <sys/malloc.h>
+#include <sys/sockio.h>
 #include <sys/kernel.h>
-#include <sys/proc.h>	/* only for declaration of wakeup() used by vm.h */
 #include <sys/device.h>
 #include <sys/timeout.h>
 

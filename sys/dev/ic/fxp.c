@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995, David Greenman
  * All rights reserved.
@@ -43,8 +42,11 @@
 #include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/syslog.h>
 #include <sys/timeout.h>
+#include <sys/errno.h>
+#include <sys/device.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -61,10 +63,6 @@
 #if NBPFILTER > 0
 #include <net/bpf.h>
 #endif
-
-#include <sys/ioctl.h>
-#include <sys/errno.h>
-#include <sys/device.h>
 
 #include <netinet/if_ether.h>
 

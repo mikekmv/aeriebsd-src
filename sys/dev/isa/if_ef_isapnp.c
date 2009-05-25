@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1999 Jason L. Wright (jason@thought.net)
  * All rights reserved.
@@ -31,7 +30,7 @@
 #include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/selinfo.h>

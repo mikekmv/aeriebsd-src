@@ -38,6 +38,8 @@
 #ifndef _NET_BPF_H_
 #define _NET_BPF_H_
 
+#include <sys/ioccom.h>
+
 /* BSD style release date */
 #define BPF_RELEASE 199606
 

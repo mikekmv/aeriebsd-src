@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2001 Wasabi Systems, Inc.
  * All rights reserved.
@@ -33,7 +32,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Device driver for the AMD PCnet-PCI series of Ethernet
  * chips:
@@ -69,13 +67,10 @@
 #include <sys/systm.h>
 #include <sys/timeout.h>
 #include <sys/mbuf.h>
-#include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
+#include <sys/sockio.h>
 #include <sys/device.h>
-#include <sys/queue.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>

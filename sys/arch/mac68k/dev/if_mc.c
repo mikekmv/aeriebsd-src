@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997 David Huang <khym@azeotrope.org>
  * All rights reserved.
@@ -39,8 +38,8 @@
 #include <sys/buf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/syslog.h>
-#include <sys/ioctl.h>
 #include <sys/errno.h>
 #include <sys/device.h>
 

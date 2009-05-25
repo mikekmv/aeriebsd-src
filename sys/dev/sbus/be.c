@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -27,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Copyright (c) 1998 Theo de Raadt and Jason L. Wright.
  * All rights reserved.
@@ -57,15 +55,12 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/timeout.h>
 #include <sys/kernel.h>
-#include <sys/errno.h>
-#include <sys/ioctl.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/syslog.h>
 #include <sys/device.h>
-#include <sys/malloc.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -26,7 +25,7 @@ char    copyright[] =
 #endif				/* not lint */
 
 #ifndef lint
-static char rcsid[] = "$ABSD: rarpd.c,v 1.1.1.1 2008/08/26 14:44:31 root Exp $";
+static char rcsid[] = "$ABSD: rarpd.c,v 1.2 2008/12/26 18:52:28 mickey Exp $";
 #endif
 
 
@@ -36,23 +35,23 @@ static char rcsid[] = "$ABSD: rarpd.c,v 1.1.1.1 2008/08/26 14:44:31 root Exp $";
  * usage:	rarpd [-adflt] interface
  */
 
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/file.h>
+#include <sys/ttycom.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
 #include <string.h>
 #include <stdarg.h>
-#include <sys/param.h>
 #include <unistd.h>
-#include <sys/time.h>
 #include <net/bpf.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <net/if_types.h>
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
-#include <sys/file.h>
 #include <errno.h>
 #include <netdb.h>
 #include <arpa/inet.h>

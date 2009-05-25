@@ -16,13 +16,12 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: privsep.c,v 1.1.1.1 2008/08/26 14:40:28 root Exp $";
 #endif
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
 
 #include <net/if.h>
 #include <net/bpf.h>

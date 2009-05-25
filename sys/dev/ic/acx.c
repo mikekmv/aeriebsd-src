@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2006 Jonathan Gray <jsg@openbsd.org>
  *
@@ -95,7 +94,6 @@
 #include <sys/proc.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
-#include <sys/ioctl.h>
 
 #include <machine/bus.h>
 #include <machine/endian.h>

@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1993, 1994, 1995 Charles Hannum.
  * Copyright (c) 1992, 1993, University of Vermont and State
@@ -43,7 +42,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 /*
  * Intel 82586 Ethernet chip
  * Register, bit, and structure definitions.
@@ -60,14 +58,12 @@
  *
  * Majorly cleaned up and 3C507 code merged by Charles Hannum.
  */
-
 /*
  * The i82586 is a very versatile chip, found in many implementations.
  * Programming this chip is mostly the same, but certain details differ
  * from card to card.  This driver is written so that different cards
  * can be automatically detected at run-time.
  */
-
 /*
 Mode of operation:
 
@@ -112,8 +108,7 @@ iomem, and to make 16-pointers, we subtract sc_maddr and and with 0xffff.
 #include <sys/buf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
+#include <sys/sockio.h>
 #include <sys/syslog.h>
 #include <sys/device.h>
 #include <sys/timeout.h>

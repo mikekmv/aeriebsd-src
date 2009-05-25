@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997, 1998, 1999
  *	Bill Paul <wpaul@ctr.columbia.edu>.  All rights reserved.
@@ -30,9 +29,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $FreeBSD: if_xl.c,v 1.77 2000/08/28 20:40:03 wpaul Exp $
  */
-
 /*
  * 3Com 3c90x Etherlink XL PCI NIC driver
  *
@@ -74,7 +71,6 @@
  * Electrical Engineering Department
  * Columbia University, New York City
  */
-
 /*
  * The 3c90x series chips use a bus-master DMA interface for transfering
  * packets to and from the controller chip. Some of the "vortex" cards
@@ -106,11 +102,9 @@
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <sys/errno.h>
-#include <sys/malloc.h>
 #include <sys/kernel.h>
-#include <sys/proc.h>   /* only for declaration of wakeup() used by vm.h */
 #include <sys/device.h>
 
 #include <net/if.h>

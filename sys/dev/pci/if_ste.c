@@ -29,7 +29,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $FreeBSD: src/sys/pci/if_ste.c,v 1.14 1999/12/07 20:14:42 wpaul Exp $
  */
 
 #include "bpfilter.h"
@@ -37,11 +36,8 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
-#include <sys/protosw.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
-#include <sys/malloc.h>
+#include <sys/sockio.h>
 #include <sys/kernel.h>
 #include <sys/timeout.h>
 

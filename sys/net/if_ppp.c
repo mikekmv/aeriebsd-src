@@ -111,7 +111,8 @@
 #include <sys/proc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
+#include <sys/filio.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/time.h>

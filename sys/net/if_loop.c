@@ -110,8 +110,8 @@
 #include <sys/kernel.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/errno.h>
-#include <sys/ioctl.h>
 #include <sys/time.h>
 
 #include <machine/cpu.h>

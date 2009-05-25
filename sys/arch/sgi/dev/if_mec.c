@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2004 Izumi Tsutsui.
  * All rights reserved.
@@ -72,7 +71,7 @@
 #include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <sys/errno.h>
 
 #include <net/if.h>

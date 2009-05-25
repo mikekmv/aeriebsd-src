@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -28,7 +27,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*      
  * Copyright (c) 1996 Gardner Buchanan <gbuchanan@shl.com>
  * All rights reserved.
@@ -76,11 +74,10 @@
 #include <sys/mbuf.h>
 #include <sys/syslog.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/device.h>
 #include <sys/timeout.h>
 #include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/ioctl.h> 
 #include <sys/errno.h>
 
 #include <machine/bus.h>

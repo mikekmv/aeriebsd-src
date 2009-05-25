@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2004, 2005 David Young.  All rights reserved.
  *
@@ -38,10 +37,9 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/mbuf.h>
-#include <sys/malloc.h>
 #include <sys/kernel.h>
-#include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/time.h>
 
 #include <machine/endian.h>

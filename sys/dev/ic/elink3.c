@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996, 1997 Jonathan Stone <jonathan@NetBSD.org>
  * Copyright (c) 1994 Herb Peyerl <hpeyerl@beer.org>
@@ -36,7 +35,7 @@
 #include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/selinfo.h>

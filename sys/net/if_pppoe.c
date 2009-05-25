@@ -38,9 +38,10 @@
 #include <sys/malloc.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/syslog.h>
 #include <sys/proc.h>
-#include <sys/ioctl.h>
+
 #include <net/if.h>
 #include <net/if_types.h>
 #include <net/if_sppp.h>

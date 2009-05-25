@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2003 Oleg Safiullin <form@pdp11.org.ru>
  * All rights reserved.
@@ -34,7 +33,7 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 
 #include <net/if.h>
 #include <net/if_media.h>

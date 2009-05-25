@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994, Matthew E. Kimmel.  Permission is hereby granted
  * to use, copy, modify and distribute this software provided that both
@@ -22,9 +21,9 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/errno.h>
-#include <sys/ioctl.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/syslog.h>
 #include <sys/device.h>
 

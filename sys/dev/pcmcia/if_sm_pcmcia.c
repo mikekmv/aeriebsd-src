@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997, 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -35,11 +34,8 @@
 #include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/selinfo.h>
-#include <sys/timeout.h>
 #include <sys/device.h>
 
 #include <net/if.h>

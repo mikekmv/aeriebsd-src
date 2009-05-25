@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2003 Dale Rahn. All rights reserved.
  *
@@ -26,19 +25,16 @@
  * Agency (DARPA) and Air Force Research Laboratory, Air Force
  * Materiel Command, USAF, under agreement number F30602-01-2-0537.
  */
+
 #include "bpfilter.h"
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/sockio.h>
 #include <sys/mbuf.h>
-#include <sys/malloc.h>
 #include <sys/kernel.h>
-#include <sys/proc.h>
 #include <sys/socket.h>
 #include <sys/device.h>
 #include <sys/kthread.h>
-#include <sys/tree.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>

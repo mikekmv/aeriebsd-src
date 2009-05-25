@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1995, 1996 Matt Thomas <matt@3am-software.com>
  * All rights reserved.
@@ -36,11 +35,7 @@
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/mbuf.h>
-#include <sys/protosw.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
-#include <sys/malloc.h>
 #include <sys/device.h>
 
 #include <net/if.h>

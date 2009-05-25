@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1998 Theo de Raadt and Jason L. Wright.
  * All rights reserved.
@@ -28,9 +27,9 @@
 #include <sys/systm.h>
 #include <sys/kernel.h>
 #include <sys/errno.h>
-#include <sys/ioctl.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/syslog.h>
 #include <sys/device.h>
 #include <sys/malloc.h>

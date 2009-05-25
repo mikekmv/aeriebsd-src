@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994 Herb Peyerl <hpeyerl@beer.org>
  * All rights reserved.
@@ -35,9 +34,6 @@
 #include <sys/systm.h>
 #include <sys/mbuf.h> 
 #include <sys/socket.h> 
-#include <sys/ioctl.h>
-#include <sys/errno.h>
-#include <sys/timeout.h>
 #include <sys/syslog.h>
 #include <sys/selinfo.h>
 #include <sys/device.h>

@@ -1,4 +1,3 @@
-
 /*
  * National Semiconductor  DP8393X SONIC Driver
  * Copyright (c) 1991   Algorithmics Ltd (http://www.algor.co.uk)
@@ -20,8 +19,8 @@
 #include <sys/buf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/syslog.h>
-#include <sys/ioctl.h>
 #include <sys/errno.h>
 #include <sys/device.h>
 

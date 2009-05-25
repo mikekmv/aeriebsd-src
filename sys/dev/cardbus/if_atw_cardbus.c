@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1999, 2000, 2003 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -42,7 +41,7 @@
 #include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <sys/errno.h>
 #include <sys/device.h>
 

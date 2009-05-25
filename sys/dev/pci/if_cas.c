@@ -1,4 +1,3 @@
-
 /*
  *
  * Copyright (C) 2007 Mark Kettenis.
@@ -28,7 +27,6 @@
  * SUCH DAMAGE.
  *
  */
-
 /*
  * Driver for Sun Cassini ethernet controllers.
  *
@@ -48,11 +46,9 @@
 #include <sys/timeout.h>
 #include <sys/mbuf.h>
 #include <sys/syslog.h>
-#include <sys/malloc.h>
 #include <sys/kernel.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
+#include <sys/sockio.h>
 #include <sys/device.h>
 
 #include <machine/endian.h>

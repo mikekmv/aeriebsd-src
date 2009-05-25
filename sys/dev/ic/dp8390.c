@@ -1,4 +1,3 @@
-
 /*
  * Device driver for National Semiconductor DS8390/WD83C690 based ethernet
  * adapters.
@@ -18,9 +17,9 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/errno.h>
-#include <sys/ioctl.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/syslog.h>
 
 #include <net/if.h>

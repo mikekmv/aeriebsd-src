@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2006 Claudio Jeker <claudio@openbsd.org>
  * Copyright (c) 2006 Marcus Glocker <mglocker@openbsd.org>
@@ -15,7 +14,6 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
 /*
  * Copyright (c) 2004 Fujitsu Laboratories of America, Inc.
  * Copyright (c) 2004 Brian Fundakowski Feldman
@@ -56,7 +54,6 @@
 #include <sys/sysctl.h>
 #include <sys/kthread.h>
 #include <sys/time.h>
-#include <sys/ioctl.h>
 #include <sys/device.h>
 
 #include <machine/bus.h>

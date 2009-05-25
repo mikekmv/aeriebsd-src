@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997-1999 LAN Media Corporation (LMC)
  * All rights reserved.  www.lanmedia.com
@@ -36,7 +35,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*-
  * Copyright (c) 1994-1997 Matt Thomas (matt@3am-software.com)
  * All rights reserved.
@@ -60,7 +58,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * LMC1200 (DS1) & LMC5245 (DS3) LED definitions
  * led0 yellow = far-end link is in Red alarm condition
@@ -83,12 +80,10 @@
 #include <sys/systm.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
-#include <sys/malloc.h>
+#include <sys/sockio.h>
 #include <sys/kernel.h>
-#include <sys/proc.h>
 #include <sys/device.h>
+#include <sys/proc.h>	/* for curproc */
 
 #include <dev/pci/pcidevs.h>
 

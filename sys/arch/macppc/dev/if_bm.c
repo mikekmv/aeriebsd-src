@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (C) 1998, 1999 Tsubai Masanari.  All rights reserved.
  *
@@ -29,9 +28,9 @@
 
 #include <sys/param.h>
 #include <sys/device.h>
-#include <sys/ioctl.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/systm.h>
 #include <sys/timeout.h>
 #include <sys/kernel.h>

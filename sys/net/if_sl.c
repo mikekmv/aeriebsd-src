@@ -65,7 +65,7 @@
 #include <sys/mbuf.h>
 #include <sys/dkstat.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <sys/file.h>
 #include <sys/tty.h>
 #include <sys/kernel.h>

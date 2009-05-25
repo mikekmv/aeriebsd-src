@@ -32,10 +32,11 @@
 #include <sys/time.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <sys/timeout.h>
 #include <sys/kernel.h>
 #include <sys/sysctl.h>
+#include <sys/pool.h>
 
 #include <net/if.h>
 #include <net/if_types.h>
@@ -45,7 +46,6 @@
 #include <netinet/if_ether.h>
 #include <netinet/tcp.h>
 #include <netinet/tcp_seq.h>
-#include <sys/pool.h>
 
 #ifdef	INET
 #include <netinet/in_systm.h>

@@ -41,10 +41,11 @@
 #include <sys/mbuf.h>
 #include <sys/proc.h>
 #include <sys/signalvar.h>
-#include <sys/ioctl.h>
 #include <sys/conf.h>
 #include <sys/vnode.h>
 #include <sys/file.h>
+#include <sys/filio.h>
+#include <sys/ttycom.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <sys/kernel.h>

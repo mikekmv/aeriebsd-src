@@ -40,7 +40,7 @@
 #include <sys/mbuf.h>
 #include <sys/proc.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 
 #include <net/if.h>
 #include <net/if_types.h>

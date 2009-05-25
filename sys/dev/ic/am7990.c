@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1995 Charles M. Hannum.  All rights reserved.
  * Copyright (c) 1992, 1993
@@ -41,9 +40,9 @@
 #include <sys/mbuf.h> 
 #include <sys/syslog.h>
 #include <sys/socket.h>
+#include <sys/sockio.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
-#include <sys/ioctl.h>
 #include <sys/errno.h>
 
 #include <net/if.h>

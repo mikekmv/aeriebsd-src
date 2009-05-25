@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2000 Christian E. Hopps
  * All rights reserved.
@@ -27,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 /*
  * Driver for the Raylink (Raytheon) / WebGear IEEE 802.11 (FH) WLANs
  *
@@ -48,7 +46,6 @@
  *	with other 802.11 FH 2Mbps cards, since this was also untested.
  *	Given the nature of the buggy build 4 firmware there may be problems.
  */
-
 /* Authentication added by Steve Weiss <srw@alum.mit.edu> based on advice
  * received by Corey Thomas, author of the Linux driver for this device.
  * Authentication currently limited to adhoc networks, and was added to
@@ -63,14 +60,12 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/timeout.h>
 #include <sys/mbuf.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/errno.h>
+#include <sys/sockio.h>
 #include <sys/device.h>
 #include <sys/kernel.h>
-#include <sys/proc.h>
+#include <sys/proc.h>	/* for curproc */
 
 #include <net/if.h>
 #include <net/if_dl.h>

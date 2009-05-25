@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1993, 1994, 1995 Charles Hannum.
  * Copyright (c) 1992, 1993, University of Vermont and State
@@ -104,7 +103,7 @@ Mode of operation:
 #include <sys/buf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/device.h>

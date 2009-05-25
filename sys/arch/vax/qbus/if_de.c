@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * Copyright (c) 2000 Ludd, University of Lule}, Sweden.
@@ -52,7 +51,7 @@
 #include <sys/buf.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
+#include <sys/sockio.h>
 #include <sys/errno.h>
 #include <sys/syslog.h>
 #include <sys/device.h>

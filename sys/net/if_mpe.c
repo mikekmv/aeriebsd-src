@@ -22,7 +22,6 @@
 #include <sys/proc.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
-#include <sys/ioctl.h>
 
 #include <net/if.h>
 #include <net/if_types.h>

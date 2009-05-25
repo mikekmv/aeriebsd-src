@@ -29,7 +29,6 @@
 #include <sys/uio.h>
 #include <sys/time.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
 #include <sys/param.h>
 #include <net/if.h>
 #include <net/if_dl.h>
