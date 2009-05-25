@@ -1,4 +1,3 @@
-
 /*
  * This tool requests configuration info from a multicast router
  * and prints the reply (if any).  Invoke it as:
@@ -74,15 +73,15 @@
  */
 
 #ifndef lint
-static char rcsid[] =
+static char rcsid[] = "$ABSD$";
 /*  original rcsid:
     "@(#) Header: mrinfo.c,v 1.6 93/04/08 15:14:16 van Exp (LBL)";
 */
 #endif
 
+#include <sys/time.h>
 #include <string.h>
 #include <netdb.h>
-#include <sys/time.h>
 #include "defs.h"
 #include <arpa/inet.h>
 #include <stdarg.h>
