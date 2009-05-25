@@ -106,10 +106,6 @@ procinit(void)
 	    &pool_allocator_nointr);
 }
 
-/*
- * Change the count associated with number of processes
- * a given user is using.
- */
 struct uidinfo *
 uid_find(uid_t uid)
 {
@@ -136,6 +132,10 @@ uid_find(uid_t uid)
 	return (nuip);
 }
 
+/*
+ * Change the count associated with number of processes
+ * a given user is using.
+ */
 int
 chgproccnt(uid_t uid, int diff)
 {
