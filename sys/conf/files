@@ -934,9 +934,6 @@ file compat/common/vfs_syscalls_25.c	!small_kernel &
 	(compat_freebsd | compat_bsdos | compat_sunos | compat_hpux)
 file compat/common/vfs_syscalls_35.c	!small_kernel &
 	(compat_freebsd | compat_bsdos | compat_sunos | compat_hpux)
-file compat/common/vfs_syscalls_o43.c	!small_kernel & compat_o43
-file compat/common/kern_ipc_35.c	!small_kernel & compat_35
-file compat/common/kern_ipc_23.c	!small_kernel & compat_23
 file compat/common/kern_exit_43.c	!small_kernel
 file compat/common/kern_info_43.c	!small_kernel
 file compat/common/kern_resource_43.c	!small_kernel
