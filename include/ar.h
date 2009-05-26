@@ -48,6 +48,7 @@
 #define	SARMAG		8		/* strlen(ARMAG); */
 
 #define	AR_EFMT1	"#1/"		/* extended format #1 */
+#define	AR_NAMTAB	"//"		/* long names table */
 
 struct ar_hdr {
 	char ar_name[16];		/* name */
