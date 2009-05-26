@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.3 2009/03/20 16:25:16 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.4 2009/04/03 11:25:52 mickey Exp $";
 #endif
 #endif
 
@@ -72,7 +72,6 @@ static const char rcsid[] = "$ABSD: nm.c,v 1.3 2009/03/20 16:25:16 mickey Exp $"
 #include "byte.c"
 
 #define	SYMTABMAG	"/ "
-#define	STRTABMAG	"//"
 
 union hdr {
 	struct exec aout;
@@ -530,8 +529,8 @@ show_archive(int count, const char *fname, FILE *fp)
 			}
 
 			/* load the Sys5 long names table */
-		} else if (strncmp(ar_head.ar_name, STRTABMAG,
-		    sizeof(STRTABMAG) - 1) == 0) {
+		} else if (strncmp(ar_head.ar_name, AR_NAMTAB,
+		    sizeof(AR_NAMTAB) - 1) == 0) {
 			char *p;
 
 			if ((nametab = malloc(mmbrlen)) == NULL) {
