@@ -1,0 +1,264 @@
+
+
+
+CRYPTO_SET_LOCKING_CALLBACK(3)OpenSSLCRYPTO_SET_LOCKING_CALLBACK(3)
+
+
+NNAAMMEE
+       CRYPTO_set_locking_callback, CRYPTO_set_id_callback,
+       CRYPTO_num_locks, CRYPTO_set_dynlock_create_callback,
+       CRYPTO_set_dynlock_lock_callback, CRYPTO_set_dyn-
+       lock_destroy_callback, CRYPTO_get_new_dynlockid,
+       CRYPTO_destroy_dynlockid, CRYPTO_lock - OpenSSL thread
+       support
+
+SSYYNNOOPPSSIISS
+        #include <openssl/crypto.h>
+
+        void CRYPTO_set_locking_callback(void (*locking_function)(int mode,
+               int n, const char *file, int line));
+
+        void CRYPTO_set_id_callback(unsigned long (*id_function)(void));
+
+        int CRYPTO_num_locks(void);
+
+        /* struct CRYPTO_dynlock_value needs to be defined by the user */
+        struct CRYPTO_dynlock_value;
+
+        void CRYPTO_set_dynlock_create_callback(struct CRYPTO_dynlock_value *
+               (*dyn_create_function)(char *file, int line));
+        void CRYPTO_set_dynlock_lock_callback(void (*dyn_lock_function)
+               (int mode, struct CRYPTO_dynlock_value *l,
+               const char *file, int line));
+        void CRYPTO_set_dynlock_destroy_callback(void (*dyn_destroy_function)
+               (struct CRYPTO_dynlock_value *l, const char *file, int line));
+
+        int CRYPTO_get_new_dynlockid(void);
+
+        void CRYPTO_destroy_dynlockid(int i);
+
+        void CRYPTO_lock(int mode, int n, const char *file, int line);
+
+        #define CRYPTO_w_lock(type)    \
+               CRYPTO_lock(CRYPTO_LOCK|CRYPTO_WRITE,type,__FILE__,__LINE__)
+        #define CRYPTO_w_unlock(type)  \
+               CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_WRITE,type,__FILE__,__LINE__)
+        #define CRYPTO_r_lock(type)    \
+               CRYPTO_lock(CRYPTO_LOCK|CRYPTO_READ,type,__FILE__,__LINE__)
+        #define CRYPTO_r_unlock(type)  \
+               CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_READ,type,__FILE__,__LINE__)
+        #define CRYPTO_add(addr,amount,type)   \
+               CRYPTO_add_lock(addr,amount,type,__FILE__,__LINE__)
+
+DDEESSCCRRIIPPTTIIOONN
+       OpenSSL can safely be used in multi-threaded applications
+       provided that at least two callback functions are set.
+
+       locking_function(int mode, int n, const char *file, int
+       line) is needed to perform locking on shared data struc-
+       tures.  (Note that OpenSSL uses a number of global data
+       structures that will be implicitly shared whenever
+
+
+
+AerieBSD 1.0                2009-05-26                          1
+
+
+
+
+
+CRYPTO_SET_LOCKING_CALLBACK(3)OpenSSLCRYPTO_SET_LOCKING_CALLBACK(3)
+
+
+       multiple threads use OpenSSL.)  Multi-threaded applica-
+       tions will crash at random if it is not set.
+
+       _l_o_c_k_i_n_g___f_u_n_c_t_i_o_n_(_) must be able to handle up to
+       _C_R_Y_P_T_O___n_u_m___l_o_c_k_s_(_) different mutex locks. It sets the nn-th
+       lock if mmooddee & CCRRYYPPTTOO__LLOOCCKK, and releases it otherwise.
+
+       ffiillee and lliinnee are the file number of the function setting
+       the lock. They can be useful for debugging.
+
+       id_function(void) is a function that returns a thread ID,
+       for example _p_t_h_r_e_a_d___s_e_l_f_(_) if it returns an integer (see
+       NOTES below).  It isn't needed on Windows nor on platforms
+       where _g_e_t_p_i_d_(_) returns a different ID for each thread (see
+       NOTES below).
+
+       Additionally, OpenSSL supports dynamic locks, and some-
+       times, some parts of OpenSSL need it for better perfor-
+       mance.  To enable this, the following is required:
+
+       * Three additional callback function, dyn_create_function,
+       dyn_lock_function and dyn_destroy_function.
+       * A structure defined with the data that each lock needs
+       to han- dle.
+
+       struct CRYPTO_dynlock_value has to be defined to contain
+       whatever structure is needed to handle locks.
+
+       dyn_create_function(const char *file, int line) is needed
+       to create a lock.  Multi-threaded applications might crash
+       at random if it is not set.
+
+       dyn_lock_function(int mode, CRYPTO_dynlock *l, const char
+       *file, int line) is needed to perform locking off dynamic
+       lock numbered n. Multi-threaded applications might crash
+       at random if it is not set.
+
+       dyn_destroy_function(CRYPTO_dynlock *l, const char *file,
+       int line) is needed to destroy the lock l. Multi-threaded
+       applications might crash at random if it is not set.
+
+       _C_R_Y_P_T_O___g_e_t___n_e_w___d_y_n_l_o_c_k_i_d_(_) is used to create locks.  It
+       will call dyn_create_function for the actual creation.
+
+       _C_R_Y_P_T_O___d_e_s_t_r_o_y___d_y_n_l_o_c_k_i_d_(_) is used to destroy locks.  It
+       will call dyn_destroy_function for the actual destruction.
+
+       _C_R_Y_P_T_O___l_o_c_k_(_) is used to lock and unlock the locks.  mode
+       is a bitfield describing what should be done with the
+       lock.  n is the number of the lock as returned from
+       _C_R_Y_P_T_O___g_e_t___n_e_w___d_y_n_l_o_c_k_i_d_(_).  mode can be combined from the
+       following values.  These values are pairwise exclusive,
+       with undefined behaviour if misused (for example,
+       CRYPTO_READ and CRYPTO_WRITE should not be used together):
+
+
+
+AerieBSD 1.0                2009-05-26                          2
+
+
+
+
+
+CRYPTO_SET_LOCKING_CALLBACK(3)OpenSSLCRYPTO_SET_LOCKING_CALLBACK(3)
+
+
+               CRYPTO_LOCK     0x01
+               CRYPTO_UNLOCK   0x02
+               CRYPTO_READ     0x04
+               CRYPTO_WRITE    0x08
+
+RREETTUURRNN VVAALLUUEESS
+       _C_R_Y_P_T_O___n_u_m___l_o_c_k_s_(_) returns the required number of locks.
+
+       _C_R_Y_P_T_O___g_e_t___n_e_w___d_y_n_l_o_c_k_i_d_(_) returns the index to the newly
+       created lock.
+
+       The other functions return no values.
+
+NNOOTTEESS
+       You can find out if OpenSSL was configured with thread
+       support:
+
+        #define OPENSSL_THREAD_DEFINES
+        #include <openssl/opensslconf.h>
+        #if defined(OPENSSL_THREADS)
+          // thread support enabled
+        #else
+          // no thread support
+        #endif
+
+       Also, dynamic locks are currently not used internally by
+       OpenSSL, but may do so in the future.
+
+       Defining id_function(void) has it's own issues.  Generally
+       speaking, _p_t_h_r_e_a_d___s_e_l_f_(_) should be used, even on platforms
+       where _g_e_t_p_i_d_(_) gives different answers in each thread,
+       since that may depend on the machine the program is run
+       on, not the machine where the program is being compiled.
+       For instance, Red Hat 8 Linux and earlier used Linux-
+       Threads, whose _g_e_t_p_i_d_(_) returns a different value for each
+       thread.  Red Hat 9 Linux and later use NPTL, which is
+       Posix-conformant, and has a _g_e_t_p_i_d_(_) that returns the same
+       value for all threads in a process.  A program compiled on
+       Red Hat 8 and run on Red Hat 9 will therefore see _g_e_t_p_i_d_(_)
+       returning the same value for all threads.
+
+       There is still the issue of platforms where _p_t_h_r_e_a_d___s_e_l_f_(_)
+       returns something other than an integer.  This is a bit
+       unusual, and this manual has no cookbook solution for that
+       case.
+
+EEXXAAMMPPLLEESS
+       ccrryyppttoo//tthhrreeaaddss//mmtttteesstt..cc shows examples of the callback
+       functions on Solaris, Irix and Win32.
+
+HHIISSTTOORRYY
+       _C_R_Y_P_T_O___s_e_t___l_o_c_k_i_n_g___c_a_l_l_b_a_c_k_(_) and _C_R_Y_P_T_O___s_e_t___i_d___c_a_l_l_b_a_c_k_(_)
+       are available in all versions of SSLeay and OpenSSL.
+       _C_R_Y_P_T_O___n_u_m___l_o_c_k_s_(_) was added in OpenSSL 0.9.4.  All
+
+
+
+AerieBSD 1.0                2009-05-26                          3
+
+
+
+
+
+CRYPTO_SET_LOCKING_CALLBACK(3)OpenSSLCRYPTO_SET_LOCKING_CALLBACK(3)
+
+
+       functions dealing with dynamic locks were added in OpenSSL
+       0.9.5b-dev.
+
+SSEEEE AALLSSOO
+       _c_r_y_p_t_o(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AerieBSD 1.0                2009-05-26                          4
+
+
