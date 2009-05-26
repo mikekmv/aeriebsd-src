@@ -31,6 +31,8 @@
  * SUCH DAMAGE.
  */
 
+#include <sys/cdefs.h>
+
 /*
  * x86-64 machine dependent routines for kvm.
  */
@@ -93,8 +95,14 @@ _kvm_kvatop(kvm_t *kd, u_long va, paddr_t *pa)
 		return (0);
 	}
 
-	cpu_kh = kd->cpu_data;
 	page_off = va & PGOFSET;
+
+	if (va >= PMAP_DIRECT_BASE && va <= PMAP_DIRECT_END) {
+		*pa = va - PMAP_DIRECT_BASE;
+		return (int)(NBPG - page_off);
+	}
+
+	cpu_kh = kd->cpu_data;
 
 	/*
 	 * Find and read all entries to get to the pa.
@@ -142,6 +150,14 @@ _kvm_kvatop(kvm_t *kd, u_long va, paddr_t *pa)
 		goto lose;
 	}
 
+	/*
+	 * Might be a large page.
+	 */
+	if ((pde & PG_PS) != 0) {
+		page_off = va & (NBPD_L2 - 1);
+		*pa = (pde & PG_LGFRAME) | page_off;
+		return (int)(NBPD_L2 - page_off);
+	}
 
 	/*
 	 * Level 1.
@@ -190,6 +206,9 @@ _kvm_pa2off(kvm_t *kd, paddr_t pa)
 		}
 		off += ramsegs[i].size;
 	}
+
+	if (i == cpu_kh->nmemsegs)
+		_kvm_err(kd, 0, "pa %lx not in dump", pa);
 
 	return (kd->dump_off + off);
 }

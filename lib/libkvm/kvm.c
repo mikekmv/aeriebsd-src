@@ -36,7 +36,7 @@
 #if 0
 static char sccsid[] = "@(#)kvm.c	8.2 (Berkeley) 2/13/94";
 #else
-static char *rcsid = "$ABSD$";
+static char *rcsid = "$ABSD: kvm.c,v 1.1.1.1 2008/08/26 14:38:50 root Exp $";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
@@ -211,8 +211,6 @@ _kvm_open(kvm_t *kd, const char *uf, const char *mf, const char *sf,
 	}
 	if (mf == 0)
 		mf = _PATH_MEM;
-	if (sf == 0)
-		sf = _PATH_DRUM;
 
 	if ((kd->pmfd = open(mf, flag, 0)) < 0) {
 		_kvm_syserr(kd, kd->program, "%s", mf);
@@ -239,7 +237,7 @@ _kvm_open(kvm_t *kd, const char *uf, const char *mf, const char *sf,
 			goto failed;
 		}
 		kd->alive = 1;
-		if ((kd->swfd = open(sf, flag, 0)) < 0) {
+		if (sf != NULL && (kd->swfd = open(sf, flag, 0)) < 0) {
 			_kvm_syserr(kd, kd->program, "%s", sf);
 			goto failed;
 		}

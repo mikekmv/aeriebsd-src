@@ -64,7 +64,7 @@
 #if 0
 static char sccsid[] = "@(#)kvm_proc.c	8.3 (Berkeley) 9/23/93";
 #else
-static char *rcsid = "$ABSD: kvm_proc.c,v 1.1.1.1 2008/08/26 14:38:50 root Exp $";
+static char *rcsid = "$ABSD: kvm_proc.c,v 1.2 2008/12/26 18:50:36 mickey Exp $";
 #endif
 #endif /* LIBC_SCCS and not lint */
 
@@ -229,7 +229,8 @@ _kvm_ureadm(kvm_t *kd, const struct miniproc *p, u_long va, u_long *cnt)
 		    (size_t)kd->nbpg, (off_t)pg.phys_addr) != kd->nbpg)
 			return (NULL);
 	} else {
-		if (_kvm_pread(kd, kd->swfd, (void *)kd->swapspc,
+		if (kd->swfd == -1 ||
+		    _kvm_pread(kd, kd->swfd, (void *)kd->swapspc,
 		    (size_t)kd->nbpg,
 		    (off_t)(anon.an_swslot * kd->nbpg)) != kd->nbpg)
 			return (NULL);
