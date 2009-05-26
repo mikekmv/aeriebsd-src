@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.4 2009/04/03 11:25:52 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.5 2009/05/26 10:29:22 mickey Exp $";
 #endif
 #endif
 
@@ -295,7 +295,7 @@ process_file(int count, const char *fname)
 	return(retval);
 }
 
-char *nametab;
+char **nametab;
 
 /*
  *
@@ -311,7 +311,7 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 		int len;
 
 		i = atol(&arh->ar_name[1]);
-		len = strlen(&nametab[i]);
+		len = strlen(nametab[i]) + 1;
 		if (len > *namelen) {
 			p -= (long)*name;
 			if ((*name = realloc(*name, baselen+len)) == NULL)
@@ -319,8 +319,8 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 			*namelen = len;
 			p += (long)*name;
 		}
-		strlcpy(p, &nametab[i], len);
-		p += len;
+		strlcpy(p, nametab[i], len);
+		return 0;
 	} else
 #ifdef AR_EFMT1
 	/*
@@ -531,23 +531,42 @@ show_archive(int count, const char *fname, FILE *fp)
 			/* load the Sys5 long names table */
 		} else if (strncmp(ar_head.ar_name, AR_NAMTAB,
 		    sizeof(AR_NAMTAB) - 1) == 0) {
-			char *p;
+			char **nt, *p, *pp;
+			int i;
+		 
+			if (!(p = malloc(mmbrlen + 1))) {
+				warn("%s: alloc nametab", fname);
+				rval = 1;
+				break;
+			}
+					  
+			if (fread(p, mmbrlen, (size_t)1, fp) != 1) {
+				warn("%s: read nametab", fname);
+				rval = 1;
+				break;
+			}
+			p[mmbrlen] = '\0';
 
-			if ((nametab = malloc(mmbrlen)) == NULL) {
-				warn("%s: nametab", fname);
+			for (pp = p, i = 0; *pp; )
+				if (*pp++ == '\n')
+					i++;
+
+			/* XXX check overflow */
+			if (!(nametab = malloc((i + 1) * sizeof *nametab))) {
+				warn("%s: alloc nametab index", fname);
 				rval = 1;
 				break;
 			}
 
-			if (fread(nametab, mmbrlen, (size_t)1, fp) != 1) {
-				warnx("%s: premature EOF", fname);
-				rval = 1;
-				break;
-			}
-
-			for (p = nametab, i = mmbrlen; i--; p++)
-				if (*p == '\n')
-					*p = '\0';
+			for (nt = nametab, pp = p; *p; p++)
+				if (*p == '\n') {
+					*nt++ = pp;
+					if (p[-1] == '/')
+						p[-1] = '\0';
+					*p++ = '\0';
+					pp = p;
+				}
+			*nt = NULL;
 
 			if (issize || !armap || !symtablen || !symtaboff)
 				goto skip;
