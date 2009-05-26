@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.5 2009/05/26 10:29:22 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.6 2009/05/26 16:35:27 mickey Exp $";
 #endif
 #endif
 
@@ -609,11 +609,9 @@ show_archive(int count, const char *fname, FILE *fp)
 
 		rval |= show_file(2, non_object_warning, name, fp, foff, &exec_head);
 		/*
-		 * skip to next archive object - it starts at the next
-		 * even byte boundary
+		 * skip to next archive object
 		 */
-#define even(x) (((x) + 1) & ~1)
-skip:		if (fseeko(fp, last_ar_off + even(mmbrlen), SEEK_SET)) {
+skip:		if (fseeko(fp, last_ar_off + mmbrlen, SEEK_SET)) {
 			warn("%s", fname);
 			rval = 1;
 			break;
