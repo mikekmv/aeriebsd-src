@@ -60,6 +60,8 @@ static struct kw {
 /* 14 */{ "__signed__", NULL, 0 },
 /* 15 */{ "__attribute__", NULL, 0 },
 /* 16 */{ "__attribute", NULL, 0 },
+/* 17 */{ "__real__", NULL, 0 },
+/* 18 */{ "__imag__", NULL, 0 },
 	{ NULL, NULL, 0 },
 };
 
@@ -82,6 +84,7 @@ int
 gcc_keyword(char *str, NODE **n)
 {
 	extern int inattr, parlvl, parbal;
+	YYSTYPE *yyl = (YYSTYPE *)n; /* XXX should pass yylval */
 	char tlbuf[TLLEN], *tw;
 	struct kw *kwp;
 	int i;
@@ -123,6 +126,12 @@ gcc_keyword(char *str, NODE **n)
 		inattr = 1;
 		parlvl = parbal;
 		return C_ATTRIBUTE;
+	case 17: /* __real__ */
+		yyl->intval = XREAL;
+		return C_UNOP;
+	case 18: /* __imag__ */
+		yyl->intval = XIMAG;
+		return C_UNOP;
 	}
 	cerror("gcc_keyword");
 	return 0;
@@ -161,6 +170,7 @@ struct atax {
 	[GCC_ATYP_NONNULL] =	{ A_MANY, "nonnull" },
 	[GCC_ATYP_SENTINEL] =	{ A_0ARG|A_1ARG, "sentinel" },
 	[GCC_ATYP_WEAK] =	{ A_0ARG, "weak" },
+	[GCC_ATYP_FORMATARG] =	{ A_1ARG, "format_arg" },
 };
 
 static int
@@ -318,7 +328,7 @@ gcc_tcattrfix(NODE *p, NODE *q)
 	struct suedef *sue;
 	gcc_ap_t *gap;
 	int align = 0;
-	int i, sz, coff;
+	int i, sz, coff, csz;
 
 	gap = gcc_attr_parse(q);
 	sue = p->n_sue;
@@ -338,7 +348,7 @@ gcc_tcattrfix(NODE *p, NODE *q)
 		case GCC_ATYP_PACKED:
 			/* Must repack struct */
 			/* XXX - aligned types inside? */
-			coff = 0;
+			coff = csz = 0;
 			for (sp = sue->suem; sp; sp = sp->snext) {
 				if (sp->sclass & FIELD)
 					sz = sp->sclass&FLDSIZ;
@@ -346,12 +356,13 @@ gcc_tcattrfix(NODE *p, NODE *q)
 					sz = tsize(sp->stype, sp->sdf, sp->ssue);
 				SETOFF(sz, gap->ga[i].a1.iarg);
 				sp->soffset = coff;
-				if (p->n_type == STRTY)
-					coff += sz;
-				else if (sz > coff)
-					coff = sz;
+				coff += sz;
+				if (coff > csz)
+					csz = coff;
+				if (p->n_type == UNIONTY)
+					coff = 0;
 			}
-			sue->suesize = coff;
+			sue->suesize = csz;
 			sue->suealign = gap->ga[i].a1.iarg;
 			break;
 

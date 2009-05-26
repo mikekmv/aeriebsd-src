@@ -29,10 +29,13 @@
 
 # include "pass1.h"
 
-NODE *funarg(NODE *, int *);
-int argreg(TWORD, int *);
+static int nsse, ngpr, nrsp;
+enum { INTEGER = 1, INTMEM, SSE, SSEMEM, X87, STRREG, STRMEM };
+static const int argregsi[] = { RDI, RSI, RDX, RCX, R09, R08 };
 
 int lastloc = -1;
+
+static int argtyp(TWORD t, union dimfun *df, struct suedef *sue);
 
 /*
  * Define everything needed to print out some data (or text).
@@ -43,6 +46,8 @@ defloc(struct symtab *sp)
 {
 	extern char *nextsect;
 	static char *loctbl[] = { "text", "data", "section .rodata" };
+	int weak = 0;
+	char *name = NULL;
 	TWORD t;
 	int s;
 
@@ -59,6 +64,17 @@ defloc(struct symtab *sp)
 		nextsect = ".tdata";
 	}
 #endif
+#ifdef GCC_COMPAT
+	{
+		struct gcc_attrib *ga;
+
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_SECTION)) != NULL)
+			nextsect = ga->a1.sarg;
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_WEAK)) != NULL)
+			weak = 1;
+	}
+#endif
+
 	if (nextsect) {
 		printf("	.section %s\n", nextsect);
 		nextsect = NULL;
@@ -71,12 +87,17 @@ defloc(struct symtab *sp)
 	s = ISFTN(t) ? ALINT : talign(t, sp->ssue);
 	if (s > ALCHAR)
 		printf("	.align %d\n", s/ALCHAR);
-	if (sp->sclass == EXTDEF)
-		printf("	.globl %s\n", exname(sp->soname));
+	if (weak || sp->sclass == EXTDEF || sp->slevel == 0 || ISFTN(t))
+		if ((name = sp->soname) == NULL)
+			name = exname(sp->sname);
+	if (weak)
+		printf("        .weak %s\n", name);
+	else if (sp->sclass == EXTDEF)
+		printf("	.globl %s\n", name);
 	if (ISFTN(t))
-		printf("\t.type %s,@function\n", exname(sp->soname));
+		printf("\t.type %s,@function\n", name);
 	if (sp->slevel == 0)
-		printf("%s:\n", exname(sp->soname));
+		printf("%s:\n", name);
 	else
 		printf(LABFMT ":\n", sp->soffset);
 }
@@ -96,7 +117,7 @@ efcode()
 		return;
 	/* Create struct assignment */
 	q = block(OREG, NIL, NIL, PTR+STRTY, 0, cftnsp->ssue);
-	q->n_rval = EBP;
+	q->n_rval = RBP;
 	q->n_lval = 8; /* return buffer offset */
 	q = buildtree(UMUL, q, NIL);
 	p = block(REG, NIL, NIL, PTR+STRTY, 0, cftnsp->ssue);
@@ -110,50 +131,57 @@ efcode()
  * indices in symtab for the arguments; n is the number
  */
 void
-bfcode(struct symtab **a, int cnt)
+bfcode(struct symtab **s, int cnt)
 {
-	struct symtab *sp2;
-	extern int gotnr;
-	NODE *n, *p;
-	int i;
+	struct symtab *sp;
+	NODE *p, *r;
+	int i, rno, typ;
 
 	if (cftnsp->stype == STRTY+FTN || cftnsp->stype == UNIONTY+FTN) {
 		/* Function returns struct, adjust arg offset */
 		for (i = 0; i < cnt; i++) 
-			sp[i]->soffset += SZPOINT(LONG);
-	}
-
-	if (kflag) {
-		/* Put ebx in temporary */
-		n = block(REG, NIL, NIL, INT, 0, MKSUE(INT));
-		n->n_rval = EBX;
-		p = tempnode(0, INT, 0, MKSUE(INT));
-		gotnr = regno(p);
-		ecomp(buildtree(ASSIGN, p, n));
+			s[i]->soffset += SZPOINT(LONG);
 	}
 
 	/* recalculate the arg offset and create TEMP moves */
-	for (n = 0, i = 0; i < cnt; i++) {
-		sp = a[i];
+	/* Always do this for reg, even if not optimizing, to free arg regs */
+	nsse = ngpr = 0;
+	nrsp = ARGINIT;
+	for (i = 0; i < cnt; i++) {
+		sp = s[i];
 
-		if (n < 6) {
+		if (sp == NULL)
+			continue; /* XXX when happens this? */
+
+		switch (typ = argtyp(sp->stype, sp->sdf, sp->ssue)) {
+		case INTEGER:
+		case SSE:
+			if (typ == SSE)
+				rno = XMM0 + nsse++;
+			else
+				rno = argregsi[ngpr++];
+			r = block(REG, NIL, NIL, sp->stype, sp->sdf, sp->ssue);
+			regno(r) = rno;
 			p = tempnode(0, sp->stype, sp->sdf, sp->ssue);
-			q = block(REG, NIL, NIL, sp->stype, sp->sdf, sp->ssue);
-			q->n_rval = argreg(sp->stype, &n);
-			p = buildtree(ASSIGN, p, q);
-			sp->soffset = regno(p->n_left);
+			sp->soffset = regno(p);
 			sp->sflags |= STNODE;
-			ecomp(p);
-		} else {
-			sp->soffset += SZLONG * n;
+			ecomp(buildtree(ASSIGN, p, r));
+			break;
+
+		case INTMEM:
+			sp->soffset = nrsp;
+			nrsp += SZLONG;
 			if (xtemps) {
-				/* put stack args in temps if optimizing */
 				p = tempnode(0, sp->stype, sp->sdf, sp->ssue);
-				p = buildtree(ASSIGN, p, buildtree(NAME, 0, 0));
+				p = buildtree(ASSIGN, p, nametree(sp));
 				sp->soffset = regno(p->n_left);
 				sp->sflags |= STNODE;
 				ecomp(p);
 			}
+			break;
+
+		default:
+			cerror("bfcode: %d", typ);
 		}
 	}
 }
@@ -173,9 +201,6 @@ bccode()
 void
 ejobcode(int flag )
 {
-	if (errors)
-		return;
-
 #define _MKSTR(x) #x
 #define MKSTR(x) _MKSTR(x)
 #define OS MKSTR(TARGOS)
@@ -187,52 +212,107 @@ bjobcode()
 {
 }
 
-static const int argregsi[] = { RDI, RSI, RDX, RCX, R09, R08 };
-
-int
-argreg(TWORD t, int *n)   
+static NODE *
+movtoreg(NODE *p, int rno)
 {
-	switch (t) {
-	case FLOAT:
-	case DOUBLE:
-	case LDOUBLE:
-		return FR6 - *n - 2;
-	case LONGLONG:
-	case ULONGLONG:
-		/* TODO */;
+	NODE *r;
+
+	r = block(REG, NIL, NIL, p->n_type, p->n_df, p->n_sue);
+	regno(r) = rno;
+	return clocal(buildtree(ASSIGN, r, p));
+}  
+
+static NODE *
+movtomem(NODE *p, int off)
+{
+	struct symtab s;
+	NODE *r, *l;
+
+	s.stype = p->n_type;
+	s.sdf = p->n_df;
+	s.ssue = p->n_sue;
+	s.soffset = off;
+
+	l = block(REG, NIL, NIL, PTR+STRTY, 0, 0);
+	l->n_lval = 0;
+	regno(l) = STKREG;
+
+	r = block(NAME, NIL, NIL, p->n_type, p->n_df, p->n_sue);
+	r->n_sp = &s;
+	r = stref(block(STREF, l, r, 0, 0, 0));
+
+	return clocal(buildtree(ASSIGN, r, p));
+}  
+
+
+/*
+ * AMD64 parameter classification.
+ */
+static int
+argtyp(TWORD t, union dimfun *df, struct suedef *sue)
+{
+	int cl = 0;
+
+	if (t <= ULONG || ISPTR(t)) {
+		cl = ngpr < 6 ? INTEGER : INTMEM;
+	} else if (t == FLOAT || t == DOUBLE) {
+		cl = nsse < 8 ? SSE : SSEMEM;
+	} else if (t == LDOUBLE) {
+		cl = X87; /* XXX */
+	} else if (t == STRTY) {
+		if (tsize(t, df, sue) > 4*SZLONG)
+			cl = STRMEM;
+		else
+			cerror("clasif");
+	} else
+		cerror("FIXME: classify");
+	return cl;
+}
+
+static void
+argput(NODE *p)
+{
+	NODE *q;
+	int typ, r;
+
+	/* first arg may be struct return pointer */
+	/* XXX - check if varargs; setup al */
+	switch (typ = argtyp(p->n_type, p->n_df, p->n_sue)) {
+	case INTEGER:
+	case SSE:
+		q = talloc();
+		*q = *p;
+		if (typ == SSE)
+			r = XMM0 + nsse++;
+		else
+			r = argregsi[ngpr++];
+		q = movtoreg(q, r);
+		*p = *q;
+		nfree(q);
+		break;
+	case X87:
+		cerror("no long double yet");
+		break;
+
+	case INTMEM:
+		q = talloc();
+		*q = *p;
+		r = nrsp;
+		nrsp += SZLONG;
+		q = movtomem(q, r);
+		*p = *q;
+		nfree(q);
+		break;
+
+	case STRMEM:
+		/* Struct moved to memory */
+	case STRREG:
+		/* Struct in registers */
 	default:
-		return argregsi[(*n)++];
+		cerror("argument %d", typ);
 	}
 }
 
-NODE *
-funarg(NODE *p, int *n)
-{
-	NODE *r;
-	int sz;
-
-	if (p->n_op == CM) {
-		p->n_left = funarg(p->n_left, n);
-		p->n_right = funarg(p->n_right, n);
-		return p;
-	}
-
-	if (*n >= 6) {
-		*n++;
-		r = block(OREG, NIL, NIL, p->n_type|PTR, 0,
-		    MKSUE(p->n_type|PTR));
-		r->n_rval = RBP;
-		r->n_lval = 16 + (*n - 6) * 8;
-	} else {
-		r = block(REG, NIL, NIL, p->n_type, 0, 0);
-		r->n_lval = 0;
-		r->n_rval = argreg(p->n_type, n);
-	}
-	p = block(ASSIGN, r, p, p->n_type, 0, 0);
-	clocal(p);
-
-	return p;
-}  
 
 /*
  * Called with a function call with arguments as argument.
@@ -242,18 +322,13 @@ funarg(NODE *p, int *n)
 NODE *
 funcode(NODE *p)
 {
-	extern int gotnr;
-	NODE *r, *l;
-	int n = 0;
+	NODE *l, *r;
 
-	p->n_right = funarg(p->n_right, &n);
+	nsse = ngpr = nrsp = 0;
+	listf(p->n_right, argput);
 
-	if (kflag == 0)
-		return p;
-	/* Create an ASSIGN node for ebx */
-	l = block(REG, NIL, NIL, INT, 0, MKSUE(INT));
-	l->n_rval = EBX;
-	l = buildtree(ASSIGN, l, tempnode(gotnr, INT, 0, MKSUE(INT)));
+	/* Always emit number of SSE regs used */
+	l = movtoreg(bcon(nsse), RAX);
 	if (p->n_right->n_op != CM) {
 		p->n_right = block(CM, l, p->n_right, INT, 0, MKSUE(INT));
 	} else {

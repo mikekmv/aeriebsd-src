@@ -32,7 +32,7 @@ L			[a-zA-Z_]
 H			[a-fA-F0-9]
 E			[Ee][+-]?{D}+
 P			[Pp][+-]?{D}+
-FS			(f|F|l|L|i|I)
+FS			(f|F|l|L)?i?
 IS			(u|U|l|L)*
 UL			({L}|\\u{H}{H}{H}{H}|\\U{H}{H}{H}{H}{H}{H}{H}{H})
 
@@ -271,7 +271,11 @@ f2(char *str)
 	char *eptr;
 	int imag = 0;
 
+#ifdef HAVE_STRTOLD
+	dc = strtold(str, &eptr); /* XXX - avoid strtod() */
+#else
 	dc = strtod(str, &eptr); /* XXX - avoid strtod() */
+#endif
 	tw = DOUBLE;
 	for (; *eptr; eptr++) {
 		switch (*eptr) {

@@ -316,7 +316,7 @@ clocal(NODE *p)
 			break;
 		/* Change to CALL node with ebx as argument */
 		l = block(REG, NIL, NIL, INT, 0, MKSUE(INT));
-		l->n_rval = EBX;
+		l->n_rval = RBX;
 		p->n_right = buildtree(ASSIGN, l,
 		    tempnode(gotnr, INT, 0, MKSUE(INT)));
 		p->n_op -= (UCALL-CALL);
@@ -356,8 +356,7 @@ clocal(NODE *p)
 			l->n_lval = (unsigned)l->n_lval;
 			goto delp;
 		}
-		if (l->n_type < INT || l->n_type == LONGLONG || 
-		    l->n_type == ULONGLONG) {
+		if (l->n_type < LONG) {
 			/* float etc? */
 			p->n_left = block(SCONV, l, NIL,
 			    UNSIGNED, 0, MKSUE(UNSIGNED));
@@ -386,6 +385,16 @@ clocal(NODE *p)
 		
 	case SCONV:
 		l = p->n_left;
+
+		/* Float conversions may need extra casts */
+		if (p->n_type == FLOAT || p->n_type == DOUBLE) {
+			if (l->n_type < INT) {
+				p->n_left = block(SCONV, l, NIL,
+				    ISUNSIGNED(l->n_type) ? UNSIGNED : INT,
+				    l->n_df, l->n_sue);
+				break;
+			}
+		}
 
 		if (p->n_type == l->n_type) {
 			nfree(p);
@@ -803,7 +812,6 @@ ninval(CONSZ off, int fsz, NODE *p)
 	struct symtab *q;
 	char *c;
 	TWORD t;
-	int i;
 
 	t = p->n_type;
 	if (t > BTMASK)
@@ -831,26 +839,24 @@ ninval(CONSZ off, int fsz, NODE *p)
 		uerror("element not constant");
 
 	switch (t) {
-	case LONGLONG:
-	case ULONGLONG:
-		i = (p->n_lval >> 32);
-		p->n_lval &= 0xffffffff;
-		p->n_type = INT;
-		ninval(off, 32, p);
-		p->n_lval = i;
-		ninval(off+32, 32, p);
-		break;
-	case INT:
-	case UNSIGNED:
-		printf("\t.long 0x%x", (int)p->n_lval);
+	case LONG:
+	case ULONG:
+		printf("\t.long 0x%llx", p->n_lval);
 		if ((q = p->n_sp) != NULL) {
 			if ((q->sclass == STATIC && q->slevel > 0)) {
 				printf("+" LABFMT, q->soffset);
 			} else {
-				printf("+%s", exname(q->soname));
+				char *name;
+				if ((name = q->soname) == NULL)
+					name = exname(q->sname);
+				printf("+%s", name);
 			}
 		}
 		printf("\n");
+		break;
+	case INT:
+	case UNSIGNED:
+		printf("\t.long 0x%x\n", (int)p->n_lval & 0xffffffff);
 		break;
 	case SHORT:
 	case USHORT:
@@ -905,11 +911,11 @@ TWORD
 ctype(TWORD type)
 {
 	switch (BTYPE(type)) {
-	case LONG:
+	case LONGLONG:
 		MODTYPE(type,LONG);
 		break;
 
-	case ULONG:
+	case ULONGLONG:
 		MODTYPE(type,ULONG);
 
 	}
@@ -944,9 +950,10 @@ defzero(struct symtab *sp)
 	off = tsize(sp->stype, sp->sdf, sp->ssue);
 	off = (off+(SZCHAR-1))/SZCHAR;
 	printf("	.%scomm ", sp->sclass == STATIC ? "l" : "");
-	if (sp->slevel == 0)
-		printf("%s,0%o\n", exname(sp->soname), off);
-	else
+	if (sp->slevel == 0) {
+		char *c = sp->soname ? sp->soname : exname(sp->sname);
+		printf("%s,0%o\n", c, off);
+	} else
 		printf(LABFMT ",0%o\n", sp->soffset, off);
 }
 

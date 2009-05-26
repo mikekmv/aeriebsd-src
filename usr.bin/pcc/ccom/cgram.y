@@ -168,7 +168,6 @@ static void adddef(void);
 static void savebc(void);
 static void swstart(int, TWORD);
 static void genswitch(int, TWORD, struct swents **, int);
-static NODE *structref(NODE *p, int f, char *name);
 static char *mkpstr(char *str);
 static struct symtab *clbrace(NODE *);
 static NODE *cmop(NODE *l, NODE *r);
@@ -328,7 +327,14 @@ attribute:	   {
  * Adds a pointer list to front of the declarators.
  */
 declarator:	   '*' declarator { $$ = bdty(UMUL, $2); }
-		|  '*' type_qualifier_list declarator { $$ = bdty(UMUL, $3); tfree($2); }
+		|  '*' type_qualifier_list declarator {
+			$$ = bdty(UMUL, $3);
+			if ($2->n_op == QUALIFIER)
+				$$->n_qual = $2->n_type;
+			else
+				werror("FIXME: attributes discarding qualifiers");
+			tfree($2);
+		}
 		|  C_NAME { $$ = bdty(NAME, $1); }
 		|  '(' declarator ')' { $$ = $2; }
 		|  declarator '[' nocon_e ']' {
@@ -866,11 +872,16 @@ statement:	   e ';' { ecomp(eve($1)); symclear(blevel); }
 			reached = 0;
 		}
 		|  C_RETURN e  ';' {
-			NODE *p;
+			NODE *p, *q;
 
 			p = nametree(cftnsp);
 			p->n_type = DECREF(p->n_type);
-			p = buildtree(RETURN, p, eve($2));
+			q = eve($2);
+#ifndef NO_COMPLEX
+			if (ANYCX(q) || ANYCX(p))
+				q = cxret(q, p);
+#endif
+			p = buildtree(RETURN, p, q);
 			if (p->n_type == VOID) {
 				ecomp(p->n_right);
 			} else {
@@ -1584,7 +1595,7 @@ fend(void)
 	cftnsp = NULL;
 }
 
-static NODE *
+NODE *
 structref(NODE *p, int f, char *name)
 {
 	NODE *r;
@@ -1918,6 +1929,14 @@ eve(NODE *p)
 		break;
 
 	case COMPL:
+#ifndef NO_COMPLEX
+		p1 = eve(p1);
+		if (ANYCX(p1))
+			r = cxconj(p1);
+		else
+			r = buildtree(COMPL, p1, NIL);
+		break;
+#endif
 	case UMINUS:
 	case NOT:
 	case UMUL:
@@ -1951,6 +1970,31 @@ eve(NODE *p)
 			r = doacall(NULL, eve(p1), p2);
 		break;
 
+#ifndef NO_COMPLEX
+	case XREAL:
+	case XIMAG:
+		p1 = eve(p1);
+		r = cxelem(p->n_op, p1);
+		break;
+#endif
+
+	case MUL:
+	case DIV:
+	case PLUS:
+	case MINUS:
+	case ASSIGN:
+#ifndef NO_COMPLEX
+		p1 = eve(p1);
+		p2 = eve(p2);
+		if (ANYCX(p1) || ANYCX(p2)) {
+			r = cxop(p->n_op, p1, p2);
+		} else if (ISITY(p1->n_type) || ISITY(p2->n_type)) {
+			r = imop(p->n_op, p1, p2);
+		} else
+			r = buildtree(p->n_op, p1, p2);
+		break;
+#endif
+	case MOD:
 	case INCR:
 	case DECR:
 	case CM:
@@ -1967,11 +2011,6 @@ eve(NODE *p)
 	case AND:
 	case OR:
 	case ER:
-	case MUL:
-	case DIV:
-	case MOD:
-	case PLUS:
-	case MINUS:
 	case OROR:
 	case ANDAND:
 	case EREQ:
@@ -1984,7 +2023,6 @@ eve(NODE *p)
 	case MODEQ:
 	case QUEST:
 	case COLON:
-	case ASSIGN:
 		p1 = eve(p1);
 		r = buildtree(p->n_op, p1, eve(p2));
 		break;
@@ -2014,7 +2052,7 @@ eve(NODE *p)
 		break;
 
 	default:
-		r = NULL;
+		r = NULL;	/* shudup gcc */
 #ifdef PCC_DEBUG
 		fwalk(p, eprint, 0);
 #endif
@@ -2033,4 +2071,3 @@ bfix(int a)
                 argoff = a;
         blevel--;
 }
-

@@ -30,9 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #include <fcntl.h>
 #include <errno.h>
 
@@ -373,11 +371,12 @@ inch(void)
 
 again:	switch (c = inpch()) {
 	case '\\': /* continued lines */
-		if ((c = inpch()) == '\n') {
+msdos:		if ((c = inpch()) == '\n') {
 			ifiles->lineno++;
 			putch('\n');
 			goto again;
-		}
+		} else if (c == '\r')
+			goto msdos;
 		unch(c);
 		return '\\';
 	case '?': /* trigraphs */

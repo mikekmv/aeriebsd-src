@@ -363,6 +363,7 @@ main(int argc, char *argv[])
 		nfree(p);
 	}
 #endif
+	complinit();
 
 #ifdef STABS
 	if (gflag) {

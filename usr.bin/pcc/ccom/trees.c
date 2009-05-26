@@ -110,6 +110,14 @@ int inftn; /* currently between epilog/prolog */
 int bdebug = 0;
 extern int negrel[];
 
+/* sometimes int is smaller than pointers */
+#if SZPOINT(CHAR) <= SZINT
+#define	INTPTR	INT
+#elif SZPOINT(CHAR) <= SZLONG
+#define INTPTR	LONG
+#else
+#error int size unknown
+#endif
 
 NODE *
 buildtree(int o, NODE *l, NODE *r)
@@ -210,16 +218,16 @@ buildtree(int o, NODE *l, NODE *r)
 		}
 	} else if (opty == BITYPE && (l->n_op == FCON || l->n_op == ICON) &&
 	    (r->n_op == FCON || r->n_op == ICON) && (o == PLUS || o == MINUS ||
-	    o == MUL || o == DIV)) {
+	    o == MUL || o == DIV || (o >= EQ && o <= GT) )) {
+		if (l->n_op == ICON)
+			l->n_dcon = FLOAT_CAST(l->n_lval, l->n_type);
+		if (r->n_op == ICON)
+			r->n_dcon = FLOAT_CAST(r->n_lval, r->n_type);
 		switch(o){
 		case PLUS:
 		case MINUS:
 		case MUL:
 		case DIV:
-			if (l->n_op == ICON)
-				l->n_dcon = FLOAT_CAST(l->n_lval, l->n_type);
-			if (r->n_op == ICON)
-				r->n_dcon = FLOAT_CAST(r->n_lval, r->n_type);
 			switch (o) {
 			case PLUS:
 				l->n_dcon = FLOAT_PLUS(l->n_dcon, r->n_dcon);
@@ -241,6 +249,36 @@ buildtree(int o, NODE *l, NODE *r)
 			l->n_sue = MKSUE(DOUBLE);
 			nfree(r);
 			return(l);
+		case EQ:
+		case NE:
+		case LE:
+		case LT:
+		case GE:
+		case GT:
+			switch (o) {
+			case EQ:
+				l->n_lval = FLOAT_EQ(l->n_dcon, r->n_dcon);
+				break;
+			case NE:
+				l->n_lval = FLOAT_NE(l->n_dcon, r->n_dcon);
+				break;
+			case LE:
+				l->n_lval = FLOAT_LE(l->n_dcon, r->n_dcon);
+				break;
+			case LT:
+				l->n_lval = FLOAT_LT(l->n_dcon, r->n_dcon);
+				break;
+			case GE:
+				l->n_lval = FLOAT_GE(l->n_dcon, r->n_dcon);
+				break;
+			case GT:
+				l->n_lval = FLOAT_GT(l->n_dcon, r->n_dcon);
+				break;
+			}
+			nfree(r);
+			r = bcon(l->n_lval);
+			nfree(l);
+			return r;
 		}
 	}
 runtime:
@@ -666,7 +704,7 @@ conval(NODE *p, int o, NODE *q)
 	case PLUS:
 		p->n_lval += val;
 		if (p->n_sp == NULL) {
-			p->n_rval = q->n_rval;
+			p->n_right = q->n_right;
 			p->n_type = q->n_type;
 		}
 		break;
@@ -1057,8 +1095,8 @@ convert(NODE *p, int f)
 	 * SCONV here if arg is not an integer.
 	 * XXX - complain?
 	 */
-	if (r->n_type != INT)
-		r = clocal(block(SCONV, r, NIL, INT, 0, MKSUE(INT)));
+	if (r->n_type != INTPTR)
+		r = clocal(block(SCONV, r, NIL, INTPTR, 0, MKSUE(INTPTR)));
 	if (f == CVTL)
 		p->n_left = r;
 	else
@@ -2499,6 +2537,10 @@ copst(int op)
 	SNAM(STRING,STRING)
 	SNAM(SZOF,SIZEOF)
 	SNAM(ATTRIB,ATTRIBUTE)
+#ifdef GCC_COMPAT
+	SNAM(XREAL,__real__)
+	SNAM(XIMAG,__imag__)
+#endif
 	default:
 		cerror("bad copst %d", op);
 	}
@@ -2526,6 +2568,8 @@ cdope(int op)
 	case COLON:
 	case LB:
 		return BITYPE;
+	case XIMAG:
+	case XREAL:
 	case ATTRIB:
 		return UTYPE;
 	case ANDAND:

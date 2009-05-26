@@ -335,7 +335,13 @@ void pass1_lastchance(struct interpass *);
 void fldty(struct symtab *p);
 int getlab(void);
 struct suedef *sueget(struct suedef *p);
-
+void complinit(void);
+NODE *structref(NODE *p, int f, char *name);
+NODE *cxop(int op, NODE *l, NODE *r);
+NODE *imop(int op, NODE *l, NODE *r);
+NODE *cxelem(int op, NODE *p);
+NODE *cxconj(NODE *p);
+NODE *cxret(NODE *p, NODE *q);
 
 #ifdef SOFTFLOAT
 typedef struct softfloat SF;
@@ -345,6 +351,12 @@ SF soft_plus(SF, SF);
 SF soft_minus(SF, SF);
 SF soft_mul(SF, SF);
 SF soft_div(SF, SF);
+int soft_cmp_eq(SF, SF);
+int soft_cmp_ne(SF, SF);
+int soft_cmp_ge(SF, SF);
+int soft_cmp_gt(SF, SF);
+int soft_cmp_le(SF, SF);
+int soft_cmp_lt(SF, SF);
 int soft_isz(SF);
 CONSZ soft_val(SF);
 #define FLOAT_NEG(sf)		soft_neg(sf)
@@ -355,6 +367,12 @@ CONSZ soft_val(SF);
 #define	FLOAT_DIV(x1,x2)	soft_div(x1, x2)
 #define	FLOAT_ISZERO(sf)	soft_isz(sf)
 #define	FLOAT_VAL(sf)		soft_val(sf)
+#define FLOAT_EQ(x1,x2)		soft_cmp_eq(x1, x2)
+#define FLOAT_NE(x1,x2)		soft_cmp_ne(x1, x2)
+#define FLOAT_GE(x1,x2)		soft_cmp_ge(x1, x2)
+#define FLOAT_GT(x1,x2)		soft_cmp_gt(x1, x2)
+#define FLOAT_LE(x1,x2)		soft_cmp_le(x1, x2)
+#define FLOAT_LT(x1,x2)		soft_cmp_lt(x1, x2)
 #else
 #define	FLOAT_NEG(p)		-(p)
 #define	FLOAT_CAST(p,v)		(ISUNSIGNED(v) ? \
@@ -365,6 +383,12 @@ CONSZ soft_val(SF);
 #define	FLOAT_DIV(x1,x2)	(x1) / (x2)
 #define	FLOAT_ISZERO(p)		(p) == 0.0
 #define FLOAT_VAL(p)		(CONSZ)(p)
+#define FLOAT_EQ(x1,x2)		(x1) == (x2)
+#define FLOAT_NE(x1,x2)		(x1) != (x2)
+#define FLOAT_GE(x1,x2)		(x1) >= (x2)
+#define FLOAT_GT(x1,x2)		(x1) > (x2)
+#define FLOAT_LE(x1,x2)		(x1) <= (x2)
+#define FLOAT_LT(x1,x2)		(x1) < (x2)
 #endif
 
 #ifdef GCC_COMPAT
@@ -385,9 +409,11 @@ enum {	GCC_ATYP_NONE,
 	GCC_ATYP_NONNULL,
 	GCC_ATYP_SENTINEL,
 	GCC_ATYP_WEAK,
+	GCC_ATYP_FORMATARG,
 
 	/* other stuff */
 	GCC_ATYP_BOUNDED,	/* OpenBSD extra boundary checks */
+	ATTR_COMPLEX,		/* Internal definition of complex */
 
 	GCC_ATYP_MAX
 };
@@ -474,6 +500,8 @@ void stabs_struct(struct symtab *, struct suedef *);
 #define SZOF		(MAXOP+28)
 #define CLOP		(MAXOP+29)
 #define ATTRIB		(MAXOP+30)
+#define XREAL		(MAXOP+31)
+#define XIMAG		(MAXOP+32)
 
 
 /*
@@ -481,17 +509,18 @@ void stabs_struct(struct symtab *, struct suedef *);
  */
 #define SIGNED		(MAXTYPES+1)
 #define BOOL		(MAXTYPES+2)
-#define	FCOMPLEX	(MAXTYPES+3)
-#define	COMPLEX		(MAXTYPES+4)
-#define	LCOMPLEX	(MAXTYPES+5)
-#define	FIMAG		(MAXTYPES+6)
-#define	IMAG		(MAXTYPES+7)
-#define	LIMAG		(MAXTYPES+8)
+#define	FIMAG		(MAXTYPES+3)
+#define	IMAG		(MAXTYPES+4)
+#define	LIMAG		(MAXTYPES+5)
+#define	FCOMPLEX	(MAXTYPES+6)
+#define	COMPLEX		(MAXTYPES+7)
+#define	LCOMPLEX	(MAXTYPES+8)
 #define	ENUMTY		(MAXTYPES+9)
 
 #define	ISFTY(x)	((x) >= FLOAT && (x) <= LDOUBLE)
 #define	ISCTY(x)	((x) >= FCOMPLEX && (x) <= LCOMPLEX)
 #define	ISITY(x)	((x) >= FIMAG && (x) <= LIMAG)
+#define ANYCX(p) (p->n_type == STRTY && gcc_get_attr(p->n_sue, ATTR_COMPLEX))
 
 #define coptype(o)	(cdope(o)&TYFLG)
 #define clogop(o)	(cdope(o)&LOGFLG)

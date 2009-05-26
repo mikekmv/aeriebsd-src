@@ -40,6 +40,7 @@ deflab(int label)
 
 static int regoff[7];
 static TWORD ftype;
+char *rbyte[], *rshort[], *rlong[];
 
 /*
  * Print out the prolog assembler.
@@ -48,46 +49,20 @@ static TWORD ftype;
 static void
 prtprolog(struct interpass_prolog *ipp, int addto)
 {
-	static int lwnr;
 	int i;
 
+	/* XXX should look if there is any need to emit this */
 	printf("\tpushq %%rbp\n");
 	printf("\tmovq %%rsp,%%rbp\n");
+	addto = (addto+15) & ~15; /* 16-byte aligned */
 	if (addto)
 		printf("\tsubq $%d,%%rsp\n", addto);
+
+	/* save permanent registers */
 	for (i = 0; i < MAXREGS; i++)
 		if (TESTBIT(ipp->ipp_regs, i))
 			fprintf(stdout, "\tmov %s,-%d(%s)\n",
 			    rnames[i], regoff[i], rnames[FPREG]);
-	if (kflag == 0)
-		return;
-
-	/* if ebx are not saved to stack, it must be moved into another reg */
-	/* check and emit the move before GOT stuff */
-	if (!TESTBIT(ipp->ipp_regs, EBX)) {
-		struct interpass *ip = (struct interpass *)ipp;
-
-		ip = DLIST_PREV(ip, qelem);
-		ip = DLIST_PREV(ip, qelem);
-		ip = DLIST_PREV(ip, qelem);
-		if (ip->type != IP_NODE || ip->ip_node->n_op != ASSIGN ||
-		    ip->ip_node->n_left->n_op != REG)
-			comperr("prtprolog pic error");
-		ip = (struct interpass *)ipp;
-		ip = DLIST_NEXT(ip, qelem);
-		if (ip->type != IP_NODE || ip->ip_node->n_op != ASSIGN ||
-		    ip->ip_node->n_left->n_op != REG)
-			comperr("prtprolog pic error2");
-		printf("	movl %s,%s\n",
-		    rnames[ip->ip_node->n_right->n_rval],
-		    rnames[ip->ip_node->n_left->n_rval]);
-		tfree(ip->ip_node);
-		DLIST_REMOVE(ip, qelem);
-	}
-	printf("	call .LW%d\n", ++lwnr);
-	printf(".LW%d:\n", lwnr);
-	printf("	popl %%ebx\n");
-	printf("	addl $_GLOBAL_OFFSET_TABLE_+[.-.LW%d], %%ebx\n", lwnr);
 }
 
 /*
@@ -103,7 +78,7 @@ offcalc(struct interpass_prolog *ipp)
 		addto -= AUTOINIT/SZCHAR;
 	for (i = 0; i < MAXREGS; i++)
 		if (TESTBIT(ipp->ipp_regs, i)) {
-			addto += SZINT/SZCHAR;
+			addto += SZLONG/SZCHAR;
 			regoff[i] = addto;
 		}
 	return addto;
@@ -119,7 +94,7 @@ prologue(struct interpass_prolog *ipp)
 #ifdef LANG_F77
 	if (ipp->ipp_vis)
 		printf("	.globl %s\n", ipp->ipp_name);
-	printf("	.align 4\n");
+	printf("	.align 16\n");
 	printf("%s:\n", ipp->ipp_name);
 #endif
 	/*
@@ -141,7 +116,7 @@ eoftn(struct interpass_prolog *ipp)
 	/* return from function code */
 	for (i = 0; i < MAXREGS; i++)
 		if (TESTBIT(ipp->ipp_regs, i))
-			fprintf(stdout, "	movl -%d(%s),%s\n",
+			fprintf(stdout, "	movq -%d(%s),%s\n",
 			    regoff[i], rnames[FPREG], rnames[i]);
 
 	/* struct return needs special treatment */
@@ -152,8 +127,7 @@ eoftn(struct interpass_prolog *ipp)
 	} else {
 		printf("	leave\n");
 	}
-	printf("\t.size %s,.-%s\n", ipp->ipp_name,
-	    ipp->ipp_name);
+	printf("\t.size %s,.-%s\n", ipp->ipp_name, ipp->ipp_name);
 }
 
 /*
@@ -224,6 +198,7 @@ tlen(NODE *p)
 		}
 }
 
+#if 0
 /*
  * Emit code to compare two longlong numbers.
  */
@@ -269,6 +244,7 @@ twollcomp(NODE *p)
 	cbgen(p->n_op, e);
 	deflab(s);
 }
+#endif
 
 int
 fldexpand(NODE *p, int cookie, char **cp)
@@ -297,6 +273,7 @@ fldexpand(NODE *p, int cookie, char **cp)
 	return 1;
 }
 
+#if 0
 static void
 bfext(NODE *p)
 {
@@ -351,73 +328,29 @@ starg(NODE *p)
 	fprintf(fp, "	addl $12,%%esp\n");
 }
 
+#endif
 /*
- * Compare two floating point numbers.
+ * Generate code to convert an unsigned long to xmm float/double.
  */
 static void
-fcomp(NODE *p)  
+ultofd(NODE *p)
 {
-	
-	if (p->n_left->n_op == REG) {
-		if (p->n_su & DORIGHT)
-			expand(p, 0, "	fxch\n");
-		expand(p, 0, "	fucompp\n");	/* emit compare insn  */
-	} else if (p->n_left->n_type == DOUBLE)
-		expand(p, 0, "	fcompl AL\n");	/* emit compare insn  */
-	else if (p->n_left->n_type == FLOAT)
-		expand(p, 0, "	fcomp AL\n");	/* emit compare insn  */
-	else
-		comperr("bad compare %p\n", p);
-	expand(p, 0, "	fnstsw %ax\n");	/* move status reg to ax */
-	
-	switch (p->n_op) {
-	case EQ:
-		expand(p, 0, "	andb $64,%ah\n	jne LC\n");
-		break;
-	case NE:
-		expand(p, 0, "	andb $64,%ah\n	je LC\n");
-		break;
-	case LE:
-		expand(p, 0, "	andb $65,%ah\n	cmpb $1,%ah\n	jne LC\n");
-		break;
-	case LT:
-		expand(p, 0, "	andb $65,%ah\n	je LC\n");
-		break;
-	case GT:
-		expand(p, 0, "	andb $1,%ah\n	jne LC\n");
-		break;
-	case GE:
-		expand(p, 0, "	andb $65,%ah\n	jne LC\n");
-		break;
-	default:
-		comperr("fcomp op %d\n", p->n_op);
-	}
-}
 
-/*
- * Convert an unsigned long long to floating point number.
- */
-static void
-ulltofp(NODE *p)
-{
-	static int loadlab;
-	int jmplab;
-
-	if (loadlab == 0) {
-		loadlab = getlab2();
-		expand(p, 0, "	.data\n");
-		printf(LABFMT ":	.long 0,0x80000000,0x403f\n", loadlab);
-		expand(p, 0, "	.text\n");
-	}
-	jmplab = getlab2();
-	expand(p, 0, "	pushl UL\n	pushl AL\n");
-	expand(p, 0, "	fildq (%esp)\n");
-	expand(p, 0, "	addl $8,%esp\n");
-	expand(p, 0, "	cmpl $0,UL\n");
-	printf("	jge " LABFMT "\n", jmplab);
-	printf("	fldt " LABFMT "\n", loadlab);
-	printf("	faddp %%st,%%st(1)\n");
-	printf(LABFMT ":\n", jmplab);
+#define	E(x)	expand(p, 0, x)
+	E("	movq AL,A1\n");
+	E("	testq A1,A1\n");
+	E("	js 2f\n");
+	E("	cvtsi2sZfq A1,A3\n");
+	E("	jmp 3f\n");
+	E("2:\n");
+	E("	movq A1,A2\n");
+	E("	shrq A2\n");
+	E("	andq $1,A1\n");
+	E("	orq A1,A2\n");
+	E("	cvtsi2sZfq A2,A3\n");
+	E("	addsZf A3,A3\n");
+	E("3:\n");
+#undef E
 }
 
 static int
@@ -425,27 +358,23 @@ argsiz(NODE *p)
 {
 	TWORD t = p->n_type;
 
-	if (t < LONG || t == FLOAT || t > BTMASK)
-		return 4;
-	if (t == LONG || t == ULONG || t == LONGLONG || t == ULONGLONG ||
-	    t == DOUBLE)
-		return 8;
+	if (p->n_left->n_op == REG)
+		return 0; /* not on stack */
 	if (t == LDOUBLE)
 		return 16;
 	if (t == STRTY || t == UNIONTY)
 		return p->n_stsize;
-	comperr("argsiz");
-	return 0;
+	return 8;
 }
 
 void
 zzzcode(NODE *p, int c)
 {
-	NODE *r, *l;
+	NODE *l;
 	int pr, lr, s;
-	char *ch;
 
 	switch (c) {
+#if 0
 	case 'A': /* swap st0 and st1 if right is evaluated second */
 		if ((p->n_su & DORIGHT) == 0) {
 			if (logop(p->n_op))
@@ -454,19 +383,19 @@ zzzcode(NODE *p, int c)
 				printf("r");
 		}
 		break;
+#endif
 
 	case 'C':  /* remove from stack after subroutine call */
-		if (p->n_left->n_flags & FSTDCALL)
-			break;
 		pr = p->n_qual;
 		if (p->n_op == STCALL || p->n_op == USTCALL)
-			pr += 4;
+			pr += 4; /* XXX */
 		if (p->n_op == UCALL)
 			return; /* XXX remove ZC from UCALL */
 		if (pr)
-			printf("	addl $%d, %s\n", pr, rnames[ESP]);
+			printf("	addq $%d, %s\n", pr, rnames[RSP]);
 		break;
 
+#if 0
 	case 'E': /* Perform bitfield sign-extension */
 		bfext(p);
 		break;
@@ -475,13 +404,9 @@ zzzcode(NODE *p, int c)
 		if (p->n_stalign != 0) /* already on stack */
 			starg(p);
 		break;
-
-	case 'G': /* Floating point compare */
-		fcomp(p);
-		break;
-
-	case 'J': /* convert unsigned long long to floating point */
-		ulltofp(p);
+#endif
+	case 'j': /* convert unsigned long to f/d */
+		ultofd(p);
 		break;
 
 	case 'M': /* Output sconv move, if needed */
@@ -489,15 +414,13 @@ zzzcode(NODE *p, int c)
 		/* XXX fixneed: regnum */
 		pr = DECRA(p->n_reg, 0);
 		lr = DECRA(l->n_reg, 0);
-		if ((pr == AL && lr == EAX) || (pr == BL && lr == EBX) ||
-		    (pr == CL && lr == ECX) || (pr == DL && lr == EDX))
-			;
-		else
-			printf("	movb %%%cl,%s\n",
-			    rnames[lr][2], rnames[pr]);
+		if (pr == lr)
+			break;
+		printf("	movb %s,%s\n", rbyte[lr], rbyte[pr]);
 		l->n_rval = l->n_reg = p->n_reg; /* XXX - not pretty */
 		break;
 
+#if 0
 	case 'N': /* output extended reg name */
 		printf("%s", rnames[getlr(p, '1')->n_rval]);
 		break;
@@ -549,6 +472,40 @@ zzzcode(NODE *p, int c)
 			comperr("SCONV4 %s->%s", rnames[lr], rnames[pr]);
 			break;
 		}
+		break;
+#endif
+        case 'Q': /* emit struct assign */
+		/* XXX - optimize for small structs */
+		printf("\tmovq $%d,%%rdx\n", p->n_stsize);
+		expand(p, INAREG, "\tmovq AR,%rsi\n");
+		expand(p, INAREG, "\tleaq AL,%rdi\n\n");
+		printf("\tcall memcpy\n");
+		break;
+
+	case 'R': /* print opname based on right type */
+	case 'L': /* print opname based on left type */
+		switch (getlr(p, c)->n_type) {
+		case CHAR: case UCHAR: s = 'b'; break;
+		case SHORT: case USHORT: s = 'w'; break;
+		case INT: case UNSIGNED: s = 'l'; break;
+		default: s = 'q'; break;
+		printf("%c", s);
+		}
+		break;
+	case '1': /* special reg name printout */
+		l = getlr(p, '1');
+		printf("%s", rlong[l->n_rval]);
+		break;
+
+	case 'g':
+		p = p->n_left;
+		/* FALLTHROUGH */
+	case 'f': /* float or double */
+		printf("%c", p->n_type == FLOAT ? 's' : 'd');
+		break;
+
+	case 'q': /* int or long */
+		printf("%c", p->n_left->n_type == LONG ? 'q' : ' ');
 		break;
 
 	default:
@@ -691,6 +648,7 @@ void
 adrput(FILE *io, NODE *p)
 {
 	int r;
+	char **rc;
 	/* output an address, with offsets, from p */
 
 	if (p->n_op == FLD)
@@ -739,18 +697,23 @@ adrput(FILE *io, NODE *p)
 
 	case REG:
 		switch (p->n_type) {
-		case LONGLONG:
-		case ULONGLONG:
-			fprintf(io, "%%%c%c%c", rnames[p->n_rval][0],
-			    rnames[p->n_rval][1], rnames[p->n_rval][2]);
+		case CHAR:
+		case UCHAR:
+			rc = rbyte;
 			break;
 		case SHORT:
 		case USHORT:
-			fprintf(io, "%%%s", &rnames[p->n_rval][2]);
+			rc = rshort;
+			break;
+		case INT:
+		case UNSIGNED:
+			rc = rlong;
 			break;
 		default:
-			fprintf(io, "%s", rnames[p->n_rval]);
+			rc = rnames;
+			break;
 		}
+		fprintf(io, "%s", rc[p->n_rval]);
 		return;
 
 	default:
@@ -797,49 +760,6 @@ fixcalls(NODE *p, void *arg)
 	}
 }
 
-/*
- * Must store floats in memory if there are two function calls involved.
- */
-static int
-storefloat(struct interpass *ip, NODE *p)
-{
-	int l, r;
-
-	switch (optype(p->n_op)) {
-	case BITYPE:
-		l = storefloat(ip, p->n_left);
-		r = storefloat(ip, p->n_right);
-		if (p->n_op == CM)
-			return 0; /* arguments, don't care */
-		if (callop(p->n_op))
-			return 1; /* found one */
-#define ISF(p) ((p)->n_type == FLOAT || (p)->n_type == DOUBLE || \
-	(p)->n_type == LDOUBLE)
-		if (ISF(p->n_left) && ISF(p->n_right) && l && r) {
-			/* must store one. store left */
-			struct interpass *nip;
-			TWORD t = p->n_left->n_type;
-			NODE *ll;
-			int off;
-
-                	off = BITOOR(freetemp(szty(t)));
-                	ll = mklnode(OREG, off, FPREG, t);
-			nip = ipnode(mkbinode(ASSIGN, ll, p->n_left, t));
-			p->n_left = mklnode(OREG, off, FPREG, t);
-                	DLIST_INSERT_BEFORE(ip, nip, qelem);
-		}
-		return l|r;
-
-	case UTYPE:
-		l = storefloat(ip, p->n_left);
-		if (callop(p->n_op))
-			l = 1;
-		return l;
-	default:
-		return 0;
-	}
-}
-
 void
 myreader(struct interpass *ipole)
 {
@@ -850,7 +770,6 @@ myreader(struct interpass *ipole)
 		if (ip->type != IP_NODE)
 			continue;
 		walkf(ip->ip_node, fixcalls, 0);
-		storefloat(ip, ip->ip_node);
 	}
 	if (stkpos > p2autooff)
 		p2autooff = stkpos;
@@ -900,7 +819,6 @@ myoptim(struct interpass *ip)
 void
 rmove(int s, int d, TWORD t)
 {
-	int sl, sh, dl, dh;
 
 	switch (t) {
 	case LONG:
@@ -911,7 +829,11 @@ rmove(int s, int d, TWORD t)
 		break;
 	case CHAR:
 	case UCHAR:
-		printf("	movb %s,%s\n", rnames[s], rnames[d]);
+		printf("	movb %s,%s\n", rbyte[s], rbyte[d]);
+		break;
+	case SHORT:
+	case USHORT:
+		printf("	movw %s,%s\n", rshort[s], rshort[d]);
 		break;
 	case FLOAT:
 	case DOUBLE:
@@ -922,7 +844,7 @@ rmove(int s, int d, TWORD t)
 #endif
 		break;
 	default:
-		printf("	movl %s,%s\n", rnames[s], rnames[d]);
+		printf("	movl %s,%s\n", rlong[s], rlong[d]);
 	}
 }
 
@@ -933,38 +855,38 @@ rmove(int s, int d, TWORD t)
 int
 COLORMAP(int c, int *r)
 {
-	int num;
 
 	switch (c) {
 	case CLASSA:
-		num = r[CLASSB] > 4 ? 4 : r[CLASSB];
-		num += 2*r[CLASSC];
-		num += r[CLASSA];
-		return num < 6;
+		return r[CLASSA] < 14;
 	case CLASSB:
-		num = r[CLASSA];
-		num += 2*r[CLASSC];
-		num += r[CLASSB];
-		return num < 4;
-	case CLASSC:
-		num = r[CLASSA];
-		num += r[CLASSB] > 4 ? 4 : r[CLASSB];
-		num += 2*r[CLASSC];
-		return num < 5;
-	case CLASSD:
-		return r[CLASSD] < DREGCNT;
+		return r[CLASSB] < 16;
 	}
 	return 0; /* XXX gcc */
 }
 
 char *rnames[] = {
-	"%eax", "%edx", "%ecx", "%ebx", "%esi", "%edi", "%ebp", "%esp",
-	"%al", "%ah", "%dl", "%dh", "%cl", "%ch", "%bl", "%bh",
 	"%rax", "%rdx", "%rcx", "%rbx", "%rsi", "%rdi", "%rbp", "%rsp",
-	"%r08", "%r09", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15",
-	"%eaxedx",
-	"%st0", "%st1", "%st2", "%st3", "%st4", "%st5", "%st6", "%st7",
+	"%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15",
+	"%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7",
+	"%xmm8", "%xmm9", "%xmm10", "%xmm11", "%xmm12", "%xmm13", "%xmm14",
+	"%xmm15",
 };
+
+/* register names for shorter sizes */
+char *rbyte[] = {
+	"%al", "%dl", "%cl", "%bl", "%sil", "%dil", "%bpl", "%spl",
+	"%r8b", "%r9b", "%r10b", "%r11b", "%r12b", "%r13b", "%r14b", "%r15b", 
+};
+char *rshort[] = {
+	"%ax", "%dx", "%cx", "%bx", "%si", "%di", "%bp", "%sp",
+	"%r8w", "%r9w", "%r10w", "%r11w", "%r12w", "%r13w", "%r14w", "%r15w", 
+};
+char *rlong[] = {
+	"%eax", "%edx", "%ecx", "%ebx", "%esi", "%edi", "%ebp", "%esp",
+	"%r8d", "%r9d", "%r10d", "%r11d", "%r12d", "%r13d", "%r14d", "%r15d", 
+};
+
 
 /*
  * Return a class suitable for a specific type.
@@ -972,12 +894,8 @@ char *rnames[] = {
 int
 gclass(TWORD t)
 {
-	if (t == CHAR || t == UCHAR)
-		return CLASSB;
-	if (t == LONG || t == ULONG || t == LONGLONG || t == ULONGLONG)
-		return CLASSC;
 	if (t == FLOAT || t == DOUBLE || t == LDOUBLE)
-		return CLASSD;
+		return CLASSB;
 	return CLASSA;
 }
 
@@ -996,8 +914,9 @@ lastcall(NODE *p)
 	for (p = p->n_right; p->n_op == CM; p = p->n_left)
 		size += argsiz(p->n_right);
 	size += argsiz(p);
-	if (kflag)
-		size -= 4;
+	size = (size+15) & ~15;
+	if (size)
+		printf("	subq $%d,%s\n", size, rnames[RSP]);
 	op->n_qual = size; /* XXX */
 }
 
@@ -1049,6 +968,8 @@ mflags(char *str)
 int
 myxasm(struct interpass *ip, NODE *p)
 {
+cerror("myxasm");
+#if 0
 	struct interpass *ip2;
 	NODE *in = 0, *ut = 0;
 	TWORD t;
@@ -1110,12 +1031,15 @@ myxasm(struct interpass *ip, NODE *p)
 		ip2 = ipnode(mkbinode(ASSIGN, tcopy(p->n_left), in, t));
 		DLIST_INSERT_BEFORE(ip, ip2, qelem);
 	}
+#endif
 	return 1;
 }
 
 void
 targarg(char *w, void *arg)
 {
+cerror("targarg");
+#if 0
 	NODE **ary = arg;
 	NODE *p, *q;
 
@@ -1138,6 +1062,7 @@ targarg(char *w, void *arg)
 	}
 	adrput(stdout, q);
 	tfree(q);
+#endif
 }
 
 /*

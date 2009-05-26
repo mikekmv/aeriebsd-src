@@ -54,9 +54,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <signal.h>
 #include <stdarg.h>
-#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -233,6 +233,7 @@ char *libclibs_profile[] = { "-lc_p", NULL };
 #define STARTLABEL "__start"
 #endif
 char *incdir = STDINC;
+char *altincdir = STDINC "pcc/";
 char *libdir = LIBDIR;
 char *pccincdir = PCCINCDIR;
 char *pcclibdir = PCCLIBDIR;
@@ -275,6 +276,7 @@ main(int argc, char *argv[])
 #ifdef WIN32
 	/* have to prefix path early.  -B may override */
 	incdir = win32pathsubst(incdir);
+	altincdir = win32pathsubst(altincdir);
 	libdir = win32pathsubst(libdir);
 	pccincdir = win32pathsubst(pccincdir);
 	pcclibdir = win32pathsubst(pcclibdir);
@@ -630,6 +632,7 @@ main(int argc, char *argv[])
 	}
 	if (Bflag) {
 		incdir = Bflag;
+		altincdir = Bflag;
 		libdir = Bflag;
 		pccincdir = Bflag;
 		pcclibdir = Bflag;
@@ -720,9 +723,11 @@ main(int argc, char *argv[])
 			av[na++] = "-t";
 		for(pv=ptemp; pv <pvt; pv++)
 			av[na++] = *pv;
-		if (!nostdinc)
+		if (!nostdinc) {
+			av[na++] = "-S", av[na++] = altincdir;
 			av[na++] = "-S", av[na++] = incdir;
-		av[na++] = "-I", av[na++] = pccincdir;
+			av[na++] = "-S", av[na++] = pccincdir;
+		}
 		if (idirafter) {
 			av[na++] = "-I";
 			av[na++] = idirafter;
@@ -1225,8 +1230,9 @@ callsys(char *f, char *v[])
 {
 	int t, status = 0;
 	pid_t p;
-	char *s, *a = NULL;
-	size_t len = 0;
+	char *s;
+	char * volatile a = NULL;
+	volatile size_t len;
 
 	if (vflag) {
 		fprintf(stderr, "%s ", f);

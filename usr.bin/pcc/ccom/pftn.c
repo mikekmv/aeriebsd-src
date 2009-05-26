@@ -129,6 +129,7 @@ void vfdalign(int n);
 static void ssave(struct symtab *);
 static void alprint(union arglist *al, int in);
 static void lcommadd(struct symtab *sp);
+static NODE *mkcmplx(NODE *p, TWORD dt);
 extern int fun_inline;
 struct suedef *sueget(struct suedef *p);
 
@@ -1700,8 +1701,10 @@ typwalk(NODE *p, void *arg)
 NODE *
 typenode(NODE *p)
 {
+	struct symtab *sp;
 	struct typctx tc;
 	NODE *q;
+	char *c;
 
 	memset(&tc, 0, sizeof(struct typctx));
 
@@ -1717,9 +1720,15 @@ typenode(NODE *p)
 		if ((tc.cmplx && tc.imag) || tc.sig || tc.uns ||
 		    !ISFTY(tc.type))
 			goto bad;
-		if (tc.cmplx)
-			tc.type += (FCOMPLEX-FLOAT);
-		else
+		if (tc.cmplx) {
+			c = tc.type == DOUBLE ? "0d" :
+			    tc.type == FLOAT ? "0f" : "0l";
+			sp = lookup(addname(c), 0);
+			tc.type = STRTY;
+			tc.saved = mkty(tc.type, sp->sdf, sp->ssue);
+			tc.saved->n_sp = sp;
+			tc.type = 0;
+		} else
 			tc.type += (FIMAG-FLOAT);
 	}
 
@@ -2478,6 +2487,22 @@ incomp:					uerror("incompatible types for arg %d",
 				} else {
 					MKTY(apole->node, arrt, 0, 0)
 				}
+#ifndef NO_COMPLEX
+			} else if (type == STRTY &&
+			    gcc_get_attr(apole->node->n_sue, ATTR_COMPLEX) &&
+			    gcc_get_attr(al[1].sue, ATTR_COMPLEX)) {
+				/* Both are complex */
+				if (apole->node->n_sue->suem->stype !=
+				    al[1].sue->suem->stype) {
+					/* must convert to correct type */
+					w = talloc();
+					*w = *apole->node;
+					w = mkcmplx(w, al[1].sue->suem->stype);
+					*apole->node = *w;
+					nfree(w);
+				}
+				goto out;
+#endif
 			} else if (ISSOU(BTYPE(type))) {
 				if (apole->node->n_sue->suem != al[1].sue->suem)
 					goto incomp;
@@ -2995,3 +3020,343 @@ inlalloc(int size)
 {
 	return isinlining ?  permalloc(size) : tmpalloc(size);
 }
+
+#ifndef NO_COMPLEX
+
+static char *real, *imag;
+static struct symtab *cxsp[3];
+/*
+ * As complex numbers internally are handled as structs, create
+ * these by hand-crafting them.
+ */
+void
+complinit()
+{
+	struct rstack *rp;
+	NODE *p, *q;
+	char *n[] = { "0f", "0d", "0l" };
+	int i, odebug;
+
+	odebug = ddebug;
+	ddebug = 0;
+	real = addname("__real");
+	imag = addname("__imag");
+	p = block(NAME, NIL, NIL, FLOAT, 0, MKSUE(FLOAT));
+	for (i = 0; i < 3; i++) {
+		p->n_type = FLOAT+i;
+		p->n_sue = MKSUE(FLOAT+i);
+		rp = bstruct(NULL, STNAME, NULL);
+		soumemb(p, real, 0);
+		soumemb(p, imag, 0);
+		q = dclstruct(rp);
+		cxsp[i] = q->n_sp = lookup(addname(n[i]), 0);
+		defid(q, TYPEDEF);
+		q->n_sp->ssue->suega = permalloc(sizeof(struct gcc_attr_pack) +
+		    sizeof(struct gcc_attrib));
+		q->n_sp->ssue->suega->num = 1;
+		q->n_sp->ssue->suega->ga[0].atype = ATTR_COMPLEX;
+		nfree(q);
+	}
+	nfree(p);
+	ddebug = odebug;
+}
+
+/*
+ * Return the highest real floating point type.
+ * Known that at least one type is complex or imaginary.
+ */
+static TWORD
+maxtyp(NODE *l, NODE *r)
+{
+	TWORD tl, tr, t;
+
+#define ANYCX(p) (p->n_type == STRTY && gcc_get_attr(p->n_sue, ATTR_COMPLEX))
+	tl = ANYCX(l) ? l->n_sue->suem->stype : l->n_type;
+	tr = ANYCX(r) ? r->n_sue->suem->stype : r->n_type;
+	if (ISITY(tl))
+		tl -= (FIMAG - FLOAT);
+	if (ISITY(tr))
+		tr -= (FIMAG - FLOAT);
+	t = tl > tr ? tl : tr;
+	if (!ISFTY(t))
+		cerror("maxtyp");
+	return t;
+}
+
+/*
+ * Fetch space on stack for complex struct.
+ */
+static NODE *
+cxstore(TWORD t)
+{
+	struct symtab s;
+
+	s = *cxsp[t - FLOAT];
+	s.sclass = AUTO;
+	s.soffset = NOOFFSET;
+	oalloc(&s, &autooff);
+	return nametree(&s);
+}
+
+#define	comop(x,y) buildtree(COMOP, x, y)
+
+static NODE *
+mkcmplx(NODE *p, TWORD dt)
+{
+	NODE *q, *r, *i, *t;
+
+	if (!ANYCX(p)) {
+		/* Not complex, convert to complex on stack */
+		q = cxstore(dt);
+		if (ISITY(p->n_type)) {
+			p->n_type = p->n_type - FIMAG + FLOAT;
+			r = bcon(0);
+			i = p;
+		} else {
+			r = p;
+			i = bcon(0);
+		}
+		p = buildtree(ASSIGN, structref(ccopy(q), DOT, real), r);
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, imag), i));
+		p = comop(p, q);
+	} else if (p->n_sue->suem->stype != dt) {
+		q = cxstore(dt);
+		p = buildtree(ADDROF, p, NIL);
+		t = tempnode(0, p->n_type, p->n_df, p->n_sue);
+		p = buildtree(ASSIGN, ccopy(t), p);
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, real),
+		    structref(ccopy(t), STREF, real)));
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, imag),
+		    structref(t, STREF, imag)));
+		p = comop(p, q);
+	}
+	return p;
+}
+
+static NODE *
+cxasg(NODE *l, NODE *r)
+{
+
+	if (ANYCX(l) && ANYCX(r) &&
+	    l->n_sue->suem->stype != r->n_sue->suem->stype) {
+		/* different types in structs */
+		r = mkcmplx(r, l->n_sue->suem->stype);
+	} else if (!ANYCX(l))
+		r = structref(r, DOT, ISITY(l->n_type) ? imag : real);
+	else if (!ANYCX(r))
+		r = mkcmplx(r, l->n_sue->suem->stype);
+	return buildtree(ASSIGN, l, r);
+}
+
+/*
+ * Fixup complex operations.
+ * At least one operand is complex.
+ */
+NODE *
+cxop(int op, NODE *l, NODE *r)
+{
+	TWORD mxtyp;
+	NODE *p, *q;
+	NODE *ltemp, *rtemp;
+	NODE *real_l, *imag_l;
+	NODE *real_r, *imag_r;
+
+	if (op == ASSIGN)
+		return cxasg(l, r);
+
+	mxtyp = maxtyp(l, r);
+	l = mkcmplx(l, mxtyp);
+	r = mkcmplx(r, mxtyp);
+
+
+	/* put a pointer to left and right elements in a TEMP */
+	l = buildtree(ADDROF, l, NIL);
+	ltemp = tempnode(0, l->n_type, l->n_df, l->n_sue);
+	l = buildtree(ASSIGN, ccopy(ltemp), l);
+
+	r = buildtree(ADDROF, r, NIL);
+	rtemp = tempnode(0, r->n_type, r->n_df, r->n_sue);
+	r = buildtree(ASSIGN, ccopy(rtemp), r);
+
+	p = comop(l, r);
+
+	/* create the four trees needed for calculation */
+	real_l = structref(ccopy(ltemp), STREF, real);
+	real_r = structref(ccopy(rtemp), STREF, real);
+	imag_l = structref(ltemp, STREF, imag);
+	imag_r = structref(rtemp, STREF, imag);
+
+	/* get storage on stack for the result */
+	q = cxstore(mxtyp);
+
+	switch (op) {
+	case PLUS:
+	case MINUS:
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, real), 
+		    buildtree(op, real_l, real_r)));
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, imag), 
+		    buildtree(op, imag_l, imag_r)));
+		break;
+
+	case MUL:
+		/* Complex mul is "complex" */
+		/* (u+iv)*(x+iy)=((u*x)-(v*y))+i(v*x+y*u) */
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, real),
+		    buildtree(MINUS,
+		    buildtree(MUL, ccopy(real_r), ccopy(real_l)),
+		    buildtree(MUL, ccopy(imag_r), ccopy(imag_l)))));
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, imag),
+		    buildtree(PLUS,
+		    buildtree(MUL, real_r, imag_l),
+		    buildtree(MUL, imag_r, real_l))));
+		break;
+
+	case DIV:
+		/* Complex div is even more "complex" */
+		/* (u+iv)/(x+iy)=(u*x+v*y)/(x*x+y*y)+i((v*x-u*y)/(x*x+y*y)) */
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, real),
+		    buildtree(DIV,
+		      buildtree(PLUS,
+			buildtree(MUL, ccopy(real_r), ccopy(real_l)),
+			buildtree(MUL, ccopy(imag_r), ccopy(imag_l))),
+		      buildtree(PLUS,
+			buildtree(MUL, ccopy(real_r), ccopy(real_r)),
+			buildtree(MUL, ccopy(imag_r), ccopy(imag_r))))));
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, real),
+		    buildtree(DIV,
+		      buildtree(MINUS,
+			buildtree(MUL, ccopy(imag_l), ccopy(real_r)),
+			buildtree(MUL, ccopy(real_l), ccopy(imag_r))),
+		      buildtree(PLUS,
+			buildtree(MUL, ccopy(real_r), ccopy(real_r)),
+			buildtree(MUL, ccopy(imag_r), ccopy(imag_r))))));
+		tfree(real_r);
+		tfree(real_l);
+		tfree(imag_r);
+		tfree(imag_l);
+		break;
+	}
+	return comop(p, q);
+}
+
+/*
+ * Fixup imaginary operations.
+ * At least one operand is imaginary, none is complex.
+ */
+NODE *
+imop(int op, NODE *l, NODE *r)
+{
+	NODE *p, *q;
+	TWORD mxtyp;
+	int li, ri;
+
+	li = ri = 0;
+	if (ISITY(l->n_type))
+		li = 1, l->n_type = l->n_type - (FIMAG-FLOAT);
+	if (ISITY(r->n_type))
+		ri = 1, r->n_type = r->n_type - (FIMAG-FLOAT);
+
+	if (op == ASSIGN)
+		cerror("imop ASSIGN");
+
+	mxtyp = maxtyp(l, r);
+	switch (op) {
+	case PLUS:
+		if (li && ri) {
+			p = buildtree(PLUS, l, r);
+			p->n_type = p->n_type += (FIMAG-FLOAT);
+		} else {
+			/* If one is imaginary and one is real, make complex */
+			if (li)
+				q = l, l = r, r = q; /* switch */
+			q = cxstore(mxtyp);
+			p = buildtree(ASSIGN,
+			    structref(ccopy(q), DOT, real), l);
+			p = comop(p, buildtree(ASSIGN,
+			    structref(ccopy(q), DOT, imag), r));
+			p = comop(p, q);
+		}
+		break;
+
+	case MINUS:
+		if (li && ri) {
+			p = buildtree(MINUS, l, r);
+			p->n_type = p->n_type += (FIMAG-FLOAT);
+		} else if (li) {
+			q = cxstore(mxtyp);
+			p = buildtree(ASSIGN, structref(ccopy(q), DOT, real),
+			    buildtree(UMINUS, r, NIL));
+			p = comop(p, buildtree(ASSIGN,
+			    structref(ccopy(q), DOT, imag), l));
+			p = comop(p, q);
+		} else /* if (ri) */ {
+			q = cxstore(mxtyp);
+			p = buildtree(ASSIGN,
+			    structref(ccopy(q), DOT, real), l);
+			p = comop(p, buildtree(ASSIGN,
+			    structref(ccopy(q), DOT, imag),
+			    buildtree(UMINUS, r, NIL)));
+			p = comop(p, q);
+		}
+		break;
+
+	case MUL:
+		p = buildtree(MUL, l, r);
+		if (li && ri)
+			p = buildtree(UMINUS, p, NIL);
+		if (li ^ ri)
+			p->n_type = p->n_type += (FIMAG-FLOAT);
+		break;
+
+	case DIV:
+		p = buildtree(DIV, l, r);
+		if (ri && !li)
+			p = buildtree(UMINUS, p, NIL);
+		if (li ^ ri)
+			p->n_type = p->n_type += (FIMAG-FLOAT);
+		break;
+	default:
+		cerror("imop");
+		p = NULL;
+	}
+	return p;
+}
+
+NODE *
+cxelem(int op, NODE *p)
+{
+
+	if (ANYCX(p)) {
+		p = structref(p, DOT, op == XREAL ? real : imag);
+	} else if (op == XIMAG) {
+		/* XXX  sanitycheck? */
+		tfree(p);
+		p = bcon(0);
+	}
+	return p;
+}
+
+NODE *
+cxconj(NODE *p)
+{
+	NODE *q, *r;
+
+	/* XXX side effects? */
+	q = cxstore(p->n_sue->suem->stype);
+	r = buildtree(ASSIGN, structref(ccopy(q), DOT, real),
+	    structref(ccopy(p), DOT, real));
+	r = comop(r, buildtree(ASSIGN, structref(ccopy(q), DOT, imag),
+	    buildtree(UMINUS, structref(p, DOT, imag), NIL)));
+	return comop(r, q);
+}
+
+/*
+ * Prepare for return.
+ */
+NODE *
+cxret(NODE *p, NODE *q)
+{
+	/* XXX what if cast the other way? */
+	return mkcmplx(p, q->n_sue->suem->stype);
+}
+#endif
