@@ -79,6 +79,8 @@
 #define	SNG_FRACBITS	23
 
 #define	DBL_EXPBITS	11
+#define	DBL_FRACHBITS	20
+#define	DBL_FRACLBITS	32
 #define	DBL_FRACBITS	52
 
 struct ieee_single {
