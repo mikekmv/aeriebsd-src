@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)delete.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: delete.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -49,7 +49,6 @@ static const char rcsid[] =
 #include <unistd.h>
 
 #include "archive.h"
-#include "extern.h"
 #include "pathnames.h"
 
 /*-
@@ -61,32 +60,33 @@ delete(char **argv)
 {
 	CF cf;
 	off_t size;
-	int afd, tfd;
+	FILE *afp, *tfp;
 	char *file;
 
-	afd = open_archive(O_RDWR);
-	tfd = tmp();
+	afp = open_archive(O_RDWR);
+	tfp = tmp();
 
 	/* Read and write to an archive; pad on both. */
-	SETCF(afd, archive, tfd, tname, RPAD|WPAD);
-	while (get_arobj(afd)) {
+	SETCF(afp, archive, tfp, tname, RPAD|WPAD);
+	while (get_arobj(afp)) {
 		if (*argv && (file = files(argv))) {
 			if (options & AR_V)
 				(void)printf("d - %s\n", file);
-			skip_arobj(afd);
+			skip_arobj(afp);
 			continue;
 		}
 		put_arobj(&cf, NULL);
 	}
 
-	size = lseek(tfd, (off_t)0, SEEK_CUR);
-	(void)lseek(tfd, (off_t)0, SEEK_SET);
-	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
-	SETCF(tfd, tname, afd, archive, NOPAD);
+	size = ftello(tfp);
+	rewind(tfp);
+	(void)fseeko(afp, SARMAG, SEEK_SET);
+	SETCF(tfp, tname, afp, archive, NOPAD);
 	copy_ar(&cf, size);
-	(void)close(tfd);
-	(void)ftruncate(afd, size + SARMAG);
-	close_archive(afd);
+	(void)fclose(tfp);
+	fflush(afp);
+	(void)ftruncate(fileno(afp), size + SARMAG);
+	close_archive(afp);
 
 	if (*argv) {
 		orphans(argv);

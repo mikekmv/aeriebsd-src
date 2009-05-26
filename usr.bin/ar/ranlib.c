@@ -36,7 +36,7 @@
 static char sccsid[] = "@(#)build.c	5.3 (Berkeley) 3/12/91";
 static char sccsid[] = "@(#)touch.c	5.3 (Berkeley) 3/12/91";
 #else
-static const char rcsid[] = "$ABSD: ranlib.c,v 1.1 2009/04/03 11:18:10 mickey Exp $";
+static const char rcsid[] = "$ABSD: ranlib.c,v 1.2 2009/05/03 22:32:34 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -54,11 +54,13 @@ static const char rcsid[] = "$ABSD: ranlib.c,v 1.1 2009/04/03 11:18:10 mickey Ex
 #include <a.out.h>
 #include <ar.h>
 #include <ranlib.h>
-#include <archive.h>
 #include <elf_abi.h>
 #include <elfuncs.h>
+
+#include "archive.h"
+
+/* from usr.bin/nm/ */
 #include "byte.c"
-#include "extern.h"
 
 #define	MID_ELFFL	0x80000000	/* signal for the symdef format */
 
@@ -73,10 +75,10 @@ typedef struct _rlib {
 RLIB *rhead, **pnext;
 off_t r_fuzz;
 
-int read_exec(FILE *, int, int, long *, long *);
+int read_exec(FILE *, FILE *, long *, long *);
 void symobj(FILE *, int, long, long);
 int touch(void);
-void settime(int);
+void settime(FILE *);
 int do_ranlib(void);
 int addsym(struct nlist *, const char *, off_t, long *, long *, const char *);
 
@@ -100,31 +102,30 @@ do_ranlib(void)
 {
 	CF cf;
 	off_t size;
-	FILE	*fp;
+	FILE	*afp, *tfp;
 	long	symcnt;			/* symbol count */
 	long	tsymlen;		/* total string length */
-	int afd, tfd, current_mid;
+	int	current_mid;
 
 	current_mid = -1;
-	afd = open_archive(O_RDWR);
-	fp = fdopen(afd, "r+");
-	tfd = tmp();
+	afp = open_archive(O_RDWR);
+	tfp = tmp();
 
-	SETCF(afd, archive, tfd, tname, RPAD|WPAD);
+	SETCF(afp, archive, tfp, tname, RPAD|WPAD);
 
 	/* Read through the archive, creating list of symbols. */
 	symcnt = tsymlen = 0;
 	r_fuzz = SARMAG;
 	pnext = &rhead;
-	while(get_arobj(afd)) {
+	while(get_arobj(afp)) {
 		int new_mid;
 
 		if (!strcmp(chdr.name, RANLIBMAG) ||
 		    !strcmp(chdr.name, RANLIBMAG2)) {
-			r_fuzz += skip_arobj(afd);
+			r_fuzz += skip_arobj(afp);
 			continue;
 		}
-		new_mid = read_exec(fp, afd, tfd, &symcnt, &tsymlen);
+		new_mid = read_exec(afp, tfp, &symcnt, &tsymlen);
 		if (new_mid != -1) {
 			if (current_mid == -1)
 				current_mid = new_mid;
@@ -137,19 +138,20 @@ do_ranlib(void)
 	*pnext = NULL;
 
 	/* Create the symbol table.  Endianess the same as last mid seen */
-	symobj(fp, current_mid, symcnt, tsymlen);
+	symobj(afp, current_mid, symcnt, tsymlen);
 
 	/* Copy the saved objects into the archive. */
-	size = lseek(tfd, (off_t)0, SEEK_CUR);
-	(void)lseek(tfd, (off_t)0, SEEK_SET);
-	SETCF(tfd, tname, afd, archive, NOPAD);
+	size = ftello(tfp);
+	rewind(tfp);
+	SETCF(tfp, tname, afp, archive, NOPAD);
 	copy_ar(&cf, size);
-	(void)ftruncate(afd, lseek(afd, (off_t)0, SEEK_CUR));
-	(void)close(tfd);
+	fflush(afp);
+	(void)ftruncate(fileno(afp), ftello(afp));
+	(void)fclose(tfp);
 
 	/* Set the time. */
-	settime(afd);
-	close_archive(afd);
+	settime(afp);
+	close_archive(afp);
 	return(0);
 }
 
@@ -162,7 +164,7 @@ do_ranlib(void)
  *	out.
  */
 int
-read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
+read_exec(FILE *rfp, FILE *wfp, long *symcnt, long *tsymlen)
 {
 	union {
 		struct exec exec;
@@ -173,15 +175,15 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 	off_t r_off, w_off;
 	char *strtab = NULL;
 	long strsize, nsyms;
-	int i, nr;
+	int i;
 
 	/* Get current offsets for original and tmp files. */
-	r_off = lseek(rfd, (off_t)0, SEEK_CUR);
-	w_off = lseek(wfd, (off_t)0, SEEK_CUR);
+	r_off = ftello(rfp);
+	w_off = ftello(wfp);
 
 	/* Read in exec structure. */
-	if ((nr = read(rfd, &eh, sizeof(eh))) != sizeof(eh))
-		goto bad;
+	if (fread(&eh, sizeof(eh), 1, rfp) != 1)
+		err(1, "fread: %s", archive);
 
 	if (IS_ELF(eh.elf32) &&
 	    eh.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
@@ -192,17 +194,17 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 		size_t stabsize;
 
 		elf32_fix_header(&eh.elf32);
-		if (!(shdr = elf32_load_shdrs(archive, fp, r_off, &eh.elf32)))
+		if (!(shdr = elf32_load_shdrs(archive, rfp, r_off, &eh.elf32)))
 			goto bad;
 		elf32_fix_shdrs(&eh.elf32, shdr);
 
-		if (!(shstr = elf32_shstrload(archive, fp, r_off, &eh.elf32,
+		if (!(shstr = elf32_shstrload(archive, rfp, r_off, &eh.elf32,
 		    shdr))) {
 			free(shdr);
 			goto bad;
 		}
 
-		if (!(strtab = elf32_strload(archive, fp, r_off, &eh.elf32,
+		if (!(strtab = elf32_strload(archive, rfp, r_off, &eh.elf32,
 		    shdr, shstr, ELF_STRTAB, &stabsize))) {
 			free(shstr);
 			free(shdr);
@@ -222,11 +224,11 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 			goto bad;
 		}
 
-		if (fseeko(fp, r_off + shdr[i].sh_offset, SEEK_SET))
+		if (fseeko(rfp, r_off + shdr[i].sh_offset, SEEK_SET))
 			err(1, "fseeko: %s", archive);
 
 		for (i = 0; i < nsyms; i++) {
-			if (fread(&sbuf, sizeof(sbuf), 1, fp) != 1)
+			if (fread(&sbuf, sizeof(sbuf), 1, rfp) != 1)
 				err(1, "fread: %s", archive);
 
 			elf32_fix_sym(&eh.elf32, &sbuf);
@@ -243,7 +245,7 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 		free(strtab);
 		free(shstr);
 		free(shdr);
-		(void)lseek(rfd, (off_t)r_off, SEEK_SET);
+		(void)fseeko(rfp, (off_t)r_off, SEEK_SET);
 		return MID_ELFFL | eh.elf32.e_machine;
 
 	} else if (IS_ELF(eh.elf64) &&
@@ -255,17 +257,17 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 		size_t stabsize;
 
 		elf64_fix_header(&eh.elf64);
-		if (!(shdr = elf64_load_shdrs(archive, fp, r_off, &eh.elf64)))
+		if (!(shdr = elf64_load_shdrs(archive, rfp, r_off, &eh.elf64)))
 			goto bad;
 		elf64_fix_shdrs(&eh.elf64, shdr);
 
-		if (!(shstr = elf64_shstrload(archive, fp, r_off, &eh.elf64,
+		if (!(shstr = elf64_shstrload(archive, rfp, r_off, &eh.elf64,
 		    shdr))) {
 			free(shdr);
 			goto bad;
 		}
 
-		if (!(strtab = elf64_strload(archive, fp, r_off, &eh.elf64,
+		if (!(strtab = elf64_strload(archive, rfp, r_off, &eh.elf64,
 		    shdr, shstr, ELF_STRTAB, &stabsize))) {
 			free(shstr);
 			free(shdr);
@@ -285,11 +287,11 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 			goto bad;
 		}
 
-		if (fseeko(fp, r_off + shdr[i].sh_offset, SEEK_SET))
+		if (fseeko(rfp, r_off + shdr[i].sh_offset, SEEK_SET))
 			err(1, "fseeko: %s", archive);
 
 		for (i = 0; i < nsyms; i++) {
-			if (fread(&sbuf, sizeof(sbuf), 1, fp) != 1)
+			if (fread(&sbuf, sizeof(sbuf), 1, rfp) != 1)
 				err(1, "fread: %s", archive);
 
 			elf64_fix_sym(&eh.elf64, &sbuf);
@@ -306,7 +308,7 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 		free(strtab);
 		free(shstr);
 		free(shdr);
-		(void)lseek(rfd, (off_t)r_off, SEEK_SET);
+		(void)fseeko(rfp, (off_t)r_off, SEEK_SET);
 		return MID_ELFFL | eh.elf64.e_machine;
 
 	} else if (BAD_OBJECT(eh.exec) || eh.exec.a_syms == 0)
@@ -315,7 +317,7 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 	fix_header_order(&eh.exec);
 
 	/* Seek to string table. */
-	if (lseek(rfd, N_STROFF(eh.exec) + r_off, SEEK_SET) == (off_t)-1) {
+	if (fseeko(rfp, N_STROFF(eh.exec) + r_off, SEEK_SET) == -1) {
 		if (errno == EINVAL)
 			goto bad;
 		else
@@ -323,9 +325,8 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 	}
 
 	/* Read in size of the string table. */
-	nr = read(rfd, (char *)&strsize, sizeof(strsize));
-	if (nr != sizeof(strsize))
-		goto bad;
+	if (fread((char *)&strsize, sizeof(strsize), 1, rfp) != 1)
+		err(1, "fread: %s", archive);
 
 	strsize = fix_32_order(strsize, N_GETMID(eh.exec));
 
@@ -334,19 +335,18 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 	strtab = malloc(strsize);
 	if (!strtab)
 		err(1, "malloc: %s", archive);
-	nr = read(rfd, strtab, strsize);
-	if (nr != strsize)
-		goto bad;
+	if (fread(strtab, strsize, 1, rfp) != 1)
+		err(1, "fread: %s", archive);
 
 	/* Seek to symbol table. */
-	if (fseek(fp, N_SYMOFF(eh.exec) + r_off, SEEK_SET) == (off_t)-1)
-		goto bad;
+	if (fseek(rfp, N_SYMOFF(eh.exec) + r_off, SEEK_SET) == (off_t)-1)
+		err(1, "fseeko: %s", archive);
 
 	/* For each symbol read the nlist entry and save it as necessary. */
 	nsyms = eh.exec.a_syms / sizeof(struct nlist);
 	while (nsyms--) {
-		if (!fread((char *)&nl, sizeof(struct nlist), 1, fp)) {
-			if (feof(fp))
+		if (!fread((char *)&nl, sizeof(struct nlist), 1, rfp)) {
+			if (feof(rfp))
 				badfmt();
 			err(1, "fread: %s", archive);
 		}
@@ -356,10 +356,9 @@ read_exec(FILE *fp, int rfd, int wfd, long *symcnt, long *tsymlen)
 		    sizeof(struct ar_hdr), symcnt, tsymlen, archive);
 	}
 
-bad:	if (nr < 0)
-		err(1, "%s", archive);
+bad:
 	free(strtab);
-	(void)lseek(rfd, (off_t)r_off, SEEK_SET);
+	(void)fseeko(rfp, r_off, SEEK_SET);
 	return N_GETMID(eh.exec);
 }
 
@@ -511,33 +510,33 @@ symobj(FILE *fp, int mid, long symcnt, long tsymlen)
 int
 touch(void)
 {
-	int afd;
+	FILE *afp;
 
-	afd = open_archive(O_RDWR);
+	afp = open_archive(O_RDWR);
 
-	if (!get_arobj(afd) ||
+	if (!get_arobj(afp) ||
 	    (strncmp(RANLIBMAG, chdr.name, sizeof(RANLIBMAG) - 1) &&
 	     strncmp(RANLIBMAG2, chdr.name, sizeof(RANLIBMAG2) - 1))) {
 		warnx("%s: no symbol table.", archive);
 		return(1);
 	}
-	settime(afd);
-	close_archive(afd);
+	settime(afp);
+	close_archive(afp);
 	return(0);
 }
 
 void
-settime(int afd)
+settime(FILE *afp)
 {
 	struct ar_hdr *hdr;
 	off_t size;
 	char buf[50];
 
 	size = SARMAG + sizeof(hdr->ar_name);
-	if (lseek(afd, size, SEEK_SET) == (off_t)-1)
-		err(1, "lseek: %s", archive);
+	if (fseeko(afp, size, SEEK_SET) == -1)
+		err(1, "fseeko: %s", archive);
 	(void)snprintf(buf, sizeof buf,
-	    "%-12ld", (long int)time((time_t *)NULL) + RANLIBSKEW);
-	if (write(afd, buf, sizeof(hdr->ar_date)) != sizeof(hdr->ar_date))
+	    "%-12ld", (long)time((time_t *)NULL) + RANLIBSKEW);
+	if (fwrite(buf, sizeof(hdr->ar_date), 1, afp) != 1)
 		err(1, "write: %s", archive);
 }

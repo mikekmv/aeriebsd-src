@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)print.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: print.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -47,7 +47,6 @@ static const char rcsid[] =
 #include <unistd.h>
 
 #include "archive.h"
-#include "extern.h"
 
 /*
  * print --
@@ -58,18 +57,19 @@ int
 print(char **argv)
 {
 	CF cf;
-	int afd, all;
+	FILE *afp;
 	char *file;
+	int all;
 
-	afd = open_archive(O_RDONLY);
+	afp = open_archive(O_RDONLY);
 
 	/* Read from an archive, write to stdout; pad on read. */
-	SETCF(afd, archive, STDOUT_FILENO, "stdout", RPAD);
-	for (all = !*argv; get_arobj(afd);) {
+	SETCF(afp, archive, stdout, "stdout", RPAD);
+	for (all = !*argv; get_arobj(afp);) {
 		if (all)
 			file = chdr.name;
 		else if (!(file = files(argv))) {
-			skip_arobj(afd);
+			skip_arobj(afp);
 			continue;
 		}
 		if (options & AR_V) {
@@ -80,7 +80,7 @@ print(char **argv)
 		if (!all && !*argv)
 			break;
 	}
-	close_archive(afd);
+	close_archive(afp);
 
 	if (*argv) {
 		orphans(argv);

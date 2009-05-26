@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)misc.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: misc.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -49,26 +49,24 @@ static const char rcsid[] =
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <paths.h>
 
 #include "archive.h"
-#include "extern.h"
 #include "pathnames.h"
 
 char *tname = "temporary file";		/* temporary file "name" */
 
-int
+FILE *
 tmp(void)
 {
 	extern char *envtmp;
-	sigset_t set, oset;
-	static int first;
-	int fd;
 	char path[MAXPATHLEN];
+	FILE *fp;
+	sigset_t set, oset;
+	int fd;
 
-	if (!first && !envtmp) {
-		envtmp = getenv("TMPDIR");
-		first = 1;
-	}
+	if (!envtmp && !(envtmp = getenv("TMPDIR")))
+		envtmp = _PATH_TMP;
 
 	if (envtmp)
 		(void)snprintf(path, sizeof(path), "%s/%s", envtmp,
@@ -82,7 +80,10 @@ tmp(void)
 		err(1, "mkstemp: %s", tname);
         (void)unlink(path);
 	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
-	return (fd);
+
+	if (!(fp = fdopen(fd, "r+")))
+		err(1, "fdopen: %s", tname);
+	return (fp);
 }
 
 /*

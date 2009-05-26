@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: archive.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -52,17 +52,18 @@ static const char rcsid[] =
 #include <err.h>
 
 #include "archive.h"
-#include "extern.h"
 
 typedef struct ar_hdr HDR;
 static char hb[sizeof(HDR) + 1];	/* real header */
 
-int
+FILE *
 open_archive(int mode)
 {
+	FILE *fp;
 	int created, fd, nr;
 	char buf[SARMAG];
 
+	fd = -1;
 	created = 0;
 	if (mode & O_CREAT) {
 		mode |= O_EXCL;
@@ -71,13 +72,14 @@ open_archive(int mode)
 			if (!(options & AR_C))
 				warnx("creating archive %s", archive);
 			created = 1;
-			goto opened;
+		} else {
+			if (errno != EEXIST)
+				err(1, "open: %s", archive);
+			mode &= ~O_EXCL;
 		}
-		if (errno != EEXIST)
-			err(1, "open: %s", archive);
-		mode &= ~O_EXCL;
 	}
-	if ((fd = open(archive, mode, DEFFILEMODE)) < 0)
+
+	if (fd < 0 && (fd = open(archive, mode, DEFFILEMODE)) < 0)
 		err(1, "open: %s", archive);
 
 	/*
@@ -85,8 +87,10 @@ open_archive(int mode)
 	 * error then someone is already working on this library (or
 	 * it's going across NFS).
 	 */
-opened:	if (flock(fd, LOCK_EX|LOCK_NB) && errno != EOPNOTSUPP)
+	if (flock(fd, LOCK_EX|LOCK_NB) && errno != EOPNOTSUPP)
 		err(1, "flock: %s", archive);
+
+	fp = fdopen(fd, mode & O_RDWR? "r+" : "r");
 
 	/*
 	 * If not created, O_RDONLY|O_RDWR indicates that it has to be
@@ -94,22 +98,20 @@ opened:	if (flock(fd, LOCK_EX|LOCK_NB) && errno != EOPNOTSUPP)
 	 */
 	if (!created &&
 	    ((mode & O_ACCMODE) == O_RDONLY || (mode & O_ACCMODE) == O_RDWR)) {
-		if ((nr = read(fd, buf, SARMAG) != SARMAG)) {
-			if (nr >= 0)
-				badfmt();
-			err(1, "read: %s", archive);
-		} else if (bcmp(buf, ARMAG, SARMAG))
+		if (fread(buf, SARMAG, 1, fp) != 1)
+			err(1, "fread: %s", archive);
+		else if (bcmp(buf, ARMAG, SARMAG))
 			badfmt();
-	} else if (write(fd, ARMAG, SARMAG) != SARMAG)
-		err(1, "write: %s", archive);
-	return (fd);
+	} else if (fwrite(ARMAG, SARMAG, 1, fp) != 1)
+		err(1, "fwrite: %s", archive);
+
+	return (fp);
 }
 
 void
-close_archive(int fd)
+close_archive(FILE *fp)
 {
-
-	(void)close(fd);			/* Implicit unlock. */
+	fclose(fp);			/* Implicit unlock. */
 }
 
 /* Convert ar header field to an integer. */
@@ -124,18 +126,18 @@ close_archive(int fd)
  *	read the archive header for this member
  */
 int
-get_arobj(int fd)
+get_arobj(FILE *fp)
 {
 	struct ar_hdr *hdr;
 	int len, nr;
 	char *p, buf[20];
 
-	nr = read(fd, hb, sizeof(HDR));
-	if (nr != sizeof(HDR)) {
-		if (!nr)
+	nr = fread(hb, sizeof(HDR), 1, fp);
+	if (nr != 1) {
+		if (feof(fp))
 			return (0);
-		if (nr < 0)
-			err(1, "read: %s", archive);
+		if (ferror(fp))
+			err(1, "fread: %s", archive);
 		badfmt();
 	}
 
@@ -165,10 +167,9 @@ get_arobj(int fd)
 		chdr.lname = len = atoi(hdr->ar_name + sizeof(AR_EFMT1) - 1);
 		if (len <= 0 || len > MAXNAMLEN)
 			badfmt();
-		nr = read(fd, chdr.name, len);
-		if (nr != len) {
-			if (nr < 0)
-				err(1, "read: %s", archive);
+		if (fread(chdr.name, len, 1, fp) != 1) {
+			if (ferror(fp))
+				err(1, "fread: %s", archive);
 			badfmt();
 		}
 		chdr.name[len] = 0;
@@ -181,6 +182,7 @@ get_arobj(int fd)
 		for (p = chdr.name + sizeof(hdr->ar_name) - 1; *p == ' '; --p);
 		*++p = '\0';
 	}
+
 	return (1);
 }
 
@@ -193,10 +195,10 @@ static int already_written;
 void
 put_arobj(CF *cfp, struct stat *sb)
 {
-	int lname;
+	off_t size;
 	char *name;
 	struct ar_hdr *hdr;
-	off_t size;
+	int lname;
 	uid_t uid;
 	gid_t gid;
 
@@ -208,7 +210,7 @@ put_arobj(CF *cfp, struct stat *sb)
 	 */
 	if (sb) {
 		name = rname(cfp->rname);
-		(void)fstat(cfp->rfd, sb);
+		(void)fstat(fileno(cfp->rfp), sb);
 
 		/*
 		 * If not truncating names and the name is too long or contains
@@ -256,11 +258,11 @@ put_arobj(CF *cfp, struct stat *sb)
 		size = chdr.size;
 	}
 
-	if (write(cfp->wfd, hb, sizeof(HDR)) != sizeof(HDR))
-		err(1, "write: %s", cfp->wname);
+	if (fwrite(hb, sizeof(HDR), 1, cfp->wfp) != 1)
+		err(1, "fwrite: %s", cfp->wname);
 	if (lname) {
-		if (write(cfp->wfd, name, lname) != lname)
-			err(1, "write: %s", cfp->wname);
+		if (fwrite(name, lname, 1, cfp->wfp) != 1)
+			err(1, "fwrite: %s", cfp->wname);
 		already_written = lname;
 	}
 	copy_ar(cfp, size);
@@ -284,21 +286,19 @@ put_arobj(CF *cfp, struct stat *sb)
 void
 copy_ar(CF *cfp, off_t size)
 {
-	static char pad = '\n';
-	off_t sz;
-	int from, nr, nw, off, to;
+	static const char pad = '\n';
 	char buf[8*1024];
+	off_t sz;
+	int nr, nw, off;
 
 	if (!(sz = size))
 		return;
 
-	from = cfp->rfd;
-	to = cfp->wfd;
 	sz = size;
-	while (sz && (nr = read(from, buf, MIN(sz, sizeof(buf)))) > 0) {
+	while (sz && (nr = fread(buf, 1, MIN(sz, sizeof buf), cfp->rfp)) > 0) {
 		sz -= nr;
 		for (off = 0; off < nr; nr -= off, off += nw)
-			if ((nw = write(to, buf + off, nr)) < 0)
+			if ((nw = fwrite(buf + off, 1, nr, cfp->wfp)) <= 0)
 				err(1, "write: %s", cfp->wname);
 	}
 	if (sz) {
@@ -308,13 +308,13 @@ copy_ar(CF *cfp, off_t size)
 	}
 
 	if (cfp->flags & RPAD && (size + chdr.lname) & 1 &&
-	    (nr = read(from, buf, 1)) != 1) {
+	    (nr = fread(buf, 1, 1, cfp->rfp)) != 1) {
 		if (nr == 0)
 			badfmt();
 		err(1, "read: %s", cfp->rname);
 	}
 	if (cfp->flags & WPAD && (size + already_written) & 1 &&
-	    write(to, &pad, 1) != 1)
+	    fwrite(&pad, 1, 1, cfp->wfp) != 1)
 		err(1, "write: %s", cfp->wname);
 }
 
@@ -323,13 +323,13 @@ copy_ar(CF *cfp, off_t size)
  *	Skip over an object -- taking care to skip the pad bytes.
  */
 off_t
-skip_arobj(int fd)
+skip_arobj(FILE *fp)
 {
 	off_t len;
 
 	len = chdr.size + ((chdr.size + chdr.lname) & 1);
-	if (lseek(fd, len, SEEK_CUR) == (off_t)-1)
-		err(1, "lseek: %s", archive);
+	if (fseeko(fp, len, SEEK_CUR) == -1)
+		err(1, "fseeko: %s", archive);
 
 	return len + sizeof(struct ar_hdr);
 }

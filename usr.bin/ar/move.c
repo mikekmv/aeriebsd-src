@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)move.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: move.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -50,7 +50,6 @@ static const char rcsid[] =
 #include <unistd.h>
 
 #include "archive.h"
-#include "extern.h"
 #include "pathnames.h"
 
 /*
@@ -65,15 +64,16 @@ move(char **argv)
 {
 	CF cf;
 	off_t size, tsize;
-	int afd, curfd, mods, tfd1, tfd2, tfd3;
+	FILE *afp, *curfp, *tfp1, *tfp2, *tfp3;
 	char *file;
+	int mods;
 
-	afd = open_archive(O_RDWR);
+	afp = open_archive(O_RDWR);
 	mods = options & (AR_A|AR_B);
 
-	tfd1 = tmp();			/* Files before key file. */
-	tfd2 = tmp();			/* Files selected by user. */
-	tfd3 = tmp();			/* Files after key file. */
+	tfp1 = tmp();			/* Files before key file. */
+	tfp2 = tmp();			/* Files selected by user. */
+	tfp3 = tmp();			/* Files after key file. */
 
 	/*
 	 * Break archive into three parts -- selected entries and entries
@@ -84,53 +84,54 @@ move(char **argv)
 	 */
 
 	/* Read and write to an archive; pad on both. */
-	SETCF(afd, archive, 0, tname, RPAD|WPAD);
-	for (curfd = tfd1; get_arobj(afd);) {
+	SETCF(afp, archive, 0, tname, RPAD|WPAD);
+	for (curfp = tfp1; get_arobj(afp);) {
 		if (*argv && (file = files(argv))) {
 			if (options & AR_V)
 				(void)printf("m - %s\n", file);
-			cf.wfd = tfd2;
+			cf.wfp = tfp2;
 			put_arobj(&cf, NULL);
 			continue;
 		}
 		if (mods && compare(posname)) {
 			mods = 0;
 			if (options & AR_B)
-				curfd = tfd3;
-			cf.wfd = curfd;
+				curfp = tfp3;
+			cf.wfp = curfp;
 			put_arobj(&cf, NULL);
 			if (options & AR_A)
-				curfd = tfd3;
+				curfp = tfp3;
 		} else {
-			cf.wfd = curfd;
+			cf.wfp = curfp;
 			put_arobj(&cf, NULL);
 		}
 	}
 
 	if (mods) {
 		warnx("%s: archive member not found", posarg);
-		close_archive(afd);
+		close_archive(afp);
 		return (1);
 	}
-	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
+	(void)fseeko(afp, SARMAG, SEEK_SET);
 
-	SETCF(tfd1, tname, afd, archive, NOPAD);
-	tsize = size = lseek(tfd1, (off_t)0, SEEK_CUR);
-	(void)lseek(tfd1, (off_t)0, SEEK_SET);
+	SETCF(tfp1, tname, afp, archive, NOPAD);
+	tsize = size = ftello(tfp1);
+	rewind(tfp1);
 	copy_ar(&cf, size);
 
-	tsize += size = lseek(tfd2, (off_t)0, SEEK_CUR);
-	(void)lseek(tfd2, (off_t)0, SEEK_SET);
-	cf.rfd = tfd2;
+	tsize += size = ftello(tfp2);
+	rewind(tfp2);
+	cf.rfp = tfp2;
 	copy_ar(&cf, size);
 
-	tsize += size = lseek(tfd3, (off_t)0, SEEK_CUR);
-	(void)lseek(tfd3, (off_t)0, SEEK_SET);
-	cf.rfd = tfd3;
+	tsize += size = ftello(tfp3);
+	rewind(tfp3);
+	cf.rfp = tfp3;
 	copy_ar(&cf, size);
 
-	(void)ftruncate(afd, tsize + SARMAG);
-	close_archive(afd);
+	fflush(afp);
+	(void)ftruncate(fileno(afp), tsize + SARMAG);
+	close_archive(afp);
 
 	if (*argv) {
 		orphans(argv);

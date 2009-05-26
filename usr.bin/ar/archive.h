@@ -30,6 +30,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)archive.h	8.3 (Berkeley) 4/2/94
+ *	@(#)extern.h	8.3 (Berkeley) 4/2/94
  */
 
 /* Ar(1) options. */
@@ -53,23 +54,23 @@ extern u_int options;
 
 /* Set up file copy. */
 #define	SETCF(from, fromname, to, toname, pad) { \
-	cf.rfd = from; \
+	cf.rfp = from; \
 	cf.rname = fromname; \
-	cf.wfd = to; \
+	cf.wfp = to; \
 	cf.wname = toname; \
 	cf.flags = pad; \
 }
 
 /* File copy structure. */
 typedef struct {
-	int rfd;			/* read file descriptor */
-	char *rname;			/* read name */
-	int wfd;			/* write file descriptor */
-	char *wname;			/* write name */
+	FILE	*rfp;			/* read file descriptor */
+	char	*rname;			/* read name */
+	FILE	*wfp;			/* write file descriptor */
+	char	*wname;			/* write name */
 #define	NOPAD	0x00			/* don't pad */
 #define	RPAD	0x01			/* pad on reads */
 #define	WPAD	0x02			/* pad on writes */
-	u_int flags;			/* pad flags */
+	u_int	flags;			/* pad flags */
 } CF;
 
 /* Header structure internal format. */
@@ -90,14 +91,31 @@ typedef struct {
 #define	OLDARMAXNAME	15
 #define	HDR3	"%-16.15s%-12ld%-6u%-6u%-8o%-10qd%2s"
 
-
-#include <sys/cdefs.h>
-
 struct stat;
 
-void	close_archive(int);
+FILE	*open_archive(int);
+void	close_archive(FILE *);
 void	copy_ar(CF *, off_t);
-int	get_arobj(int);
-int	open_archive(int);
+int	get_arobj(FILE *);
 void	put_arobj(CF *, struct stat *);
-off_t	skip_arobj(int);
+off_t	skip_arobj(FILE *);
+
+int	append(char **);
+void	badfmt(void);
+int	compare(char *);
+int	contents(char **);
+int	delete(char **);
+int	extract(char **);
+char	*files(char **argv);
+int	move(char **);
+void	orphans(char **argv);
+int	print(char **);
+int	replace(char **);
+char	*rname(char *);
+FILE	*tmp(void);
+int	ranlib(char **);
+
+extern char *archive;
+extern char *posarg, *posname;		/* positioning file name */
+extern char *tname;                     /* temporary file "name" */
+extern CHDR chdr;			/* converted header */

@@ -35,22 +35,20 @@
 static char sccsid[] = "@(#)append.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: append.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-
-#include <err.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <string.h>
+#include <err.h>
 
 #include "archive.h"
-#include "extern.h"
 
 /*
  * append --
@@ -60,30 +58,30 @@ static const char rcsid[] =
 int
 append(char **argv)
 {
-	int afd, fd, eval;
-	char *file;
-	CF cf;
 	struct stat sb;
+	CF cf;
+	FILE *afp;
+	char *file;
+	int fd, eval;
 
-	afd = open_archive(O_CREAT|O_RDWR);
-	if (lseek(afd, (off_t)0, SEEK_END) == (off_t)-1)
+	afp = open_archive(O_CREAT|O_RDWR);
+	if (fseeko(afp, 0, SEEK_END) == (off_t)-1)
 		err(1, "lseek: %s", archive);
 
 	/* Read from disk, write to an archive; pad on write. */
-	SETCF(0, 0, afd, archive, WPAD);
+	SETCF(0, 0, afp, archive, WPAD);
 	for (eval = 0; (file = *argv++);) {
-		if ((fd = open(file, O_RDONLY)) < 0) {
-			warn("open: %s", file);
+		if (!(cf.rfp = fopen(file, "r"))) {
+			warn("fopen: %s", file);
 			eval = 1;
 			continue;
 		}
 		if (options & AR_V)
 			(void)printf("q - %s\n", file);
-		cf.rfd = fd;
 		cf.rname = file;
 		put_arobj(&cf, &sb);
 		(void)close(fd);
 	}
-	close_archive(afd);
+	close_archive(afp);
 	return (eval);
 }

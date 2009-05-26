@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)contents.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: contents.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -52,7 +52,6 @@ static const char rcsid[] =
 #include <unistd.h>
 
 #include "archive.h"
-#include "extern.h"
 
 /*
  * contents --
@@ -62,17 +61,17 @@ static const char rcsid[] =
 int
 contents(char **argv)
 {
-	int afd, all;
+	FILE *afp;
 	struct tm *tp;
 	char *file, buf[25];
+	int all;
 
-	afd = open_archive(O_RDONLY);
-
-	for (all = !*argv; get_arobj(afd);) {
+	afp = open_archive(O_RDONLY);
+	for (all = !*argv; get_arobj(afp); skip_arobj(afp)) {
 		if (all)
 			file = chdr.name;
 		else if (!(file = files(argv)))
-			goto next;
+			continue;
 		if (options & AR_V) {
 			(void)strmode(chdr.mode, buf);
 			(void)printf("%s %6d/%-6d %8qd ",
@@ -84,9 +83,8 @@ contents(char **argv)
 			(void)printf("%s\n", file);
 		if (!all && !*argv)
 			break;
-next:		skip_arobj(afd);
 	}
-	close_archive(afd);
+	close_archive(afp);
 
 	if (*argv) {
 		orphans(argv);

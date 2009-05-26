@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)extract.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: extract.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -51,7 +51,6 @@ static const char rcsid[] =
 #include <unistd.h>
 
 #include "archive.h"
-#include "extern.h"
 
 /*
  * extract --
@@ -64,24 +63,25 @@ static const char rcsid[] =
 int
 extract(char **argv)
 {
-	char *file;
-	int afd, all, eval, tfd;
 	struct timeval tv[2];
 	struct stat sb;
 	CF cf;
+	FILE *afp;
+	char *file;
+	int all, eval, tfd;
 
 	eval = 0;
 	tv[0].tv_usec = tv[1].tv_usec = 0;
 
-	afd = open_archive(O_RDONLY);
+	afp = open_archive(O_RDONLY);
 
 	/* Read from an archive, write to disk; pad on read. */
-	SETCF(afd, archive, 0, 0, RPAD);
-	for (all = !*argv; get_arobj(afd);) {
+	SETCF(afp, archive, 0, 0, RPAD);
+	for (all = !*argv; get_arobj(afp);) {
 		if (all)
 			file = chdr.name;
 		else if (!(file = files(argv))) {
-			skip_arobj(afd);
+			skip_arobj(afp);
 			continue;
 		}
 
@@ -93,7 +93,7 @@ extract(char **argv)
 			/* -C means do not overwrite existing files */
 			if ((tfd = open(file, O_WRONLY|O_CREAT|O_EXCL,
 			    S_IWUSR)) < 0) {
-				skip_arobj(afd);
+				skip_arobj(afp);
 				eval = 1;
 				continue;
 			}
@@ -101,7 +101,7 @@ extract(char **argv)
 			if ((tfd = open(file, O_WRONLY|O_CREAT|O_TRUNC,
 			    S_IWUSR)) < 0) {
 				warn("open: %s", file);
-				skip_arobj(afd);
+				skip_arobj(afp);
 				eval = 1;
 				continue;
 			}
@@ -110,7 +110,8 @@ extract(char **argv)
 		if (options & AR_V)
 			(void)printf("x - %s\n", file);
 
-		cf.wfd = tfd;
+		if (!(cf.wfp = fdopen(tfd, "w")))
+			err(1, "fdopen: %s", file);
 		cf.wname = file;
 		copy_ar(&cf, chdr.size);
 
@@ -125,11 +126,11 @@ extract(char **argv)
 				eval = 1;
 			}
 		}
-		(void)close(tfd);
+		(void)fclose(cf.wfp);
 		if (!all && !*argv)
 			break;
 	}
-	close_archive(afd);
+	close_archive(afp);
 
 	if (*argv) {
 		orphans(argv);

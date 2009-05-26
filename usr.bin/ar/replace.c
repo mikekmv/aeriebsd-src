@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)replace.c	8.3 (Berkeley) 4/2/94";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: replace.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -49,7 +49,6 @@ static const char rcsid[] = "$ABSD$";
 #include <err.h>
 
 #include "archive.h"
-#include "extern.h"
 
 /*
  * replace --
@@ -61,11 +60,12 @@ static const char rcsid[] = "$ABSD$";
 int
 replace(char **argv)
 {
-	char *file;
-	int afd, curfd, errflg, exists, mods, sfd, tfd1, tfd2;
 	struct stat sb;
 	CF cf;
 	off_t size, tsize;
+	FILE *afp, *sfp, *curfp, *tfp1, *tfp2;
+	char *file;
+	int errflg, exists, mods;
 
 	errflg = 0;
 	/*
@@ -73,16 +73,16 @@ replace(char **argv)
 	 * a race here, but it's pretty short, and not worth fixing.
 	 */
 	exists = !stat(archive, &sb);
-	afd = open_archive(O_CREAT|O_RDWR);
+	afp = open_archive(O_CREAT|O_RDWR);
 
 	if (!exists) {
-		tfd1 = -1;
-		tfd2 = tmp();
+		tfp1 = NULL;
+		tfp2 = tmp();
 		goto append;
 	}
 
-	tfd1 = tmp();			/* Files before key file. */
-	tfd2 = tmp();			/* Files after key file. */
+	tfp1 = tmp();			/* Files before key file. */
+	tfp2 = tmp();			/* Files after key file. */
 
 	/*
 	 * Break archive into two parts -- entries before and after the key
@@ -92,16 +92,16 @@ replace(char **argv)
 	 * all back together at the end.
 	 */
 	mods = (options & (AR_A|AR_B));
-	for (curfd = tfd1; get_arobj(afd);) {
+	for (curfp = tfp1; get_arobj(afp);) {
 		if (*argv && (file = files(argv))) {
-			if ((sfd = open(file, O_RDONLY)) < 0) {
+			if (!(sfp = fopen(file, "r"))) {
 				errflg = 1;
 				warn("%s", file);
 				goto useold;
 			}
-			(void)fstat(sfd, &sb);
+			(void)fstat(fileno(sfp), &sb);
 			if (options & AR_U && sb.st_mtime <= chdr.date) {
-				close(sfd);
+				fclose(sfp);
 				goto useold;
 			}
 
@@ -109,32 +109,32 @@ replace(char **argv)
 			     (void)printf("r - %s\n", file);
 
 			/* Read from disk, write to an archive; pad on write */
-			SETCF(sfd, file, curfd, tname, WPAD);
+			SETCF(sfp, file, curfp, tname, WPAD);
 			put_arobj(&cf, &sb);
-			(void)close(sfd);
-			skip_arobj(afd);
+			(void)fclose(sfp);
+			skip_arobj(afp);
 			continue;
 		}
 
 		if (mods && compare(posname)) {
 			mods = 0;
 			if (options & AR_B)
-				curfd = tfd2;
+				curfp = tfp2;
 			/* Read and write to an archive; pad on both. */
-			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
+			SETCF(afp, archive, curfp, tname, RPAD|WPAD);
 			put_arobj(&cf, NULL);
 			if (options & AR_A)
-				curfd = tfd2;
+				curfp = tfp2;
 		} else {
 			/* Read and write to an archive; pad on both. */
-useold:			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
+useold:			SETCF(afp, archive, curfp, tname, RPAD|WPAD);
 			put_arobj(&cf, NULL);
 		}
 	}
 
 	if (mods) {
 		warnx("%s: archive member not found", posarg);
-                close_archive(afd);
+                close_archive(afp);
                 return (1);
         }
 
@@ -142,35 +142,36 @@ useold:			SETCF(afd, archive, curfd, tname, RPAD|WPAD);
 append:	while ((file = *argv++)) {
 		if (options & AR_V)
 			(void)printf("a - %s\n", file);
-		if ((sfd = open(file, O_RDONLY)) < 0) {
+		if (!(sfp = fopen(file, "r"))) {
 			errflg = 1;
 			warn("%s", file);
 			continue;
 		}
-		(void)fstat(sfd, &sb);
+		(void)fstat(fileno(sfp), &sb);
 		/* Read from disk, write to an archive; pad on write. */
-		SETCF(sfd, file,
-		    options & (AR_A|AR_B) ? tfd1 : tfd2, tname, WPAD);
+		SETCF(sfp, file,
+		    options & (AR_A|AR_B) ? tfp1 : tfp2, tname, WPAD);
 		put_arobj(&cf, &sb);
-		(void)close(sfd);
+		(void)fclose(sfp);
 	}
 
-	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
+	(void)fseeko(afp, SARMAG, SEEK_SET);
 
-	SETCF(tfd1, tname, afd, archive, NOPAD);
-	if (tfd1 != -1) {
-		tsize = size = lseek(tfd1, (off_t)0, SEEK_CUR);
-		(void)lseek(tfd1, (off_t)0, SEEK_SET);
+	SETCF(tfp1, tname, afp, archive, NOPAD);
+	if (tfp1) {
+		tsize = size = ftello(tfp1);
+		rewind(tfp1);
 		copy_ar(&cf, size);
 	} else
 		tsize = 0;
 
-	tsize += size = lseek(tfd2, (off_t)0, SEEK_CUR);
-	(void)lseek(tfd2, (off_t)0, SEEK_SET);
-	cf.rfd = tfd2;
+	tsize += size = ftello(tfp2);
+	rewind(tfp2);
+	cf.rfp = tfp2;
 	copy_ar(&cf, size);
 
-	(void)ftruncate(afd, tsize + SARMAG);
-	close_archive(afd);
+	fflush(afp);
+	(void)ftruncate(fileno(afp), tsize + SARMAG);
+	close_archive(afp);
 	return (errflg);
 }
