@@ -60,6 +60,6 @@ int		monitor_readdir(char *, size_t);
 void            monitor_init_done(void);
 
 int		monitor_pf_key_v2_open(void);
-void		monitor_exit(int);
+void		monitor_exit(int) __dead;
 
 #endif				/* _MONITOR_H_ */

@@ -29,7 +29,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ike_quick_mode.c,v 1.1.1.1 2008/08/26 14:40:24 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -1699,7 +1699,8 @@ next_sa:
 		    (exchange->doi->decode_ids("initiator id %s, responder"
 		    " id %s", ie->id_ci, ie->id_ci_sz, ie->id_cr,
 		    ie->id_cr_sz, 1)));
-		message_drop(msg, ISAKMP_NOTIFY_NO_PROPOSAL_CHOSEN, 0, 1, 0);
+		message_drop(msg, ISAKMP_NOTIFY_INVALID_ID_INFORMATION, 0, 1,
+		    0);
 		goto cleanup;
 	}
 

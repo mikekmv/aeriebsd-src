@@ -23,7 +23,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: virtual.c,v 1.1.1.1 2008/08/26 14:40:25 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -32,6 +32,7 @@ static const char rcsid[] = "$ABSD$";
 #include <sys/sockio.h>
 #include <net/if.h>
 #include <netinet/in.h>
+#include <netinet6/in6_var.h>
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <limits.h>
@@ -157,7 +158,7 @@ virtual_get_default(sa_family_t af)
  *
  * At the same time, we try to determine whether existing interfaces have
  * been rendered invalid; we do this by marking all virtual transports before
- * we call virtual_bind_if () through if_map (), and then releasing those
+ * we call virtual_bind_if() through if_map(), and then releasing those
  * transports that have not been unmarked.
  */
 void
@@ -331,6 +332,7 @@ virtual_bind_if(char *ifname, struct sockaddr *if_addr, void *arg)
 	struct sockaddr		*addr;
 	struct transport	*t;
 	struct ifreq		flags_ifr;
+	struct in6_ifreq	flags_ifr6;
 	char	*addr_str;
 	int	 s, error;
 
@@ -409,9 +411,36 @@ virtual_bind_if(char *ifname, struct sockaddr *if_addr, void *arg)
 		close(s);
 		return -1;
 	}
-	close(s);
-	if (!(flags_ifr.ifr_flags & IFF_UP))
+	if (!(flags_ifr.ifr_flags & IFF_UP)) {
+		close(s);
 		return 0;
+	}
+	/* Also skip tentative addresses during DAD since bind(2) would fail. */
+	if (if_addr->sa_family == AF_INET6) {
+		memset(&flags_ifr6, 0, sizeof(flags_ifr6));
+		strlcpy(flags_ifr6.ifr_name, ifname, sizeof flags_ifr6.ifr_name);
+		flags_ifr6.ifr_addr = *(struct sockaddr_in6 *)if_addr;
+		if (ioctl(s, SIOCGIFAFLAG_IN6, (caddr_t)&flags_ifr6) < 0) {
+			log_error("virtual_bind_if: "
+			    "ioctl (%d, SIOCGIFAFLAG_IN6, ...) failed", s);
+			close(s);
+			return 0;
+		}
+		if (flags_ifr6.ifr_ifru.ifru_flags6 & (IN6_IFF_ANYCAST|
+		    IN6_IFF_TENTATIVE|IN6_IFF_DUPLICATED|IN6_IFF_DETACHED)) {
+			error = sockaddr2text(if_addr, &addr_str, 0);
+			log_print("virtual_bind_if: "
+			    "IPv6 address %s not ready (flags 0x%x)",
+			    error ? "unknown" : addr_str,
+			    flags_ifr6.ifr_ifru.ifru_flags6);
+			/* XXX schedule an interface rescan */
+			if (!error)
+				free(addr_str);
+			close(s);
+			return 0;
+		}
+	}
+	close(s);
 
 	/* Set the port number to zero.  */
 	switch (if_addr->sa_family) {

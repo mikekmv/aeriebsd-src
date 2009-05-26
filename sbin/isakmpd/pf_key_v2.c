@@ -29,7 +29,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: pf_key_v2.c,v 1.1.1.1 2008/08/26 14:40:24 root Exp $";
+static const char rcsid[] = "$ABSD: pf_key_v2.c,v 1.2 2008/12/26 18:50:50 mickey Exp $";
 #endif
 
 #include <sys/types.h>
@@ -578,8 +578,7 @@ pf_key_v2_get_spi(size_t *sz, u_int8_t proto, struct sockaddr *src,
 		goto cleanup;
 	addr = 0;
 
-	len =
-	    sizeof(struct sadb_address) + PF_KEY_V2_ROUND(SA_LEN(dst));
+	len = sizeof(struct sadb_address) + PF_KEY_V2_ROUND(SA_LEN(dst));
 	addr = calloc(1, len);
 	if (!addr)
 		goto cleanup;

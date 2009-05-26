@@ -40,7 +40,7 @@
 #include <crc.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: md5.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
+static const char rcsid[] = "$ABSD: md5.c,v 1.2 2008/12/26 18:50:18 mickey Exp $";
 #endif
 
 #define STYLE_NORMAL	0
@@ -63,9 +63,7 @@ union ANY_CTX {
 	MD5_CTX md5;
 	RMD160_CTX rmd160;
 	SHA1_CTX sha1;
-	SHA256_CTX sha256;
-	SHA384_CTX sha384;
-	SHA512_CTX sha512;
+	SHA2_CTX sha2;
 	SUM_CTX sum;
 	SYSVSUM_CTX sysvsum;
 };
@@ -163,30 +161,30 @@ struct hash_function {
 		&style_hash,
 		0,
 		NULL,
-		(void (*)(void *))SHA256_Init,
-		(void (*)(void *, const unsigned char *, unsigned int))SHA256_Update,
-		(void (*)(unsigned char *, void *))SHA256_Final,
-		(char *(*)(void *, char *))SHA256_End
+		(void (*)(void *))SHA256Init,
+		(void (*)(void *, const unsigned char *, unsigned int))SHA256Update,
+		(void (*)(unsigned char *, void *))SHA256Final,
+		(char *(*)(void *, char *))SHA256End
 	}, {
 		"SHA384",
 		SHA384_DIGEST_LENGTH,
 		&style_hash,
 		0,
 		NULL,
-		(void (*)(void *))SHA384_Init,
-		(void (*)(void *, const unsigned char *, unsigned int))SHA384_Update,
-		(void (*)(unsigned char *, void *))SHA384_Final,
-		(char *(*)(void *, char *))SHA384_End
+		(void (*)(void *))SHA384Init,
+		(void (*)(void *, const unsigned char *, unsigned int))SHA384Update,
+		(void (*)(unsigned char *, void *))SHA384Final,
+		(char *(*)(void *, char *))SHA384End
 	}, {
 		"SHA512",
 		SHA512_DIGEST_LENGTH,
 		&style_hash,
 		0,
 		NULL,
-		(void (*)(void *))SHA512_Init,
-		(void (*)(void *, const unsigned char *, unsigned int))SHA512_Update,
-		(void (*)(unsigned char *, void *))SHA512_Final,
-		(char *(*)(void *, char *))SHA512_End
+		(void (*)(void *))SHA512Init,
+		(void (*)(void *, const unsigned char *, unsigned int))SHA512Update,
+		(void (*)(unsigned char *, void *))SHA512Final,
+		(char *(*)(void *, char *))SHA512End
 	}, {
 		NULL,
 	}

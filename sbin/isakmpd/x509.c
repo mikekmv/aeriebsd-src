@@ -29,7 +29,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: x509.c,v 1.1.1.1 2008/08/26 14:40:25 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -831,7 +831,13 @@ x509_cert_validate(void *scert)
 	 * we trust.
 	 */
 	X509_STORE_CTX_init(&csc, x509_cas, cert, NULL);
-#if OPENSSL_VERSION_NUMBER >= 0x00907000L
+#if OPENSSL_VERSION_NUMBER >= 0x00908000L
+	/* XXX See comment in x509_read_crls_from_dir.  */
+	if (x509_cas->param->flags & X509_V_FLAG_CRL_CHECK) {
+		X509_STORE_CTX_set_flags(&csc, X509_V_FLAG_CRL_CHECK);
+		X509_STORE_CTX_set_flags(&csc, X509_V_FLAG_CRL_CHECK_ALL);
+	}
+#elif OPENSSL_VERSION_NUMBER >= 0x00907000L
 	/* XXX See comment in x509_read_crls_from_dir.  */
 	if (x509_cas->flags & X509_V_FLAG_CRL_CHECK) {
 		X509_STORE_CTX_set_flags(&csc, X509_V_FLAG_CRL_CHECK);

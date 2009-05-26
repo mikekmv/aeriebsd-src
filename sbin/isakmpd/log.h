@@ -82,7 +82,7 @@ extern void	log_error(const char *,...)
 extern void	log_errorx(const char *,...)
 		    __attribute__((__format__(__printf__, 1, 2)));
 extern void     log_fatal(const char *,...)
-		    __attribute__((__format__(__printf__, 1, 2)));
+		    __attribute__((__format__(__printf__, 1, 2))) __dead;
 extern void     log_fatalx(const char *,...)
 		    __attribute__((__format__(__printf__, 1, 2)));
 extern void     log_print(const char *,...)
