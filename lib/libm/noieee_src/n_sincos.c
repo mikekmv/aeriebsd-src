@@ -31,11 +31,13 @@
 #if 0
 static char sccsid[] = "@(#)sincos.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD: n_sincos.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
+static const char rcsid[] = "$ABSD: n_sincos.c,v 1.2 2008/12/26 18:50:37 mickey Exp $";
 #endif
 #endif
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <math.h>
+
 #include "mathimpl.h"
 
 double
@@ -67,6 +69,10 @@ sin(double x)
 	return x+x*sin__S(x*x);
 }
 
+#ifdef __weak_alias
+__weak_alias(sinl, sin);
+#endif /* __weak_alias */
+
 double
 cos(double x)
 {
@@ -96,3 +102,7 @@ cos(double x)
 	a = (z >= thresh ? half-((z-half)-c) : one-(z-c));
 	return copysign(a,s);
 }
+
+#ifdef __weak_alias
+__weak_alias(cosl, cos);
+#endif /* __weak_alias */

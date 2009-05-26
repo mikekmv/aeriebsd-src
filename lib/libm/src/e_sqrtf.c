@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_sqrtf.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 #include "math.h"
@@ -23,7 +23,7 @@ static const char rcsid[] = "$ABSD$";
 static	const float	one	= 1.0, tiny=1.0e-30;
 
 float
-__ieee754_sqrtf(float x)
+sqrtf(float x)
 {
 	float z;
 	int32_t sign = (int)0x80000000; 

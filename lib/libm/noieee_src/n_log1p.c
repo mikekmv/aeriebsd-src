@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)log1p.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD: n_log1p.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
+static const char rcsid[] = "$ABSD: n_log1p.c,v 1.2 2008/12/26 18:50:37 mickey Exp $";
 #endif
 #endif
 
@@ -98,24 +98,14 @@ static const char rcsid[] = "$ABSD: n_log1p.c,v 1.1.1.1 2008/08/26 14:38:53 root
 #include "math.h"
 #include "mathimpl.h"
 
-vc(ln2hi, 6.9314718055829871446E-1  ,7217,4031,0000,f7d0,   0, .B17217F7D00000)
-vc(ln2lo, 1.6465949582897081279E-12 ,bcd5,2ce7,d9cc,e4f1, -39, .E7BCD5E4F1D9CC)
-vc(sqrt2, 1.4142135623730950622E0   ,04f3,40b5,de65,33f9,   1, .B504F333F9DE65)
-
-ic(ln2hi, 6.9314718036912381649E-1,   -1, 1.62E42FEE00000)
-ic(ln2lo, 1.9082149292705877000E-10, -33, 1.A39EF35793C76)
-ic(sqrt2, 1.4142135623730951455E0,     0, 1.6A09E667F3BCD)
-
-#ifdef vccast
-#define	ln2hi	vccast(ln2hi)
-#define	ln2lo	vccast(ln2lo)
-#define	sqrt2	vccast(sqrt2)
-#endif
+static const double ln2hi = 6.9314718055829871446E-1;
+static const double ln2lo = 1.6465949582897081279E-12;
+static const double sqrt2 = 1.4142135623730950622E0;
 
 double
 log1p(double x)
 {
-	const static double zero=0.0, negone= -1.0, one=1.0,
+	static const double zero=0.0, negone= -1.0, one=1.0,
 		      half=1.0/2.0, small=1.0E-20;   /* 1+small == 1 */
 	double z,s,t,c;
 	int k;

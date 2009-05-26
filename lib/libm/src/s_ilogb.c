@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_ilogb.c,v 1.1.1.1 2008/08/26 14:38:55 root Exp $";
 #endif
 
 /* ilogb(double x)
@@ -20,7 +20,10 @@ static const char rcsid[] = "$ABSD$";
  * ilogb(inf/NaN) = 0x7fffffff (no signal is raised)
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <float.h>
+#include <math.h>
+
 #include "math_private.h"
 
 int
@@ -45,3 +48,9 @@ ilogb(double x)
 	else if (hx<0x7ff00000) return (hx>>20)-1023;
 	else return 0x7fffffff;
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(ilogbl, ilogb);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

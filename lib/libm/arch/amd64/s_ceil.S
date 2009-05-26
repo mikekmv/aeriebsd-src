@@ -5,7 +5,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: s_ceil.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
@@ -13,25 +13,6 @@
 #include "abi.h"
 
 ENTRY(ceil)
-#ifdef __i386__
-	pushl	%ebp
-	movl	%esp,%ebp
-	subl	$8,%esp
-
-	fstcw	-4(%ebp)		/* store fpu control word */
-	movw	-4(%ebp),%dx
-	orw	$0x0800,%dx		/* round towards +oo */
-	andw	$0xfbff,%dx
-	movw	%dx,-8(%ebp)
-	fldcw	-8(%ebp)		/* load modfied control word */
-
-	fldl	8(%ebp);		/* round */
-	frndint
-
-	fldcw	-4(%ebp)		/* restore original control word */
-
-	leave
-#else
 	fstcw	-12(%rsp)
 	movw	-12(%rsp),%dx
 	orw	$0x0800,%dx
@@ -44,5 +25,4 @@ ENTRY(ceil)
 	fldcw	-12(%rsp)
 	fstpl	-8(%rsp)
 	movsd	-8(%rsp),%xmm0
-#endif
 	ret

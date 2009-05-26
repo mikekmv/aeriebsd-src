@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_rint.c,v 1.1.1.1 2008/08/26 14:38:55 root Exp $";
 #endif
 
 /*
@@ -24,7 +24,10 @@ static const char rcsid[] = "$ABSD$";
  *	Inexact flag raised if x not equal to rint(x).
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <float.h>
+#include <math.h>
+
 #include "math_private.h"
 
 static const double
@@ -76,3 +79,9 @@ rint(double x)
 	w = TWO52[sx]+x;
 	return w-TWO52[sx];
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(rintl, rint);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

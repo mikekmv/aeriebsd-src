@@ -37,11 +37,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: xdr_stdio.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
-#include <rpc/types.h>
 #include <stdio.h>
+#include <rpc/types.h>
 #include <rpc/xdr.h>
 
 static bool_t	xdrstdio_getlong(XDR *, long *);
@@ -64,7 +64,8 @@ static struct xdr_ops	xdrstdio_ops = {
 	xdrstdio_getpos,	/* get offset in the stream */
 	xdrstdio_setpos,	/* set offset in the stream */
 	xdrstdio_inline,	/* prime stream for inline macros */
-	xdrstdio_destroy	/* destroy stream */
+	xdrstdio_destroy,	/* destroy stream */
+	NULL,			/* xdrstdio_control */
 };
 
 /*

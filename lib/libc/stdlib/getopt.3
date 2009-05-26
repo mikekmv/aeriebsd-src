@@ -26,7 +26,7 @@
 .\" SUCH DAMAGE.
 .\"
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt GETOPT 3
 .Os
 .Sh NAME
@@ -72,7 +72,9 @@ recognizes an option and argument
 .Fl x Ar argument .
 It does not matter to
 .Fn getopt
-if a following argument has leading whitespace.
+if a following argument has leading whitespace; except in the case where
+the argument is optional, denoted with two colons, no leading whitespace
+is permitted.
 .Pp
 On return from
 .Fn getopt ,

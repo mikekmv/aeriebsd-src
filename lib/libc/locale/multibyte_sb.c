@@ -29,7 +29,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: multibyte_sb.c,v 1.1.1.1 2008/08/26 14:38:30 root Exp $";
 #endif
 
 #include <errno.h>
@@ -134,7 +134,8 @@ mbstowcs(wchar_t *pwcs, const char *s, size_t n)
 {
 
 	/* pwcs may be NULL */
-	/* s may be NULL */
+	if (pwcs == NULL)
+		return strlen(s);
 
 	return mbsrtowcs(pwcs, &s, n, NULL);
 }

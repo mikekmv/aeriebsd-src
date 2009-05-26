@@ -25,12 +25,12 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_exp2.c,v 1.1 2008/12/26 18:50:38 mickey Exp $";
 #endif
 
 #include <float.h>
+#include <math.h>
 
-#include "math.h"
 #include "math_private.h"
 
 #define	TBLBITS	8
@@ -391,3 +391,9 @@ exp2(double x)
 		return (r * twopkp1000 * twom1000);
 	}
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(exp2l, exp2);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

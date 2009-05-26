@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: w_gammaf_r.c,v 1.1.1.1 2008/08/26 14:38:55 root Exp $";
 #endif
 
 /* 
@@ -27,20 +27,5 @@ static const char rcsid[] = "$ABSD$";
 float
 gammaf_r(float x, int *signgamp) /* wrapper lgammaf_r */
 {
-#ifdef _IEEE_LIBM
-	return __ieee754_lgammaf_r(x,signgamp);
-#else
-        float y;
-        y = __ieee754_lgammaf_r(x,signgamp);
-        if(_LIB_VERSION == _IEEE_) return y;
-        if(!finitef(y)&&finitef(x)) {
-            if(floorf(x)==x&&x<=(float)0.0)
-	        /* gammaf pole */
-                return (float)__kernel_standard((double)x,(double)x,141);
-            else
-	        /* gamma overflow */
-                return (float)__kernel_standard((double)x,(double)x,140);
-        } else
-            return y;
-#endif
-}             
+	return lgammaf_r(x,signgamp);
+}

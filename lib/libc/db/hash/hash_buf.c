@@ -32,7 +32,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: hash_buf.c,v 1.1.1.1 2008/08/26 14:38:26 root Exp $";
 #endif
 
 /*
@@ -171,6 +171,18 @@ newbuf(HTAB *hashp, u_int32_t addr, BUFHEAD *prev_bp)
                 MRU_INSERT(bp);
                 bp = LRU;
         }
+
+	/* If prev_bp is part of bp overflow, create a new buffer. */
+	if (hashp->nbufs == 0 && prev_bp && bp->ovfl) {
+		BUFHEAD *ovfl;
+
+		for (ovfl = bp->ovfl; ovfl ; ovfl = ovfl->ovfl) {
+			if (ovfl == prev_bp) {
+				hashp->nbufs++;
+				break;
+			}
+		}
+	}
 
 	/*
 	 * If LRU buffer is pinned, the buffer pool is too small. We need to

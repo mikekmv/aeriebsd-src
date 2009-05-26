@@ -1,0 +1,2 @@
+
+CFLAGS+= -DNO_HEX_FP

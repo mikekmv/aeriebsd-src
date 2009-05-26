@@ -25,9 +25,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fabs.c,v 1.1.1.1 2008/08/26 14:38:22 root Exp $";
 #endif
 
+#include <sys/cdefs.h>
 #include <math.h>
 
 double
@@ -36,3 +37,5 @@ fabs(double x)
 	__asm__ __volatile("fabs %0,%1" : "=f"(x) : "f"(x));
 	return (x);
 }
+
+__weak_alias(fabsl, fabs);

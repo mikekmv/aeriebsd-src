@@ -29,7 +29,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fts.c,v 1.1.1.1 2008/08/26 14:38:27 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -518,8 +518,10 @@ fts_children(FTS *sp, int instr)
 	if ((fd = open(".", O_RDONLY, 0)) < 0)
 		return (NULL);
 	sp->fts_child = fts_build(sp, instr);
-	if (fchdir(fd))
+	if (fchdir(fd)) {
+		(void)close(fd);
 		return (NULL);
+	}
 	(void)close(fd);
 	return (sp->fts_child);
 }
@@ -633,6 +635,14 @@ fts_build(FTS *sp, int type)
 	}
 	len++;
 	maxlen = sp->fts_pathlen - len;
+
+	if (cur->fts_level == SHRT_MAX) {
+		(void)closedir(dirp);
+		cur->fts_info = FTS_ERR;
+		SET(FTS_STOP);
+		errno = ENAMETOOLONG;
+		return (NULL);
+	}
 
 	level = cur->fts_level + 1;
 

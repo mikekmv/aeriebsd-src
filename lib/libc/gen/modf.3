@@ -30,16 +30,19 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt MODF 3
 .Os
 .Sh NAME
-.Nm modf
+.Nm modf ,
+.Nm modff
 .Nd extract signed integral and fractional values from floating-point number
 .Sh SYNOPSIS
 .Fd #include <math.h>
 .Ft double
 .Fn modf "double value" "double *iptr"
+.Ft float
+.Fn modff "float value" "float *iptr"
 .Sh DESCRIPTION
 The
 .Fn modf
@@ -51,10 +54,16 @@ It stores the integral part as a
 .Li double
 in the object pointed to by
 .Fa iptr .
+The
+.Fn modff
+function is a single precision version of
+.Fn modf .
 .Sh RETURN VALUES
 The
 .Fn modf
-function returns the signed fractional part of
+and
+.Fn modff
+functions return the signed fractional part of
 .Fa value .
 .Sh SEE ALSO
 .Xr frexp 3 ,

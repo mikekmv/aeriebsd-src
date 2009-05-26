@@ -31,7 +31,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD: n_sqrt.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
+	.asciz "$ABSD: n_sqrt.S,v 1.2 2008/12/26 18:50:36 mickey Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
@@ -45,12 +45,10 @@
  * W. Kahan's magic square root
  * coded by Heidi Stettner and revised by Emile LeBlanc 8/18/82
  *
- * entry points:d_sqrt		address of double arg is on the stack
- *		sqrt		double arg is on the stack
+ * entry points: sqrt		double arg is on the stack
  */
-ENTRY(d_sqrt, R2|R3|R4|R5)
-	movq	*4(ap),r0
-	jmp  	dsqrt2
+
+WEAK_ALIAS(sqrtl,sqrt)
 ENTRY(sqrt, R2|R3|R4|R5)
 	movq    4(ap),r0
 dsqrt2:	bicw3	$0x807f,r0,r2	# check exponent of input

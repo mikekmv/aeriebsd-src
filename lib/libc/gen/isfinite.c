@@ -15,11 +15,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: isfinite.c,v 1.1 2008/12/26 18:50:32 mickey Exp $";
 #endif
 
 #include <sys/types.h>
+#include <sys/cdefs.h>
 #include <machine/ieee.h>
+#include <float.h>
+#include <math.h>
 
 int
 __isfinite(double d)
@@ -37,12 +40,16 @@ __isfinitef(float f)
 	return (p->sng_exp != SNG_EXP_INFNAN);
 }
 
-#if 0	/* XXX */
-int
-__isfinitel(long double e)
-{
-	struct ieee_ext *p = (struct ieee_ext *)&e;
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(__isfinitel, __isfinite);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */
 
-	return (p->ext_exp != EXT_EXP_INFNAN);
-}
-#endif	/* XXX */
+/* 
+ * 3BSD compatibility aliases.
+ */
+#ifdef __weak_alias
+__weak_alias(finite, __isfinite);
+__weak_alias(finitef, __isfinitef);
+#endif /* __weak_alias */

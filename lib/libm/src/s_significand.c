@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_significand.c,v 1.1.1.1 2008/08/26 14:38:55 root Exp $";
 #endif
 
 /*
@@ -26,5 +26,5 @@ static const char rcsid[] = "$ABSD$";
 double
 significand(double x)
 {
-	return __ieee754_scalb(x,(double) -ilogb(x));
+	return scalb(x,(double) -ilogb(x));
 }

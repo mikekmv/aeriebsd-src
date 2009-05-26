@@ -15,11 +15,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fpclassify.c,v 1.1 2008/12/26 18:50:32 mickey Exp $";
 #endif
 
 #include <sys/types.h>
+#include <sys/cdefs.h>
 #include <machine/ieee.h>
+#include <float.h>
 #include <math.h>
 
 int
@@ -66,28 +68,8 @@ __fpclassifyf(float f)
 	return FP_NORMAL;
 }
 
-#if 0	/* XXX */
-int
-__fpclassifyl(long double e)
-{
-	struct ieee_ext *p = (struct ieee_ext *)&e;
-
-	if (p->ext_exp == 0) {
-		if (p->ext_frach == 0 && p->ext_fracl == 0)
-			return FP_ZERO;
-		else
-			return FP_SUBNORMAL;
-	}
-
-	p->ext_frach &= ~0x80000000;	/* clear sign bit */
-
-	if (p->ext_exp == EXT_EXP_INFNAN) {
-		if (p->ext_frach == 0 && p->ext_fracl == 0)
-			return FP_INFINITE;
-		else
-			return FP_NAN;
-	}
-
-	return FP_NORMAL;
-}
-#endif	/* XXX */
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(__fpclassifyl, __fpclassify);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

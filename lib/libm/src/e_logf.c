@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_logf.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 #include "math.h"
@@ -35,7 +35,7 @@ Lg7 = 1.4798198640e-01; /* 3E178897 */
 static const float zero   =  0.0;
 
 float
-__ieee754_logf(float x)
+logf(float x)
 {
 	float hfsq,f,s,z,R,w,t1,t2,dk;
 	int32_t k,ix,i,j;

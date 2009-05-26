@@ -27,12 +27,13 @@
 .\"
 .\"     from: @(#)cos.3	5.1 (Berkeley) 5/2/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt COS 3
 .Os
 .Sh NAME
 .Nm sin ,
-.Nm sinf
+.Nm sinf ,
+.Nm sinl
 .Nd sine functions
 .Sh SYNOPSIS
 .Fd #include <math.h>
@@ -40,6 +41,8 @@
 .Fn sin "double x"
 .Ft float
 .Fn sinf "float x"
+.Ft long double
+.Fn sinl "long double x"
 .Sh DESCRIPTION
 The
 .Fn sin
@@ -50,15 +53,20 @@ The
 .Fn sinf
 function is a single precision version of
 .Fn sin .
+The
+.Fn sinl
+function is an extended precision version of
+.Fn sin .
 A large magnitude argument may yield a result with little or no
 significance.
 For a discussion of error due to roundoff, see
 .Xr math 3 .
 .Sh RETURN VALUES
 The
-.Fn sin
-and
+.Fn sin ,
 .Fn sinf
+and
+.Fn sinl
 functions return the sine value.
 .Sh SEE ALSO
 .Xr acos 3 ,

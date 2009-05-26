@@ -27,12 +27,13 @@
 .\"
 .\"     from: @(#)rint.3	5.1 (Berkeley) 5/2/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt RINT 3
 .Os
 .Sh NAME
 .Nm rint ,
-.Nm rintf
+.Nm rintf ,
+.Nm rintl
 .Nd round to integral value in floating-point format
 .Sh SYNOPSIS
 .Fd #include <math.h>
@@ -40,6 +41,8 @@
 .Fn rint "double x"
 .Ft float
 .Fn rintf "float x"
+.Ft long double
+.Fn rintl "long double x"
 .Sh DESCRIPTION
 The
 .Fn rint
@@ -50,6 +53,10 @@ according to the prevailing rounding mode.
 The
 .Fn rintf
 function is a single precision version of
+.Fn rint .
+The
+.Fn rintl
+function is an extended precision version of
 .Fn rint .
 .Sh SEE ALSO
 .Xr abs 3 ,

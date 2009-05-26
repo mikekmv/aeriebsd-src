@@ -31,7 +31,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD: n_sincos.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
+	.asciz "$ABSD: n_sincos.S,v 1.2 2008/12/26 18:50:36 mickey Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
@@ -51,6 +51,7 @@
  * S. McDonald, April 4,  1985
  */
 
+WEAK_ALIAS(sinl,sin)
 ENTRY(sin, R2|R3|R4|R5|R6|R7|R8|R9|R10|R11)
 	movq	4(ap),r0
 	bicw3	$0x807f,r0,r2
@@ -80,6 +81,7 @@ ENTRY(sin, R2|R3|R4|R5|R6|R7|R8|R9|R10|R11)
  * S. McDonald, April 4,  1985
  */
 
+WEAK_ALIAS(cosl,cos)
 ENTRY(cos, R2|R3|R4|R5|R6|R7|R8|R9|R10|R11)
 	movq	4(ap),r0
 	bicw3	$0x7f,r0,r2

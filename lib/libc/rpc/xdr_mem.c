@@ -38,14 +38,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: xdr_mem.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
+#include <sys/types.h>
+#include <netinet/in.h>
 #include <string.h>
 
 #include <rpc/types.h>
 #include <rpc/xdr.h>
-#include <netinet/in.h>
 
 static bool_t	xdrmem_getlong_aligned(XDR *, long *);
 static bool_t	xdrmem_putlong_aligned(XDR *, long *);
@@ -67,7 +68,8 @@ static struct	xdr_ops xdrmem_ops_aligned = {
 	xdrmem_getpos,
 	xdrmem_setpos,
 	xdrmem_inline_aligned,
-	xdrmem_destroy
+	xdrmem_destroy,
+	NULL,	/* xdrmem_control */
 };
 
 static struct	xdr_ops xdrmem_ops_unaligned = {
@@ -78,7 +80,8 @@ static struct	xdr_ops xdrmem_ops_unaligned = {
 	xdrmem_getpos,
 	xdrmem_setpos,
 	xdrmem_inline_unaligned,
-	xdrmem_destroy
+	xdrmem_destroy,
+	NULL,	/* xdrmem_control */
 };
 
 /*

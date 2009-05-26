@@ -31,7 +31,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: e_exp.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
 #endif /* LIBM_SCCS */
 
 /*
@@ -44,7 +44,7 @@
 #include "abi.h"
 
 /* e^x = 2^(x * log2(e)) */
-ENTRY(__ieee754_exp)
+ENTRY(exp)
 	XMM_ONE_ARG_DOUBLE_PROLOGUE
 	/*
 	 * If x is +-Inf, then the subtraction would give Inf-Inf = NaN.

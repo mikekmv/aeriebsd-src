@@ -19,6 +19,10 @@
 
 #include <sys/stdint.h>
 
+#ifdef __cplusplus
+#define __wchar_t	wchar_t
+#endif
+
 #if !defined(__cplusplus) || defined(__STDC_FORMAT_MACROS)
 /*
  * 7.8.1 Macros for format specifiers
@@ -250,6 +254,10 @@ intmax_t	imaxabs(intmax_t);
 imaxdiv_t	imaxdiv(intmax_t, intmax_t);
 intmax_t	strtoimax(const char *, char **, int);
 uintmax_t	strtoumax(const char *, char **, int);
+intmax_t	wcstoimax(const __wchar_t * __restrict,
+		    __wchar_t ** __restrict, int);
+uintmax_t	wcstoumax(const __wchar_t * __restrict,
+		    __wchar_t ** __restrict, int);
 __END_DECLS
 
 #endif /* _INTTYPES_H_ */

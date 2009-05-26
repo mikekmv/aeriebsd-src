@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)inet.3	8.1 (Berkeley) 6/4/93
 .\"
-.Dd $Mdocdate: June 12 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt INET 3
 .Os
 .Sh NAME
@@ -62,7 +62,7 @@
 .Ft char *
 .Fn inet_ntoa "struct in_addr in"
 .Ft const char *
-.Fn inet_ntop "int af" "const void *src" "char *dst" "size_t size"
+.Fn inet_ntop "int af" "const void *src" "char *dst" "socklen_t size"
 .Ft int
 .Fn inet_pton "int af" "const char *src" "void *dst"
 .Sh DESCRIPTION

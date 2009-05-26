@@ -27,12 +27,13 @@
 .\"
 .\"     from: @(#)asin.3	5.1 (Berkeley) 5/2/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt ASIN 3
 .Os
 .Sh NAME
 .Nm asin ,
-.Nm asinf
+.Nm asinf ,
+.Nm asinl
 .Nd arc sine functions
 .Sh SYNOPSIS
 .Fd #include <math.h>
@@ -40,6 +41,8 @@
 .Fn asin "double x"
 .Ft float
 .Fn asinf "float x"
+.Ft long double
+.Fn asinl "long double x"
 .Sh DESCRIPTION
 The
 .Fn asin
@@ -53,11 +56,16 @@ The
 .Fn asinf
 function is a single precision version of
 .Fn asin .
+The
+.Fn asinl
+function is an extended precision version of
+.Fn asin .
 .Sh RETURN VALUES
 If |x|>1,
-.Fn asin "x"
-and
+.Fn asin "x" ,
 .Fn asinf "x"
+and
+.Fn asinl "x"
 return NaN and set the global variable
 .Va errno
 to EDOM.

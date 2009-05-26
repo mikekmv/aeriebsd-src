@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_atan.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 /* atan(x)
@@ -34,7 +34,10 @@ static const char rcsid[] = "$ABSD$";
  * to produce the hexadecimal values shown.
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <float.h>
+#include <math.h>
+
 #include "math_private.h"
 
 static const double atanhi[] = {
@@ -117,3 +120,9 @@ atan(double x)
 	    return (hx<0)? -z:z;
 	}
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(atanl, atan);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

@@ -11,9 +11,9 @@ SRCS+=  alarm.c assert.c auth_subr.c authenticate.c \
         getloadavg.c getlogin.c getmntinfo.c getnetgrent.c getpagesize.c \
         getpwent.c getttyent.c getusershell.c glob.c initgroups.c \
         isatty.c isctype.c isfdtype.c isfinite.c isinf.c isnan.c \
-        isnormal.c signbit.c lockf.c login_cap.c nice.c nlist.c \
-        nftw.c opendir.c pause.c popen.c psignal.c pw_dup.c pwcache.c \
-        raise.c readdir.c readpassphrase.c rewinddir.c scandir.c \
+        isnormal.c signbit.c lockf.c login_cap.c nice.c \
+        nlist.c nftw.c opendir.c pause.c popen.c psignal.c pw_dup.c \
+        pwcache.c raise.c readdir.c readpassphrase.c rewinddir.c scandir.c \
         seekdir.c setdomainname.c sethostname.c setjmperr.c setmode.c \
         setproctitle.c siginterrupt.c siglist.c signal.c signame.c \
         sigsetops.c sleep.c statvfs.c strtofflags.c sysconf.c sysctl.c \
@@ -88,6 +88,7 @@ MLINKS+=fpclassify.3 finite.3 fpclassify.3 finitef.3 fpclassify.3 isfinite.3 \
 MLINKS+=fpgetmask.3 fpgetround.3 fpgetmask.3 fpgetsticky.3 \
 	fpgetmask.3 fpsetmask.3 fpgetmask.3 fpsetround.3 \
 	fpgetmask.3 fpsetsticky.3
+MLINKS+=frexp.3 frexpf.3 frexp.3 frexpl.3
 MLINKS+=fts.3 fts_open.3 fts.3 fts_read.3 fts.3 fts_children.3 \
 	fts.3 fts_set.3 fts.3 fts_close.3
 MLINKS+=ftw.3 nftw.3
@@ -113,11 +114,13 @@ MLINKS+=getusershell.3 endusershell.3 getusershell.3 setusershell.3
 MLINKS+=glob.3 globfree.3
 MLINKS+=isgreater.3 isgreaterequal.3 isgreater.3 isless.3 isgreater.3 \
 	islessequal.3 isgreater.3 islessgreater.3 isgreater.3 isunordered.3
+MLINKS+=ldexp.3 ldexpf.3 ldexp.3 ldexpl.3
 MLINKS+=login_cap.3 login_getclass.3 login_cap.3 login_getstyle.3 login_cap.3 \
 	login_getcapbool.3 login_cap.3 login_getcapnum.3 login_cap.3 \
 	login_getcapsize.3 login_cap.3 login_getcapstr.3 login_cap.3 \
 	login_getcaptime.3 login_cap.3 login_close.3 login_cap.3 \
 	secure_path.3 login_cap.3 setclasscontext.3 login_cap.3 setusercontext.3
+MLINKS+=modf.3 modff.3
 MLINKS+=popen.3 pclose.3
 MLINKS+=psignal.3 sys_siglist.3 psignal.3 sys_signame.3
 MLINKS+=pwcache.3 user_from_uid.3 pwcache.3 group_from_gid.3

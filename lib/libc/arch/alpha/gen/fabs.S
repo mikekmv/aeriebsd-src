@@ -27,11 +27,12 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: fabs.S,v 1.1.1.1 2008/08/26 14:38:15 root Exp $"
+	.asciz "$ABSD: fabs.S,v 1.2 2009/05/23 01:24:03 mickey Exp $"
 #endif /* LIBC_SCCS */
 
 #include <machine/asm.h>
 
+WEAK_ALIAS(fabsl, fabs)
 LEAF(fabs, 1)
 	cpys	fzero, fa0, fv0
 	RET

@@ -29,7 +29,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: getgrent.c,v 1.1.1.1 2008/08/26 14:38:28 root Exp $";
+static const char rcsid[] = "$ABSD: getgrent.c,v 1.2 2008/12/26 18:50:32 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -358,14 +358,14 @@ grscan(int search, gid_t gid, const char *name, struct group *p_gr,
 		}
 #ifdef YP
 		if (line[0] == '+') {
-			if (foundyp) {
-				*foundyp = 1;
-				return (NULL);
-			}
 			switch (line[1]) {
 			case ':':
 			case '\0':
 			case '\n':
+				if (foundyp) {
+					*foundyp = 1;
+					return (NULL);
+				}
 				if (_yp_check(NULL)) {
 					if (!search) {
 						__ypmode = YPMODE_FULL;
@@ -416,10 +416,11 @@ grscan(int search, gid_t gid, const char *name, struct group *p_gr,
 					char *tptr;
 
 					tptr = strsep(&bp, ":\n");
+					tptr++;
 					if (search && name && strcmp(tptr, name))
 						continue;
 					__ypmode = YPMODE_NAME;
-					grname = strdup(tptr + 1);
+					grname = strdup(tptr);
 					continue;
 				}
 				break;

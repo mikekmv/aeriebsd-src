@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)log10.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD: n_log10.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
+static const char rcsid[] = "$ABSD: n_log10.c,v 1.2 2008/12/26 18:50:37 mickey Exp $";
 #endif
 #endif
 
@@ -76,13 +76,7 @@ static const char rcsid[] = "$ABSD: n_log10.c,v 1.1.1.1 2008/08/26 14:38:53 root
 #include "math.h"
 #include "mathimpl.h"
 
-vc(ln10hi, 2.3025850929940456790E0 ,5d8d,4113,a8ac,ddaa, 2, .935D8DDDAAA8AC)
-
-ic(ivln10, 4.3429448190325181667E-1, -2, 1.BCB7B1526E50E)
-
-#ifdef vccast
-#define	ln10hi	vccast(ln10hi)
-#endif
+static const double ln10hi = 2.3025850929940456790E0;
 
 double
 log10(double x)

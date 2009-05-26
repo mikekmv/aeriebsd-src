@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_scalbf.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 #include "math.h"
@@ -22,7 +22,7 @@ static const char rcsid[] = "$ABSD$";
 
 #ifdef _SCALB_INT
 float
-__ieee754_scalbf(float x, int fn)
+scalbf(float x, int fn)
 {
 	return scalbnf(x,fn);
 }
@@ -30,7 +30,7 @@ __ieee754_scalbf(float x, int fn)
 #else
 
 float
-__ieee754_scalbf(float x, float fn)
+scalbf(float x, float fn)
 {
 	if (isnanf(x)||isnanf(fn)) return x*fn;
 	if (!finitef(fn)) {

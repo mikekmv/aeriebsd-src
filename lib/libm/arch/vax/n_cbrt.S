@@ -31,7 +31,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD: n_cbrt.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
+	.asciz "$ABSD: n_cbrt.S,v 1.2 2008/12/26 18:50:36 mickey Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
@@ -45,22 +45,17 @@
  */
 	.text
 	_ALIGN_TEXT
-ALTENTRY(d_cbrt)
 ENTRY(cbrt, R2|R3|R4|R5|R6|R7)
 	movq	4(ap),r0	# r0 = argument x
-	jmp 	dcbrt2
-ENTRY(dcbrt, R2|R3|R4|R5|R6|R7)
-	movq	*4(ap),r0	# r0 = argument x
-
-dcbrt2:	bicw3	$0x807f,r0,r2	# biased exponent of x
-	jeql	return		# dcbrt(0)=0  dcbrt(res)=res. operand
+	bicw3	$0x807f,r0,r2	# biased exponent of x
+	jeql	return		# cbrt(0)=0  cbrt(res)=res. operand
 	bicw3	$0x7fff,r0,ap	# ap has sign(x)
 	xorw2	ap,r0		# r0 is abs(x)
 	movl	r0,r2		# r2 has abs(x)
 	rotl	$16,r2,r2	# r2 = |x| with bits unscrambled
-	divl2	$3,r2		# rough dcbrt with bias/3
+	divl2	$3,r2		# rough cbrt with bias/3
 	addl2	B,r2		# restore bias, diminish fraction
-	rotl	$16,r2,r2	# r2=|q|=|dcbrt| to 5 bits
+	rotl	$16,r2,r2	# r2=|q|=|cbrt| to 5 bits
 	mulf3	r2,r2,r3	# r3 =qq
 	divf2	r0,r3		# r3 = qq/x
 	mulf2	r2,r3

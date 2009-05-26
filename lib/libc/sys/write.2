@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)write.2	8.5 (Berkeley) 4/2/94
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt WRITE 2
 .Os
 .Sh NAME
@@ -222,6 +222,8 @@ values in the
 .Fa iov
 array overflowed an
 .Em ssize_t .
+.It Bq Er ENOBUFS
+The system lacked sufficient buffer space or a queue was full.
 .El
 .Sh SEE ALSO
 .Xr fcntl 2 ,

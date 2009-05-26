@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)atan.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD: n_atan.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
+static const char rcsid[] = "$ABSD: n_atan.c,v 1.2 2008/12/26 18:50:37 mickey Exp $";
 #endif
 #endif
 
@@ -79,7 +79,8 @@ static const char rcsid[] = "$ABSD: n_atan.c,v 1.1.1.1 2008/08/26 14:38:53 root 
  *	0.85 ulps.
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <math.h>
 
 double
 atan(double x)
@@ -87,3 +88,7 @@ atan(double x)
 	double one=1.0;
 	return(atan2(x,one));
 }
+
+#ifdef __weak_alias
+__weak_alias(atanl, atan);
+#endif /* __weak_alias */

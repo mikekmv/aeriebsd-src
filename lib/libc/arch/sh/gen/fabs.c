@@ -16,9 +16,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: fabs.c,v 1.1.1.1 2008/08/26 14:38:22 root Exp $";
+static const char rcsid[] = "$ABSD: fabs.c,v 1.2 2008/12/26 18:50:31 mickey Exp $";
 #endif
 
+#include <sys/cdefs.h>
 #if !defined(__SH4__) || defined(__SH4_NOFPU__)
 #include <sys/types.h>
 #include <machine/ieee.h>
@@ -30,7 +31,7 @@ double
 fabs(double d)
 {
 #if defined(__SH4__) && !defined(__SH4_NOFPU__)
-	__asm__ __volatile__("fabs %0" : "=f"(d));
+	__asm__ __volatile__("fabs %0" : "+f" (d));
 #else
 	struct ieee_double *p = (struct ieee_double *)&d;
 
@@ -38,3 +39,5 @@ fabs(double d)
 #endif
 	return (d);
 }
+
+__weak_alias(fabsl, fabs);

@@ -1,6 +1,6 @@
 .\"
 .\" This file is in the public domain.
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt PTRACE 2
 .Os
 .Sh NAME
@@ -215,11 +215,15 @@ Possible values are:
 .It PIOD_WRITE_D
 .It PIOD_READ_I
 .It PIOD_WRITE_I
+.It PIOD_READ_AUXV
 .El
 .Pp
 See also the description of
 .Dv PT_READ_I
 for the difference between D and I spaces.
+The
+.Dv PIOD_READ_AUXV
+operation can be used to read from the ELF auxiliary vector.
 A pointer to the descriptor is passed in
 .Fa addr .
 On return the

@@ -27,12 +27,13 @@
 .\"
 .\"     from: @(#)acos.3	5.1 (Berkeley) 5/2/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt ACOS 3
 .Os
 .Sh NAME
 .Nm acos ,
-.Nm acosf
+.Nm acosf ,
+.Nm acosl
 .Nd arc cosine functions
 .Sh SYNOPSIS
 .Fd #include <math.h>
@@ -40,6 +41,8 @@
 .Fn acos "double x"
 .Ft float
 .Fn acosf "float x"
+.Ft long double
+.Fn acosl "long double x"
 .Sh DESCRIPTION
 The
 .Fn acos
@@ -51,11 +54,16 @@ The
 .Fn acosf
 is a single precision version of
 .Fn acos .
+The
+.Fn acosl
+is an extended precision version of
+.Fn acos .
 .Sh RETURN VALUES
 If |x|>1,
-.Fn acos "x"
-and
+.Fn acos "x" ,
 .Fn acosf "x"
+and
+.Fn acosl "x"
 set the global variable
 .Va errno
 to EDOM.

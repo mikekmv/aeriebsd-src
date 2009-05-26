@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fstab.c,v 1.1.1.1 2008/08/26 14:38:27 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -46,7 +46,6 @@ static const char rcsid[] = "$ABSD$";
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
 
-static void error(int);
 static int fstabscan(void);
 
 static int
@@ -149,8 +148,7 @@ fstabscan(void)
 		if (cp != NULL)
 			return(1);
 
-bad:		/* no way to distinguish between EOF and syntax error */
-		error(EFTYPE);
+bad:		/* We silently ignore all bogus lines */
 	}
 	/* NOTREACHED */
 }
@@ -204,7 +202,6 @@ setfsent(void)
 		return(1);
 
 fail:
-	error(errno);
 	return(0);
 }
 
@@ -215,22 +212,4 @@ endfsent(void)
 		(void)fclose(_fs_fp);
 		_fs_fp = NULL;
 	}
-}
-
-static void
-error(int err)
-{
-	struct iovec iov[5];
-
-	iov[0].iov_base = "fstab: ";
-	iov[0].iov_len = 7;
-	iov[1].iov_base = _PATH_FSTAB;
-	iov[1].iov_len = sizeof(_PATH_FSTAB) - 1;
-	iov[2].iov_base =  ": ";
-	iov[2].iov_len = 2;
-	iov[3].iov_base = strerror(err);
-	iov[3].iov_len = strlen(iov[3].iov_base);
-	iov[4].iov_base = "\n";
-	iov[4].iov_len = 1;
-	(void)writev(STDERR_FILENO, iov, 5);
 }

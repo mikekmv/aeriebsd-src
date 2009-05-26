@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_significandf.c,v 1.1.1.1 2008/08/26 14:38:55 root Exp $";
 #endif
 
 #include "math.h"
@@ -23,5 +23,5 @@ static const char rcsid[] = "$ABSD$";
 float
 significandf(float x)
 {
-	return __ieee754_scalbf(x,(float) -ilogbf(x));
+	return scalbf(x,(float) -ilogbf(x));
 }

@@ -15,10 +15,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: signbit.c,v 1.1 2008/12/26 18:50:31 mickey Exp $";
 #endif
 
+#include <sys/cdefs.h>
 #include <machine/vaxfp.h>
+#include <math.h>
 
 int
 __signbit(double d)
@@ -35,3 +37,7 @@ __signbitf(float f)
 
 	return p->fflt_sign;
 }
+
+#ifdef __weak_alias
+__weak_alias(__signbitl, __signbit);
+#endif /* __weak_alias */

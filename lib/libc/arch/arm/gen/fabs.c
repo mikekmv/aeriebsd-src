@@ -15,7 +15,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fabs.c,v 1.2 2008/12/26 18:50:29 mickey Exp $";
 #endif
 
 #include <sys/types.h>
@@ -33,3 +33,5 @@ fabs(double d)
 
 	return(d);
 }
+
+__weak_alias(fabsl, fabs);

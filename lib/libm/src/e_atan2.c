@@ -11,10 +11,10 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_atan2.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
-/* __ieee754_atan2(y,x)
+/* atan2(y,x)
  * Method :
  *	1. Reduce y to positive by atan2(y,x)=-atan2(-y,x).
  *	2. Reduce x to positive by (if x and y are unexceptional): 
@@ -41,7 +41,10 @@ static const char rcsid[] = "$ABSD$";
  * to produce the hexadecimal values shown.
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <float.h>
+#include <math.h>
+
 #include "math_private.h"
 
 static const double 
@@ -53,7 +56,7 @@ pi      = 3.1415926535897931160E+00, /* 0x400921FB, 0x54442D18 */
 pi_lo   = 1.2246467991473531772E-16; /* 0x3CA1A626, 0x33145C07 */
 
 double
-__ieee754_atan2(double y, double x)
+atan2(double y, double x)
 {  
 	double z;
 	int32_t k,m,hx,hy,ix,iy;
@@ -120,3 +123,9 @@ __ieee754_atan2(double y, double x)
 	    	    return  (z-pi_lo)-pi;/* atan(-,-) */
 	}
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(atan2l, atan2);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

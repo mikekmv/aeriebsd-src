@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)pow.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD: n_pow.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
+static const char rcsid[] = "$ABSD: n_pow.c,v 1.2 2008/12/26 18:50:37 mickey Exp $";
 #endif
 #endif
 
@@ -119,7 +119,7 @@ static const char rcsid[] = "$ABSD: n_pow.c,v 1.1.1.1 2008/08/26 14:38:53 root E
 #define infnan(x)	0.0
 #endif		/* defined(__vax__) */
 
-const static double zero=0.0, one=1.0, two=2.0, negone= -1.0;
+static const double zero=0.0, one=1.0, two=2.0, negone= -1.0;
 
 static double pow_P(double, double);
 

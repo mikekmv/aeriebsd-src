@@ -1,6 +1,6 @@
 .\"
 .\"
-.Dd $Mdocdate: January 7 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt CTIME 3
 .Os
 .Sh NAME
@@ -239,11 +239,15 @@ The
 .Fa tm_zone
 and
 .Fa tm_gmtoff
-fields exist, and are filled in, only if arrangements to do
-so were made when the library containing these functions was
-created.
+fields exist, and are filled in by
+.Fn mktime ,
+.Fn localtime ,
+.Fn timegm ,
+and
+.Fn gmtime ,
+but are not standardized.
 There is no guarantee that these fields will continue to exist
-in this form in future releases of this code.
+in this form and they may be altered or removed in a future release.
 .Pp
 .Fa tm_isdst
 is non-zero if summer time is in effect.

@@ -31,7 +31,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD: n_support.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
+	.asciz "$ABSD: n_support.S,v 1.2 2008/12/26 18:50:36 mickey Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
@@ -39,12 +39,14 @@
 
 /*
  * copysign(x,y),
+ * copysignf(x,y),
  * logb(x),
+ * logbf(x),
  * scalbn(x,N),
- * finite(x),
- * reminder(x,y),
+ * remainder(x,y),
  * Coded in vax assembly language by K.C. Ng,  3/14/85.
  * Revised by K.C. Ng on 4/9/85.
+ * Float versions by M.V. on 11/19/08.
  */
 
 /*
@@ -52,6 +54,7 @@
  * copysign(double x, double y)
  */
 
+WEAK_ALIAS(copysignl,copysign)
 ENTRY(copysign, R2)
 	movq	4(ap),r0		# load x into r0
 	bicw3	$0x807f,r0,r2		# mask off the exponent of x
@@ -62,10 +65,25 @@ ENTRY(copysign, R2)
 Lz:	ret
 
 /*
+ * float
+ * copysignf(float x, float y)
+ */
+
+ENTRY(copysignf, R2)
+	movl	4(ap),r0		# load x into r0
+	bicw3	$0x807f,r0,r2		# mask off the exponent of x
+	beql	Fz			# if zero or reserved op then return x
+	bicw3	$0x7fff,8(ap),r2	# copy the sign bit of y into r2
+	bicw2	$0x8000,r0		# replace x by |x|
+	bisw2	r2,r0			# copy the sign bit of y to x
+Fz:	ret
+
+/*
  * double
  * logb(double x)
  */
 
+WEAK_ALIAS(logbl,logb)
 ENTRY(logb, 0)
 	bicl3	$0xffff807f,4(ap),r0	# mask off the exponent of x
 	beql    Ln
@@ -79,24 +97,28 @@ Ln:	movq	4(ap),r0		# r0:1 = x (zero or reserved op)
 1:	ret
 
 /*
- * long
- * finite(double x)
+ * float
+ * logbf(float x)
  */
 
-ENTRY(finite, 0)
-	bicw3	$0x7f,4(ap),r0		# mask off the mantissa
-	cmpw	r0,$0x8000		# to see if x is the reserved op
-	beql	1f			# if so, return FALSE (0)
-	movl	$1,r0			# else return TRUE (1)
+ENTRY(logbf, 0)
+	bicl3	$0xffff807f,4(ap),r0	# mask off the exponent of x
+	beql    Fn
+	ashl	$-7,r0,r0		# get the bias exponent
+	subl2	$129,r0			# get the unbias exponent
+	cvtlf	r0,r0			# return the answer in float
 	ret
-1:	clrl	r0
-	ret
+Fn:	movl	4(ap),r0		# r0:1 = x (zero or reserved op)
+	bneq	1f			# simply return if reserved op
+	movl 	$0x0000d000,r0		# -2147483647.0
+1:	ret
 
 /*
  * double
  * scalbn(double x, int N)
  */
 
+WEAK_ALIAS(scalbnl,scalbn)
 ENTRY(scalbn, R2|R3)
 	movq	4(ap),r0
 	bicl3	$0xffff807f,r0,r3

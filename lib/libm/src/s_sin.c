@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_sin.c,v 1.1.1.1 2008/08/26 14:38:55 root Exp $";
 #endif
 
 /* sin(x)
@@ -45,7 +45,10 @@ static const char rcsid[] = "$ABSD$";
  *	TRIG(x) returns trig(x) nearly rounded 
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <float.h>
+#include <math.h>
+
 #include "math_private.h"
 
 double
@@ -76,3 +79,9 @@ sin(double x)
 	    }
 	}
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(sinl, sin);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_copysign.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 /*
@@ -20,7 +20,10 @@ static const char rcsid[] = "$ABSD$";
  * with the sign bit of y.
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <float.h>
+#include <math.h>
+
 #include "math_private.h"
 
 double
@@ -32,3 +35,9 @@ copysign(double x, double y)
 	SET_HIGH_WORD(x,(hx&0x7fffffff)|(hy&0x80000000));
         return x;
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(copysignl, copysign);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

@@ -5,7 +5,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: e_fmod.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
@@ -13,7 +13,7 @@
 #include "abi.h"
 
 
-ENTRY(__ieee754_fmod)
+ENTRY(fmod)
 	XMM_TWO_ARG_DOUBLE_PROLOGUE
 	fldl	ARG_DOUBLE_TWO
 	fldl	ARG_DOUBLE_ONE

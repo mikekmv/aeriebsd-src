@@ -43,7 +43,6 @@
 #define	_PATH_DEFTAPE	"/dev/rst0"
 #define	_PATH_DEVDB	"/var/run/dev.db"
 #define	_PATH_DEVNULL	"/dev/null"
-#define	_PATH_DRUM	"/dev/drum"
 #define	_PATH_FSIRAND	"/sbin/fsirand"
 #define _PATH_KLOG      "/dev/klog"
 #define	_PATH_KMEM	"/dev/kmem"

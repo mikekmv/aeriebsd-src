@@ -1,0 +1,2 @@
+
+SRCS+= strtord.c

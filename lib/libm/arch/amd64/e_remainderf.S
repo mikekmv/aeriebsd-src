@@ -5,14 +5,14 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: e_remainderf.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
 
 #include "abi.h"
 
-ENTRY(__ieee754_remainderf)
+ENTRY(remainderf)
 	XMM_TWO_ARG_FLOAT_PROLOGUE
 	flds	ARG_FLOAT_TWO
 	flds	ARG_FLOAT_ONE

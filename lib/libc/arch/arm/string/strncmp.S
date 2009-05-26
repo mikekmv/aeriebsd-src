@@ -29,16 +29,19 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: strncmp.S,v 1.1.1.1 2008/08/26 14:38:17 root Exp $"
+	.asciz "$ABSD: strncmp.S,v 1.2 2009/05/23 01:24:06 mickey Exp $"
 #endif /* LIBC_SCCS */
 
 #include <machine/asm.h>
 
 ENTRY(strncmp)
-/* if ((len - 1) < 0) return 0 */
-	subs	r2, r2, #1
-	movmi	r0, #0
-	movmi	pc, lr
+/* if (len == 0) return 0 */
+	cmp	r2, #0
+	moveq	r0, #0
+	moveq	pc, lr
+
+/* subtract one to have the index of the last character to check */
+	sub	r2, r2, #1
 
 /* ip == last src address to compare */
 	add	ip, r0, r2

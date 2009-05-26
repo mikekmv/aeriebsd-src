@@ -15,11 +15,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: isnormal.c,v 1.1 2008/12/26 18:50:32 mickey Exp $";
 #endif
 
 #include <sys/types.h>
+#include <sys/cdefs.h>
 #include <machine/ieee.h>
+#include <float.h>
+#include <math.h>
 
 int
 __isnormal(double d)
@@ -37,12 +40,8 @@ __isnormalf(float f)
 	return (p->sng_exp != 0 && p->sng_exp != SNG_EXP_INFNAN);
 }
 
-#if 0	/* XXX */
-int
-__isnormall(long double e)
-{
-	struct ieee_ext *p = (struct ieee_ext *)&e;
-
-	return (p->ext_exp != 0 && p->ext_exp != EXT_EXP_INFNAN);
-}
-#endif	/* XXX */
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(__isnormall, __isnormal);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

@@ -10,7 +10,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: s_log1p.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
@@ -58,11 +58,11 @@ ENTRY(log1p)
 	.align	4
 use_fyl2x:
 	fldln2
-        fldl	4(%esp)
-        fld1
-        faddp
-        fyl2x
-        ret
+	fldl	4(%esp)
+	fld1
+	faddp
+	fyl2x
+	ret
 
 	.align	4
 use_fyl2xp1:

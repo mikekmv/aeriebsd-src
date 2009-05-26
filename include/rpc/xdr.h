@@ -115,6 +115,7 @@ typedef struct __rpc_xdr {
 		int32_t	*(*x_inline)(struct __rpc_xdr *, unsigned int);
 		/* free privates of this xdr_stream */
 		void	(*x_destroy)(struct __rpc_xdr *);
+		bool_t	(*x_control)(struct __rpc_xdr *, int, void *);
 	} *x_ops;
 	caddr_t 	x_public;	/* users' data */
 	caddr_t		x_private;	/* pointer to private data */

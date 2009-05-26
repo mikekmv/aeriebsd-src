@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)support.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD: n_support.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
+static const char rcsid[] = "$ABSD: n_support.c,v 1.2 2008/12/26 18:50:37 mickey Exp $";
 #endif
 #endif
 
@@ -64,16 +64,15 @@ static const char rcsid[] = "$ABSD: n_support.c,v 1.1.1.1 2008/08/26 14:38:53 ro
  *              returns the unbiased exponent of x, a signed integer in
  *              double precision, except that logb(0) is -INF, logb(INF)
  *              is +INF, and logb(NAN) is that NAN.
- * (d) finite(x)
- *              returns the value TRUE if -INF < x < +INF and returns
- *              FALSE otherwise.
  *
  *
  * CODED IN C BY K.C. NG, 11/25/84;
  * REVISED BY K.C. NG on 1/22/85, 2/13/85, 3/24/85.
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <math.h>
+
 #include "mathimpl.h"
 
 #if defined(__vax__)      /* VAX D format */
@@ -124,6 +123,9 @@ scalbn(double x, int N)
         return(x);
 }
 
+#ifdef __weak_alias    
+__weak_alias(scalbnl, scalbn);
+#endif /* __weak_alias */
 
 double
 copysign(double x, double y)
@@ -138,6 +140,10 @@ copysign(double x, double y)
         *px = ( *px & msign ) | ( *py & ~msign );
         return(x);
 }
+
+#ifdef __weak_alias    
+__weak_alias(copysignl, copysign);
+#endif /* __weak_alias */
 
 double
 logb(double x)
@@ -162,15 +168,9 @@ logb(double x)
 #endif	/* defined(__vax__) */
 }
 
-int
-finite(double x)
-{
-#if defined(__vax__)
-        return(1);
-#else	/* defined(__vax__) */
-        return( (*((short *) &x ) & mexp ) != mexp );
-#endif	/* defined(__vax__) */
-}
+#ifdef __weak_alias    
+__weak_alias(logbl, logb);
+#endif /* __weak_alias */
 
 double
 remainder(double x, double p)
@@ -320,6 +320,10 @@ sqrt(double x)
 
 end:        return(scalbn(q,n));
 }
+
+#ifdef __weak_alias    
+__weak_alias(sqrtl, sqrt);
+#endif /* __weak_alias */
 
 #if 0
 /* REMAINDER(X,Y)

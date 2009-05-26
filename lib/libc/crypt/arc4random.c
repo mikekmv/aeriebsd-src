@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: arc4random.c,v 1.2 2008/12/26 18:50:32 mickey Exp $";
+static const char rcsid[] = "$ABSD: arc4random.c,v 1.3 2009/05/08 16:37:14 mikeb Exp $";
 #endif
 
 /*
@@ -134,19 +134,6 @@ arc4_getbyte(void)
 	rs.s[rs.i] = sj;
 	rs.s[rs.j] = si;
 	return (rs.s[(si + sj) & 0xff]);
-}
-
-u_int8_t
-__arc4_getbyte(void)
-{
-	u_int8_t val;
-
-	_ARC4_LOCK();
-	if (--arc4_count == 0 || !rs_initialized)
-		arc4_stir();
-	val = arc4_getbyte();
-	_ARC4_UNLOCK();
-	return val;
 }
 
 static inline u_int32_t

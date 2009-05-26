@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_atan2f.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 #include "math.h"
@@ -29,7 +29,7 @@ pi      = 3.1415925026e+00, /* 0x40490fda */
 pi_lo   = 1.5099578832e-07; /* 0x34222168 */
 
 float
-__ieee754_atan2f(float y, float x)
+atan2f(float y, float x)
 {  
 	float z;
 	int32_t k,m,hx,hy,ix,iy;

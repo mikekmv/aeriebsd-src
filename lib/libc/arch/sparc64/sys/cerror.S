@@ -34,7 +34,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: cerror.S,v 1.1.1.1 2008/08/26 14:38:24 root Exp $"
+	.asciz "$ABSD: cerror.S,v 1.2 2009/05/23 01:24:15 mickey Exp $"
 #endif /* LIBC_SCCS */
 
 #include <machine/asm.h>
@@ -45,7 +45,9 @@
 #ifdef PIC
 FUNC(__cerror)
 	PIC_PROLOGUE(%g1, %o3)
-	ldx	[%g1 + _C_LABEL(errno)], %g1
+	sethi	%hi(_C_LABEL(errno)), %o3
+	or	%o3, %lo(_C_LABEL(errno)), %o3
+	ldx	[ %g1 + %o3 ], %g1
 	st	%o0, [%g1]
 	mov	-1, %o0
 	retl

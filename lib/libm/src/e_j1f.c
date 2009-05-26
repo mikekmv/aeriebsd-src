@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_j1f.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 #include "math.h"
@@ -41,7 +41,7 @@ s05  =  1.2354227016e-11; /* 0x2d59567e */
 static const float zero    = 0.0;
 
 float
-__ieee754_j1f(float x) 
+j1f(float x) 
 {
 	float z, s,c,ss,cc,r,u,v,y;
 	int32_t hx,ix;
@@ -98,7 +98,7 @@ static const float V0[5] = {
 };
 
 float
-__ieee754_y1f(float x) 
+y1f(float x) 
 {
 	float z, s,c,ss,cc,u,v;
 	int32_t hx,ix;
@@ -143,7 +143,7 @@ __ieee754_y1f(float x)
         z = x*x;
         u = U0[0]+z*(U0[1]+z*(U0[2]+z*(U0[3]+z*U0[4])));
         v = one+z*(V0[0]+z*(V0[1]+z*(V0[2]+z*(V0[3]+z*V0[4]))));
-        return(x*(u/v) + tpi*(__ieee754_j1f(x)*__ieee754_logf(x)-one/x));
+        return(x*(u/v) + tpi*(j1f(x)*logf(x)-one/x));
 }
 
 /* For x >= 8, the asymptotic expansions of pone is

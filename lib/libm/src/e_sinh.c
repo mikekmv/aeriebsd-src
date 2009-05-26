@@ -11,10 +11,10 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_sinh.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
-/* __ieee754_sinh(x)
+/* sinh(x)
  * Method : 
  * mathematically sinh(x) if defined to be (exp(x)-exp(-x))/2
  *	1. Replace x by |x| (sinh(-x) = -sinh(x)). 
@@ -38,7 +38,7 @@ static const char rcsid[] = "$ABSD$";
 static const double one = 1.0, shuge = 1.0e307;
 
 double
-__ieee754_sinh(double x)
+sinh(double x)
 {	
 	double t,w,h;
 	int32_t ix,jx;
@@ -63,12 +63,12 @@ __ieee754_sinh(double x)
 	}
 
     /* |x| in [22, log(maxdouble)] return 0.5*exp(|x|) */
-	if (ix < 0x40862E42)  return h*__ieee754_exp(fabs(x));
+	if (ix < 0x40862E42)  return h*exp(fabs(x));
 
     /* |x| in [log(maxdouble), overflowthresold] */
 	GET_LOW_WORD(lx,x);
 	if (ix<0x408633CE || ((ix==0x408633ce)&&(lx<=(u_int32_t)0x8fb9f87d))) {
-	    w = __ieee754_exp(0.5*fabs(x));
+	    w = exp(0.5*fabs(x));
 	    t = h*w;
 	    return t*w;
 	}

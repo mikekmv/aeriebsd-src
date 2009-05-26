@@ -29,8 +29,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: isinf.c,v 1.1.1.1 2008/08/26 14:38:25 root Exp $";
+static const char rcsid[] = "$ABSD: isinf.c,v 1.2 2008/12/26 18:50:31 mickey Exp $";
 #endif
+
+#include <sys/cdefs.h>
 
 /* ARGSUSED */
 int
@@ -41,7 +43,19 @@ __isinf(double d)
 
 /* ARGSUSED */
 int
-isinff(float f)
+__isinff(float f)
 {
 	return(0);
 }
+
+#ifdef __weak_alias
+__weak_alias(__isinfl, __isinf);
+#endif /* __weak_alias */
+
+/*
+ * 3BSD compatibility aliases.
+ */
+#ifdef __weak_alias
+__weak_alias(isinf, __isinf);
+__weak_alias(isinff, __isinff);
+#endif /* __weak_alias */

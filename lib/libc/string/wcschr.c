@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: wcschr.c,v 1.1.1.1 2008/08/26 14:38:37 root Exp $";
 #endif
 
 #include <wchar.h>
@@ -39,12 +39,14 @@ wcschr(const wchar_t *s, wchar_t c)
 	const wchar_t *p;
 
 	p = s;
-	while (*p) {
+	for (;;) {
 		if (*p == c) {
 			/* LINTED interface specification */
 			return (wchar_t *)p;
 		}
+		if (!*p)
+			return NULL;
 		p++;
 	}
-	return NULL;
+	/* NOTREACHED */
 }

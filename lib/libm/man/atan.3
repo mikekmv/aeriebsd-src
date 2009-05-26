@@ -27,12 +27,13 @@
 .\"
 .\"     from: @(#)atan.3	5.1 (Berkeley) 5/2/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt ATAN 3
 .Os
 .Sh NAME
 .Nm atan ,
-.Nm atanf
+.Nm atanf ,
+.Nm atanl
 .Nd arc tangent functions of one variable
 .Sh SYNOPSIS
 .Fd #include <math.h>
@@ -40,6 +41,8 @@
 .Fn atan "double x"
 .Ft float
 .Fn atanf "float x"
+.Ft long double
+.Fn atanl "long double x"
 .Sh DESCRIPTION
 The
 .Fn atan
@@ -52,6 +55,10 @@ in the range
 The
 .Fn atanf
 function is a single precision version of
+.Fn atan .
+The
+.Fn atanl
+function is an extended precision version of
 .Fn atan .
 .Sh SEE ALSO
 .Xr acos 3 ,

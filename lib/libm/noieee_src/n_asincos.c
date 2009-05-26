@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)asincos.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD: n_asincos.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
+static const char rcsid[] = "$ABSD: n_asincos.c,v 1.2 2008/12/26 18:50:37 mickey Exp $";
 #endif
 #endif
 
@@ -87,7 +87,9 @@ static const char rcsid[] = "$ABSD: n_asincos.c,v 1.1.1.1 2008/08/26 14:38:53 ro
  *      1.99 ulps.
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <math.h>
+
 #include "mathimpl.h"
 
 double
@@ -105,6 +107,10 @@ asin(double x)
 	    { t=one-s; s=t+t; return(atan2(x,sqrt(s-t*t))); }
 
 }
+
+#ifdef __weak_alias
+__weak_alias(asinl, asin);
+#endif /* __weak_alias */
 
 /* ACOS(X)
  * RETURNS ARC COS OF X
@@ -172,3 +178,7 @@ acos(double x)
 	    t=atan2(one,0.0);	/* t = PI/2 */
 	return(t+t);
 }
+
+#ifdef __weak_alias
+__weak_alias(acosl, acos);
+#endif /* __weak_alias */

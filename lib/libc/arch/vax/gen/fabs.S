@@ -29,13 +29,14 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: fabs.S,v 1.1.1.1 2008/08/26 14:38:25 root Exp $"
+	.asciz "$ABSD: fabs.S,v 1.2 2009/05/23 01:24:15 mickey Exp $"
 #endif /* LIBC_SCCS */
 
 /* fabs - floating absolute value */
 
 #include "DEFS.h"
 
+WEAK_ALIAS(fabsl,fabs)
 ENTRY(fabs, 0)
 	movd	4(ap),r0
 	bgeq	1f

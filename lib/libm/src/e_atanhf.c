@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_atanhf.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 #include "math.h"
@@ -24,7 +24,7 @@ static const float one = 1.0, huge = 1e30;
 static const float zero = 0.0;
 
 float
-__ieee754_atanhf(float x)
+atanhf(float x)
 {
 	float t;
 	int32_t hx,ix;

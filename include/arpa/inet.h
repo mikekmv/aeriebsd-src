@@ -82,7 +82,7 @@ int		 inet_net_pton(int, const char *, void *, size_t)
 			__attribute__((__bounded__(__string__,3,4)));
 char		*inet_ntoa(struct in_addr);
 int		 inet_pton(int, const char *, void *);
-const char	*inet_ntop(int, const void *, char *, size_t)
+const char	*inet_ntop(int, const void *, char *, socklen_t)
 			__attribute__ ((__bounded__(__string__,3,4)));
 unsigned int	 inet_nsap_addr(const char *, unsigned char *, int);
 char		*inet_nsap_ntoa(int, const unsigned char *, char *);

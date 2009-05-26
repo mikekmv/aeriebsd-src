@@ -29,7 +29,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: ldexp.S,v 1.2 2008/12/26 18:50:31 mickey Exp $"
+	.asciz "$ABSD: ldexp.S,v 1.3 2009/05/23 01:24:15 mickey Exp $"
 #endif /* LIBC_SCCS */
 
 /*
@@ -56,6 +56,7 @@
 
 	.globl	_C_LABEL(errno)
 
+WEAK_ALIAS(ldexpl,ldexp)
 ENTRY(ldexp, R2)
 	movd	4(ap),r0	/* fetch "value" */
 	extzv	$7,$8,r0,r2	/* r2 := biased exponent */

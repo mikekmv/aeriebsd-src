@@ -15,7 +15,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: inet_ntop.c,v 1.1.1.1 2008/08/26 14:38:31 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -44,13 +44,13 @@ static const char *inet_ntop6(const u_char *src, char *dst, size_t size);
  *	Paul Vixie, 1996.
  */
 const char *
-inet_ntop(int af, const void *src, char *dst, size_t size)
+inet_ntop(int af, const void *src, char *dst, socklen_t size)
 {
 	switch (af) {
 	case AF_INET:
-		return (inet_ntop4(src, dst, size));
+		return (inet_ntop4(src, dst, (size_t)size));
 	case AF_INET6:
-		return (inet_ntop6(src, dst, size));
+		return (inet_ntop6(src, dst, (size_t)size));
 	default:
 		errno = EAFNOSUPPORT;
 		return (NULL);

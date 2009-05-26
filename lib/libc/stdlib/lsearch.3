@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)lsearch.3	8.1 (Berkeley) 6/4/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt LSEARCH 3
 .Os
 .Sh NAME
@@ -39,10 +39,10 @@
 .Fd #include <search.h>
 .Ft char *
 .Fn lsearch "const void *key" "const void *base" "size_t *nelp" \
-    "size_t width" "int (*compar)(void *, void *)"
+    "size_t width" "int (*compar)(const void *, const void *)"
 .Ft char *
 .Fn lfind "const void *key" "const void *base" "size_t *nelp" \
-    "size_t width" "int (*compar)(void *, void *)"
+    "size_t width" "int (*compar)(const void *, const void *)"
 .Sh DESCRIPTION
 The functions
 .Fn lsearch

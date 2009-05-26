@@ -5,12 +5,12 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: e_scalb.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
 
-ENTRY(__ieee754_scalb)
+ENTRY(scalb)
 	fldl	12(%esp)
 	fldl	4(%esp)
 	fscale

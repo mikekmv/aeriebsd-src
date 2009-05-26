@@ -27,12 +27,13 @@
 .\"
 .\"     from: @(#)tan.3	5.1 (Berkeley) 5/2/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt TAN 3
 .Os
 .Sh NAME
 .Nm tan ,
-.Nm tanf
+.Nm tanf ,
+.Nm tanl
 .Nd tangent functions
 .Sh SYNOPSIS
 .Fd #include <math.h>
@@ -40,6 +41,8 @@
 .Fn tan "double x"
 .Ft float
 .Fn tanf "float x"
+.Ft long double
+.Fn tanl "long double x"
 .Sh DESCRIPTION
 The
 .Fn tan
@@ -50,15 +53,20 @@ The
 .Fn tanf
 function is a single precision version of
 .Fn tan .
+The
+.Fn tanl
+function is an extended precision version of
+.Fn tan .
 A large magnitude argument may yield a result
 with little or no significance.
 For a discussion of error due to roundoff, see
 .Xr math 3 .
 .Sh RETURN VALUES
 The
-.Fn tan
-and
+.Fn tan ,
 .Fn tanf
+and
+.Fn tanl
 functions return the tangent value.
 .Sh SEE ALSO
 .Xr acos 3 ,

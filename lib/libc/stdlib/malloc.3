@@ -32,7 +32,7 @@
 .\"
 .\"	$OpenBSD: malloc.3,v 1.54 2008/08/07 18:41:47 otto Exp $
 .\"
-.Dd $Mdocdate: August 7 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt MALLOC 3
 .Os
 .Sh NAME
@@ -215,9 +215,11 @@ Flags are single letters, uppercase means on, lowercase means off.
 .It Cm A
 .Dq Abort .
 .Fn malloc
-will coredump the process, rather than tolerate failure.
-This is a very handy debugging aid, since the core file will represent the
-time of failure, rather than when the null pointer was accessed.
+will coredump the process, rather than tolerate internal
+inconsistencies or incorrect usage.
+This is the default and a very handy debugging aid,
+since the core file represents the time of failure,
+rather than when the bogus pointer was used.
 .It Cm D
 .Dq Dump .
 .Fn malloc
@@ -231,12 +233,15 @@ order to have any effect.
 Enable use after free protection.
 Unused pages on the freelist are read and write protected to
 cause a segmentation fault upon access.
+This will also switch off the delayed freeing of chunks,
+reducing random behaviour but detecting double
+.Fn free
+calls as early as possible.
 .It Cm G
 .Dq Guard .
-Enable guard pages and chunk randomization.
+Enable guard pages.
 Each page size or larger allocation is followed by a guard page that will
 cause a segmentation fault upon any access.
-Smaller than page size chunks are returned in a random order.
 .It Cm H
 .Dq Hint .
 Pass a hint to the kernel about pages we don't use.
@@ -248,14 +253,12 @@ Currently junk is bytes of 0xd0 when allocating; this is pronounced
 .Dq Duh .
 \&:-)
 Freed chunks are filled with 0xdf.
-.It Cm N
-Do not output warning messages when encountering possible corruption
-or bad pointers.
 .It Cm P
 .Dq Move allocations within a page.
-Allocations larger than half a page but smaller that a page
+Allocations larger than half a page but smaller than a page
 are aligned to the end of a page to catch buffer overruns in more
 cases.
+This is the default.
 .It Cm R
 .Dq realloc .
 Always reallocate when
@@ -296,15 +299,13 @@ Decrease the size of the free page cache by a factor of two.
 Increase the size of the free page cache by a factor of two.
 .El
 .Pp
-So to set a systemwide reduction of cache size and coredumps on problems:
-.Li ln -s 'A<' /etc/malloc.conf
+So to set a systemwide reduction of cache size and use guard pages:
+.Dl # ln -s 'G\*(Lt' /etc/malloc.conf
 .Pp
-The
-.Cm J
-and
-.Cm Z
-flags are mostly for testing and debugging.
-If a program changes behavior if either of these options are used,
+The flags are mostly for testing and debugging.
+If a program changes behavior if any of these options (except
+.Cm X )
+are used,
 it is buggy.
 .Pp
 The default number of free pages cached is 64.
@@ -349,22 +350,19 @@ If
 .Fn realloc ,
 or
 .Fn free
-detect an error or warning condition,
+detect an error condition,
 a message will be printed to file descriptor
 2 (not using stdio).
-Errors will always result in the process being
-.Xr abort 3 'ed.
-If the
-.Cm A
-option has been specified, warnings will also
-.Xr abort 3
-the process.
+Errors will result in the process being aborted,
+unless the
+.Cm a
+option has been specified.
 .Pp
 Here is a brief description of the error messages and what they mean:
 .Bl -tag -width Ds
 .It Dq out of memory
 If the
-.Cm A
+.Cm X
 option is specified it is an error for
 .Fn malloc ,
 .Fn calloc ,
@@ -375,14 +373,6 @@ to return
 .It Dq malloc init mmap failed
 This is a rather weird condition that is most likely to indicate a
 seriously overloaded system or a ulimit restriction.
-.It any other error
-.Fn malloc
-detected an internal error;
-consult sources and/or wizards.
-.El
-.Pp
-Here is a brief description of the warning messages and what they mean:
-.Bl -tag -width Ds
 .It Dq bogus pointer (double free?)
 An attempt to
 .Fn free
@@ -418,6 +408,10 @@ The internal malloc page cache has been corrupted.
 The internal malloc page cache has been corrupted.
 .It Dq guard size
 An inconsistent guard size was detected.
+.It any other error
+.Fn malloc
+detected an internal error;
+consult sources and/or wizards.
 .El
 .Sh SEE ALSO
 .Xr brk 2 ,

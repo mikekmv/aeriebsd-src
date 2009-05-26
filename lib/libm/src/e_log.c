@@ -11,10 +11,10 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: e_log.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
+static const char rcsid[] = "$ABSD: e_log.c,v 1.2 2008/12/26 18:50:38 mickey Exp $";
 #endif
 
-/* __ieee754_log(x)
+/* log(x)
  * Return the logrithm of x
  *
  * Method :                  
@@ -83,7 +83,7 @@ Lg7 = 1.479819860511658591e-01;  /* 3FC2F112 DF3E5244 */
 static const double zero   =  0.0;
 
 double
-__ieee754_log(double x)
+log(double x)
 {
 	double hfsq,f,s,z,R,w,t1,t2,dk;
 	int32_t k,hx,i,j;

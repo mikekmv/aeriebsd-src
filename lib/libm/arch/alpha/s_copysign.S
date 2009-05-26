@@ -30,11 +30,12 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD: s_copysign.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
+	.asciz "$ABSD: s_copysign.S,v 1.2 2008/12/26 18:50:36 mickey Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
 
+WEAK_ALIAS(copysignl, copysign)
 LEAF(copysign, 2)
 	cpys	fa1, fa0, fv0
 	RET

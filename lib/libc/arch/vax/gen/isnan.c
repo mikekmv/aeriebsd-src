@@ -15,8 +15,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: isnan.c,v 1.1 2008/12/26 18:50:31 mickey Exp $";
 #endif
+
+#include <sys/cdefs.h>
 
 /* ARGSUSED */
 int
@@ -27,7 +29,19 @@ __isnan(double d)
 
 /* ARGSUSED */
 int
-isnanf(float f)
+__isnanf(float f)
 {
 	return(0);
 }
+
+#ifdef __weak_alias
+__weak_alias(__isnanl, __isnan);
+#endif /* __weak_alias */
+
+/*
+ * 3BSD compatibility aliases.
+ */
+#ifdef __weak_alias
+__weak_alias(isnan, __isnan);
+__weak_alias(isnanf, __isnanf);
+#endif /* __weak_alias */

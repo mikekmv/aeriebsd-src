@@ -15,11 +15,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: signbit.c,v 1.1 2008/12/26 18:50:33 mickey Exp $";
 #endif
 
 #include <sys/types.h>
+#include <sys/cdefs.h>
 #include <machine/ieee.h>
+#include <float.h>
+#include <math.h>
 
 int
 __signbit(double d)
@@ -37,12 +40,8 @@ __signbitf(float f)
 	return p->sng_sign;
 }
 
-#if 0	/* XXX */
-int
-__signbitl(long double e)
-{
-	struct ieee_ext *p = (struct ieee_ext *)&e;
-
-	return p->ext_sign;
-}
-#endif	/* XXX */
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(__signbitl, __signbit);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

@@ -11,14 +11,17 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_fabs.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 /*
  * fabs(x) returns the absolute value of x.
  */
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <float.h>
+#include <math.h>
+
 #include "math_private.h"
 
 double
@@ -29,3 +32,9 @@ fabs(double x)
 	SET_HIGH_WORD(x,high&0x7fffffff);
         return x;
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(fabsl, fabs);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

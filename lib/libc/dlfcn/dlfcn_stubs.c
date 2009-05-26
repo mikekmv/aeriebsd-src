@@ -26,7 +26,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: dlfcn_stubs.c,v 1.1.1.1 2008/08/26 14:38:27 root Exp $";
 #endif
 
 #include <stddef.h>
@@ -44,7 +44,9 @@ int	 dlclose(void *handle) __attribute__((weak));
 void	*dlsym(void *handle, const char *name) __attribute__((weak));
 int	 dlctl(void *handle, int command, void *data) __attribute__((weak));
 const char *	dlerror(void) __attribute__((weak));
-int	dladdr(const void *addr, void *info) __attribute__((weak));
+
+struct dl_info;
+int	dladdr(const void *addr, struct dl_info *info) __attribute__((weak));
 
 struct dl_phdr_info;
 int	 dl_iterate_phdr(int (*callback)(struct dl_phdr_info *, size_t, void *),	    void *date) __attribute__((weak));
@@ -99,7 +101,7 @@ dl_iterate_phdr(int (*callback)(struct dl_phdr_info *, size_t, void *),
 
 /*ARGSUSED*/
 int
-dladdr(const void *addr, void *info)
+dladdr(const void *addr, struct dl_info *info)
 {
 	printf("Wrong dl symbols!\n");
 	return -1;

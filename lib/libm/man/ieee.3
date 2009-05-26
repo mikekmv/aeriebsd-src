@@ -27,18 +27,21 @@
 .\"
 .\"     from: @(#)ieee.3	6.4 (Berkeley) 5/6/91
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt IEEE 3
 .Os
 .Sh NAME
 .Nm copysign ,
 .Nm copysignf ,
+.Nm copysignl ,
 .Nm ilogb ,
 .Nm ilogbf ,
+.Nm ilogbl ,
 .Nm nextafter ,
 .Nm nextafterf ,
 .Nm scalbn ,
-.Nm scalbnf
+.Nm scalbnf ,
+.Nm scalbnl
 .Nd functions for IEEE arithmetic
 .Sh SYNOPSIS
 .Fd #include <math.h>
@@ -46,10 +49,14 @@
 .Fn copysign "double x" "double y"
 .Ft float
 .Fn copysignf "float x" "float y"
+.Ft long double
+.Fn copysignl "long double x" "long double y"
 .Ft int
 .Fn ilogb "double x"
 .Ft int
 .Fn ilogbf "float x"
+.Ft int
+.Fn ilogbl "long double x"
 .Ft double
 .Fn nextafter "double x" "double y"
 .Ft float
@@ -58,6 +65,8 @@
 .Fn scalbn "double x" "int n"
 .Ft float
 .Fn scalbnf "float x" "int n"
+.Ft long double
+.Fn scalbnl "long double x" "int n"
 .Sh DESCRIPTION
 These functions are required or recommended by
 .St -ieee754 .
@@ -70,6 +79,10 @@ with its sign changed to
 The
 .Fn copysignf
 function is a single precision version of
+.Fn copysign .
+The
+.Fn copysignl
+function is an extended precision version of
 .Fn copysign .
 .Pp
 .Fn ilogb
@@ -87,6 +100,10 @@ returns
 The
 .Fn ilogbf
 function is a single precision version of
+.Fn ilogb .
+The
+.Fn ilogbl
+function is an extended precision version of
 .Fn ilogb .
 .Pp
 .Fn nextafter
@@ -106,6 +123,10 @@ computed by exponent manipulation.
 The
 .Fn scalbnf
 function is a single precision version of
+.Fn scalbn .
+The
+.Fn scalbnl
+function is an extended precision version of
 .Fn scalbn .
 .Sh SEE ALSO
 .Xr math 3

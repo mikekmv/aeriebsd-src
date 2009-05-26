@@ -31,11 +31,13 @@
 #if 0
 static char sccsid[] = "@(#)tan.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD: n_tan.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
+static const char rcsid[] = "$ABSD: n_tan.c,v 1.2 2008/12/26 18:50:37 mickey Exp $";
 #endif
 #endif
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <math.h>
+
 #include "mathimpl.h"
 
 double
@@ -69,3 +71,7 @@ tan(double x)
 	else
 		return c/(x+x*ss);		/* ... cos/sin */
 }
+
+#ifdef __weak_alias
+__weak_alias(tanl, tan);
+#endif /* __weak_alias */

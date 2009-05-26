@@ -5,7 +5,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: e_asin.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
@@ -13,7 +13,7 @@
 #include "abi.h"
 
 /* asin = atan (x / sqrt(1 - x^2)) */
-ENTRY(__ieee754_asin)
+ENTRY(asin)
 	XMM_ONE_ARG_DOUBLE_PROLOGUE
 	fldl	ARG_DOUBLE_ONE		/* x */
 	fld	%st(0)

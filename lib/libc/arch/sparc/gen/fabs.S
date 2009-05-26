@@ -33,13 +33,14 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: fabs.S,v 1.1.1.1 2008/08/26 14:38:23 root Exp $"
+	.asciz "$ABSD: fabs.S,v 1.2 2009/05/23 01:24:13 mickey Exp $"
 #endif /* LIBC_SCCS */
 
 /* fabs - floating absolute value */
 
 #include "DEFS.h"
 
+WEAK_ALIAS(fabsl, fabs)
 ENTRY(fabs)
 	std	%o0, [%sp + 32]		! return value => %f0:f1
 	ldd	[%sp + 32], %f0		! (via kernel %o0/%o1 slot)

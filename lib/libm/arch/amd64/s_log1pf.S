@@ -5,7 +5,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: s_log1pf.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
 #endif /* LIBM_SCCS */
 
 /*
@@ -63,12 +63,12 @@ ENTRY(log1pf)
 	.align	4
 use_fyl2x:
 	fldln2
-        flds	ARG_FLOAT_ONE
-        fld1
-        faddp
-        fyl2x
+	flds	ARG_FLOAT_ONE
+	fld1
+	faddp
+	fyl2x
 	XMM_FLOAT_EPILOGUE
-        ret
+	ret
 
 	.align	4
 use_fyl2xp1:

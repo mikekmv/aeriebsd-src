@@ -11,10 +11,10 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: e_exp.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
+static const char rcsid[] = "$ABSD: e_exp.c,v 1.2 2008/12/26 18:50:38 mickey Exp $";
 #endif
 
-/* __ieee754_exp(x)
+/* exp(x)
  * Returns the exponential of x.
  *
  * Method
@@ -100,7 +100,7 @@ P5   =  4.13813679705723846039e-08; /* 0x3E663769, 0x72BEA4D0 */
 
 
 double
-__ieee754_exp(double x)	/* default IEEE double exp */
+exp(double x)	/* default IEEE double exp */
 {
 	double y,hi,lo,c,t;
 	int32_t k,xsb;

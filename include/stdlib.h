@@ -129,6 +129,8 @@ void	 srand(unsigned);
 double	 strtod(const char *, char **);
 float	 strtof(const char *, char **);
 long	 strtol(const char *, char **, int);
+long double
+	 strtold(const char *, char **);
 unsigned long
 	 strtoul(const char *, char **, int);
 int	 system(const char *);

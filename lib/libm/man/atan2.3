@@ -27,12 +27,13 @@
 .\"
 .\"     from: @(#)atan2.3	5.1 (Berkeley) 5/2/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt ATAN2 3
 .Os
 .Sh NAME
 .Nm atan2 ,
-.Nm atan2f
+.Nm atan2f ,
+.Nm atan2l
 .Nd arc tangent functions of two variables
 .Sh SYNOPSIS
 .Fd #include <math.h>
@@ -40,6 +41,8 @@
 .Fn atan2 "double y" "double x"
 .Ft float
 .Fn atan2f "float y" "float x"
+.Ft long double
+.Fn atan2l "long double y" "long double x"
 .Sh DESCRIPTION
 The
 .Fn atan2
@@ -51,11 +54,16 @@ The
 .Fn atan2f
 function is a single precision version of
 .Fn atan2 .
+The
+.Fn atan2l
+function is an extended precision version of
+.Fn atan2 .
 .Sh RETURN VALUES
 The
-.Fn atan2
-and
+.Fn atan2 ,
 .Fn atan2f
+and
+.Fn atan2l
 functions, if successful,
 return the arc tangent of
 .Ar y/ Ns Ar x

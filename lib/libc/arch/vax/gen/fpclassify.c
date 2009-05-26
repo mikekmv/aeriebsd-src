@@ -15,9 +15,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fpclassify.c,v 1.1 2008/12/26 18:50:31 mickey Exp $";
 #endif
 
+#include <sys/cdefs.h>
 #include <machine/vaxfp.h>
 #include <math.h>
 
@@ -44,3 +45,7 @@ __fpclassifyf(float f)
 
 	return FP_NORMAL;
 }
+
+#ifdef __weak_alias
+__weak_alias(__fpclassifyl, __fpclassify);
+#endif /* __weak_alias */

@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: vfscanf.c,v 1.1.1.1 2008/08/26 14:38:35 root Exp $";
 #endif
 
 #include <ctype.h>
@@ -243,6 +243,7 @@ literal:
 		case 'G':
 		case 'e': 
 		case 'f': 
+		case 'F': 
 		case 'g':
 			c = CT_FLOAT;
 			break;

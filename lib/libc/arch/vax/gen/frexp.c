@@ -28,9 +28,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: frexp.c,v 1.1.1.1 2008/08/26 14:38:25 root Exp $";
 #endif
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <math.h>
 
@@ -60,3 +61,9 @@ frexp(value, eptr)
 		return((double)0);
 	}
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(frexpl, frexp);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

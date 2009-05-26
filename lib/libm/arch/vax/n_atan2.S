@@ -31,7 +31,7 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD: n_atan2.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
+	.asciz "$ABSD: n_atan2.S,v 1.2 2008/12/26 18:50:36 mickey Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
@@ -76,6 +76,7 @@
  *	atan2(y,x) returns the exact ARG(x+iy) nearly rounded. 
  */
 
+WEAK_ALIAS(atan2l,atan2)
 ENTRY(atan2, R2|R3|R4|R5|R6|R7|R8|R9|R10|R11)
 	movq	4(ap),r2		# r2 = y
 	movq	12(ap),r4		# r4 = x

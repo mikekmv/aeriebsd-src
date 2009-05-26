@@ -143,6 +143,11 @@ long int wcstol(const wchar_t * __restrict, wchar_t ** __restrict, int base);
 unsigned long int wcstoul(const wchar_t * __restrict, wchar_t ** __restrict,
 		int base);
 
+#if __ISO_C_VISIBLE >= 1999
+float	wcstof(const wchar_t * __restrict, wchar_t ** __restrict);
+long double wcstold(const wchar_t * __restrict, wchar_t ** __restrict);
+#endif
+
 #if (defined(__GNUC__) && __GNUC__ >= 2 && !defined(__STRICT_ANSI__)) || \
     __ISO_C_VISIBLE >= 1999
 /* LONGLONG */

@@ -14,11 +14,11 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e_fmodf.c,v 1.1.1.1 2008/08/26 14:38:54 root Exp $";
 #endif
 
 /* 
- * __ieee754_fmodf(x,y)
+ * fmodf(x,y)
  * Return x mod y in exact arithmetic
  * Method: shift and subtract
  */
@@ -29,7 +29,7 @@ static const char rcsid[] = "$ABSD$";
 static const float one = 1.0, Zero[] = {0.0, -0.0,};
 
 float
-__ieee754_fmodf(float x, float y)
+fmodf(float x, float y)
 {
 	int32_t n,hx,hy,hz,ix,iy,sx,i;
 

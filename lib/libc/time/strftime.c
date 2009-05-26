@@ -34,7 +34,7 @@
 #if 0
 static const char sccsid[] = "@(#)strftime.c      5.4 (Berkeley) 3/14/89";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: strftime.c,v 1.2 2008/12/26 18:50:35 mickey Exp $";
 #endif
 #endif /* !defined LIBC_SCCS */
 
@@ -225,7 +225,7 @@ label:
 				{
 				int warn2 = IN_SOME;
 
-				pt = _fmt(Locale->c_fmt, t, pt, ptlim, warnp);
+				pt = _fmt(Locale->c_fmt, t, pt, ptlim, &warn2);
 				if (warn2 == IN_ALL)
 					warn2 = IN_THIS;
 				if (warn2 > *warnp)

@@ -26,9 +26,10 @@
  */
 
 #if defined(LIBM_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: s_nan.c,v 1.1 2008/12/26 18:50:38 mickey Exp $";
 #endif
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <ctype.h>
 #include <float.h>
@@ -41,7 +42,7 @@ static const char rcsid[] = "$ABSD$";
 /*
  * OpenBSD's ctype doesn't have digittoint, so we define it here.
  */
-int
+static int
 _digittoint(int c)
 {
 	if (!isxdigit(c))
@@ -122,3 +123,9 @@ nanf(const char *s)
 	u.bits[0] |= 0x7fc00000;
 	return (u.f);
 }
+
+#if LDBL_MANT_DIG == 53
+#ifdef __weak_alias
+__weak_alias(nanl, nan);
+#endif /* __weak_alias */
+#endif /* LDBL_MANT_DIG == 53 */

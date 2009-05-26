@@ -28,12 +28,13 @@
 .\"
 .\"     from: @(#)fabs.3	5.1 (Berkeley) 5/2/91
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt FABS 3
 .Os
 .Sh NAME
 .Nm fabs ,
-.Nm fabsf
+.Nm fabsf ,
+.Nm fabsl
 .Nd floating-point absolute value functions
 .Sh SYNOPSIS
 .Fd #include <math.h>
@@ -41,6 +42,8 @@
 .Fn fabs "double x"
 .Ft float
 .Fn fabsf "float x"
+.Ft long double
+.Fn fabsl "long double x"
 .Sh DESCRIPTION
 The
 .Fn fabs
@@ -50,11 +53,16 @@ The
 .Fn fabsf
 function is a single precision version of
 .Fn fabs .
+The
+.Fn fabsl
+function is an extended precision version of
+.Fn fabs .
 .Sh RETURN VALUES
 The
-.Fn fabs
-and
+.Fn fabs ,
 .Fn fabsf
+and
+.Fn fabsl
 functions return the absolute value of
 .Fa x .
 .Sh SEE ALSO

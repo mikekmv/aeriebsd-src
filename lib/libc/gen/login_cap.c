@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: login_cap.c,v 1.1.1.1 2008/08/26 14:38:28 root Exp $";
 #endif
 /*-
  * Copyright (c) 1995,1997 Berkeley Software Design, Inc. All rights reserved.
@@ -159,11 +159,8 @@ login_getstyle(login_cap_t *lc, char *style, char *atype)
 {
     	char **authtypes = _authtypes;
 	char *auths, *ta;
-    	char *f1, **f2;
+    	char *f1 = NULL, **f2 = NULL;
 	int i;
-
-	f1 = 0;
-	f2 = 0;
 
 	/* Silently convert 's/key' -> 'skey' */
 	if (style && strcmp(style, "s/key") == 0)
@@ -171,7 +168,7 @@ login_getstyle(login_cap_t *lc, char *style, char *atype)
 
 	if (lc->lc_style) {
 		free(lc->lc_style);
-		lc->lc_style = 0;
+		lc->lc_style = NULL;
 	}
 
     	if (!atype || !(auths = login_getcapstr(lc, atype, NULL, NULL)))
@@ -209,20 +206,16 @@ login_getstyle(login_cap_t *lc, char *style, char *atype)
 	while (*authtypes && strcmp(style, *authtypes))
 		++authtypes;
 
-	if (*authtypes == NULL || (auths = strdup(*authtypes)) == NULL) {
-		if (f1)
-			free(f1);
-		if (f2)
-			free(f2);
-		if (*authtypes)
+	if (*authtypes) {
+		lc->lc_style = strdup(*authtypes);
+		if (lc->lc_style == NULL)
 			syslog(LOG_ERR, "strdup: %m");
-		return (0);
 	}
 	if (f1)
 		free(f1);
 	if (f2)
 		free(f2);
-	return (lc->lc_style = auths);
+	return (lc->lc_style);
 }
 
 char *

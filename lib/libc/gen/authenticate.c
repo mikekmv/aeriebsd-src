@@ -34,7 +34,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: authenticate.c,v 1.1.1.1 2008/08/26 14:38:27 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -311,7 +311,7 @@ auth_usercheck(char *name, char *style, char *type, char *password)
 	auth_session_t *as;
 	login_cap_t *lc;
 	struct passwd *pwd;
-	char *sep, save;
+	char *slash;
 
 	if (strlcpy(namebuf, name, sizeof(namebuf)) >= sizeof(namebuf))
 		return (NULL);
@@ -324,16 +324,15 @@ auth_usercheck(char *name, char *style, char *type, char *password)
 		*style++ = '\0';
 
 	/*
-	 * Cope with user[./]instance.  We are only using this to get
-	 * the class so it is okay if we strip a root instance
+	 * Cope with user/instance.  We are only using this to get
+	 * the class so it is okay if we strip a /root instance
 	 * The actual login script will pay attention to the instance.
 	 */
 	if ((pwd = getpwnam(name)) == NULL) {
-		if ((sep = strpbrk(name, "./")) != NULL) {
-			save = *sep;
-			*sep = '\0';
+		if ((slash = strchr(name, '/')) != NULL) {
+			*slash = '\0';
 			pwd = getpwnam(name);
-			*sep = save;
+			*slash = '/';
 		}
 	}
 	if ((lc = login_getclass(pwd ? pwd->pw_class : NULL)) == NULL)
@@ -377,7 +376,7 @@ auth_userchallenge(char *name, char *style, char *type, char **challengep)
 	auth_session_t *as;
 	login_cap_t *lc;
 	struct passwd *pwd;
-	char *sep, save;
+	char *slash;
 
 	if (strlen(name) >= sizeof(namebuf))
 		return (NULL);
@@ -391,16 +390,15 @@ auth_userchallenge(char *name, char *style, char *type, char **challengep)
 		*style++ = '\0';
 
 	/*
-	 * Cope with user[./]instance.  We are only using this to get
-	 * the class so it is okay if we strip a root instance
+	 * Cope with user/instance.  We are only using this to get
+	 * the class so it is okay if we strip a /root instance
 	 * The actual login script will pay attention to the instance.
 	 */
 	if ((pwd = getpwnam(name)) == NULL) {
-		if ((sep = strpbrk(name, "./")) != NULL) {
-			save = *sep;
-			*sep = '\0';
+		if ((slash = strchr(name, '/')) != NULL) {
+			*slash = '\0';
 			pwd = getpwnam(name);
-			*sep = save;
+			*slash = '/';
 		}
 	}
 	if ((lc = login_getclass(pwd ? pwd->pw_class : NULL)) == NULL)

@@ -31,20 +31,16 @@
 #if 0
 static char sccsid[] = "@(#)floor.c	8.1 (Berkeley) 6/4/93";
 #else
-static const char rcsid[] = "$ABSD: n_floor.c,v 1.1.1.1 2008/08/26 14:38:53 root Exp $";
+static const char rcsid[] = "$ABSD: n_floor.c,v 1.2 2008/12/26 18:50:37 mickey Exp $";
 #endif
 #endif
 
-#include "math.h"
+#include <sys/cdefs.h>
+#include <math.h>
+
 #include "mathimpl.h"
 
-vc(L, 4503599627370496.0E0 ,0000,5c00,0000,0000, 55, 1.0) /* 2**55 */
-
-ic(L, 4503599627370496.0E0, 52, 1.0)			  /* 2**52 */
-
-#ifdef vccast
-#define	L	vccast(L)
-#endif
+static const double L = 36028797018963968.0E0;
 
 /*
  * floor(x) := the largest integer no larger than x;
@@ -123,3 +119,7 @@ rint(double x)
 	t = x + s;				/* x+s rounded to integer */
 	return (t - s);
 }
+
+#ifdef __weak_alias    
+__weak_alias(rintl, rint);
+#endif /* __weak_alias */

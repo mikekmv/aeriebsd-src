@@ -28,7 +28,7 @@
 .\"
 .\"     from: @(#)exp.3	6.12 (Berkeley) 7/31/91
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt EXP 3
 .Os
 .Sh NAME
@@ -36,6 +36,7 @@
 .Nm expf ,
 .Nm exp2 ,
 .Nm exp2f ,
+.Nm exp2l ,
 .Nm expm1 ,
 .Nm expm1f ,
 .Nm log ,
@@ -57,6 +58,8 @@
 .Fn exp2 "double x"
 .Ft float
 .Fn exp2f "float x"
+.Ft long double
+.Fn exp2l "long double x"
 .Ft double
 .Fn expm1 "double x"
 .Ft float
@@ -96,6 +99,10 @@ function computes the base 2 exponential of the given argument
 The
 .Fn exp2f
 function is a single precision version of
+.Fn exp2 .
+The
+.Fn exp2l
+function is an extended precision version of
 .Fn exp2 .
 .Pp
 The

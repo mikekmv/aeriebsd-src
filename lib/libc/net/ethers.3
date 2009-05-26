@@ -1,7 +1,7 @@
 .\"
 .\" Written by roland@frob.com.  Public domain.
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt ETHERS 3
 .Os
 .Sh NAME
@@ -52,6 +52,8 @@ converts an
 string of the same form and to a structure
 containing the 6 octets of the address.
 It returns a pointer to a static structure that is reused for each call.
+.Fn ether_aton
+will return NULL if the string does not represent a valid address.
 .Pp
 The
 .Fn ether_ntohost

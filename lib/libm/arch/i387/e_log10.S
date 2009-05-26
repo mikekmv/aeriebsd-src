@@ -5,12 +5,12 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: e_log10.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
 
-ENTRY(__ieee754_log10)
+ENTRY(log10)
 	fldlg2
 	fldl	4(%esp)
 	fyl2x

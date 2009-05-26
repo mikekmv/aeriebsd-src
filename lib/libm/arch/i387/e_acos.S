@@ -5,13 +5,13 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: e_acos.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
 
 /* acos = atan (sqrt(1 - x^2) / x) */
-ENTRY(__ieee754_acos)
+ENTRY(acos)
 	fldl	4(%esp)			/* x */
 	fst	%st(1)
 	fmul	%st(0)			/* x^2 */
