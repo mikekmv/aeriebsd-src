@@ -63,6 +63,8 @@
 extern "C" {
 #endif
 
+#include <openssl/opensslconf.h>
+
 #ifdef OPENSSL_NO_CAST
 #error CAST is disabled.
 #endif
@@ -80,7 +82,6 @@ typedef struct cast_key_st
 	CAST_LONG data[32];
 	int short_key;	/* Use reduced rounds for short key */
 	} CAST_KEY;
-
 
 #ifdef OPENSSL_FIPS 
 void private_CAST_set_key(CAST_KEY *key, int len, const unsigned char *data);

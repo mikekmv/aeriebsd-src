@@ -56,12 +56,13 @@
  * [including the GNU Public Licence.]
  */
 
-#ifndef OPENSSL_NO_SOCK
-
 #include <stdio.h>
 #include <errno.h>
 #define USE_SOCKETS
 #include "cryptlib.h"
+
+#ifndef OPENSSL_NO_SOCK
+
 #include <openssl/bio.h>
 
 #ifdef WATT32
@@ -248,7 +249,7 @@ int BIO_sock_non_fatal_error(int err)
 	{
 	switch (err)
 		{
-#if defined(OPENSSL_SYS_WINDOWS)
+#if defined(OPENSSL_SYS_WINDOWS) || defined(OPENSSL_SYS_NETWARE)
 # if defined(WSAEWOULDBLOCK)
 	case WSAEWOULDBLOCK:
 # endif
@@ -279,7 +280,7 @@ int BIO_sock_non_fatal_error(int err)
 #endif
 
 #ifdef EAGAIN
-#if EWOULDBLOCK != EAGAIN
+# if EWOULDBLOCK != EAGAIN
 	case EAGAIN:
 # endif
 #endif
@@ -302,4 +303,5 @@ int BIO_sock_non_fatal_error(int err)
 		}
 	return(0);
 	}
-#endif
+
+#endif  /* #ifndef OPENSSL_NO_SOCK */

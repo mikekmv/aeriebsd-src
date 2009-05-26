@@ -1,3 +1,4 @@
+/*	$Id: e_acss.c,v 1.2 2009/05/26 19:45:03 mickey Exp $	*/
 /*
  * Copyright (c) 2004 The OpenBSD project
  *

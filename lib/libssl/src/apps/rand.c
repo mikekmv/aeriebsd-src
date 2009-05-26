@@ -68,8 +68,8 @@
 
 /* -out file         - write to file
  * -rand file:file   - PRNG seed files
- * -base64           - encode output
- * -hex		     - hex encode output
+ * -base64           - base64 encode output
+ * -hex              - hex encode output
  * num               - write 'num' bytes
  */
 
@@ -172,7 +172,7 @@ int MAIN(int argc, char **argv)
 		BIO_printf(bio_err, "-engine e             - use engine e, possibly a hardware device.\n");
 #endif
 		BIO_printf(bio_err, "-rand file%cfile%c... - seed PRNG from files\n", LIST_SEPARATOR_CHAR, LIST_SEPARATOR_CHAR);
-		BIO_printf(bio_err, "-base64               - encode output\n");
+		BIO_printf(bio_err, "-base64               - base64 encode output\n");
 		BIO_printf(bio_err, "-hex                  - hex encode output\n");
 		goto err;
 		}
@@ -218,21 +218,23 @@ int MAIN(int argc, char **argv)
 		int chunk;
 
 		chunk = num;
-		if (chunk > sizeof buf)
+		if (chunk > (int)sizeof(buf))
 			chunk = sizeof buf;
 		r = RAND_bytes(buf, chunk);
 		if (r <= 0)
 			goto err;
 		if (!hex) 
 			BIO_write(out, buf, chunk);
-		else {
-			int i;
+		else
+			{
 			for (i = 0; i < chunk; i++)
 				BIO_printf(out, "%02x", buf[i]);
-		}
+			}
 		num -= chunk;
 		}
-	BIO_flush(out);
+	if (hex)
+		BIO_puts(out, "\n");
+	(void)BIO_flush(out);
 
 	app_RAND_write_file(NULL, bio_err);
 	ret = 0;

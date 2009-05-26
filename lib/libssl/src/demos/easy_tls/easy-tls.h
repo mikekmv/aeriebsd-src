@@ -1,6 +1,7 @@
 /* -*- Mode: C; c-file-style: "bsd" -*- */
 /*
  * easy-tls.h -- generic TLS proxy.
+ * $Id: easy-tls.h,v 1.2 2009/05/26 19:45:17 mickey Exp $
  */
 /*
  * (c) Copyright 1999 Bodo Moeller.  All rights reserved.

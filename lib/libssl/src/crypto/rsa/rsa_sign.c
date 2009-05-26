@@ -90,6 +90,14 @@ int RSA_sign(int type, const unsigned char *m, unsigned int m_len,
 		i = SSL_SIG_LENGTH;
 		s = m;
 	} else {
+	/* NB: in FIPS mode block anything that isn't a TLS signature */
+#ifdef OPENSSL_FIPS
+		if(FIPS_mode() && !(rsa->flags & RSA_FLAG_NON_FIPS_ALLOW))
+			{
+			RSAerr(RSA_F_RSA_SIGN, RSA_R_OPERATION_NOT_ALLOWED_IN_FIPS_MODE);
+			return 0;
+			}
+#endif
 		sig.algor= &algor;
 		sig.algor->algorithm=OBJ_nid2obj(type);
 		if (sig.algor->algorithm == NULL)
@@ -146,7 +154,7 @@ int RSA_verify(int dtype, const unsigned char *m, unsigned int m_len,
 	     unsigned char *sigbuf, unsigned int siglen, RSA *rsa)
 	{
 	int i,ret=0,sigtype;
-	unsigned char *p,*s;
+	unsigned char *s;
 	X509_SIG *sig=NULL;
 
 	if (siglen != (unsigned int)RSA_size(rsa))
@@ -167,10 +175,22 @@ int RSA_verify(int dtype, const unsigned char *m, unsigned int m_len,
 		RSAerr(RSA_F_RSA_VERIFY,ERR_R_MALLOC_FAILURE);
 		goto err;
 		}
-	if((dtype == NID_md5_sha1) && (m_len != SSL_SIG_LENGTH) ) {
+	if(dtype == NID_md5_sha1)
+		{
+		if (m_len != SSL_SIG_LENGTH)
+			{
 			RSAerr(RSA_F_RSA_VERIFY,RSA_R_INVALID_MESSAGE_LENGTH);
 			goto err;
-	}
+			}
+		}
+	/* NB: in FIPS mode block anything that isn't a TLS signature */
+#ifdef OPENSSL_FIPS
+	else if(FIPS_mode() && !(rsa->flags & RSA_FLAG_NON_FIPS_ALLOW))
+		{
+		RSAerr(RSA_F_RSA_VERIFY, RSA_R_OPERATION_NOT_ALLOWED_IN_FIPS_MODE);
+		return 0;
+		}
+#endif
 	i=RSA_public_decrypt((int)siglen,sigbuf,s,rsa,RSA_PKCS1_PADDING);
 
 	if (i <= 0) goto err;
@@ -181,7 +201,7 @@ int RSA_verify(int dtype, const unsigned char *m, unsigned int m_len,
 				RSAerr(RSA_F_RSA_VERIFY,RSA_R_BAD_SIGNATURE);
 		else ret = 1;
 	} else {
-		p=s;
+		const unsigned char *p=s;
 		sig=d2i_X509_SIG(NULL,&p,(long)i);
 
 		if (sig == NULL) goto err;

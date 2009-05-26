@@ -56,6 +56,7 @@
  * [including the GNU Public Licence.]
  */
 
+#include <openssl/opensslconf.h>	/* for OPENSSL_NO_DSA */
 #ifndef OPENSSL_NO_DSA
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,6 +69,7 @@
 #include <openssl/evp.h>
 #include <openssl/x509.h>
 #include <openssl/pem.h>
+#include <openssl/bn.h>
 
 #undef PROG
 #define PROG	dsa_main
@@ -82,6 +84,10 @@
  * -aes128	- encrypt output if PEM format
  * -aes192	- encrypt output if PEM format
  * -aes256	- encrypt output if PEM format
+ * -camellia128 - encrypt output if PEM format
+ * -camellia192 - encrypt output if PEM format
+ * -camellia256 - encrypt output if PEM format
+ * -seed        - encrypt output if PEM format
  * -text	- print a text version
  * -modulus	- print the DSA public key
  */
@@ -90,9 +96,7 @@ int MAIN(int, char **);
 
 int MAIN(int argc, char **argv)
 	{
-#ifndef OPENSSL_NO_ENGINE
 	ENGINE *e = NULL;
-#endif
 	int ret=1;
 	DSA *dsa=NULL;
 	int i,badops=0;
@@ -210,6 +214,13 @@ bad:
 		BIO_printf(bio_err," -aes128, -aes192, -aes256\n");
 		BIO_printf(bio_err,"                 encrypt PEM output with cbc aes\n");
 #endif
+#ifndef OPENSSL_NO_CAMELLIA
+		BIO_printf(bio_err," -camellia128, -camellia192, -camellia256\n");
+		BIO_printf(bio_err,"                 encrypt PEM output with cbc camellia\n");
+#endif
+#ifndef OPENSSL_NO_SEED
+		BIO_printf(bio_err," -seed           encrypt PEM output with cbc seed\n");
+#endif
 		BIO_printf(bio_err," -text           print the key in text\n");
 		BIO_printf(bio_err," -noout          don't print key out\n");
 		BIO_printf(bio_err," -modulus        print the DSA public value\n");
@@ -227,37 +238,27 @@ bad:
 		goto end;
 	}
 
-	in=BIO_new(BIO_s_file());
 	out=BIO_new(BIO_s_file());
-	if ((in == NULL) || (out == NULL))
+	if (out == NULL)
 		{
 		ERR_print_errors(bio_err);
 		goto end;
 		}
 
-	if (infile == NULL)
-		BIO_set_fp(in,stdin,BIO_NOCLOSE);
-	else
-		{
-		if (BIO_read_filename(in,infile) <= 0)
-			{
-			perror(infile);
-			goto end;
-			}
-		}
-
 	BIO_printf(bio_err,"read DSA key\n");
-	if	(informat == FORMAT_ASN1) {
-		if(pubin) dsa=d2i_DSA_PUBKEY_bio(in,NULL);
-		else dsa=d2i_DSAPrivateKey_bio(in,NULL);
-	} else if (informat == FORMAT_PEM) {
-		if(pubin) dsa=PEM_read_bio_DSA_PUBKEY(in,NULL, NULL, NULL);
-		else dsa=PEM_read_bio_DSAPrivateKey(in,NULL,NULL,passin);
-	} else
-		{
-		BIO_printf(bio_err,"bad input format specified for key\n");
-		goto end;
-		}
+	{
+		EVP_PKEY	*pkey;
+		if (pubin)
+			pkey = load_pubkey(bio_err, infile, informat, 1,
+				passin, e, "Public Key");
+		else
+			pkey = load_key(bio_err, infile, informat, 1,
+				passin, e, "Private Key");
+
+		if (pkey != NULL)
+		dsa = pkey == NULL ? NULL : EVP_PKEY_get1_DSA(pkey);
+		EVP_PKEY_free(pkey);
+	}
 	if (dsa == NULL)
 		{
 		BIO_printf(bio_err,"unable to load Key\n");

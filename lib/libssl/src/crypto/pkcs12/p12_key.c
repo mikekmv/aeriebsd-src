@@ -1,5 +1,5 @@
 /* p12_key.c */
-/* Written by Dr Stephen N Henson (shenson@bigfoot.com) for the OpenSSL
+/* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 1999.
  */
 /* ====================================================================
@@ -59,7 +59,7 @@
 #include <stdio.h>
 #include "cryptlib.h"
 #include <openssl/pkcs12.h>
-
+#include <openssl/bn.h>
 
 /* Uncomment out this line to get debugging info about key generation */
 /*#define DEBUG_KEYGEN*/

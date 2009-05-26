@@ -32,10 +32,10 @@
 
 #if (defined(__unix__) || defined(unix)) && !defined(USG)
 #include <sys/param.h>
-# if (OpenBSD >= 200112) || ((__FreeBSD_version >= 470101 && __FreeBSD_version < 500000) || __FreeBSD_version >= 500041)
+# if (OpenBSD >= 200112) || ((__FreeBSD_version >= 470101 && __FreeBSD_version < 500000) || __FreeBSD_version >= 500041) || defined(__AerieBSD__)
 # define HAVE_CRYPTODEV
 # endif
-# if (OpenBSD >= 200110)
+# if (OpenBSD >= 200110) || defined(__AerieBSD__)
 # define HAVE_SYSLOG_R
 # endif
 #endif
@@ -114,8 +114,9 @@ static int cryptodev_asym(struct crypt_kop *kop, int rlen, BIGNUM *r,
 static int cryptodev_bn_mod_exp(BIGNUM *r, const BIGNUM *a,
     const BIGNUM *p, const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx);
 static int cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I,
-    RSA *rsa);
-static int cryptodev_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa);
+    RSA *rsa, BN_CTX *ctx);
+static int cryptodev_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa,
+    BN_CTX *ctx);
 static int cryptodev_dsa_bn_mod_exp(DSA *dsa, BIGNUM *r, BIGNUM *a,
     const BIGNUM *p, const BIGNUM *m, BN_CTX *ctx, BN_MONT_CTX *m_ctx);
 static int cryptodev_dsa_dsa_mod_exp(DSA *dsa, BIGNUM *t1, BIGNUM *g,
@@ -978,19 +979,14 @@ err:
 }
 
 static int
-cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa)
+cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa,
+    BN_CTX *ctx)
 {
-	int r;
-	BN_CTX *ctx;
-
-	ctx = BN_CTX_new();
-	r = cryptodev_bn_mod_exp(r0, I, rsa->d, rsa->n, ctx, NULL);
-	BN_CTX_free(ctx);
-	return (r);
+	return (RSA_PKCS1_SSLeay()->rsa_mod_exp)(r0, I, rsa, ctx);
 }
 
 static int
-cryptodev_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa)
+cryptodev_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx)
 {
 	struct crypt_kop kop;
 	int ret = 1;
@@ -1019,7 +1015,7 @@ cryptodev_rsa_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa)
 
 	if (cryptodev_asym(&kop, BN_num_bytes(rsa->n), r0, 0, NULL) == -1) {
 		const RSA_METHOD *meth = RSA_PKCS1_SSLeay();
-		ret = (*meth->rsa_mod_exp)(r0, I, rsa);
+		ret = (*meth->rsa_mod_exp)(r0, I, rsa, ctx);
 	}
 err:
 	zapparams(&kop);

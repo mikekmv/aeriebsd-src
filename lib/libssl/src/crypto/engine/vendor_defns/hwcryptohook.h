@@ -64,6 +64,8 @@
  * library files; if you received the library files without a licence,
  * please contact nCipher.
  *
+ *
+ * $Id: hwcryptohook.h,v 1.2 2009/05/26 19:45:02 mickey Exp $
  */
 
 #ifndef HWCRYPTOHOOK_H

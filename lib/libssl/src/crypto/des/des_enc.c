@@ -58,7 +58,6 @@
 
 #include "des_locl.h"
 
-#ifndef OPENSSL_FIPS
 #ifndef OPENBSD_DES_ASM
 
 void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
@@ -249,7 +248,8 @@ void DES_encrypt2(DES_LONG *data, DES_key_schedule *ks, int enc)
 	data[1]=ROTATE(r,3)&0xffffffffL;
 	l=r=t=u=0;
 	}
-#endif
+
+#endif /* OPENBSD_DES_ASM */
 
 void DES_encrypt3(DES_LONG *data, DES_key_schedule *ks1,
 		  DES_key_schedule *ks2, DES_key_schedule *ks3)
@@ -290,8 +290,6 @@ void DES_decrypt3(DES_LONG *data, DES_key_schedule *ks1,
 	data[0]=l;
 	data[1]=r;
 	}
-
-#endif /* ndef OPENSSL_FIPS */
 
 #ifndef DES_DEFAULT_OPTIONS
 
@@ -412,6 +410,6 @@ void DES_ede3_cbc_encrypt(const unsigned char *input, unsigned char *output,
 	tin[0]=tin[1]=0;
 	}
 
-#endif /* !defined(OPENSSL_FIPS_DES_ASM) */
+#endif
 
 #endif /* DES_DEFAULT_OPTIONS */

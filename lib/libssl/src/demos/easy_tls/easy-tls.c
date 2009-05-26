@@ -1,6 +1,7 @@
 /* -*- Mode: C; c-file-style: "bsd" -*- */
 /*
  * easy-tls.c -- generic TLS proxy.
+ * $Id: easy-tls.c,v 1.2 2009/05/26 19:45:17 mickey Exp $
  */
 /*
  (c) Copyright 1999 Bodo Moeller.  All rights reserved.
@@ -71,9 +72,8 @@
  * for use in the OpenSSL Toolkit. (http://www.openssl.org/)
  */
 
-#ifndef lint
-static char const rcsid[] = "$ABSD$";
-#endif
+static char const rcsid[] =
+"$Id: easy-tls.c,v 1.2 2009/05/26 19:45:17 mickey Exp $";
 
 #include <assert.h>
 #include <errno.h>
