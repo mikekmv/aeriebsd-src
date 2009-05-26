@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)contents.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: contents.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
+    "$ABSD: contents.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -61,6 +61,7 @@ static const char rcsid[] =
 int
 contents(char **argv)
 {
+	off_t size;
 	FILE *afp;
 	struct tm *tp;
 	char *file, buf[25];
@@ -68,6 +69,13 @@ contents(char **argv)
 
 	afp = open_archive(O_RDONLY);
 	for (all = !*argv; get_arobj(afp); skip_arobj(afp)) {
+		if (!strncmp(chdr.name, AR_NAMTAB, sizeof(AR_NAMTAB) - 1)) {
+			size = ftello(afp);
+			get_namtab(afp);
+			(void)fseeko(afp, size, SEEK_SET);
+			continue;
+		}
+
 		if (all)
 			file = chdr.name;
 		else if (!(file = files(argv)))

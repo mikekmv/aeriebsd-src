@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)replace.c	8.3 (Berkeley) 4/2/94";
 #else
-static const char rcsid[] = "$ABSD: replace.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
+static const char rcsid[] = "$ABSD: replace.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -46,6 +46,7 @@ static const char rcsid[] = "$ABSD: replace.c,v 1.2 2009/04/03 11:18:10 mickey E
 #include <fcntl.h>
 #include <ar.h>
 #include <dirent.h>
+#include <errno.h>
 #include <err.h>
 
 #include "archive.h"
@@ -65,21 +66,21 @@ replace(char **argv)
 	off_t size, tsize;
 	FILE *afp, *sfp, *curfp, *tfp1, *tfp2;
 	char *file;
-	int errflg, exists, mods;
+	int errflg, mods;
 
 	errflg = 0;
 	/*
 	 * If doesn't exist, simply append to the archive.  There's
 	 * a race here, but it's pretty short, and not worth fixing.
 	 */
-	exists = !stat(archive, &sb);
-	afp = open_archive(O_CREAT|O_RDWR);
-
-	if (!exists) {
-		tfp1 = NULL;
-		tfp2 = tmp();
-		goto append;
+	if (stat(archive, &sb)) {
+		if (errno == ENOENT)
+			append(argv);
+		else
+			err(1, "stat: %s", archive);
 	}
+
+	afp = open_archive(O_CREAT|O_RDWR);
 
 	tfp1 = tmp();			/* Files before key file. */
 	tfp2 = tmp();			/* Files after key file. */
@@ -109,7 +110,7 @@ replace(char **argv)
 			     (void)printf("r - %s\n", file);
 
 			/* Read from disk, write to an archive; pad on write */
-			SETCF(sfp, file, curfp, tname, WPAD);
+			SETCF(sfp, file, curfp, tname, 0);
 			put_arobj(&cf, &sb);
 			(void)fclose(sfp);
 			skip_arobj(afp);
@@ -121,13 +122,13 @@ replace(char **argv)
 			if (options & AR_B)
 				curfp = tfp2;
 			/* Read and write to an archive; pad on both. */
-			SETCF(afp, archive, curfp, tname, RPAD|WPAD);
+			SETCF(afp, archive, curfp, tname, 0);
 			put_arobj(&cf, NULL);
 			if (options & AR_A)
 				curfp = tfp2;
 		} else {
 			/* Read and write to an archive; pad on both. */
-useold:			SETCF(afp, archive, curfp, tname, RPAD|WPAD);
+useold:			SETCF(afp, archive, curfp, tname, 0);
 			put_arobj(&cf, NULL);
 		}
 	}
@@ -139,7 +140,7 @@ useold:			SETCF(afp, archive, curfp, tname, RPAD|WPAD);
         }
 
 	/* Append any left-over arguments to the end of the after file. */
-append:	while ((file = *argv++)) {
+	while ((file = *argv++)) {
 		if (options & AR_V)
 			(void)printf("a - %s\n", file);
 		if (!(sfp = fopen(file, "r"))) {
@@ -150,14 +151,14 @@ append:	while ((file = *argv++)) {
 		(void)fstat(fileno(sfp), &sb);
 		/* Read from disk, write to an archive; pad on write. */
 		SETCF(sfp, file,
-		    options & (AR_A|AR_B) ? tfp1 : tfp2, tname, WPAD);
+		    options & (AR_A|AR_B) ? tfp1 : tfp2, tname, 0);
 		put_arobj(&cf, &sb);
 		(void)fclose(sfp);
 	}
 
 	(void)fseeko(afp, SARMAG, SEEK_SET);
 
-	SETCF(tfp1, tname, afp, archive, NOPAD);
+	SETCF(tfp1, tname, afp, archive, 0);
 	if (tfp1) {
 		tsize = size = ftello(tfp1);
 		rewind(tfp1);

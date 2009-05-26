@@ -36,7 +36,7 @@
 static char sccsid[] = "@(#)build.c	5.3 (Berkeley) 3/12/91";
 static char sccsid[] = "@(#)touch.c	5.3 (Berkeley) 3/12/91";
 #else
-static const char rcsid[] = "$ABSD: ranlib.c,v 1.2 2009/05/03 22:32:34 mickey Exp $";
+static const char rcsid[] = "$ABSD: ranlib.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -74,6 +74,7 @@ typedef struct _rlib {
 } RLIB;
 RLIB *rhead, **pnext;
 off_t r_fuzz;
+int ntsize;
 
 int read_exec(FILE *, FILE *, long *, long *);
 void symobj(FILE *, int, long, long);
@@ -105,23 +106,33 @@ do_ranlib(void)
 	FILE	*afp, *tfp;
 	long	symcnt;			/* symbol count */
 	long	tsymlen;		/* total string length */
-	int	current_mid;
+	int	i, current_mid;
 
 	current_mid = -1;
 	afp = open_archive(O_RDWR);
 	tfp = tmp();
 
-	SETCF(afp, archive, tfp, tname, RPAD|WPAD);
+	SETCF(afp, archive, tfp, tname, 0);
 
 	/* Read through the archive, creating list of symbols. */
 	symcnt = tsymlen = 0;
+	ntsize = 0;
 	r_fuzz = SARMAG;
 	pnext = &rhead;
 	while(get_arobj(afp)) {
 		int new_mid;
 
-		if (!strcmp(chdr.name, RANLIBMAG) ||
-		    !strcmp(chdr.name, RANLIBMAG2)) {
+		if (!strncmp(chdr.name, AR_NAMTAB, sizeof(AR_NAMTAB) - 1)) {
+			size = ftello(afp);
+			get_namtab(afp);
+			ntsize = chdr.size + sizeof(struct ar_hdr);
+			(void)fseeko(afp, size, SEEK_SET);
+			r_fuzz += skip_arobj(afp);
+			continue;
+		}
+
+		if (!strncmp(chdr.name, RANLIBMAG, sizeof(RANLIBMAG) - 1) ||
+		    !strncmp(chdr.name, RANLIBMAG2, sizeof(RANLIBMAG2) - 1)) {
 			r_fuzz += skip_arobj(afp);
 			continue;
 		}
@@ -137,13 +148,15 @@ do_ranlib(void)
 	}
 	*pnext = NULL;
 
+	SETCF(tfp, tname, afp, archive, NOPAD);
+
 	/* Create the symbol table.  Endianess the same as last mid seen */
 	symobj(afp, current_mid, symcnt, tsymlen);
+	put_nametab(&cf);
 
 	/* Copy the saved objects into the archive. */
 	size = ftello(tfp);
 	rewind(tfp);
-	SETCF(tfp, tname, afp, archive, NOPAD);
 	copy_ar(&cf, size);
 	fflush(afp);
 	(void)ftruncate(fileno(afp), ftello(afp));
@@ -245,7 +258,7 @@ read_exec(FILE *rfp, FILE *wfp, long *symcnt, long *tsymlen)
 		free(strtab);
 		free(shstr);
 		free(shdr);
-		(void)fseeko(rfp, (off_t)r_off, SEEK_SET);
+		(void)fseeko(rfp, r_off, SEEK_SET);
 		return MID_ELFFL | eh.elf32.e_machine;
 
 	} else if (IS_ELF(eh.elf64) &&
@@ -308,7 +321,7 @@ read_exec(FILE *rfp, FILE *wfp, long *symcnt, long *tsymlen)
 		free(strtab);
 		free(shstr);
 		free(shdr);
-		(void)fseeko(rfp, (off_t)r_off, SEEK_SET);
+		(void)fseeko(rfp, r_off, SEEK_SET);
 		return MID_ELFFL | eh.elf64.e_machine;
 
 	} else if (BAD_OBJECT(eh.exec) || eh.exec.a_syms == 0)
@@ -417,8 +430,8 @@ symobj(FILE *fp, int mid, long symcnt, long tsymlen)
 	uid_t uid;
 	gid_t gid;
 
-	/* Rewind the archive, leaving the magic number. */
-	if (fseek(fp, (off_t)SARMAG, SEEK_SET) == (off_t)-1)
+	/* Rewind the archive, leaving the magic number and nametab */
+	if (fseek(fp, SARMAG, SEEK_SET) == (off_t)-1)
 		err(1, "fseek: %s", archive);
 
 	/* Size of the ranlib archive file, pad if necessary. */
@@ -462,7 +475,7 @@ symobj(FILE *fp, int mid, long symcnt, long tsymlen)
 		err(1, "fwrite: %s", tname);
 
 	/* Offset of the first archive file. */
-	size = SARMAG + sizeof(struct ar_hdr) + ransize;
+	size = SARMAG + sizeof(struct ar_hdr) + ransize + ntsize;
 
 	/*
 	 * Write out the ranlib structures.  The offset into the string

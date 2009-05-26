@@ -34,22 +34,23 @@
  */
 
 /* Ar(1) options. */
-#define	AR_A	0x0001
-#define	AR_B	0x0002
-#define	AR_C	0x0004
-#define	AR_D	0x0008
-#define	AR_M	0x0010
-#define	AR_O	0x0020
-#define	AR_P	0x0040
-#define	AR_Q	0x0080
-#define	AR_R	0x0100
-#define	AR_S	0x0200
-#define	AR_T	0x0400
-#define	AR_TR	0x0800
-#define	AR_U	0x1000
-#define	AR_V	0x2000
-#define	AR_X	0x4000
-#define	AR_CC	0x8000
+#define	AR_A	0x00001
+#define	AR_B	0x00002
+#define	AR_C	0x00004
+#define	AR_D	0x00008
+#define	AR_M	0x00010
+#define	AR_O	0x00020
+#define	AR_P	0x00040
+#define	AR_Q	0x00080
+#define	AR_R	0x00100
+#define	AR_S	0x00200
+#define	AR_T	0x00400
+#define	AR_TR	0x00800
+#define	AR_U	0x01000
+#define	AR_V	0x02000
+#define	AR_X	0x04000
+#define	AR_CC	0x08000
+#define	AR_S5	0x10000
 extern u_int options;
 
 /* Set up file copy. */
@@ -58,19 +59,14 @@ extern u_int options;
 	cf.rname = fromname; \
 	cf.wfp = to; \
 	cf.wname = toname; \
-	cf.flags = pad; \
 }
 
 /* File copy structure. */
 typedef struct {
 	FILE	*rfp;			/* read file descriptor */
-	char	*rname;			/* read name */
+	const char *rname;		/* read name */
 	FILE	*wfp;			/* write file descriptor */
-	char	*wname;			/* write name */
-#define	NOPAD	0x00			/* don't pad */
-#define	RPAD	0x01			/* pad on reads */
-#define	WPAD	0x02			/* pad on writes */
-	u_int	flags;			/* pad flags */
+	const char *wname;		/* write name */
 } CF;
 
 /* Header structure internal format. */
@@ -85,11 +81,13 @@ typedef struct {
 } CHDR;
 
 /* Header format strings. */
+#define	HDR0	"/%-15d%-12ld%-6u%-6u%-8o%-10qd%2s"
 #define	HDR1	"%s%-13d%-12ld%-6u%-6u%-8o%-10qd%2s"
 #define	HDR2	"%-16.16s%-12ld%-6u%-6u%-8o%-10qd%2s"
 
 #define	OLDARMAXNAME	15
 #define	HDR3	"%-16.15s%-12ld%-6u%-6u%-8o%-10qd%2s"
+#define	HDR4	"%-16.16s%-12s%-6s%-6s%-8s%-10qd%2s"
 
 struct stat;
 
@@ -98,11 +96,13 @@ void	close_archive(FILE *);
 void	copy_ar(CF *, off_t);
 int	get_arobj(FILE *);
 void	put_arobj(CF *, struct stat *);
+int	get_namtab(FILE *);
+int	put_nametab(CF *);
 off_t	skip_arobj(FILE *);
 
 int	append(char **);
 void	badfmt(void);
-int	compare(char *);
+int	compare(const char *);
 int	contents(char **);
 int	delete(char **);
 int	extract(char **);
@@ -111,11 +111,12 @@ int	move(char **);
 void	orphans(char **argv);
 int	print(char **);
 int	replace(char **);
-char	*rname(char *);
+const char *rname(const char *);
 FILE	*tmp(void);
 int	ranlib(char **);
 
-extern char *archive;
-extern char *posarg, *posname;		/* positioning file name */
-extern char *tname;                     /* temporary file "name" */
+extern const char *archive;
+extern const char *posarg, *posname;	/* positioning file name */
+extern const char tname[];		/* temporary file "name" */
 extern CHDR chdr;			/* converted header */
+char **nametab;				/* long name table */

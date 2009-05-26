@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: archive.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
+    "$ABSD: archive.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -129,7 +129,7 @@ int
 get_arobj(FILE *fp)
 {
 	struct ar_hdr *hdr;
-	int len, nr;
+	int i, len, nr;
 	char *p, buf[20];
 
 	nr = fread(hb, sizeof(HDR), 1, fp);
@@ -174,6 +174,11 @@ get_arobj(FILE *fp)
 		}
 		chdr.name[len] = 0;
 		chdr.size -= len;
+	} else if (hdr->ar_name[0] == '/' && isdigit(hdr->ar_name[1])) {
+		i = atol(&hdr->ar_name[1]);
+		/* XXX check overflow */
+		chdr.lname = 0;
+		strlcpy(chdr.name, nametab[i], sizeof(chdr.name));
 	} else {
 		chdr.lname = 0;
 		memmove(chdr.name, hdr->ar_name, sizeof(hdr->ar_name));
@@ -196,7 +201,7 @@ void
 put_arobj(CF *cfp, struct stat *sb)
 {
 	off_t size;
-	char *name;
+	const char *name;
 	struct ar_hdr *hdr;
 	int lname;
 	uid_t uid;
@@ -214,7 +219,7 @@ put_arobj(CF *cfp, struct stat *sb)
 
 		/*
 		 * If not truncating names and the name is too long or contains
-		 * a space, use extended format 1.
+		 * a space, use extended format 1 or 2 (.
 		 */
 		lname = strlen(name);
 		uid = sb->st_uid;
@@ -240,12 +245,29 @@ put_arobj(CF *cfp, struct stat *sb)
 			    HDR3, name, (long int)sb->st_mtimespec.tv_sec,
 			    uid, gid, sb->st_mode, sb->st_size, ARFMAG);
 			lname = 0;
-		} else if (lname > sizeof(hdr->ar_name) || strchr(name, ' '))
-			(void)snprintf(hb, sizeof hb,
-			    HDR1, AR_EFMT1, lname,
-			    (long int)sb->st_mtimespec.tv_sec, uid, gid, sb->st_mode,
-			    sb->st_size + lname, ARFMAG);
-		else {
+		} else if (lname >= sizeof(hdr->ar_name) || strchr(name, ' ')) {
+			if (options & AR_S5) {
+				char **nt = nametab;
+				int i = 0;
+
+				for (; *nt && strcmp(name, *nt); nt++, i++)
+					;
+
+				if (!*nt)
+					errx(1, "corrupt nametab");
+
+				(void)snprintf(hb, sizeof hb, HDR0, i,
+				    (long)sb->st_mtimespec.tv_sec, uid, gid,
+				    sb->st_mode, sb->st_size, ARFMAG);
+
+				/* prevent BSD4.4 name prependition */
+				lname = 0;
+			} else
+				(void)snprintf(hb, sizeof hb, HDR1, AR_EFMT1,
+				    lname, (long)sb->st_mtimespec.tv_sec,
+				    uid, gid, sb->st_mode,
+				    sb->st_size + lname, ARFMAG);
+		} else {
 			lname = 0;
 			(void)snprintf(hb, sizeof hb,
 			    HDR2, name, (long int)sb->st_mtimespec.tv_sec,
@@ -269,6 +291,75 @@ put_arobj(CF *cfp, struct stat *sb)
 	already_written = 0;
 }
 
+int
+get_namtab(FILE *afp)
+{
+	char **nt, *p, *pp;
+	int i;
+
+	if (!(p = malloc(chdr.size + 1)))
+		err(1, "%s: alloc nametab", archive);
+
+	if (fread(p, chdr.size, (size_t)1, afp) != 1)
+		err(1, "%s: read nametab", archive);
+	p[chdr.size] = '\0';
+
+	for (pp = p, i = 0; *pp; )
+		if (*pp++ == '\n')
+			i++;
+
+	/* XXX check overflow */
+	if (!(nametab = malloc((i + 1) * sizeof *nametab)))
+		err(1, "%s: alloc nametab index", archive);
+
+	for (nt = nametab, pp = p; *p; p++)
+		if (*p == '\n') {
+			*nt++ = pp;
+			if (p[-1] == '/')
+				p[-1] = '\0';
+			*p++ = '\0';
+			pp = p;
+		}
+	*nt = NULL;
+}
+
+int
+put_nametab(CF *cfp)
+{
+	char boo[MAXNAMLEN + 1];
+	char **nt, pad = 0;
+	int i, sz;
+
+	if (!nametab)
+		return 0;
+
+	for (nt = nametab, sz = 0; *nt; nt++)
+		sz += strlen(*nt) + 2;
+	if (sz & 1) {
+		sz++;
+		pad = '\n';
+	}
+
+	(void)snprintf(hb, sizeof hb,
+	    HDR4, AR_NAMTAB, "", "", "", "", (quad_t)sz, ARFMAG);
+
+	if (fwrite(hb, sizeof(HDR), 1, cfp->wfp) != 1)
+		err(1, "write: %s", cfp->wname);
+
+	for (nt = nametab; *nt; nt++) {
+		i = snprintf(boo, sizeof(boo), "%s/\n", *nt);
+		if (i >= sizeof(boo))
+			errx(1, "name too long");
+		if (fwrite(boo, i, 1, cfp->wfp) != 1)
+			err(1, "fwrite: %s", cfp->wname);
+	}
+
+	if (pad && fwrite(&pad, 1, 1, cfp->wfp) != 1)
+		err(1, "fwrite: %s", cfp->wname);
+
+	return 0;
+}
+
 /*
  * copy_ar --
  *	Copy size bytes from one file to another - taking care to handle the
@@ -276,12 +367,6 @@ put_arobj(CF *cfp, struct stat *sb)
  *	extra byte if necessary when adding files to archive.  The length of
  *	the object is the long name plus the object itself; the variable
  *	already_written gets set if a long name was written.
- *
- *	The padding is really unnecessary, and is almost certainly a remnant
- *	of early archive formats where the header included binary data which
- *	a PDP-11 required to start on an even byte boundary.  (Or, perhaps,
- *	because 16-bit word addressed copies were faster?)  Anyhow, it should
- *	have been ripped out long ago.
  */
 void
 copy_ar(CF *cfp, off_t size)
@@ -294,7 +379,6 @@ copy_ar(CF *cfp, off_t size)
 	if (!(sz = size))
 		return;
 
-	sz = size;
 	while (sz && (nr = fread(buf, 1, MIN(sz, sizeof buf), cfp->rfp)) > 0) {
 		sz -= nr;
 		for (off = 0; off < nr; nr -= off, off += nw)
@@ -306,16 +390,6 @@ copy_ar(CF *cfp, off_t size)
 			badfmt();
 		err(1, "read: %s", cfp->rname);
 	}
-
-	if (cfp->flags & RPAD && (size + chdr.lname) & 1 &&
-	    (nr = fread(buf, 1, 1, cfp->rfp)) != 1) {
-		if (nr == 0)
-			badfmt();
-		err(1, "read: %s", cfp->rname);
-	}
-	if (cfp->flags & WPAD && (size + already_written) & 1 &&
-	    fwrite(&pad, 1, 1, cfp->wfp) != 1)
-		err(1, "write: %s", cfp->wname);
 }
 
 /*
@@ -325,11 +399,9 @@ copy_ar(CF *cfp, off_t size)
 off_t
 skip_arobj(FILE *fp)
 {
-	off_t len;
 
-	len = chdr.size + ((chdr.size + chdr.lname) & 1);
-	if (fseeko(fp, len, SEEK_CUR) == -1)
+	if (fseeko(fp, chdr.size, SEEK_CUR) == -1)
 		err(1, "fseeko: %s", archive);
 
-	return len + sizeof(struct ar_hdr);
+	return chdr.size + sizeof(struct ar_hdr);
 }

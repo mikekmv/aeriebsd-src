@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)append.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: append.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
+    "$ABSD: append.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -45,10 +45,16 @@ static const char rcsid[] =
 #include <unistd.h>
 #include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <ar.h>
 #include <err.h>
 
 #include "archive.h"
+
+int mknametab(char **);
+
+char **nametab;
 
 /*
  * append --
@@ -62,14 +68,30 @@ append(char **argv)
 	CF cf;
 	FILE *afp;
 	char *file;
-	int fd, eval;
+	int eval, ntsz;
 
 	afp = open_archive(O_CREAT|O_RDWR);
 	if (fseeko(afp, 0, SEEK_END) == (off_t)-1)
 		err(1, "lseek: %s", archive);
 
 	/* Read from disk, write to an archive; pad on write. */
-	SETCF(0, 0, afp, archive, WPAD);
+	SETCF(0, 0, afp, archive, 0);
+
+	if (options & AR_C) {
+		/* ain't needed for a.out but a small price to pay */
+		if ((ntsz = mknametab(argv)) == 0)
+			;
+
+		/* build and write the symdef, also need a mid! */
+		/* mkranlib(argv);
+		if (mid & ELF) */ {
+			options |= AR_S5;
+			/* write out the nametab */
+			if (ntsz)
+				put_nametab(&cf);
+		}
+	}
+
 	for (eval = 0; (file = *argv++);) {
 		if (!(cf.rfp = fopen(file, "r"))) {
 			warn("fopen: %s", file);
@@ -80,8 +102,37 @@ append(char **argv)
 			(void)printf("q - %s\n", file);
 		cf.rname = file;
 		put_arobj(&cf, &sb);
-		(void)close(fd);
+		(void)fclose(cf.rfp);
 	}
 	close_archive(afp);
 	return (eval);
+}
+
+int
+mknametab(char **argv)
+{
+	struct ar_hdr *hdr;
+	char **av, **nt;
+	int i, s, t;
+
+	/* first count the needed space */
+	for (i = 0, av = argv; *av; av++)
+		if (strlen(*av) >= sizeof(hdr->ar_name))
+			i++;
+
+	if (!i)
+		return 0;
+
+	if (!(nametab = malloc((i + 1) * sizeof(*nametab))))
+		err(1, "malloc: nametab");
+
+	/* and now populate */
+	for (i = 0, t = 0, av = argv, nt = nametab; *av; av++)
+		if ((s = strlen(*av)) >= sizeof(hdr->ar_name)) {
+			*nt++ = *av;
+			t += s + 2;
+		}
+	*nt = NULL;
+
+	return t;
 }

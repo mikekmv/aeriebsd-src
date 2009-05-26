@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)extract.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: extract.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
+    "$ABSD: extract.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -76,7 +76,7 @@ extract(char **argv)
 	afp = open_archive(O_RDONLY);
 
 	/* Read from an archive, write to disk; pad on read. */
-	SETCF(afp, archive, 0, 0, RPAD);
+	SETCF(afp, archive, 0, 0, 0);
 	for (all = !*argv; get_arobj(afp);) {
 		if (all)
 			file = chdr.name;

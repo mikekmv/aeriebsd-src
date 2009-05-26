@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)move.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: move.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
+    "$ABSD: move.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -84,7 +84,7 @@ move(char **argv)
 	 */
 
 	/* Read and write to an archive; pad on both. */
-	SETCF(afp, archive, 0, tname, RPAD|WPAD);
+	SETCF(afp, archive, 0, tname, 0);
 	for (curfp = tfp1; get_arobj(afp);) {
 		if (*argv && (file = files(argv))) {
 			if (options & AR_V)

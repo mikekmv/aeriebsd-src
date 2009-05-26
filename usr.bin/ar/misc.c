@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)misc.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: misc.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
+    "$ABSD: misc.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -54,7 +54,7 @@ static const char rcsid[] =
 #include "archive.h"
 #include "pathnames.h"
 
-char *tname = "temporary file";		/* temporary file "name" */
+const char tname[] = "temporary file";	/* temporary file "name" */
 
 FILE *
 tmp(void)
@@ -114,16 +114,16 @@ orphans(char **argv)
 		warnx("%s: not found in archive", *argv);
 }
 
-char *
-rname(char *path)
+const char *
+rname(const char *path)
 {
-	char *ind;
+	const char *ind;
 
 	return ((ind = strrchr(path, '/')) ? ind + 1 : path);
 }
 
 int
-compare(char *dest)
+compare(const char *dest)
 {
 
 	if (options & AR_TR)

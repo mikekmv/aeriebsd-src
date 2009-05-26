@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)delete.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: delete.c,v 1.2 2009/04/03 11:18:10 mickey Exp $";
+    "$ABSD: delete.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -67,7 +67,7 @@ delete(char **argv)
 	tfp = tmp();
 
 	/* Read and write to an archive; pad on both. */
-	SETCF(afp, archive, tfp, tname, RPAD|WPAD);
+	SETCF(afp, archive, tfp, tname, 0);
 	while (get_arobj(afp)) {
 		if (*argv && (file = files(argv))) {
 			if (options & AR_V)
