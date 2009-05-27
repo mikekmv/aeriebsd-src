@@ -11,7 +11,7 @@
 #define __indr_reference(sym,alias)	__lint_equal__(sym,alias)
 #define __warn_references(sym,msg)
 #define __weak_alias(alias,sym)		__lint_equal__(sym,alias)
-#elif defined(__GNUC__) && defined(__STDC__)
+#elif (defined(__GNUC__) && defined(__STDC__)) || defined(__PCC__)
 #define __weak_alias(alias,sym)				\
 	__asm__(".weak " __STRING(alias) " ; "		\
 	    __STRING(alias) " = " __STRING(sym))
