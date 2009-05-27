@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: fstab.c,v 1.1.1.1 2008/08/26 14:38:27 root Exp $";
+static const char rcsid[] = "$ABSD: fstab.c,v 1.2 2009/05/26 23:27:22 mickey Exp $";
 #endif
 
 #include <sys/types.h>
@@ -148,7 +148,7 @@ fstabscan(void)
 		if (cp != NULL)
 			return(1);
 
-bad:		/* We silently ignore all bogus lines */
+bad:		;	/* We silently ignore all bogus lines */
 	}
 	/* NOTREACHED */
 }
