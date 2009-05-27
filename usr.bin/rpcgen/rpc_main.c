@@ -29,9 +29,12 @@
  */
 
 #ifndef lint
+#if 0
 static const char sccsid[] = "@(#)rpc_main.c 1.30 89/03/30 (C) 1987 SMI";
+#else
 static const char cvsid[] =
-	"$ABSD$";
+	"$ABSD: rpc_main.c,v 1.1.1.1 2008/08/26 14:43:10 root Exp $";
+#endif
 #endif
 
 /*
