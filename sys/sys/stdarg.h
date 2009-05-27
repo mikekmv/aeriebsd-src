@@ -17,7 +17,7 @@
 #ifndef _STDARG_H_
 #define _STDARG_H_
 
-#if defined(__GNUC__) && __GNUC__ >= 3
+#if (defined(__GNUC__) && __GNUC__ >= 3) || defined(__PCC__)
 
 /* Define __gnuc_va_list.  */
 
