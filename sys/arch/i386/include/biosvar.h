@@ -220,7 +220,7 @@ extern volatile struct BIOS_regs {
 	u_int32_t	biosr_es;
 }	BIOS_regs;
 
-#ifdef _KERNEL
+#if defined(_KERNEL) && !defined(_STANDALONE)
 #include <machine/bus.h>
 
 struct bios_attach_args {
