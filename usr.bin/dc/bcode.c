@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: bcode.c,v 1.1.1.1 2008/08/26 14:42:42 root Exp $";
 #endif /* not lint */
 
 #include <ssl/ssl.h>
@@ -413,7 +413,7 @@ split_number(const struct number *n, BIGNUM *i, BIGNUM *f)
 	}
 }
 
-__inline void
+void
 normalize(struct number *n, u_int s)
 {
 	scale_number(n->number, s - n->scale);
