@@ -169,7 +169,7 @@
 #define	__pure
 #endif
 
-#if __GNUC_PREREQ__(2, 7)
+#if defined(__PCC__) || __GNUC_PREREQ__(2, 7)
 #define	__packed	__attribute__((__packed__))
 #elif defined(lint)
 #define	__packed
