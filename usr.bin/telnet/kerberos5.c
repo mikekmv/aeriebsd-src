@@ -99,7 +99,7 @@ int forwardable(int);
 #define OPTS_FORWARDABLE_CREDS	0x00000001
 
 
-void kerberos5_forward (Authenticator *);
+void kerberos5_forward (const Authenticator *);
 
 static unsigned char str_data[1024] = { IAC, SB, TELOPT_AUTHENTICATION, 0,
 			  		AUTHTYPE_KERBEROS_V5, };
@@ -155,7 +155,7 @@ check_krb5_tickets()
 }
 
 static int
-Data(Authenticator *ap, int type, void *d, int c)
+Data(const Authenticator *ap, int type, void *d, int c)
 {
     unsigned char *p = str_data + 4;
     unsigned char *cd = (unsigned char *)d;
@@ -186,7 +186,7 @@ Data(Authenticator *ap, int type, void *d, int c)
 }
 
 int
-kerberos5_init(Authenticator *ap, int server)
+kerberos5_init(const Authenticator *ap, int server)
 {
     krb5_error_code ret;
 
@@ -217,7 +217,7 @@ kerberos5_init(Authenticator *ap, int server)
 
 extern int net;
 static int
-kerberos5_send(char *name, Authenticator *ap)
+kerberos5_send(char *name, const Authenticator *ap)
 {
     krb5_error_code ret;
     krb5_ccache ccache;
@@ -341,19 +341,19 @@ kerberos5_send(char *name, Authenticator *ap)
 }
 
 int
-kerberos5_send_mutual(Authenticator *ap)
+kerberos5_send_mutual(const Authenticator *ap)
 {
     return kerberos5_send("mutual KERBEROS5", ap);
 }
 
 int
-kerberos5_send_oneway(Authenticator *ap)
+kerberos5_send_oneway(const Authenticator *ap)
 {
     return kerberos5_send("KERBEROS5", ap);
 }
 
 void
-kerberos5_is(Authenticator *ap, unsigned char *data, int cnt)
+kerberos5_is(const Authenticator *ap, unsigned char *data, int cnt)
 {
     krb5_error_code ret;
     krb5_data outbuf;
@@ -622,7 +622,7 @@ kerberos5_is(Authenticator *ap, unsigned char *data, int cnt)
 }
 
 void
-kerberos5_reply(Authenticator *ap, unsigned char *data, int cnt)
+kerberos5_reply(const Authenticator *ap, unsigned char *data, int cnt)
 {
     static int mutual_complete = 0;
 
@@ -713,7 +713,7 @@ kerberos5_reply(Authenticator *ap, unsigned char *data, int cnt)
 }
 
 int
-kerberos5_status(Authenticator *ap, char *name, size_t name_sz, int level)
+kerberos5_status(const Authenticator *ap, char *name, size_t name_sz, int level)
 {
     if (level < AUTH_USER)
 	return(level);
@@ -796,7 +796,7 @@ kerberos5_printsub(unsigned char *data, int cnt, unsigned char *buf, int buflen)
 }
 
 void
-kerberos5_forward(Authenticator *ap)
+kerberos5_forward(const Authenticator *ap)
 {
     krb5_error_code ret;
     krb5_ccache     ccache;

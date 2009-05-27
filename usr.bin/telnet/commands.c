@@ -42,8 +42,8 @@ typedef int (*intrtn_t)(int, char**);
 static int call(intrtn_t, ...);
 
 typedef struct {
-	char	*name;		/* command name */
-	char	*help;		/* help string (NULL for no help) */
+	const char *name;	/* command name */
+	const char *help;	/* help string (NULL for no help) */
 	int	(*handler)();	/* routine which executes command */
 	int	needconnect;	/* Do we need to be connected to execute? */
 } Command;
@@ -215,8 +215,8 @@ control(c)
  */
 
 struct sendlist {
-    char	*name;		/* How user refers to it (case independent) */
-    char	*help;		/* Help information (0 ==> no help) */
+    const char	*name;		/* How user refers to it (case independent) */
+    const char	*help;		/* Help information (0 ==> no help) */
     int		needconnect;	/* Need to be connected */
     int		narg;		/* Number of arguments */
     int		(*handler)();	/* Routine to perform (for special ops) */
@@ -233,7 +233,7 @@ static int
 	send_willcmd(char *),
 	send_wontcmd(char *);
 
-static struct sendlist Sendlist[] = {
+const struct sendlist Sendlist[] = {
     { "ao",	"Send Telnet Abort output",		1, 0, 0, 2, AO },
     { "ayt",	"Send Telnet 'Are You There'",		1, 0, 0, 2, AYT },
     { "brk",	"Send Telnet Break",			1, 0, 0, 2, BREAK },
@@ -447,10 +447,10 @@ send_tncmd(func, cmd, name)
     return 1;
 }
 
-    static int
+static int
 send_help()
 {
-    struct sendlist *s;	/* pointer to current command */
+    const struct sendlist *s;	/* pointer to current command */
     for (s = Sendlist; s->name; s++) {
 	if (s->help)
 	    printf("%-15s %s\r\n", s->name, s->help);
@@ -609,15 +609,15 @@ extern int EncryptVerbose(int);
 
 
 struct togglelist {
-    char	*name;		/* name of toggle */
-    char	*help;		/* help message */
+    const char	*name;		/* name of toggle */
+    const char	*help;		/* help message */
     int		(*handler)();	/* routine to do actual setting */
     int		*variable;
     char	*actionexplanation;
     int		needconnect;	/* Need to be connected */
 };
 
-static struct togglelist Togglelist[] = {
+const struct togglelist Togglelist[] = {
     { "autoflush",
 	"flushing of output when sending interrupt characters",
 	    0,
@@ -749,7 +749,7 @@ static struct togglelist Togglelist[] = {
     static int
 togglehelp()
 {
-    struct togglelist *c;
+    const struct togglelist *c;
 
     for (c = Togglelist; c->name; c++) {
 	if (c->help) {
@@ -768,7 +768,7 @@ togglehelp()
 settogglehelp(set)
     int set;
 {
-    struct togglelist *c;
+    const struct togglelist *c;
 
     for (c = Togglelist; c->name; c++) {
 	if (c->help) {
@@ -1115,8 +1115,8 @@ tn_clearmode(bit)
 }
 
 struct modelist {
-	char	*name;		/* command name */
-	char	*help;		/* help string */
+	const char *name;	/* command name */
+	const char *help;	/* help string */
 	int	(*handler)();	/* routine which executes command */
 	int	needconnect;	/* Do we need to be connected to execute? */
 	int	arg1;
@@ -1124,7 +1124,7 @@ struct modelist {
 
 static int modehelp(void);
 
-static struct modelist ModeList[] = {
+const struct modelist ModeList[] = {
     { "character", "Disable LINEMODE option",	docharmode, 1 },
 #ifdef	KLUDGELINEMODE
     { "",	"(or disable obsolete line-by-line mode)", 0 },
@@ -1160,7 +1160,7 @@ static struct modelist ModeList[] = {
     static int
 modehelp()
 {
-    struct modelist *mt;
+    const struct modelist *mt;
 
     printf("format is:  'mode Mode', where 'Mode' is one of:\r\n\r\n");
     for (mt = ModeList; mt->name; mt++) {
@@ -1210,7 +1210,7 @@ display(argc, argv)
     int  argc;
     char *argv[];
 {
-    struct togglelist *tl;
+    const struct togglelist *tl;
     struct setlist *sl;
 
 #define	dotog(tl)	if (tl->variable && tl->actionexplanation) { \
@@ -1451,15 +1451,15 @@ logout()
  */
 
 struct slclist {
-	char	*name;
-	char	*help;
+	const char *name;
+	const char *help;
 	void	(*handler)();
 	int	arg;
 };
 
 static void slc_help();
 
-struct slclist SlcList[] = {
+const struct slclist SlcList[] = {
     { "export",	"Use local special character definitions",
 						slc_mode_export,	0 },
     { "import",	"Use remote special character definitions",
@@ -1474,7 +1474,7 @@ struct slclist SlcList[] = {
     static void
 slc_help()
 {
-    struct slclist *c;
+    const struct slclist *c;
 
     for (c = SlcList; c->name; c++) {
 	if (c->help) {
@@ -1527,15 +1527,15 @@ slccmd(argc, argv)
  */
 
 struct envlist {
-	char	*name;
-	char	*help;
+	const char *name;
+	const char *help;
 	void	(*handler)();
 	int	narg;
 };
 
 static void	env_help(void);
 
-struct envlist EnvList[] = {
+const struct envlist EnvList[] = {
     { "define",	"Define an environment variable",
 						(void (*)())env_define,	2 },
     { "undefine", "Undefine an environment variable",
@@ -1559,7 +1559,7 @@ struct envlist EnvList[] = {
     static void
 env_help()
 {
-    struct envlist *c;
+    const struct envlist *c;
 
     for (c = EnvList; c->name; c++) {
 	if (c->help) {
@@ -1874,8 +1874,8 @@ unknown:
  */
 
 struct authlist {
-	char	*name;
-	char	*help;
+	const char *name;
+	const char *help;
 	int	(*handler)();
 	int	narg;
 };
@@ -1883,7 +1883,7 @@ struct authlist {
 static int
 	auth_help(void);
 
-struct authlist AuthList[] = {
+const struct authlist AuthList[] = {
     { "status",	"Display current status of authentication information",
 						auth_status,	0 },
     { "disable", "Disable an authentication type ('auth disable ?' for more)",
@@ -1898,7 +1898,7 @@ struct authlist AuthList[] = {
     static int
 auth_help()
 {
-    struct authlist *c;
+    const struct authlist *c;
 
     for (c = AuthList; c->name; c++) {
 	if (c->help) {
@@ -1953,8 +1953,8 @@ auth_cmd(argc, argv)
  */
 
 struct encryptlist {
-       char    *name;
-       char    *help;
+       const char *name;
+       const char *help;
        int     (*handler)();
        int     needconnect;
        int     minarg;
@@ -1964,7 +1964,7 @@ struct encryptlist {
 static int
        EncryptHelp (void);
 
-struct encryptlist EncryptList[] = {
+const struct encryptlist EncryptList[] = {
     { "enable", "Enable encryption. ('encrypt enable ?' for more)",
                                                EncryptEnable, 1, 1, 2 },
     { "disable", "Disable encryption. ('encrypt enable ?' for more)",
@@ -1994,7 +1994,7 @@ struct encryptlist EncryptList[] = {
 static int
 EncryptHelp()
 {
-    struct encryptlist *c;
+    const struct encryptlist *c;
 
     for (c = EncryptList; c->name; c++) {
        if (c->help) {
@@ -2498,7 +2498,7 @@ tn(argc, argv)
 
 #define HELPINDENT (sizeof ("connect"))
 
-static char
+const char
 	openhelp[] =	"connect to a site",
 	closehelp[] =	"close current connection",
 	logouthelp[] =	"forcibly logout remote user and close the connection",
@@ -2530,7 +2530,7 @@ static char
 
 static int	help(int, char**);
 
-static Command cmdtab[] = {
+const Command cmdtab[] = {
 	{ "close",	closehelp,	bye,		1 },
 	{ "logout",	logouthelp,	logout,		1 },
 	{ "display",	displayhelp,	display,	0 },
@@ -2697,7 +2697,7 @@ help(argc, argv)
 	int argc;
 	char *argv[];
 {
-	Command *c;
+	const Command *c;
 
 	if (argc == 1) {
 		printf("Commands may be abbreviated.  Commands are:\r\n\r\n");

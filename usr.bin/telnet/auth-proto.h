@@ -65,11 +65,11 @@
 /* $KTH: auth-proto.h,v 1.10 2000/01/18 03:08:55 assar Exp $ */
 
 #if	defined(AUTHENTICATION)
-Authenticator *findauthenticator (int, int);
+const Authenticator *findauthenticator (int, int);
 
 int auth_wait (char *, size_t);
 void auth_disable_name (char *);
-void auth_finished (Authenticator *, int);
+void auth_finished (const Authenticator *, int);
 void auth_gen_printsub (unsigned char *, int, unsigned char *, int);
 void auth_init (const char *, int);
 void auth_is (unsigned char *, int);
@@ -91,41 +91,41 @@ void auth_gen_printsub (unsigned char *data, int cnt,
 		       unsigned char *buf, int buflen);
 
 #ifdef UNSAFE
-int unsafe_init (Authenticator *, int);
-int unsafe_send (Authenticator *);
-void unsafe_is (Authenticator *, unsigned char *, int);
-void unsafe_reply (Authenticator *, unsigned char *, int);
-int unsafe_status (Authenticator *, char *, int);
+int unsafe_init (const Authenticator *, int);
+int unsafe_send (const Authenticator *);
+void unsafe_is (const Authenticator *, unsigned char *, int);
+void unsafe_reply (const Authenticator *, unsigned char *, int);
+int unsafe_status (const Authenticator *, char *, int);
 void unsafe_printsub (unsigned char *, int, unsigned char *, int);
 #endif
 
 #ifdef SRA
-int sra_init (Authenticator *, int);
-int sra_send (Authenticator *);
-void sra_is (Authenticator *, unsigned char *, int);
-void sra_reply (Authenticator *, unsigned char *, int);
-int sra_status (Authenticator *, char *, int);
+int sra_init (const Authenticator *, int);
+int sra_send (const Authenticator *);
+void sra_is (const Authenticator *, unsigned char *, int);
+void sra_reply (const Authenticator *, unsigned char *, int);
+int sra_status (const Authenticator *, char *, int);
 void sra_printsub (unsigned char *, int, unsigned char *, int);
 #endif
 
 #ifdef	KRB4
-int kerberos4_init (Authenticator *, int);
-int kerberos4_send_mutual (Authenticator *);
-int kerberos4_send_oneway (Authenticator *);
-void kerberos4_is (Authenticator *, unsigned char *, int);
-void kerberos4_reply (Authenticator *, unsigned char *, int);
-int kerberos4_status (Authenticator *, char *, size_t, int);
+int kerberos4_init (const Authenticator *, int);
+int kerberos4_send_mutual (const Authenticator *);
+int kerberos4_send_oneway (const Authenticator *);
+void kerberos4_is (const Authenticator *, unsigned char *, int);
+void kerberos4_reply (const Authenticator *, unsigned char *, int);
+int kerberos4_status (const Authenticator *, char *, size_t, int);
 void kerberos4_printsub (unsigned char *, int, unsigned char *, int);
-int kerberos4_forward (Authenticator *ap, void *);
+int kerberos4_forward (const Authenticator *ap, void *);
 #endif
 
 #ifdef	KRB5
-int kerberos5_init (Authenticator *, int);
-int kerberos5_send_mutual (Authenticator *);
-int kerberos5_send_oneway (Authenticator *);
-void kerberos5_is (Authenticator *, unsigned char *, int);
-void kerberos5_reply (Authenticator *, unsigned char *, int);
-int kerberos5_status (Authenticator *, char *, size_t, int);
+int kerberos5_init (const Authenticator *, int);
+int kerberos5_send_mutual (const Authenticator *);
+int kerberos5_send_oneway (const Authenticator *);
+void kerberos5_is (const Authenticator *, unsigned char *, int);
+void kerberos5_reply (const Authenticator *, unsigned char *, int);
+int kerberos5_status (const Authenticator *, char *, size_t, int);
 void kerberos5_printsub (unsigned char *, int, unsigned char *, int);
 #endif
 #endif

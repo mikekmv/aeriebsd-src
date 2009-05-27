@@ -73,7 +73,7 @@ void printd (const unsigned char *, int);
 
 char** genget (char *name, char **table, int stlen);
 int isprefix(char *s1, char *s2);
-int Ambiguous(void *s);
+int Ambiguous(const void *s);
 
 /*
  * These functions are imported from the application

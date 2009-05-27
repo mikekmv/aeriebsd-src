@@ -75,11 +75,11 @@
 typedef struct XauthP {
 	int	type;
 	int	way;
-	int	(*init) (struct XauthP *, int);
-	int	(*send) (struct XauthP *);
-	void	(*is) (struct XauthP *, unsigned char *, int);
-	void	(*reply) (struct XauthP *, unsigned char *, int);
-	int	(*status) (struct XauthP *, char *, size_t, int);
+	int	(*init) (const struct XauthP *, int);
+	int	(*send) (const struct XauthP *);
+	void	(*is) (const struct XauthP *, unsigned char *, int);
+	void	(*reply) (const struct XauthP *, unsigned char *, int);
+	int	(*status) (const struct XauthP *, char *, size_t, int);
 	void	(*printsub) (unsigned char *, int, unsigned char *, int);
 } Authenticator;
 

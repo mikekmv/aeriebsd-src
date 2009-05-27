@@ -29,7 +29,7 @@
 
 #ifndef lint
 /* from: static char sccsid[] = "@(#)auth.c    8.3 (Berkeley) 5/30/95" */
-static const char rcsid[] = "$ABSD: auth.c,v 1.1.1.1 2008/08/26 14:43:19 root Exp $";
+static const char rcsid[] = "$ABSD: auth.c,v 1.2 2009/04/30 16:54:30 mikeb Exp $";
 #endif /* not lint */
 
 /*
@@ -117,7 +117,7 @@ static	int	auth_send_cnt = 0;
  * Authentication types supported.  Plese note that these are stored
  * in priority order, i.e. try the first one first.
  */
-Authenticator authenticators[] = {
+const Authenticator authenticators[] = {
 #ifdef UNSAFE
     { AUTHTYPE_UNSAFE, AUTH_WHO_CLIENT|AUTH_HOW_ONE_WAY,
       unsafe_init,
@@ -210,10 +210,10 @@ static Authenticator NoAuth = { 0 };
 static int	i_support = 0;
 static int	i_wont_support = 0;
 
-Authenticator *
+const Authenticator *
 findauthenticator(int type, int way)
 {
-    Authenticator *ap = authenticators;
+    const Authenticator *ap = authenticators;
 
     while (ap->type && (ap->type != type || ap->way != way))
 	++ap;
@@ -223,7 +223,7 @@ findauthenticator(int type, int way)
 void
 auth_init(const char *name, int server)
 {
-    Authenticator *ap = authenticators;
+    const Authenticator *ap = authenticators;
 
     Server = server;
     Name = name;
@@ -293,7 +293,7 @@ int
 auth_onoff(char *type, int on)
 {
     int i, mask = -1;
-    Authenticator *ap;
+    const Authenticator *ap;
 
     if (!strcasecmp(type, "?") || !strcasecmp(type, "help")) {
 	printf("auth %s 'type'\n", on ? "enable" : "disable");
@@ -334,7 +334,7 @@ auth_togdebug(int on)
 int
 auth_status(void)
 {
-    Authenticator *ap;
+    const Authenticator *ap;
     int i, mask;
 
     if (i_wont_support == -1)
@@ -364,7 +364,7 @@ auth_request(void)
     static unsigned char str_request[64] = { IAC, SB,
 					     TELOPT_AUTHENTICATION,
 					     TELQUAL_SEND, };
-    Authenticator *ap = authenticators;
+    const Authenticator *ap = authenticators;
     unsigned char *e = str_request + 4;
 
     if (!authenticating) {
@@ -401,7 +401,7 @@ auth_request(void)
 void
 auth_send(unsigned char *data, int cnt)
 {
-    Authenticator *ap;
+    const Authenticator *ap;
     static unsigned char str_none[] = { IAC, SB, TELOPT_AUTHENTICATION,
 					TELQUAL_IS, AUTHTYPE_NULL, 0,
 					IAC, SE };
@@ -496,7 +496,7 @@ auth_send_retry(void)
 void
 auth_is(unsigned char *data, int cnt)
 {
-    Authenticator *ap;
+    const Authenticator *ap;
 
     if (cnt < 2)
 	return;
@@ -517,7 +517,7 @@ auth_is(unsigned char *data, int cnt)
 void
 auth_reply(unsigned char *data, int cnt)
 {
-    Authenticator *ap;
+    const Authenticator *ap;
 
     if (cnt < 2)
 	return;
@@ -575,7 +575,7 @@ auth_sendname(unsigned char *cp, int len)
 }
 
 void
-auth_finished(Authenticator *ap, int result)
+auth_finished(const Authenticator *ap, int result)
 {
     if (!(authenticated = ap))
 	authenticated = &NoAuth;
@@ -631,7 +631,7 @@ auth_debug(int mode)
 void
 auth_printsub(unsigned char *data, int cnt, unsigned char *buf, int buflen)
 {
-    Authenticator *ap;
+    const Authenticator *ap;
 
     if ((ap = findauthenticator(data[1], data[2])) && ap->printsub)
 	(*ap->printsub)(data, cnt, buf, buflen);

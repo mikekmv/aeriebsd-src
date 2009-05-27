@@ -29,7 +29,7 @@
 
 #ifndef lint
 /* from: static char sccsid[] = "@(#)genget.c  8.2 (Berkeley) 5/30/95"; */
-static const char rcsid[] = "$ABSD: genget.c,v 1.1.1.1 2008/08/26 14:43:19 root Exp $";
+static const char rcsid[] = "$ABSD: genget.c,v 1.2 2009/04/30 16:54:30 mikeb Exp $";
 #endif /* not lint */
 
 /* $KTH: genget.c,v 1.6 1997/05/04 09:01:34 assar Exp $ */
@@ -95,7 +95,7 @@ genget(char *name, char **table, int stlen)
  * Function call version of Ambiguous()
  */
 int
-Ambiguous(void *s)
+Ambiguous(const void *s)
 {
-    return((char **)s == &ambiguous);
+    return(s == &ambiguous);
 }
