@@ -79,6 +79,8 @@
 
 #define MAX_STRING_LEN 256
 
+#define INTR_MSG "\nInterrupted.\n"
+
 static char tn[MAX_STRING_LEN];
 
 static void
@@ -177,10 +179,10 @@ usage(void)
 static void
 interrupted(void)
 {
-	fprintf(stderr, "Interrupted.\n");
+	write(STDERR_FILENO, INTR_MSG, sizeof(INTR_MSG) - 1);
 	if (tn[0] != '\0')
 		unlink(tn);
-	exit(1);
+	_exit(1);
 }
 
 

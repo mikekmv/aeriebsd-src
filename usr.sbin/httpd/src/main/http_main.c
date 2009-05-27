@@ -700,8 +700,8 @@ static void usage(char *bin)
     fprintf(stderr, "  -c directive     : process directive after  reading config files\n");
     fprintf(stderr, "  -D parameter     : define a parameter for use in <IfDefine name> directives\n");
     fprintf(stderr, "  -d serverroot    : specify an alternate initial ServerRoot\n");
-    fprintf(stderr, "  -4               : assume IPv4 for ambigous directirves (default)\n");
-    fprintf(stderr, "  -6               : assume IPv6 for ambigous directives\n");
+    fprintf(stderr, "  -4               : assume IPv4 for ambiguous directirves (default)\n");
+    fprintf(stderr, "  -6               : assume IPv6 for ambiguous directives\n");
     fprintf(stderr, "  -F               : run main process in foreground, for process supervisors\n");
     fprintf(stderr, "  -f config        : specify an alternate ServerConfigFile\n");
     fprintf(stderr, "  -h               : list available command line options (this page)\n");
@@ -710,7 +710,7 @@ static void usage(char *bin)
     fprintf(stderr, "  -S               : show parsed settings (currently only vhost settings)\n");
     fprintf(stderr, "  -T               : run syntax check for config files (without docroot check)\n");
     fprintf(stderr, "  -t               : run syntax check for config files (with docroot check)\n");
-    fprintf(stderr, "  -U               : unspecified address family for ambigous directives\n"); 
+    fprintf(stderr, "  -U               : unspecified address family for ambiguous directives\n"); 
     fprintf(stderr, "  -u               : unsecure mode: do not chroot into ServerRoot\n");
     fprintf(stderr, "  -V               : show compile settings\n");
     fprintf(stderr, "  -v               : show version number\n");

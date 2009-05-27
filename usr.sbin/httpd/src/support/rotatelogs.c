@@ -19,7 +19,7 @@
 #endif
 
 int
-main(int argc, char **argv)
+main(int argc, char *argv[])
 {
 	char buf[BUFSIZE], buf2[MAX_PATH], errbuf[ERRMSGSZ];
 	time_t tLogEnd = 0, tRotation;
@@ -28,7 +28,6 @@ main(int argc, char **argv)
 	int use_strftime = 0;
 	time_t now;
 	char *szLogRoot;
-
 
 	if (argc < 3) {
 		fprintf(stderr, "usage: %s logfile rotationtime [offset]\n\n",
@@ -79,27 +78,30 @@ main(int argc, char **argv)
 				    szLogRoot, (int)tLogStart);
 
 			tLogEnd = tLogStart + tRotation;
-			nLogFD = open(buf2, O_WRONLY | O_CREAT | O_APPEND,
-			    0666);
+			do {
+				nLogFD = open(buf2, O_WRONLY | O_CREAT |
+				    O_APPEND, 0666);
+				if (nLogFD < 0 && nLogFDprev == -1) {
+					fprintf(stderr, "rotatelogs: can't "
+					    "open %s for writing: %s\n", buf2,
+					    strerror(errno));
+					sleep(2);
+				}
+			} while (nLogFD < 0 && nLogFDprev == -1);
 			if (nLogFD < 0) {
 				/*
 				 * Uh-oh. Failed to open the new log file. Try
 				 * to clear the previous log file, note the
 				 * lost log entries, and keep on truckin'.
 				 */
-				if (nLogFDprev == -1) {
-					perror(buf2);
-					exit(2);
-				} else {
-					nLogFD = nLogFDprev;
-					snprintf(errbuf, sizeof(errbuf),
-					    "Resetting log file due to error "
-					    "opening new log file. %10d "
-					    "messages lost.\n",	nMessCount); 
-					nWrite = strlen(errbuf);
-					ftruncate(nLogFD, 0);
-					write(nLogFD, errbuf, nWrite);
-				}
+				nLogFD = nLogFDprev;
+				snprintf(errbuf, sizeof(errbuf),
+				    "Resetting log file due to error opening "
+				    "new log file. %10d messages lost.\n",
+				    nMessCount); 
+				nWrite = strlen(errbuf);
+				ftruncate(nLogFD, 0);
+				write(nLogFD, errbuf, nWrite);
 			} else
 				close(nLogFDprev);
 			nMessCount = 0;
@@ -118,6 +120,7 @@ main(int argc, char **argv)
 		} else
 			nMessCount++; 
 	}
+
 	/* We never get here, but suppress the compile warning */
-	return (0);
+	return 0;
 }

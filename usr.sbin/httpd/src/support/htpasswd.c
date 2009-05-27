@@ -98,6 +98,7 @@
 #define ALG_APSHA 3 
 #define ALG_APBLF 4
 
+#define INTR_MSG "\nInterrupted.\n"
 
 #define ERR_FILEPERM 1
 #define ERR_SYNTAX 2
@@ -245,11 +246,11 @@ usage(void)
 static void
 interrupted(void)
 {
-	fprintf(stderr, "Interrupted.\n");
+	write(STDERR_FILENO, INTR_MSG, sizeof(INTR_MSG) - 1);
 	if (tempfilename[0] != '\0')
 		unlink(tempfilename);
 
-	exit(ERR_INTERRUPTED);
+	_exit(ERR_INTERRUPTED);
 }
 
 /*
