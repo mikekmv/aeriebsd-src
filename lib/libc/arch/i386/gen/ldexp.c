@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ldexp.c,v 1.1.1.1 2008/08/26 14:38:19 root Exp $";
 #endif
 
 #include <math.h>
@@ -44,7 +44,7 @@ double
 ldexp (double value, int exp)
 {
 	double temp;
-#if __GNUC__ >= 2
+#if defined(__PCC__) || (defined(__GNUC__) && __GNUC__ >= 2)
 	__asm ("fscale"
 		: "=t" (temp)
 		: "0" (value), "u" ((double)exp));
