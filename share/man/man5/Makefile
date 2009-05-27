@@ -4,7 +4,7 @@
 MAN=	a.out.5 acct.5 bsd.port.mk.5 bsd.regress.mk.5 changelist.5 \
 	core.5 defaultdomain.5 dir.5 disktab.5 elf.5 ethers.5 \
 	fbtab.5 files.conf.5 forward.5 fs.5 fstab.5 \
-	genassym.cf.5 group.5 hostname.if.5 \ hosts.equiv.5 hosts.5 \
+	genassym.cf.5 group.5 hostname.if.5 hosts.equiv.5 hosts.5 \
 	intro.5 link.5 login.conf.5 mixerctl.conf.5 \
 	mk.conf.5 moduli.5 motd.5 myname.5 netgroup.5 networks.5 \
 	passwd.5 pf.conf.5 pf.os.5 phones.5 plot.5 port-modules.5 \
