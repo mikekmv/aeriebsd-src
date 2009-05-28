@@ -62,7 +62,6 @@ getint(const char *fname)
 		else
 			errx(1, "%s: unexpected EOF", fname);
 	}
-printf("getint %x %x\n", a, b);
 	return (b << 8) | a;
 }
 
