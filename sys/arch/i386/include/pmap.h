@@ -187,7 +187,7 @@
  *
  * plus alternative versions of the above
  */
-
+#ifdef _KERNEL
 #define vtopte(VA)	(PTE_BASE + atop(VA))
 #define kvtopte(VA)	vtopte(VA)
 #define ptetov(PT)	(ptoa(PT - PTE_BASE))
@@ -197,6 +197,7 @@
 #define	ptetoav(PT)	(ptoa(PT - APTE_BASE))
 #define	avtophys(VA)	((*avtopte(VA) & PG_FRAME) | \
 			 ((unsigned)(VA) & ~PG_FRAME))
+#endif
 
 /*
  * pdei/ptei: generate index into PDP/PTP from a VA
