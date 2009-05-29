@@ -1,6 +1,6 @@
 
 AWK=	awk
 
-xbowdevs.h xbowdevs_data.h: xbowdevs devlist2h.awk
+xbowdevs.h xbowdevs_data.h: xbowdevs
 	/bin/rm -f xbowdevs.h xbowdevs_data.h
-	${AWK} -f devlist2h.awk xbowdevs
+	${AWK} -f xbowdevs xbowdevs

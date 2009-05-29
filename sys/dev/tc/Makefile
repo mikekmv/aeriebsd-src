@@ -1,6 +1,6 @@
 
 AWK=	awk
 
-tcdevs_data.h: tcdevs devlist2h.awk
+tcdevs_data.h: tcdevs
 	/bin/rm -f tcdevs_data.h
-	${AWK} -f devlist2h.awk tcdevs
+	${AWK} -f tcdevs tcdevs

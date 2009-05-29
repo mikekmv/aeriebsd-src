@@ -1,7 +1,7 @@
 
 AWK?=	awk
 
-cpudevs.h cpudevs_data.h: cpudevs devlist2h.awk
+cpudevs.h cpudevs_data.h: cpudevs
 	/bin/rm -f cpudevs.h cpudevs_data.h
-	${AWK} -f devlist2h.awk cpudevs
+	${AWK} -f cpudevs cpudevs
 

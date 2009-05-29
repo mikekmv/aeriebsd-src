@@ -1,6 +1,6 @@
 
 AWK=	awk
 
-pcmciadevs.h: pcmciadevs devlist2h.awk
+pcmciadevs.h: pcmciadevs
 	/bin/rm -f pcmciadevs.h
-	${AWK} -f devlist2h.awk pcmciadevs
+	${AWK} -f pcmciadevs pcmciadevs

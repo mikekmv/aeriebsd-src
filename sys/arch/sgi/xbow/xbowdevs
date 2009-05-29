@@ -1,43 +1,219 @@
-version	$ABSD$
+#!/usr/bin/awk -f xbowdevs
+#version $ABSD$
+#/*
+# * Copyright (c) 2008 Miodrag Vallat.
+# *
+# * Permission to use, copy, modify, and distribute this software for any
+# * purpose with or without fee is hereby granted, provided that the above
+# * copyright notice and this permission notice appear in all copies.
+# *
+# * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+# *
+# *
+# * Copyright (c) 1995, 1996 Christopher G. Demetriou
+# * All rights reserved.
+# *
+# * Redistribution and use in source and binary forms, with or without
+# * modification, are permitted provided that the following conditions
+# * are met:
+# * 1. Redistributions of source code must retain the above copyright
+# *    notice, this list of conditions and the following disclaimer.
+# * 2. Redistributions in binary form must reproduce the above copyright
+# *    notice, this list of conditions and the following disclaimer in the
+# *    documentation and/or other materials provided with the distribution.
+# * 3. All advertising materials mentioning features or use of this software
+# *    must display the following acknowledgement:
+# *      This product includes software developed by Christopher G. Demetriou.
+# * 4. The name of the author may not be used to endorse or promote products
+# *    derived from this software without specific prior written permission
+# *
+# * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# *
+# */
 
-/*
- * Copyright (c) 2008 Miodrag Vallat.
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
+BEGIN {
+	nproducts = nvendor_dup = nvendors = 0
+	dfile="xbowdevs_data.h"
+	hfile="xbowdevs.h"
+}
+/^#!/	{next}
+$1 == "#version" {
+	VERSION = $0
+	gsub("^#version[	 ]", "", VERSION)
+	gsub("\\$", "", VERSION)
 
-vendor	SGI		0x0000
-vendor	SGI2		0x0023
-vendor	SGI3		0x0024
-vendor	SGI4		0x0036
-vendor	SGI5		0x02aa
+	printf("/*\n") > dfile
+	printf(" * THIS FILE AUTOMATICALLY GENERATED.  DO NOT EDIT.\n") \
+	    > dfile
+	printf(" *\n") > dfile
+	printf(" *\t%s\n", VERSION) > dfile
+	printf(" */\n\n") > dfile
 
-/*
- * List of known products.  Grouped by ``manufacturer''.
- */
+	printf("/*\n") > hfile
+	printf(" * THIS FILE AUTOMATICALLY GENERATED.  DO NOT EDIT.\n") \
+	    > hfile
+	printf(" *\n") > hfile
+	printf(" *\t%s\n", VERSION) > hfile
+	printf(" */\n") > hfile
 
-product	SGI	XBOW		0x0000	XBow
-product	SGI	XXBOW		0xd000	XXBow
+	next
+}
+$1 == "#vendor" {
+	nvendors++
 
-product	SGI2	ODYSSEY		0xc013	Odyssey
+	if ($2 in vendorindex) {
+		printf("duplicate vendor name %s\n", $2);
+		nvendor_dup++;
+	}
 
-product	SGI3	TPU		0xc202	TPU
-product	SGI3	XBRIDGE		0xd002	XBridge
+	vendorindex[$2] = nvendors;		# record index for this name, for later.
+	vendors[nvendors, 1] = $2;		# name
+	vendors[nvendors, 2] = $3;		# id
+	printf("#define\tXBOW_VENDOR_%s\t%s\n", vendors[nvendors, 1],
+	    vendors[nvendors, 2]) > hfile
 
-product	SGI4	HEART		0xc001	Heart
-product	SGI4	BRIDGE		0xc002	Bridge
-product	SGI4	HUB		0xc101	Hub
-product	SGI4	BEDROCK		0xc110	Bedrock
+	next
+}
+$1 == "#product" {
+	nproducts++
 
-product	SGI5	IMPACT		0xc003	ImpactSR
-product	SGI5	KONA		0xc102	Kona
+	products[nproducts, 1] = $2;		# vendor name
+	products[nproducts, 2] = $3;		# product id
+	products[nproducts, 3] = $4;		# id
+	printf("#define\tXBOW_PRODUCT_%s_%s\t%s\t", products[nproducts, 1],
+	    products[nproducts, 2], products[nproducts, 3]) > hfile
+
+	i=4; f = 5;
+
+	# comments
+	ocomment = oparen = 0
+	if (f <= NF) {
+		printf("\t/* ") > hfile
+		ocomment = 1;
+	}
+	while (f <= NF) {
+		if ($f == "#") {
+			printf("(") > hfile
+			oparen = 1
+			f++
+			continue
+		}
+		if (oparen) {
+			printf("%s", $f) > hfile
+			if (f < NF)
+				printf(" ") > hfile
+			f++
+			continue
+		}
+		products[nproducts, i] = $f
+		printf("%s", products[nproducts, i]) > hfile
+		if (f < NF)
+			printf(" ") > hfile
+		i++; f++;
+	}
+	if (oparen)
+		printf(")") > hfile
+	if (ocomment)
+		printf(" */") > hfile
+	printf("\n") > hfile
+
+	next
+}
+/^#/	{
+	sub(/^#/,"")
+	if ($0 == "")
+		blanklines++
+	print $0 > hfile
+	if (blanklines < 2)
+		print $0 > dfile
+}
+END {
+	# print out the match tables
+
+	printf("\n") > dfile
+
+	if (nvendor_dup > 0)
+		exit(1);
+
+	printf("/* Descriptions of known devices. */\n") > dfile
+
+	printf("struct xbow_product {\n") > dfile
+	printf("\tuint32_t vendor;\n") > dfile
+	printf("\tuint32_t product;\n") > dfile
+	printf("\tconst char *productname;\n") > dfile
+	printf("};\n\n") > dfile
+
+
+	printf("static const struct xbow_product xbow_products[] = {\n") \
+	    > dfile
+	for (i = 1; i <= nproducts; i++) {
+		printf("\t{\n") > dfile
+		printf("\t    XBOW_VENDOR_%s, XBOW_PRODUCT_%s_%s,\n",
+		    products[i, 1], products[i, 1], products[i, 2]) \
+		    > dfile
+
+		printf("\t    \"") > dfile
+		j = 4;
+		needspace = 0;
+		while (products[i, j] != "") {
+			if (needspace)
+				printf(" ") > dfile
+			printf("%s", products[i, j]) > dfile
+			needspace = 1
+			j++
+		}
+		printf("\",\n") > dfile
+		printf("\t},\n") > dfile
+	}
+	printf("\t{ 0, 0, NULL, }\n") > dfile
+	printf("};\n\n") > dfile
+}
+
+#
+#vendor	SGI		0x0000
+#vendor	SGI2		0x0023
+#vendor	SGI3		0x0024
+#vendor	SGI4		0x0036
+#vendor	SGI5		0x02aa
+#
+#/*
+# * List of known products.  Grouped by ``manufacturer''.
+# */
+#
+#product	SGI	XBOW		0x0000	XBow
+#product	SGI	XXBOW		0xd000	XXBow
+#
+#product	SGI2	ODYSSEY		0xc013	Odyssey
+#
+#product	SGI3	TPU		0xc202	TPU
+#product	SGI3	XBRIDGE		0xd002	XBridge
+#/* PIC is really a single chip but two widgets, with 4 PCI-X slots per widget */
+#product	SGI3	PIC0		0xd102	PIC (bus 0)
+#product	SGI3	PIC1		0xd112	PIC (bus 1)
+#/* Supposedly a PIC-compatible chip, maybe a different revision */
+#/* product	SGI3	?		0xe000	? (bus 0) */
+#/* product	SGI3	?		0xe010	? (bus 1) */
+#product	SGI3	TIOCA		0xe020	TIO:CA
+#
+#product	SGI4	HEART		0xc001	Heart
+#product	SGI4	BRIDGE		0xc002	Bridge
+#product	SGI4	HUB		0xc101	Hub
+#product	SGI4	BEDROCK		0xc110	Bedrock
+#
+#product	SGI5	IMPACT		0xc003	ImpactSR
+#product	SGI5	KONA		0xc102	Kona

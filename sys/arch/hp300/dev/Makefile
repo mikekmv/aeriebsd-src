@@ -1,6 +1,6 @@
 
 AWK=	awk
 
-diodevs.h diodevs_data.h: diodevs devlist2h.awk
+diodevs.h diodevs_data.h: diodevs
 	/bin/rm -f diodevs.h diodevs_data.h
-	${AWK} -f devlist2h.awk diodevs
+	${AWK} -f diodevs diodevs

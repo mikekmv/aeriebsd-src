@@ -1,6 +1,6 @@
 
 AWK=	awk
-PROG=	devlist2h.awk
+PROG=	hildevs
 SOURCE=	hildevs
 
 ${SOURCE}_data.h: ${SOURCE} ${PROG}

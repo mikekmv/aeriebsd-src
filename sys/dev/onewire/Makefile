@@ -1,6 +1,6 @@
 
 AWK?=	awk
 
-onewiredevs.h onewiredevs_data.h: onewiredevs devlist2h.awk
+onewiredevs.h onewiredevs_data.h: onewiredevs
 	/bin/rm -f onewiredevs.h onewiredevs_data.h
-	${AWK} -f devlist2h.awk onewiredevs
+	${AWK} -f onewiredevs onewiredevs

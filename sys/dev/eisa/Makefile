@@ -1,6 +1,6 @@
 
 AWK=	awk
 
-eisadevs.h eisadevs_data.h: eisadevs devlist2h.awk
+eisadevs.h eisadevs_data.h: eisadevs
 	/bin/rm -f eisadevs.h eisadevs_data.h
-	${AWK} -f devlist2h.awk eisadevs
+	${AWK} -f eisadevs eisadevs

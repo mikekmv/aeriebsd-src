@@ -1,6 +1,6 @@
 
 AWK=	awk
 
-sdmmcdevs.h: sdmmcdevs devlist2h.awk
+sdmmcdevs.h: sdmmcdevs
 	/bin/rm -f sdmmcdevs.h
-	${AWK} -f devlist2h.awk sdmmcdevs
+	${AWK} -f sdmmcdevs sdmmcdevs

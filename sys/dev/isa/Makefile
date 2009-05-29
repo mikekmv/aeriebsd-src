@@ -1,6 +1,6 @@
 
 AWK=	awk
 
-pnpdevs.h: pnpdevs devlist2h.awk
+pnpdevs.h: pnpdevs
 	/bin/rm -f pnpdevs.h
-	${AWK} -f devlist2h.awk pnpdevs
+	${AWK} -f pnpdevs pnpdevs
