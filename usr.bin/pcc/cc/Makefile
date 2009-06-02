@@ -8,7 +8,7 @@ MANDIR=		${PREFIX}/man/man
 TARGOS=		aeriebsd
 TARGMACH=       ${MACHINE_ARCH}
 
-CFLAGS+=	-DLIBEXECDIR=\"${PREFIX}/libexec\"
+CFLAGS+=	-DLIBEXECDIR=\"${PREFIX}/libexec/\"
 CPPFLAGS+=	-I${.CURDIR}/..
 CPPFLAGS+=	-DDEFMACH=\"${TARGMACH}\"
 
