@@ -1684,8 +1684,10 @@ msk_rxeof(struct sk_if_softc *sc_if, u_int16_t len, u_int32_t rxstat)
 	MSK_CDRXSYNC(sc_if, cur, BUS_DMASYNC_POSTREAD|BUS_DMASYNC_POSTWRITE);
 
 	cur_rx = &sc_if->sk_cdata.sk_rx_chain[cur];
-	dmamap = sc_if->sk_cdata.sk_rx_jumbo_map;
+	if (cur_rx->sk_mbuf == NULL)
+		return;
 
+	dmamap = sc_if->sk_cdata.sk_rx_jumbo_map;
 	bus_dmamap_sync(sc_if->sk_softc->sc_dmatag, dmamap, 0,
 	    dmamap->dm_mapsize, BUS_DMASYNC_POSTREAD);
 
@@ -2156,7 +2158,6 @@ msk_stop(struct sk_if_softc *sc_if)
 	/* Stop transfer of Rx descriptors */
 
 	/* Turn off various components of this interface. */
-	SK_XM_SETBIT_2(sc_if, XM_GPIO, XM_GPIO_RESETMAC);
 	SK_IF_WRITE_1(sc_if,0, SK_RXMF1_CTRL_TEST, SK_RFCTL_RESET_SET);
 	SK_IF_WRITE_1(sc_if,0, SK_TXMF1_CTRL_TEST, SK_TFCTL_RESET_SET);
 	SK_IF_WRITE_4(sc_if, 0, SK_RXQ1_BMU_CSR, SK_RXBMU_OFFLINE);
@@ -2178,9 +2179,6 @@ msk_stop(struct sk_if_softc *sc_if)
 	else
 		sc->sk_intrmask &= ~SK_Y2_INTRS2;
 	CSR_WRITE_4(sc, SK_IMR, sc->sk_intrmask);
-
-	SK_XM_READ_2(sc_if, XM_ISR);
-	SK_XM_WRITE_2(sc_if, XM_IMR, 0xFFFF);
 
 	/* Free RX and TX mbufs still in the queues. */
 	for (i = 0; i < MSK_RX_RING_CNT; i++) {
