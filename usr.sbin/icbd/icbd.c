@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.12 2009/05/21 14:02:21 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.13 2009/05/24 19:50:22 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -376,7 +376,6 @@ icbd_restrict(void)
 		exit(EX_UNAVAILABLE);
 	}
 	(void)setproctitle("icbd");
-	endpwent();
 }
 
 void
