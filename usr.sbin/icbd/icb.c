@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.15 2009/05/24 19:50:21 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.16 2009/06/03 22:59:53 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,7 +36,7 @@ void   icb_command(struct icb_session *, char *, char *, char *);
 int    icb_fields(char *, size_t);
 void   icb_groupmsg(struct icb_session *, char *);
 void   icb_login(struct icb_session *, char *, char *, char *);
-char  *icb_parse(char *, size_t, int *);
+char  *icb_parse(char *, size_t, size_t *);
 /* pointers to upper level functions */
 void (*icb_drop)(struct icb_session *, char *);
 void (*icb_log)(struct icb_session *, int, const char *, ...);
@@ -82,7 +82,8 @@ icb_input(struct icb_session *is, char *msg, size_t msglen)
 {
 	char *fields[ICB_MAXFIELDS];
 	char type;
-	int i, nf, pos = 0;
+	size_t pos = 0;
+	int i, nf;
 
 	is->last = getmonotime();
 	if (msglen < 2 || msglen != ((size_t)(unsigned char)msg[0]) + 1) {
@@ -517,13 +518,13 @@ icb_fields(char *msg, size_t msglen)
  *             beginning of the field at position specified by 'pos'
  */
 char *
-icb_parse(char *msg, size_t len, int *pos)
+icb_parse(char *msg, size_t len, size_t *pos)
 {
 	char *s = msg + *pos;
 	char *t = s;
 	size_t i;
 
-	if ((size_t)*pos > len)
+	if (*pos > len)
 		return (NULL);
 	for (i = 0; i < len - *pos; i++) {
 		if (t[i] == ICB_M_SEP) {
