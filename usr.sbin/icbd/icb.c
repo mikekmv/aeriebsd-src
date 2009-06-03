@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.14 2009/05/21 14:56:38 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.15 2009/05/24 19:50:21 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,7 +33,6 @@ static const char rcsid[] = "$ABSD: icb.c,v 1.14 2009/05/21 14:56:38 mikeb Exp $
 extern int creategroups;
 
 void   icb_command(struct icb_session *, char *, char *, char *);
-void   icb_exit(struct icb_session *);
 int    icb_fields(char *, size_t);
 void   icb_groupmsg(struct icb_session *, char *);
 void   icb_login(struct icb_session *, char *, char *, char *);
@@ -70,7 +69,7 @@ icb_start(struct icb_session *is)
 	(void)gethostname(hname, sizeof hname);
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%c%c%s%c%s", ICB_M_PROTO,
 	    '1', ICB_M_SEP, hname, ICB_M_SEP, "icbd");
-	buf[0] = (unsigned char) ++buflen;
+	buf[0] = ++buflen;
 	icb_send(is, buf, buflen + 1);
 	SETF(is->flags, ICB_SF_PROTOSENT);
 }
@@ -141,7 +140,7 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	struct icb_group *ig;
 	struct icb_session *s;
 
-	if (strlen(group) == 0)
+	if (!group || strlen(group) == 0)
 		group = defgrp;
 	LIST_FOREACH(ig, &groups, entry) {
 		if (strcmp(ig->name, group) == 0)
@@ -150,6 +149,7 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	if (ig == NULL) {
 		if (!creategroups) {
 			icb_error(is, "Invalid group %s", group);
+			icb_drop(is, NULL);
 			return;
 		} else {
 			if ((ig = icb_addgroup(is, group, NULL)) == NULL) {
@@ -163,6 +163,7 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	LIST_FOREACH(s, &ig->sess, entry) {
 		if (strcmp(s->nick, nick) == 0) {
 			icb_error(is, "Nick is already in use");
+			icb_drop(is, NULL);
 			return;
 		}
 	}
@@ -215,7 +216,7 @@ icb_groupmsg(struct icb_session *is, char *msg)
 
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_OPEN,
 	    is->nick, ICB_M_SEP, msg);
-	buf[0] = (unsigned char) ++buflen;
+	buf[0] = ++buflen;
 
 	LIST_FOREACH(s, &ig->sess, entry) {
 		if (s == is)
@@ -239,25 +240,14 @@ icb_privmsg(struct icb_session *is, char *whom, char *msg)
 		if (strcmp(s->nick, whom) == 0)
 			break;
 	}
-	if (s == NULL) {
+	if (!s) {
 		icb_error(is, "No such user");
 		return;
 	}
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_PERSONAL,
 	    is->nick, ICB_M_SEP, msg);
-	buf[0] = (unsigned char) ++buflen;
+	buf[0] = ++buflen;
 	icb_send(s, buf, buflen + 1);
-}
-
-/*
- *  icb_exit: sends a client exit ('g') packet
- */
-void
-icb_exit(struct icb_session *is)
-{
-	char buf[] = { 1, ICB_M_EXIT };
-
-	icb_send(is, buf, sizeof buf);
 }
 
 /*
@@ -306,7 +296,7 @@ icb_cmdout(struct icb_session *is, int type, char *outmsg)
 	}
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_CMDOUT,
 	    otype, ICB_M_SEP, outmsg);
-	buf[0] = (unsigned char) ++buflen;
+	buf[0] = ++buflen;
 	icb_send(is, buf, buflen + 1);
 }
 
@@ -341,7 +331,7 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_STATUS,
 	    msgtab[type].msg, ICB_M_SEP, statmsg);
-	buf[0] = (unsigned char) ++buflen;
+	buf[0] = ++buflen;
 	icb_send(is, buf, buflen + 1);
 }
 
@@ -370,19 +360,16 @@ void
 icb_error(struct icb_session *is, const char *fmt, ...)
 {
 	char buf[ICB_MSGSIZE];
-	char errmsg[512];
 	va_list ap;
 	int buflen;
 
-	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s", ICB_M_ERROR,
-	    errmsg);
-	buf[0] = (unsigned char) ++buflen;
-	icb_send(is, buf, buflen + 1);
-
 	va_start(ap, fmt);
-	vsnprintf(errmsg, sizeof errmsg, fmt, ap);
+	buflen = vsnprintf(&buf[2], sizeof buf - 2, fmt, ap);
 	va_end(ap);
-	icb_log(is, ICB_LOG_DEBUG, "%s", errmsg);
+	buf[0] = ++buflen;
+	buf[1] = ICB_M_ERROR;
+	icb_send(is, buf, buflen + 1);
+	icb_log(is, ICB_LOG_DEBUG, "%s", buf + 2);
 }
 
 /*
@@ -391,19 +378,20 @@ icb_error(struct icb_session *is, const char *fmt, ...)
 void
 icb_remove(struct icb_session *is, char *reason)
 {
-	char *msg = NULL;
+	char buf[ICB_MSGSIZE];
 
 	if (is->group) {
 		if (icb_ismoder(is->group, is))
-			(void)icb_passmoder(is->group, is, NULL);
+			(void)icb_pass(is->group, is, NULL);
 		LIST_REMOVE(is, entry);
-		(void)asprintf(&msg, "%s (%s@%s) just left: %s", is->nick,
-		    is->client, is->host, reason);
-		icb_status_group(is->group, NULL, STATUS_SIGNOFF, msg);
-		free(msg);
-	} else
-		icb_log(is, ICB_LOG_ERROR,
-		    "session isn't attached to any group");
+		if (reason)
+			(void)snprintf(buf, sizeof buf, "%s (%s@%s) just left"
+			    ": %s", is->nick, is->client, is->host, reason);
+		else
+			(void)snprintf(buf, sizeof buf, "%s (%s@%s) just left",
+			    is->nick, is->client, is->host);
+		icb_status_group(is->group, NULL, STATUS_SIGNOFF, buf);
+	}
 }
 
 /*
@@ -426,6 +414,7 @@ icb_addgroup(struct icb_session *is, char *name, char *mpass)
 	return (ig);
 }
 
+#ifdef notused
 /*
  *  icb_delgroup: removes a group from the list
  */
@@ -437,13 +426,13 @@ icb_delgroup(struct icb_group *ig)
 	/* well, i guess we should kick out participants! ;-) */
 	LIST_FOREACH(s, &ig->sess, entry) {
 		icb_status(s, STATUS_WARNING, "Group dismissed");
-		icb_exit(s);
 		s->group = NULL;
 	}
 	LIST_REMOVE(ig, entry);
 	bzero(ig, sizeof ig);	/* paranoic thing, obviously */
 	free(ig);
 }
+#endif
 
 /*
  *  icb_who: sends a list of users of the specified group (or the current
@@ -459,12 +448,12 @@ icb_who(struct icb_session *is, struct icb_group *ig)
 		ig = is->group;
 	LIST_FOREACH(s, &ig->sess, entry) {
 		(void)snprintf(buf, sizeof buf,
-		    "%c%c%s%c%d%c0%c%d%c%s%c%s%c%c",
+		    "%c%c%s%c%d%c0%c%d%c%s%c%s%c%s",
 		    icb_ismoder(ig, s) ? '*' : ' ', ICB_M_SEP,
 		    s->nick, ICB_M_SEP, getmonotime() - s->last,
 		    ICB_M_SEP, ICB_M_SEP, s->login, ICB_M_SEP,
 		    s->client, ICB_M_SEP, s->host, ICB_M_SEP,
-		    ISSETF(s->flags, ICB_SF_AWAY) ? '-' : '+');
+		    ISSETF(s->flags, ICB_SF_AWAY) ? "[away]" : "");
 		icb_cmdout(is, CMDOUT_WL, buf);
 	}
 }
@@ -481,40 +470,30 @@ icb_ismoder(struct icb_group *ig, struct icb_session *is)
 }
 
 /*
- *  icb_passmoder: passes moderation of group "ig" from "from" to "to",
- *                 returns -1 if "from" is not a moderator, 1 if passed
- *                 to "to" and 0 otherwise (no moderator or passed to the
- *                 internal bot
+ *  icb_pass: passes moderation of group "ig" from "from" to "to",
+ *            returns -1 if "from" is not a moderator, 1 if passed
+ *            to "to" and 0 otherwise (no moderator or passed to the
+ *            internal bot)
  */
 int
-icb_passmoder(struct icb_group *ig, struct icb_session *from,
+icb_pass(struct icb_group *ig, struct icb_session *from,
     struct icb_session *to)
 {
-	char *msg;
+	char buf[ICB_MSGSIZE];
 
 	if (ig->moder && ig->moder != from)
 		return (-1);
-	if (to != NULL && to->group == ig) {
-		ig->moder = to;
-		if (asprintf(&msg, "%s passed moderation of %s to %s",
-		    from ? from->nick : "server", ig->name, to->nick) > 0) {
-			icb_log(NULL, ICB_LOG_DEBUG, "%s", msg);
-			icb_status_group(ig, NULL, STATUS_NOTIFY, msg);
-			free(msg);
-		}
-	} else if (from) {
-		/* TODO: pass moderation to the internal bot */
-		ig->moder = NULL;
-		icb_status(from, STATUS_NOTIFY, "You're no longer a moderator");
-		if (asprintf(&msg, "%s dropped moderation of %s",
-		    from->nick, ig->name) > 0) {
-			icb_log(NULL, ICB_LOG_DEBUG, "%s", msg);
-			icb_status_group(ig, from, STATUS_NOTIFY, msg);
-			free(msg);
-		}
-		return (0);
-	} else
+	if (!from && !to)
 		return (-1);
+	ig->moder = to;
+	if (to) {
+		(void)snprintf(buf, sizeof buf, "%s just passed you moderation"
+		    " of %s", from ? from->nick : "server", ig->name);
+		icb_status(to, STATUS_NOTIFY, buf);
+	}
+	(void)snprintf(buf, sizeof buf, "%s has passed moderation "
+	    "to %s", from ? from->nick : "server", to ? to->nick : "server");
+	icb_status_group(ig, to, STATUS_NOTIFY, buf);
 	return (1);
 }
 

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.13 2009/05/24 19:50:22 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.14 2009/06/02 21:55:40 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -113,7 +113,7 @@ main(int argc, char *argv[])
 		errx(EX_CONFIG, "Can't specify both -4 and -6");
 
 	tzset();
-	setlocale(LC_ALL, "C");
+	(void)setlocale(LC_ALL, "C");
 
 	if (foreground)
 		openlog("icbd", LOG_PID | LOG_PERROR, LOG_DAEMON);
@@ -200,7 +200,7 @@ main(int argc, char *argv[])
 	if (!foreground)
 		icbd_restrict();
 
-	signal(SIGPIPE, SIG_IGN);
+	(void)signal(SIGPIPE, SIG_IGN);
 
 	(void)event_dispatch();
 
@@ -293,14 +293,14 @@ void
 icbd_drop(struct icb_session *is, char *reason)
 {
 	struct bufferevent **bev = NULL;
-	char *msg = "disconnected";
 
-	if (reason && strlen(reason) > 0)
-		msg = reason;
-	icb_remove(is, msg);
-	icbd_log(is, ICB_LOG_DEBUG, msg);
+	if (reason) {
+		icb_remove(is, reason);
+		icbd_log(is, ICB_LOG_DEBUG, reason);
+	} else
+		icb_remove(is, NULL);
 	bev = GETBEVP(is);
-	evbuffer_write(EVBUFFER_OUTPUT(*bev), EVBUFFER_FD(*bev));
+	(void)evbuffer_write(EVBUFFER_OUTPUT(*bev), EVBUFFER_FD(*bev));
 	(void)close(EVBUFFER_FD(*bev));
 	bufferevent_free(*bev);
 	free(is);
@@ -315,7 +315,7 @@ icbd_ioerr(struct bufferevent *bev __attribute__((__unused__)), short what,
 	if (what & EVBUFFER_TIMEOUT)
 		icbd_drop(is, "timeout");
 	else if (what & EVBUFFER_EOF)
-		icbd_drop(is, "client exited");
+		icbd_drop(is, NULL);
 	else if (what & EVBUFFER_ERROR)
 		icbd_drop(is, (what & EVBUFFER_READ) ? "read error" :
 		    "write error");	
@@ -339,7 +339,7 @@ icbd_log(struct icb_session *is, int level, const char *fmt, ...)
 	else
 		level = LOG_DEBUG;
 	va_start(ap, fmt);
-	vsnprintf(buf, sizeof buf, fmt, ap);
+	(void)vsnprintf(buf, sizeof buf, fmt, ap);
 	va_end(ap);
 	if (is) {
 		getpeerinfo(is, addr, sizeof addr, &port);

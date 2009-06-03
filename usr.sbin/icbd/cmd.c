@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.15 2009/05/21 14:56:38 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.16 2009/05/24 19:50:21 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,15 +32,11 @@ extern int creategroups;
 
 void icb_cmd_away(struct icb_cmdarg *);
 void icb_cmd_boot(struct icb_cmdarg *);
-void icb_cmd_group(struct icb_cmdarg *);
-void icb_cmd_help(struct icb_cmdarg *);
+void icb_cmd_change(struct icb_cmdarg *);
 void icb_cmd_personal(struct icb_cmdarg *);
-void icb_cmd_motd(struct icb_cmdarg *);
 void icb_cmd_noaway(struct icb_cmdarg *);
 void icb_cmd_pass(struct icb_cmdarg *);
-void icb_cmd_status(struct icb_cmdarg *);
 void icb_cmd_topic(struct icb_cmdarg *);
-void icb_cmd_wall(struct icb_cmdarg *);
 void icb_cmd_who(struct icb_cmdarg *);
 
 extern void (*icb_drop)(struct icb_session *, char *);
@@ -56,7 +52,7 @@ icb_cmd_lookup(char *cmd)
 	} cmdtab[] = {
 		{ "away",	icb_cmd_away },
 		{ "boot",	icb_cmd_boot },
-		{ "g",		icb_cmd_group },
+		{ "g",		icb_cmd_change },
 		{ "m",		icb_cmd_personal },
 		{ "msg",	icb_cmd_personal },
 		{ "noaway",	icb_cmd_noaway },
@@ -77,16 +73,18 @@ void
 icb_cmd_away(struct icb_cmdarg *ca)
 {
 	char buf[ICB_MAXNICKLEN + 13];
+	struct icb_session *is = ca->sess;
 
-	SETF(ca->sess->flags, ICB_SF_AWAY);
-	icb_status(ca->sess, STATUS_AWAY, "You've been marked as away");        
-	snprintf(buf, sizeof buf, "%s is away now", ca->sess->nick);
-	icb_status_group(ca->sess->group, ca->sess, STATUS_AWAY, buf);
+	SETF(is->flags, ICB_SF_AWAY);
+	icb_status(is, STATUS_AWAY, "You've been marked as away");        
+	(void)snprintf(buf, sizeof buf, "%s is away now", is->nick);
+	icb_status_group(is->group, is, STATUS_AWAY, buf);
 }
 
 void
 icb_cmd_boot(struct icb_cmdarg *ca)
 {
+	char buf[ICB_MAXNICKLEN + 12];
 	struct icb_group *ig;
 	struct icb_session *is, *s;
 
@@ -110,12 +108,15 @@ icb_cmd_boot(struct icb_cmdarg *ca)
 	}
 
 	/* okay, here we go, but first, be polite and notify a user */
-	icb_status(s, STATUS_BOOT, "You've just been booted");
+	(void)snprintf(buf, sizeof buf, "%s booted you", is->nick);
+	icb_status(s, STATUS_BOOT, buf);
+	(void)snprintf(buf, sizeof buf, "%s was booted", s->nick);
+	icb_status_group(s->group, s, STATUS_BOOT, buf);
 	icb_drop(s, "booted");
 }
 
 void
-icb_cmd_group(struct icb_cmdarg *ca)
+icb_cmd_change(struct icb_cmdarg *ca)
 {
 	char buf[ICB_MSGSIZE];
 	struct icb_group *ig;
@@ -157,7 +158,7 @@ icb_cmd_group(struct icb_cmdarg *ca)
 	if (is->group) {
 		changing = 1;
 		if (icb_ismoder(is->group, is))
-			(void)icb_passmoder(is->group, is, NULL);
+			(void)icb_pass(is->group, is, NULL);
 		LIST_REMOVE(is, entry);
 		(void)snprintf(buf, sizeof buf, "%s (%s@%s) just left",
 		    is->nick, is->client, is->host);
@@ -202,11 +203,12 @@ void
 icb_cmd_noaway(struct icb_cmdarg *ca)
 {
 	char buf[ICB_MAXNICKLEN + 9];
+	struct icb_session *is = ca->sess;
 
-	CLRF(ca->sess->flags, ICB_SF_AWAY);
-	icb_status(ca->sess, STATUS_NOAWAY, "You're no longer marked as away"); 
-	(void)snprintf(buf, sizeof buf, "%s is back", ca->sess->nick);
-	icb_status_group(ca->sess->group, ca->sess, STATUS_NOAWAY, buf);
+	CLRF(is->flags, ICB_SF_AWAY);
+	icb_status(is, STATUS_NOAWAY, "You're no longer marked as away"); 
+	(void)snprintf(buf, sizeof buf, "%s is back", is->nick);
+	icb_status_group(is->group, is, STATUS_NOAWAY, buf);
 }
 
 void
@@ -215,7 +217,7 @@ icb_cmd_pass(struct icb_cmdarg *ca)
 	struct icb_session *is = ca->sess;
 
 	if (!icb_ismoder(is->group, is))
-		(void)icb_passmoder(is->group, is->group->moder, is);
+		(void)icb_pass(is->group, is->group->moder, is);
 }
 
 void
