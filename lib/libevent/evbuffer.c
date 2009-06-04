@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2002-2004 Niels Provos <provos@citi.umich.edu>
  * All rights reserved.
@@ -48,7 +47,6 @@
 
 /* prototypes */
 
-void bufferevent_setwatermark(struct bufferevent *, short, size_t, size_t);
 void bufferevent_read_pressure_cb(struct evbuffer *, size_t, size_t, void *);
 
 static int
@@ -104,8 +102,17 @@ bufferevent_readcb(int fd, short event, void *arg)
 	 * If we have a high watermark configured then we don't want to
 	 * read more data than would make us reach the watermark.
 	 */
-	if (bufev->wm_read.high != 0)
-		howmuch = bufev->wm_read.high;
+	if (bufev->wm_read.high != 0) {
+		howmuch = bufev->wm_read.high - EVBUFFER_LENGTH(bufev->input);
+		/* we might have lowered the watermark, stop reading */
+		if (howmuch <= 0) {
+			struct evbuffer *buf = bufev->input;
+			event_del(&bufev->ev_read);
+			evbuffer_setcb(buf,
+			    bufferevent_read_pressure_cb, bufev);
+			return;
+		}
+	}
 
 	res = evbuffer_read(bufev->input, fd, howmuch);
 	if (res == -1) {
@@ -127,13 +134,12 @@ bufferevent_readcb(int fd, short event, void *arg)
 	len = EVBUFFER_LENGTH(bufev->input);
 	if (bufev->wm_read.low != 0 && len < bufev->wm_read.low)
 		return;
-	if (bufev->wm_read.high != 0 && len > bufev->wm_read.high) {
+	if (bufev->wm_read.high != 0 && len >= bufev->wm_read.high) {
 		struct evbuffer *buf = bufev->input;
 		event_del(&bufev->ev_read);
 
-		/* Now schedule a callback for us */
+		/* Now schedule a callback for us when the buffer changes */
 		evbuffer_setcb(buf, bufferevent_read_pressure_cb, bufev);
-		return;
 	}
 
 	/* Invoke the user callback - must always be called last */
@@ -375,6 +381,11 @@ bufferevent_settimeout(struct bufferevent *bufev,
     int timeout_read, int timeout_write) {
 	bufev->timeout_read = timeout_read;
 	bufev->timeout_write = timeout_write;
+
+	if (event_pending(&bufev->ev_read, EV_READ, NULL))
+		bufferevent_add(&bufev->ev_read, timeout_read);
+	if (event_pending(&bufev->ev_write, EV_WRITE, NULL))
+		bufferevent_add(&bufev->ev_write, timeout_write);
 }
 
 /*

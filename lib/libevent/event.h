@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2000-2004 Niels Provos <provos@citi.umich.edu>
  * All rights reserved.
@@ -269,6 +268,8 @@ int bufferevent_enable(struct bufferevent *bufev, short event);
 int bufferevent_disable(struct bufferevent *bufev, short event);
 void bufferevent_settimeout(struct bufferevent *bufev,
     int timeout_read, int timeout_write);
+void bufferevent_setwatermark(struct bufferevent *bufev, short events,
+    size_t lowmark, size_t highmark);
 
 #define EVBUFFER_LENGTH(x)	(x)->off
 #define EVBUFFER_DATA(x)	(x)->buffer

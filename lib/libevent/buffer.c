@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2002, 2003 Niels Provos <provos@citi.umich.edu>
  * All rights reserved.
@@ -149,12 +148,7 @@ evbuffer_add_vprintf(struct evbuffer *buf, const char *fmt, va_list ap)
 #endif
 		va_copy(aq, ap);
 
-#ifdef WIN32
-		sz = vsnprintf(buffer, space - 1, fmt, aq);
-		buffer[space - 1] = '\0';
-#else
 		sz = vsnprintf(buffer, space, fmt, aq);
-#endif
 
 		va_end(aq);
 
@@ -352,9 +346,6 @@ evbuffer_read(struct evbuffer *buf, int fd, int howmuch)
 	u_char *p;
 	size_t oldoff = buf->off;
 	int n = EVBUFFER_MAX_READ;
-#ifdef WIN32
-	DWORD dwBytesRead;
-#endif
 
 #ifdef FIONREAD
 	if (ioctl(fd, FIONREAD, &n) == -1 || n == 0) {
@@ -383,20 +374,11 @@ evbuffer_read(struct evbuffer *buf, int fd, int howmuch)
 	/* We can append new data at this point */
 	p = buf->buffer + buf->off;
 
-#ifndef WIN32
 	n = read(fd, p, howmuch);
 	if (n == -1)
 		return (-1);
 	if (n == 0)
 		return (0);
-#else
-	n = ReadFile((HANDLE)fd, p, howmuch, &dwBytesRead, NULL);
-	if (n == 0)
-		return (-1);
-	if (dwBytesRead == 0)
-		return (0);
-	n = dwBytesRead;
-#endif
 
 	buf->off += n;
 
@@ -411,24 +393,13 @@ int
 evbuffer_write(struct evbuffer *buffer, int fd)
 {
 	int n;
-#ifdef WIN32
-	DWORD dwBytesWritten;
-#endif
 
-#ifndef WIN32
 	n = write(fd, buffer->buffer, buffer->off);
 	if (n == -1)
 		return (-1);
 	if (n == 0)
 		return (0);
-#else
-	n = WriteFile((HANDLE)fd, buffer->buffer, buffer->off, &dwBytesWritten, NULL);
-	if (n == 0)
-		return (-1);
-	if (dwBytesWritten == 0)
-		return (0);
-	n = dwBytesWritten;
-#endif
+
 	evbuffer_drain(buffer, n);
 
 	return (n);
