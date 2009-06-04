@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.17 2009/06/03 23:06:56 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.18 2009/06/04 12:10:28 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -78,38 +78,40 @@ icb_start(struct icb_session *is)
  *  icb_input: main input processing routine
  */
 void
-icb_input(struct icb_session *is, char *msg, size_t msglen)
+icb_input(struct icb_session *is, char *msg,
+    size_t msglen __attribute__((unused)))
 {
 	char *fields[ICB_MAXFIELDS];
 	char type;
-	size_t pos = 0;
+	size_t datalen, pos = 0;
 	int i, nf;
 
 	is->last = getmonotime();
-	if (msglen < 2 || msglen != ((size_t)(unsigned char)msg[0]) + 1) {
-		icb_error(is, "Invalid packet length");
-		return;
-	}
+	datalen = (size_t)(unsigned char)msg[0] - 1;
 	type = msg[1];
+	msg += 2;
 	if (!ISSETF(is->flags, ICB_SF_LOGGEDIN) && type != ICB_M_LOGIN) {
 		icb_error(is, "Not logged in");
 		return;
 	}
-	if ((nf = icb_fields(msg+2, msglen-2)) >= ICB_MAXFIELDS) {
+	if ((nf = icb_fields(msg, datalen)) >= ICB_MAXFIELDS) {
 		icb_error(is, "Too much fields in the packet");
 		return;
 	}
 	bzero(fields, sizeof fields);
 	for (i = 0; i < nf; i++)
-		fields[i] = icb_parse(msg+2, msglen-2, &pos);
+		fields[i] = icb_parse(msg, datalen, &pos);
 	switch (type) {
 	case ICB_M_LOGIN:
 		if (nf < 4)
 			goto inputerr;
-		if (strcmp(fields[3], "login") == 0)
-			icb_login(is, fields[2], fields[1], fields[0]);
-		else
+		if (fields[3][0] == 'w') {
+			icb_error(is, "Command not implemented");
+			icb_drop(is, NULL);
+			return;
+		} else if (strcmp(fields[3], "login") != 0)
 			goto inputerr;
+		icb_login(is, fields[2], fields[1], fields[0]);
 		break;
 	case ICB_M_OPEN:
 		icb_groupmsg(is, fields[0]);
