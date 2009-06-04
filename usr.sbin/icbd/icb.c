@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.16 2009/06/03 22:59:53 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.17 2009/06/03 23:06:56 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -362,10 +362,10 @@ icb_error(struct icb_session *is, const char *fmt, ...)
 {
 	char buf[ICB_MSGSIZE];
 	va_list ap;
-	int buflen;
+	int buflen = 1;
 
 	va_start(ap, fmt);
-	buflen = vsnprintf(&buf[2], sizeof buf - 2, fmt, ap);
+	buflen += vsnprintf(&buf[2], sizeof buf - 2, fmt, ap);
 	va_end(ap);
 	buf[0] = ++buflen;
 	buf[1] = ICB_M_ERROR;
