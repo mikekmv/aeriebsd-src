@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.14 2009/06/02 21:55:40 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.15 2009/06/03 22:59:53 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -230,11 +230,18 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		(void)close(s);
 		return;
 	}
+	if ((is->buffer = calloc(ICB_MSGSIZE+1, 1)) == NULL) {
+		syslog(LOG_ERR, "calloc: %m");
+		(void)close(s);
+		free(is);
+		return;
+	}
 	bev = GETBEVP(is);
 	if ((*bev = bufferevent_new(s, icbd_dispatch, NULL, icbd_ioerr,
 	    is)) == NULL) {
 		syslog(LOG_ERR, "bufferevent_new: %m");
 		(void)close(s);
+		free(is->buffer);
 		free(is);
 		return;
 	}
@@ -242,6 +249,7 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		syslog(LOG_ERR, "bufferevent_enable: %m");
 		(void)close(s);
 		bufferevent_free(*bev);
+		free(is->buffer);
 		free(is);
 		return;
 	}
@@ -271,15 +279,28 @@ usage(void)
 void
 icbd_dispatch(struct bufferevent *bev, void *arg)
 {
-	char buf[ICB_MSGSIZE + 1];
 	struct icb_session *is = (struct icb_session *)arg;
 	size_t len;
 
-	bzero(buf, sizeof buf);
-	len = bufferevent_read(bev, buf, sizeof buf -1);
-	if (len == 0)
-		return;
-	icb_input(is, buf, len);
+	if (is->length == 0) {
+		bzero(is->buffer, ICB_MSGSIZE+1);
+		/* read length */
+		len = bufferevent_read(bev, is->buffer, 1);
+		/* we're about to read the whole packet */
+		is->length = (size_t)(unsigned char)is->buffer[0];
+		if (EVBUFFER_LENGTH(EVBUFFER_INPUT(bev)) >= is->length) {
+			(void)bufferevent_read(bev, &is->buffer[1], is->length);
+			icb_input(is);
+			is->length = 0;
+		} else {
+			/* set watermark to the expected length */
+			bufferevent_setwatermark(bev, EV_READ, is->length, 0);
+		}
+	} else {
+		(void)bufferevent_read(bev, &is->buffer[1], is->length);
+		icb_input(is);
+		is->length = 0;
+	}
 }
 
 void
@@ -303,6 +324,7 @@ icbd_drop(struct icb_session *is, char *reason)
 	(void)evbuffer_write(EVBUFFER_OUTPUT(*bev), EVBUFFER_FD(*bev));
 	(void)close(EVBUFFER_FD(*bev));
 	bufferevent_free(*bev);
+	free(is->buffer);
 	free(is);
 }
 

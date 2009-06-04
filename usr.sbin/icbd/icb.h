@@ -72,6 +72,8 @@ struct icb_session {
 	LIST_ENTRY(icb_session)	 entry;
 	void			*upper;
 	struct icb_group	*group;
+	char			*buffer;
+	size_t			 length;
 	char			 nick[ICB_MAXNICKLEN];
 	char			 client[ICB_MAXNICKLEN];
 	char			 host[MAXHOSTNAMELEN];
@@ -127,7 +129,7 @@ void icb_cmdout(struct icb_session *, int, char *);
 void icb_delgroup(struct icb_group *);
 void icb_error(struct icb_session *, const char *, ...);
 void icb_init(struct icbd_callbacks *);
-void icb_input(struct icb_session *, char *, size_t);
+void icb_input(struct icb_session *);
 int  icb_ismoder(struct icb_group *, struct icb_session *);
 int  icb_pass(struct icb_group *, struct icb_session *, struct icb_session *);
 void icb_privmsg(struct icb_session *, char *, char *);

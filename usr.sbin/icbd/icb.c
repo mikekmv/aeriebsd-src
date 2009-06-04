@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.18 2009/06/04 12:10:28 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.19 2009/06/04 13:26:40 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -78,10 +78,10 @@ icb_start(struct icb_session *is)
  *  icb_input: main input processing routine
  */
 void
-icb_input(struct icb_session *is, char *msg,
-    size_t msglen __attribute__((unused)))
+icb_input(struct icb_session *is)
 {
 	char *fields[ICB_MAXFIELDS];
+	char *msg = is->buffer;
 	char type;
 	size_t datalen, pos = 0;
 	int i, nf;
