@@ -111,7 +111,7 @@ himem_match(struct device *parent, void *match, void *aux)
 		return 0;
 
 	/* if no PAE or too little memory then screw it */
-	if (!(cpu_feature & CPUID_PAE) ||
+	if (!(cpu_feature & CPUID_PAE) || !avail_end2 ||
 	    (avail_end2 - avail_end) < 4 * HIMEM_MAXCMDS * PAGE_SIZE)
 		return 0;
 
