@@ -17,6 +17,8 @@
 ;	NOARGS	included, but don't define the syscall args structure
 ;	INDIR	included, but don't define the syscall args structure,
 ;		and allow it to be "really" varargs.
+;	NOLOCK	combined with the above to specify that the call
+;		does not need the MP big lock operated
 ;
 ; The compat options are defined in the syscalls.conf file, and the
 ; compat option name is prefixed to the syscall name.  Other than
