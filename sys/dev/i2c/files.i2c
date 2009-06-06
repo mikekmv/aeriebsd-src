@@ -159,3 +159,7 @@ file	dev/i2c/sdtemp.c			sdtemp
 device	adtfsm
 attach	adtfsm at i2c
 file	dev/i2c/adt7462.c			adtfsm
+
+device	ablecom
+attach	ablecom at i2c
+file	dev/i2c/ablecom.c			ablecom

@@ -47,6 +47,7 @@ struct iicprobelist {
 struct iicprobelist probe_addrs_sensor[] = {
 	{ 0x18, 0x1f },
 	{ 0x20, 0x2f },
+/*	{ 0x38, 0x3c },	for ablecom(4) but it may give troubles */
 	{ 0x48, 0x4e },
 	{ 0, 0 }
 };
@@ -894,6 +895,16 @@ iic_probe_sensor(struct device *self, u_int8_t addr)
 			name = "ds1721";	/* terrible probe */
 	}
 #endif
+
+	/* ablecom's ps monitor */
+	if (name == NULL && (addr & 0xf8) == 0x38 &&
+	    iicprobe(0x1c) == 'A' && iicprobe(0x1d) == 'B' &&
+	    iicprobe(0x1e) == 'L' && iicprobe(0x1f) == 'E' &&
+	    iicprobe(0x20) == 'C' && iicprobe(0x21) == 'O' &&
+	    iicprobe(0x22) == 'M') {
+		name = "ablecom";	/* pic16f818/9 */
+	}
+
 	if (name == NULL && (addr & 0xf8) == 0x28 && iicprobe(0x48) == addr &&
 	    (iicprobe(0x00) & 0x90) == 0x10 && iicprobe(0x58) == 0x90) {
 		if (iicprobe(0x5b) == 0x12)

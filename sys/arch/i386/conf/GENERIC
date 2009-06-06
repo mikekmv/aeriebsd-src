@@ -139,6 +139,7 @@ fins0	at isa? port 0x4e		# Fintek F71805 Super I/O
 
 aps0	at isa? port 0x1600		# ThinkPad Active Protection System
 
+ablecom* at iic?			# Ablecom PIC16f818/9 (PS)
 adc*	at iic?				# Analog Devices AD7416/AD7417/7418
 andl*	at iic?				# Andigilog aSC7611
 adl*	at iic?				# Andigilog aSC7621
