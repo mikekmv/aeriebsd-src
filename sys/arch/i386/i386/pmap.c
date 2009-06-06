@@ -1693,11 +1693,14 @@ pmap_activate(struct proc *p)
 /*
  * pmap_deactivate: deactivate a process' pmap
  */
-
 void
 pmap_deactivate(struct proc *p)
 {
 	struct pmap *pmap = p->p_vmspace->vm_map.pmap;
+
+	/* flush it off the current cpu */
+	lcr3(proc0.p_addr->u_pcb.pcb_cr3);
+	tlbflushg();
 
 	/*
 	 * mark the pmap no longer in use by this processor.
