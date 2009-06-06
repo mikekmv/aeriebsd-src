@@ -2553,7 +2553,7 @@ pmap_collect(struct pmap *pmap)
 	 * for its entire address space.
 	 */
 
-	pmap_do_remove(pmap, VM_MIN_ADDRESS, VM_MAX_ADDRESS,
+	pmap_do_remove(pmap, VM_MIN_ADDRESS, VM_MAXUSER_ADDRESS,
 	    PMAP_REMOVE_SKIPWIRED);
 }
 
