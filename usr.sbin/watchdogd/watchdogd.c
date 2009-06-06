@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Marc Balmer <marc@msys.ch>
  *
@@ -14,6 +13,10 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
+#if defined(LIBC_SCCS) && !defined(lint)
+static const char rcsid[] = "$ABSD$";
+#endif
 
 #include <sys/param.h>
 #include <sys/sysctl.h>
@@ -51,6 +54,7 @@ sighdlr(int signum)
 int
 main(int argc, char *argv[])
 {
+	struct rlimit	 rlim;
 	const char	*errstr;
 	size_t		 len;
 	u_int		 interval = 0, period = 30, nperiod;
@@ -138,6 +142,14 @@ main(int argc, char *argv[])
 		warn("can't daemonize, restoring original values");
 		goto restore;
 	}
+
+	/*
+	 * mlockall() below will wire the whole stack up to the limit
+	 * thus we have to reduce stack size to avoid resource abuse
+	 */
+	rlim.rlim_cur = 256 * 1024;
+	rlim.rlim_max = 256 * 1024;
+	(void)setrlimit(RLIMIT_STACK, &rlim);
 
 	(void)mlockall(MCL_CURRENT | MCL_FUTURE);
 	setpriority(PRIO_PROCESS, getpid(), -5);
