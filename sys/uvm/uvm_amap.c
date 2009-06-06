@@ -359,6 +359,9 @@ amap_extend(struct vm_map_entry *entry, vsize_t addsize)
 	 * XXXCDC: could we take advantage of a kernel realloc()?  
 	 */
 
+	if (slotneed >= UVM_AMAP_LARGE)
+		return E2BIG;
+
 	slotalloc = malloc_roundup(slotneed * MALLOC_SLOT_UNIT) /
 	    MALLOC_SLOT_UNIT;
 #ifdef UVM_AMAP_PPREF

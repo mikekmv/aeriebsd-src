@@ -834,10 +834,8 @@ uvm_map_p(struct vm_map *map, vaddr_t *startp, vsize_t size,
 
 		if (prev_entry->aref.ar_amap) {
 			error = amap_extend(prev_entry, size);
-			if (error) {
-				vm_map_unlock(map);
-				return (error);
-			}
+			if (error)
+				goto step3;
 		}
 
 		UVMCNT_INCR(map_backmerge);
