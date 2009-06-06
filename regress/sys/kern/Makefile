@@ -9,7 +9,7 @@ SUBDIR+= nanosleep noexec pread preadv ptmget pwrite pwritev rcvtimeo
 SUBDIR+= rlimit-file signal signal-stress sigsuspend
 SUBDIR+= syscall sysvmsg sysvsem
 SUBDIR+= sysvshm unalign unfdpass wait
-SUBDIR+= sig-stop
+SUBDIR+= sig-stop sig-euid
 
 install:
 
