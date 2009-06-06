@@ -1,0 +1,41 @@
+.\"
+.\" Michael Shalayeff, 2009. Public Domain.
+.\"
+.Dd $Mdocdate$
+.Dt ABLECOM 4
+.Os
+.Sh NAME
+.Nm ablecom
+.Nd Ablecom Power Supply sensor
+.Sh SYNOPSIS
+.Cd "ablecom* at iic?"
+.Sh DESCRIPTION
+The
+.Nm
+driver provides access to the sensors on the Ablecom power supplies.
+This includes two sensors for monitoring fan rpm and one for the
+staus of the whole power supply unit.
+Up to four power supply units are supported providing for
+redundant power supply configuration.
+There is no status to indicate which unit is being used
+in a redundant power supply configuration.
+.Sh SEE ALSO
+.Xr iic 4 ,
+.Xr intro 4 ,
+.Xr sensorsd 8 ,
+.Xr sysctl 8
+.Sh HISTORY
+The
+.Nm
+driver first appeared in
+.Ax 1.0 .
+.Sh AUTHORS
+The
+.Nm
+driver was written by
+.An Michael Shalayeff Aq mickey@lucifier.net .
+.Sh CAVEATS
+Some older revisions of power supplies may hang i2c bus if accessed.
+Thus the address space for this driver is not scanned currently.
+First known to work properly revision of the power supply firmware is 3.0 .
+Check out the label on the unit before use.
