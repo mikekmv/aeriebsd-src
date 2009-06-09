@@ -771,11 +771,9 @@ scsibus* at iopsp?
 
 # GPIO ``pin bus'' drivers
 #gpioiic* at gpio? offset 0 mask 0x3	# I2C bus bit-banging
-gpioiic* at gpio?
-iic*	at gpioiic?
+#iic*	at gpioiic?
 #gpioow* at gpio? offset 0 mask 0x1	# 1-Wire bus bit-banging
-gpioow*	at gpio?
-onewire* at gpioow?
+#onewire* at gpioow?
 
 # 1-Wire devices
 option ONEWIREVERBOSE
