@@ -259,6 +259,16 @@ dosetrlimit(struct proc *p, u_int which, struct rlimit *limp)
 
 	if (which == RLIMIT_STACK) {
 		/*
+		 * Return EINVAL if the new stack size limit is lower than
+		 * current usage. Otherwise, the process would get SIGSEGV the
+		 * moment it would try to access anything on it's current stack.
+		 * This conforms to SUSv2.
+		 */   
+		if (limp->rlim_cur < p->p_vmspace->vm_ssize * PAGE_SIZE ||
+		    limp->rlim_max < p->p_vmspace->vm_ssize * PAGE_SIZE)
+			return (EINVAL);
+
+		/*
 		 * Stack is allocated to the max at exec time with only
 		 * "rlim_cur" bytes accessible.  If stack limit is going
 		 * up make more accessible, if going down make inaccessible.
