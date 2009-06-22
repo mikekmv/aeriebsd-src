@@ -1,5 +1,5 @@
 
-SUBDIR+= md5 ksh pax systrace
+SUBDIR+= ed md5 ksh pax systrace
 
 install:
 
