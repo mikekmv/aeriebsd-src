@@ -22,8 +22,6 @@
 #define TCP_BACKLOG	5
 
 #define EVBUFFER_FD(x)	(EVENT_FD(&(x)->ev_read))
-#define GETBEVP(is)	((struct bufferevent **)&((is)->upper))
-#define GETBEV(is)	((struct bufferevent *)((is)->upper))
 
 /* icbd.c */
 time_t getmonotime(void);

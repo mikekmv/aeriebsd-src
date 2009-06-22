@@ -62,11 +62,12 @@ enum {
 
 #define ICB_MAXFIELDS		 10
 
+struct bufferevent;
 struct icb_group;
 
 struct icb_session {
 	LIST_ENTRY(icb_session)	 entry;
-	void			*upper;
+	struct bufferevent	*bev;
 	struct icb_group	*group;
 	char			 buffer[ICB_MSGSIZE+1];
 	size_t			 length;

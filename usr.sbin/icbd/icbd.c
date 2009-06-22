@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.17 2009/06/22 18:08:57 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.18 2009/06/22 18:31:25 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -214,7 +214,6 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
     void *arg __attribute__((__unused__)))
 {
 	char host[MAXHOSTNAMELEN];
-	struct bufferevent **bev = NULL;
 	struct sockaddr_storage ss;
 	struct icb_session *is;
 	socklen_t ss_len = sizeof ss;
@@ -230,18 +229,17 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		(void)close(s);
 		return;
 	}
-	bev = GETBEVP(is);
-	if ((*bev = bufferevent_new(s, icbd_dispatch, NULL, icbd_ioerr,
+	if ((is->bev = bufferevent_new(s, icbd_dispatch, NULL, icbd_ioerr,
 	    is)) == NULL) {
 		syslog(LOG_ERR, "bufferevent_new: %m");
 		(void)close(s);
 		free(is);
 		return;
 	}
-	if (bufferevent_enable(*bev, EV_READ)) {
+	if (bufferevent_enable(is->bev, EV_READ)) {
 		syslog(LOG_ERR, "bufferevent_enable: %m");
 		(void)close(s);
-		bufferevent_free(*bev);
+		bufferevent_free(is->bev);
 		free(is);
 		return;
 	}
@@ -293,24 +291,21 @@ icbd_dispatch(struct bufferevent *bev, void *arg)
 void
 icbd_write(struct icb_session *is, char *buf, size_t size)
 {
-	if (bufferevent_write(GETBEV(is), buf, size) == -1)
+	if (bufferevent_write(is->bev, buf, size) == -1)
 		syslog(LOG_ERR, "bufferevent_write: %m");
 }
 
 void
 icbd_drop(struct icb_session *is, char *reason)
 {
-	struct bufferevent **bev = NULL;
-
 	if (reason) {
 		icb_remove(is, reason);
 		icbd_log(is, LOG_DEBUG, reason);
 	} else
 		icb_remove(is, NULL);
-	bev = GETBEVP(is);
-	(void)evbuffer_write(EVBUFFER_OUTPUT(*bev), EVBUFFER_FD(*bev));
-	(void)close(EVBUFFER_FD(*bev));
-	bufferevent_free(*bev);
+	(void)evbuffer_write(EVBUFFER_OUTPUT(is->bev), EVBUFFER_FD(is->bev));
+	(void)close(EVBUFFER_FD(is->bev));
+	bufferevent_free(is->bev);
 	free(is);
 }
 
@@ -429,7 +424,7 @@ getpeerinfo(struct icb_session *is, char *addrbuf, size_t addrsz, int *port)
 
 	bzero(addr, sizeof addr);
 	bzero(&ss, sizeof ss);
-	if (getpeername(EVBUFFER_FD(GETBEV(is)), (struct sockaddr *)&ss,
+	if (getpeername(EVBUFFER_FD(is->bev), (struct sockaddr *)&ss,
 	    &ss_len) != 0)
 		return;
 	switch (ss.ss_family) {
