@@ -1,24 +1,26 @@
 
 SHELL=	/bin/sh
-ED=	../obj/ed
+ED=	${DESTDIR}/bin/ed
+REGRESS_TARGETS=check-ed
+CLEANFILES=*.ed *.red *.[oz]
 
-all: check
-	@:
-
-check: build test
+check-ed: build-ed test-ed
+	@cd ${.OBJDIR}
 	@if grep -h '\*\*\*' errs.o scripts.o; then :; else \
 		echo "tests completed successfully."; \
 	fi
 
-build: mkscripts.sh
+build-ed: ${.CURDIR}/mkscripts.sh *.t *err
+	@cd ${.OBJDIR}
+	lndir ${.CURDIR} .
 	@if [ -f errs.o ]; then :; else \
 		echo "building test scripts for $(ED) ..."; \
 		$(SHELL) mkscripts.sh $(ED); \
 	fi
 
-test: build ckscripts.sh
+test-ed: ${.CURDIR}/ckscripts.sh
+	@cd ${.OBJDIR}
 	@echo testing $(ED) ...
 	@$(SHELL) ckscripts.sh $(ED)
 
-clean:
-	rm -f *.ed *.red *.[oz] *~
+.include <bsd.regress.mk>

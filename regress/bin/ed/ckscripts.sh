@@ -33,4 +33,4 @@ for i in *.ed; do
 	fi
 done >scripts.o 2>&1
 
-grep -h '\*\*\*' errs.o scripts.o
+#grep -h '\*\*\*' errs.o scripts.o
