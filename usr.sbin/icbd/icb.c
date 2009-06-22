@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.19 2009/06/04 13:26:40 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.20 2009/06/04 15:03:50 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,6 +25,7 @@ static const char rcsid[] = "$ABSD: icb.c,v 1.19 2009/06/04 13:26:40 mikeb Exp $
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include <unistd.h>
 
 #include "icb.h"
@@ -159,7 +160,7 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 				icb_error(is, "Can't create group %s", group);
 				return;
 			}
-			icb_log(NULL, ICB_LOG_DEBUG, "%s created group %s",
+			icb_log(NULL, LOG_DEBUG, "%s created group %s",
 			    nick, group);
 		}
 	}
@@ -294,7 +295,7 @@ icb_cmdout(struct icb_session *is, int type, char *outmsg)
 		otype = "wg";
 		break;
 	default:
-		icb_log(is, ICB_LOG_ERROR, "unknown cmdout type");
+		icb_log(is, LOG_ERR, "unknown cmdout type");
 		return;
 	}
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_CMDOUT,
@@ -353,7 +354,7 @@ icb_status_group(struct icb_group *ig, struct icb_session *ex, int type,
 			continue;
 		icb_status(s, type, statmsg);
 	}
-	icb_log(NULL, ICB_LOG_DEBUG, "%s", statmsg);
+	icb_log(NULL, LOG_DEBUG, "%s", statmsg);
 }
 
 /*
@@ -372,7 +373,7 @@ icb_error(struct icb_session *is, const char *fmt, ...)
 	buf[0] = ++buflen;
 	buf[1] = ICB_M_ERROR;
 	icb_send(is, buf, buflen + 1);
-	icb_log(is, ICB_LOG_DEBUG, "%s", buf + 2);
+	icb_log(is, LOG_DEBUG, "%s", buf + 2);
 }
 
 /*

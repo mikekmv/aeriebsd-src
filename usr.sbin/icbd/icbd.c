@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.15 2009/06/03 22:59:53 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.16 2009/06/04 15:03:50 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -230,18 +230,11 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		(void)close(s);
 		return;
 	}
-	if ((is->buffer = calloc(ICB_MSGSIZE+1, 1)) == NULL) {
-		syslog(LOG_ERR, "calloc: %m");
-		(void)close(s);
-		free(is);
-		return;
-	}
 	bev = GETBEVP(is);
 	if ((*bev = bufferevent_new(s, icbd_dispatch, NULL, icbd_ioerr,
 	    is)) == NULL) {
 		syslog(LOG_ERR, "bufferevent_new: %m");
 		(void)close(s);
-		free(is->buffer);
 		free(is);
 		return;
 	}
@@ -249,11 +242,10 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		syslog(LOG_ERR, "bufferevent_enable: %m");
 		(void)close(s);
 		bufferevent_free(*bev);
-		free(is->buffer);
 		free(is);
 		return;
 	}
-	icbd_log(is, ICB_LOG_DEBUG, "connected");
+	icbd_log(is, LOG_DEBUG, "connected");
 
 	/* save host information */
 	getpeerinfo(is, host, sizeof host, NULL);
@@ -283,7 +275,7 @@ icbd_dispatch(struct bufferevent *bev, void *arg)
 	size_t len;
 
 	if (is->length == 0) {
-		bzero(is->buffer, ICB_MSGSIZE+1);
+		bzero(is->buffer, sizeof is->buffer);
 		/* read length */
 		len = bufferevent_read(bev, is->buffer, 1);
 		/* we're about to read the whole packet */
@@ -317,14 +309,13 @@ icbd_drop(struct icb_session *is, char *reason)
 
 	if (reason) {
 		icb_remove(is, reason);
-		icbd_log(is, ICB_LOG_DEBUG, reason);
+		icbd_log(is, LOG_DEBUG, reason);
 	} else
 		icb_remove(is, NULL);
 	bev = GETBEVP(is);
 	(void)evbuffer_write(EVBUFFER_OUTPUT(*bev), EVBUFFER_FD(*bev));
 	(void)close(EVBUFFER_FD(*bev));
 	bufferevent_free(*bev);
-	free(is->buffer);
 	free(is);
 }
 
@@ -351,15 +342,9 @@ icbd_log(struct icb_session *is, int level, const char *fmt, ...)
 	va_list ap;
 	int port;
 
-	if (!verbose && level == ICB_LOG_DEBUG)
+	if (!verbose && level == LOG_DEBUG)
 		return;
 
-	if (level == ICB_LOG_ERROR)
-		level = LOG_ERR;
-	else if (level == ICB_LOG_NORMAL)
-		level = LOG_NOTICE;
-	else
-		level = LOG_DEBUG;
 	va_start(ap, fmt);
 	(void)vsnprintf(buf, sizeof buf, fmt, ap);
 	va_end(ap);

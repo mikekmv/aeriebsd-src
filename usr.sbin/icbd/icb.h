@@ -24,10 +24,6 @@
 #define ICB_MAXPASSLEN		 32
 #define ICB_MAXTOPICLEN		 160
 
-#define ICB_LOG_ERROR		 0
-#define ICB_LOG_NORMAL		 1
-#define ICB_LOG_DEBUG		 2
-
 #define ICB_M_LOGIN		 'a'
 #define ICB_M_OPEN		 'b'
 #define ICB_M_PERSONAL		 'c'
@@ -72,7 +68,7 @@ struct icb_session {
 	LIST_ENTRY(icb_session)	 entry;
 	void			*upper;
 	struct icb_group	*group;
-	char			*buffer;
+	char			 buffer[ICB_MSGSIZE+1];
 	size_t			 length;
 	char			 nick[ICB_MAXNICKLEN];
 	char			 client[ICB_MAXNICKLEN];

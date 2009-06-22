@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.16 2009/05/24 19:50:21 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.17 2009/06/03 22:59:53 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -24,6 +24,7 @@ static const char rcsid[] = "$ABSD: cmd.c,v 1.16 2009/05/24 19:50:21 mikeb Exp $
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 #include <unistd.h>
 
 #include "icb.h"
@@ -137,7 +138,7 @@ icb_cmd_change(struct icb_cmdarg *ca)
 				icb_error(is, "Can't create group");
 				return;
 			}
-			icb_log(NULL, ICB_LOG_DEBUG, "%s created group %s",
+			icb_log(NULL, LOG_DEBUG, "%s created group %s",
 			    is->nick, ca->arg);
 		}
 	}
