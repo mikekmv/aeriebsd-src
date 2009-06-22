@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.16 2009/06/04 15:03:50 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.17 2009/06/22 18:08:57 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -272,27 +272,22 @@ void
 icbd_dispatch(struct bufferevent *bev, void *arg)
 {
 	struct icb_session *is = (struct icb_session *)arg;
-	size_t len;
 
 	if (is->length == 0) {
 		bzero(is->buffer, sizeof is->buffer);
 		/* read length */
-		len = bufferevent_read(bev, is->buffer, 1);
+		(void)bufferevent_read(bev, is->buffer, 1);
 		/* we're about to read the whole packet */
 		is->length = (size_t)(unsigned char)is->buffer[0];
-		if (EVBUFFER_LENGTH(EVBUFFER_INPUT(bev)) >= is->length) {
-			(void)bufferevent_read(bev, &is->buffer[1], is->length);
-			icb_input(is);
-			is->length = 0;
-		} else {
+		if (EVBUFFER_LENGTH(EVBUFFER_INPUT(bev)) < is->length) {
 			/* set watermark to the expected length */
 			bufferevent_setwatermark(bev, EV_READ, is->length, 0);
+			return;
 		}
-	} else {
-		(void)bufferevent_read(bev, &is->buffer[1], is->length);
-		icb_input(is);
-		is->length = 0;
 	}
+	(void)bufferevent_read(bev, &is->buffer[1], is->length);
+	icb_input(is);
+	is->length = 0;
 }
 
 void
