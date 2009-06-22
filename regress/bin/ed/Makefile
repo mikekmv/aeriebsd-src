@@ -12,7 +12,7 @@ check-ed: build-ed test-ed
 
 build-ed: ${.CURDIR}/mkscripts.sh *.t *err
 	@cd ${.OBJDIR}
-	lndir ${.CURDIR} .
+	lndir -e Makefile -e CVS -e obj ${.CURDIR} .
 	@if [ -f errs.o ]; then :; else \
 		echo "building test scripts for $(ED) ..."; \
 		$(SHELL) mkscripts.sh $(ED); \
