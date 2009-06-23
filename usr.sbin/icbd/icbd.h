@@ -14,16 +14,19 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __ICBD_H__
-#define __ICBD_H__
-
 #define ICBD_USER	"_icbd"
 
 #define TCP_BACKLOG	5
 
 #define EVBUFFER_FD(x)	(EVENT_FD(&(x)->ev_read))
 
+extern int verbose;
+
 /* icbd.c */
 time_t getmonotime(void);
 
-#endif	/* __ICBD_H__ */
+/* dns.c */
+struct sockaddr_storage;
+int	icbd_dns_init(void);
+void	icbd_dns(int, short, void *);
+int	dns_rresolv(struct icb_session *, struct sockaddr_storage *);

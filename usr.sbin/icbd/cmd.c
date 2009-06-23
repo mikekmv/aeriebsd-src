@@ -15,17 +15,17 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.17 2009/06/03 22:59:53 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.18 2009/06/22 18:08:57 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/queue.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <event.h>
 
 #include "icb.h"
 

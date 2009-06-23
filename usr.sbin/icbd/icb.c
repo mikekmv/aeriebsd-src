@@ -15,18 +15,18 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.20 2009/06/04 15:03:50 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.21 2009/06/22 18:08:57 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/queue.h>
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <event.h>
 
 #include "icb.h"
 #include "icbd.h"
@@ -312,7 +312,7 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 {
 	char buf[ICB_MSGSIZE];
 	int buflen;
-	static struct {
+	static const struct {
 		int		 type;
 		const char	*msg;
 	} msgtab[] = {

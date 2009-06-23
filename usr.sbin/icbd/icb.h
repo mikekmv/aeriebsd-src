@@ -14,8 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef __ICB_H__
-#define __ICB_H__
+#include <sys/queue.h>
 
 #define ICB_MSGSIZE		 256
 
@@ -62,18 +61,21 @@ enum {
 
 #define ICB_MAXFIELDS		 10
 
-struct bufferevent;
 struct icb_group;
 
 struct icb_session {
-	LIST_ENTRY(icb_session)	 entry;
-	struct bufferevent	*bev;
-	struct icb_group	*group;
-	char			 buffer[ICB_MSGSIZE+1];
-	size_t			 length;
 	char			 nick[ICB_MAXNICKLEN];
 	char			 client[ICB_MAXNICKLEN];
 	char			 host[MAXHOSTNAMELEN];
+	char			 buffer[ICB_MSGSIZE+1];
+	struct event		 ev;
+	LIST_ENTRY(icb_session)	 entry;
+	struct bufferevent	*bev;
+	struct icb_group	*group;
+	size_t			 length;
+	time_t			 login;
+	time_t			 last;
+	int			 port;
 	uint32_t		 flags;
 #define SETF(t, f)		 ((t) |= (f))
 #define CLRF(t, f)		 ((t) &= ~(f))
@@ -84,16 +86,14 @@ struct icb_session {
 #define ICB_SF_NOGROUP		 0x08
 #define ICB_SF_AWAY		 0x10
 #define ICB_SF_MODERATOR	 0x20
-	time_t			 login;
-	time_t			 last;
 };
 
 struct icb_group {
-	LIST_ENTRY(icb_group)	 entry;
-	LIST_HEAD(, icb_session) sess;
 	char			 name[ICB_MAXGRPLEN];
 	char			 mpass[ICB_MAXPASSLEN];
 	char			 topic[ICB_MAXTOPICLEN];
+	LIST_ENTRY(icb_group)	 entry;
+	LIST_HEAD(, icb_session) sess;
 	struct icb_session	*moder;
 };
 
@@ -107,10 +107,9 @@ struct icb_cmdarg {
 };
 
 struct icbd_callbacks {
-	void 			(*drop)(struct icb_session *, char *);
-	void 			(*log)(struct icb_session *, int, const char *,
-				    ...);
-	void 			(*send)(struct icb_session *, char *, size_t);
+	void 	(*drop)(struct icb_session *, char *);
+	void 	(*log)(struct icb_session *, int, const char *, ...);
+	void 	(*send)(struct icb_session *, char *, size_t);
 };
 
 #ifndef nitems
@@ -135,5 +134,3 @@ void icb_start(struct icb_session *);
 void icb_status(struct icb_session *, int , char *);
 void icb_status_group(struct icb_group *, struct icb_session *, int , char *);
 void icb_who(struct icb_session *, struct icb_group *);
-
-#endif	/* __ICB_H__ */

@@ -16,45 +16,41 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.18 2009/06/22 18:31:25 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.19 2009/06/22 18:40:55 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
-
+#include <sys/stat.h>
 #include <netinet/in.h>
-
 #include <arpa/inet.h>
-
-#include <err.h>
-#include <errno.h>
-#include <event.h>
 #include <fcntl.h>
-#include <locale.h>
-#include <netdb.h>
-#include <pwd.h>
-#include <grp.h>
-#include <login_cap.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <sysexits.h>
 #include <syslog.h>
-#include <unistd.h>
+#include <pwd.h>
+#include <login_cap.h>
+#include <locale.h>
+#include <netdb.h>
+#include <event.h>
+#include <errno.h>
+#include <err.h>
 
 #include "icb.h"
 #include "icbd.h"
 
 extern char *__progname;
 
-int creategroups = 0;
-
-static int foreground;
-static int verbose;
+int creategroups;
+int foreground;
+int verbose;
 
 void usage(void);
-void getpeerinfo(struct icb_session *, char *, size_t, int *);
+void getpeerinfo(struct icb_session *);
 void icbd_accept(int, short, void *);
 void icbd_drop(struct icb_session *, char *);
 void icbd_ioerr(struct bufferevent *, short, void *);
@@ -197,6 +193,9 @@ main(int argc, char *argv[])
 		return (EX_UNAVAILABLE);
 	}
 
+	/* start a dns resolver thread */
+	icbd_dns_init();
+
 	if (!foreground)
 		icbd_restrict();
 
@@ -210,10 +209,29 @@ main(int argc, char *argv[])
 }
 
 void
+icbd_dns(int fd, short event, void *arg)
+{
+	struct icb_session *is = arg;
+
+	if (event != EV_READ)
+		return;
+
+	if (verbose)
+		syslog(LOG_DEBUG, "icbd_dns");
+
+	if (read(fd, is->host, sizeof is->host) < 0)
+		syslog(LOG_ERR, "read: %m");
+
+	is->host[sizeof is->host - 1] = '\0';
+
+	if (verbose)
+		syslog(LOG_DEBUG, "icbd_dns: resolved %s", is->host);
+}
+
+void
 icbd_accept(int fd, short event __attribute__((__unused__)),
     void *arg __attribute__((__unused__)))
 {
-	char host[MAXHOSTNAMELEN];
 	struct sockaddr_storage ss;
 	struct icb_session *is;
 	socklen_t ss_len = sizeof ss;
@@ -246,9 +264,7 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 	icbd_log(is, LOG_DEBUG, "connected");
 
 	/* save host information */
-	getpeerinfo(is, host, sizeof host, NULL);
-	if (strlen(host) > 0)
-		strlcpy(is->host, host, sizeof is->host);
+	getpeerinfo(is);
 
 	/* start icb conversation */
 	icb_start(is);
@@ -327,10 +343,8 @@ icbd_ioerr(struct bufferevent *bev __attribute__((__unused__)), short what,
 void
 icbd_log(struct icb_session *is, int level, const char *fmt, ...)
 {
-	char addr[INET6_ADDRSTRLEN];
 	char buf[512];
 	va_list ap;
-	int port;
 
 	if (!verbose && level == LOG_DEBUG)
 		return;
@@ -338,40 +352,54 @@ icbd_log(struct icb_session *is, int level, const char *fmt, ...)
 	va_start(ap, fmt);
 	(void)vsnprintf(buf, sizeof buf, fmt, ap);
 	va_end(ap);
-	if (is) {
-		getpeerinfo(is, addr, sizeof addr, &port);
-		syslog(level, "%s:%u: %s", addr, port, buf);
-	} else {
+	if (is)
+		syslog(level, "%s:%u: %s", is->host, is->port, buf);
+	else
 		syslog(level, "%s", buf);
-	}
 }
 
 void
 icbd_restrict(void)
 {
-	struct passwd *pw;
+	struct stat	sb;
+	struct passwd	*pw;
 
 	if ((pw = getpwnam(ICBD_USER)) == NULL) {
 		syslog(LOG_ERR, "No passwd entry for %s", ICBD_USER);
 		exit(EX_NOUSER);
 	}
+
 	if (setusercontext(NULL, pw, pw->pw_uid,
 	    LOGIN_SETALL & ~LOGIN_SETUSER) < 0) {
-		syslog(LOG_ERR, "%s:%m", pw->pw_name);
+		syslog(LOG_ERR, "%s: %m", pw->pw_name);
 		exit(EX_NOPERM);
 	}
+
+	if (stat(pw->pw_dir, &sb) == -1) {
+		syslog(LOG_ERR, "%s: %m", pw->pw_name);
+		exit(EX_NOPERM);
+	}
+
+	if (sb.st_uid != 0 || (sb.st_mode & (S_IWGRP|S_IWOTH)) != 0) {
+		syslog(LOG_ERR, "bad directory permissions");
+		exit(EX_NOPERM);
+	}
+
 	if (chroot(pw->pw_dir) < 0) {
 		syslog(LOG_ERR, "%s:%m", pw->pw_dir);
 		exit(EX_UNAVAILABLE);
 	}
+
 	if (setuid(pw->pw_uid) < 0) {
 		syslog(LOG_ERR, "%d:%m", pw->pw_uid);
 		exit(EX_NOPERM);
 	}
+
 	if (chdir("/") < 0) {
 		syslog(LOG_ERR, "%m");
 		exit(EX_UNAVAILABLE);
 	}
+
 	(void)setproctitle("icbd");
 }
 
@@ -416,32 +444,26 @@ getmonotime(void)
 }
 
 void
-getpeerinfo(struct icb_session *is, char *addrbuf, size_t addrsz, int *port)
+getpeerinfo(struct icb_session *is)
 {
-	char addr[INET6_ADDRSTRLEN];
 	struct sockaddr_storage ss;
 	socklen_t ss_len = sizeof ss;
 
-	bzero(addr, sizeof addr);
 	bzero(&ss, sizeof ss);
 	if (getpeername(EVBUFFER_FD(is->bev), (struct sockaddr *)&ss,
 	    &ss_len) != 0)
 		return;
+
+	is->port = 0;
 	switch (ss.ss_family) {
 	case AF_INET:
-		(void)inet_ntop(AF_INET,
-		    &((struct sockaddr_in *)&ss)->sin_addr, addr,
-		    sizeof addr);
-		if (port)
-			*port = ntohs(((struct sockaddr_in *)&ss)->sin_port);
+		is->port = ntohs(((struct sockaddr_in *)&ss)->sin_port);
 		break;
+
 	case AF_INET6:
-		(void)inet_ntop(AF_INET6,
-		    &((struct sockaddr_in6 *)&ss)->sin6_addr, addr,
-		    sizeof addr);
-		if (port)
-			*port = ntohs(((struct sockaddr_in6 *)&ss)->sin6_port);
+		is->port = ntohs(((struct sockaddr_in6 *)&ss)->sin6_port);
 		break;
 	}
-	strlcpy(addrbuf, addr, addrsz);
+
+	dns_rresolv(is, &ss);
 }
