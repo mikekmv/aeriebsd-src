@@ -983,6 +983,7 @@ uvm_pagealloc_strat(obj, off, anon, flags, strat, free_list)
 		}
 
 		/* No pages free! */
+		KASSERT(uvmexp.free == 0);
 		goto fail;
 
 	case UVM_PGA_STRAT_ONLY:
