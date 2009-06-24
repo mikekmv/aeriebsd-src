@@ -98,7 +98,7 @@
 int npxintr(void *);
 static int npxprobe1(struct isa_attach_args *);
 static int x86fpflags_to_siginfo(u_int32_t);
-
+void npxreset(struct proc *, struct cpu_info *);
 
 struct npx_softc {
 	struct device sc_dev;
@@ -736,7 +736,6 @@ void
 npxsave_cpu(struct cpu_info *ci, int save)
 {
 	struct proc *p;
-	int s;
 
 	KDASSERT(ci == curcpu());
 
@@ -780,6 +779,18 @@ npxsave_cpu(struct cpu_info *ci, int save)
 	stts();
 	p->p_addr->u_pcb.pcb_cr0 |= CR0_TS;
 
+	npxreset(p, ci);
+}
+
+/*
+ * this simply clears up fpu bits from proc and cpu.
+ * in particular useful in the proc exit path.
+ */
+void
+npxreset(struct proc *p, struct cpu_info *ci)
+{
+	int s;
+
 	s = splipi();
 	p->p_addr->u_pcb.pcb_fpcpu = NULL;
 	ci->ci_fpcurproc = NULL;
@@ -794,19 +805,37 @@ npxsave_proc(struct proc *p, int save)
 {
 	struct cpu_info *ci = curcpu();
 	struct cpu_info *oci;
+#if defined(MULTIPROCESSOR)
+	int s;
+#endif
 
 	KDASSERT(p->p_addr != NULL);
 
+#if defined(MULTIPROCESSOR)
+	s = splipi();
+#endif
 	oci = p->p_addr->u_pcb.pcb_fpcpu;
-	if (oci == NULL)
+	if (oci == NULL) {
+#if defined(MULTIPROCESSOR)
+		splx(s);
+#endif
 		return;
+	}
 
 	IPRINTF(("%s: fp proc %s %lx\n", ci->ci_dev.dv_xname,
 	    save ? "save" : "flush", (u_long)p));
 
 #if defined(MULTIPROCESSOR)
-	if (oci == ci) {
-		int s = splipi();
+	if (!save) {
+		/*
+		 * even if the other cpu decided to fpuswitch we do not care.
+		 * there is still a potential race in us discarding and them
+		 * saving our fpu state and thus writing ci_fpcurproc but
+		 * we will prevail.
+		 */
+		npxreset(p, oci);
+		splx(s);
+	} else if (oci == ci) {
 		npxsave_cpu(ci, save);
 		splx(s);
 	} else {
@@ -814,6 +843,7 @@ npxsave_proc(struct proc *p, int save)
 		int spincount;
 #endif
 
+		splx(s);
 		IPRINTF(("%s: fp ipi to %s %s %lx\n", ci->ci_dev.dv_xname,
 		    oci->ci_dev.dv_xname, save ? "save" : "flush", (u_long)p));
 
