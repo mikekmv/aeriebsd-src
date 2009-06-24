@@ -604,7 +604,7 @@ try586:	/* Use the `cpuid' instruction. */
  */
 	movl	RELOC(_C_LABEL(nkpde)),%ecx		# count of pde s,
 	leal	(PROC0PDIR+0*4)(%esi),%ebx		# where temp maps!
-	leal	(SYSMAP+PG_V|PG_KW)(%esi),%eax		# pte for KPT in proc 0
+	leal	(SYSMAP+PG_V|PG_KW|PG_U|PG_M)(%esi),%eax # pte for KPT in proc0
 	fillkpt
 
 /*
@@ -613,11 +613,11 @@ try586:	/* Use the `cpuid' instruction. */
  */
 	movl	RELOC(_C_LABEL(nkpde)),%ecx		# count of pde s,
 	leal	(PROC0PDIR+PDSLOT_KERN*4)(%esi),%ebx	# map them high
-	leal	(SYSMAP+PG_V|PG_KW)(%esi),%eax		# pte for KPT in proc 0
+	leal	(SYSMAP+PG_V|PG_KW|PG_U|PG_M)(%esi),%eax # pte for KPT in proc0
 	fillkpt
 
 	/* Install a PDE recursively mapping page directory as a page table! */
-	leal	(PROC0PDIR+PG_V|PG_KW)(%esi),%eax	# pte for ptd
+	leal	(PROC0PDIR+PG_V|PG_KW|PG_U|PG_M)(%esi),%eax # pte for ptd
 	movl	%eax,(PROC0PDIR+PDSLOT_PTE*4)(%esi)	# recursive PD slot
 
 	/* Save phys. addr of PTD, for libkvm. */
