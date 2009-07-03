@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996 Christopher G. Demetriou.  All rights reserved.
  * Copyright (c) 1994 Charles Hannum.  All rights reserved.
@@ -95,7 +94,6 @@ struct pcibus_attach_args {
 	 * parent bridge, then we assume we are a root bus.
 	 */
 	pcitag_t	*pba_bridgetag;
-	pci_intr_handle_t *pba_bridgeih;
 
 	/*
 	 * Interrupt swizzling information.  These fields
@@ -123,7 +121,6 @@ struct pci_attach_args {
 	pcireg_t	pa_id, pa_class;
 
 	pcitag_t	*pa_bridgetag;
-	pci_intr_handle_t *pa_bridgeih;
 
 	/*
 	 * Interrupt information.
@@ -172,7 +169,6 @@ struct pci_softc {
 	LIST_HEAD(, pci_dev) sc_devs;
 	int sc_domain, sc_bus, sc_maxndevs;
 	pcitag_t *sc_bridgetag;
-	pci_intr_handle_t *sc_bridgeih;
 	u_int sc_intrswiz;
 	pcitag_t sc_intrtag;
 };

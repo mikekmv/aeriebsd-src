@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997, 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -28,7 +27,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Copyright (c) 1996 Christopher G. Demetriou.  All rights reserved.
  * Copyright (c) 1994 Charles M. Hannum.  All rights reserved.
@@ -58,7 +56,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Machine-specific functions for PCI autoconfiguration.
  *
@@ -91,7 +88,6 @@
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 #include <dev/pci/pcidevs.h>
-#include <dev/pci/ppbreg.h>
 
 #include "ioapic.h"
 
@@ -421,9 +417,12 @@ pci_intr_map(struct pci_attach_args *pa, pci_intr_handle_t *ihp)
 			return 0;
 		}
 		if (pa->pa_bridgetag) {
-			int pin = PPB_INTERRUPT_SWIZZLE(rawpin, dev);
-			if (pa->pa_bridgeih[pin - 1] != -1) {
-				*ihp = pa->pa_bridgeih[pin - 1];
+			int bridgebus, bridgedev;
+
+			pci_decompose_tag(pc, *pa->pa_bridgetag,
+			    &bridgebus, &bridgedev, NULL);
+			mppin = (bridgedev << 2)|((rawpin + dev - 1) & 0x3);
+			if (intr_find_mpmapping(bridgebus, mppin, ihp) == 0) {
 				*ihp |= line;
 				return 0;
 			}
@@ -449,18 +448,20 @@ pci_intr_map(struct pci_attach_args *pa, pci_intr_handle_t *ihp)
 	 * that the BIOS did its job, we also recognize that as meaning that
 	 * the BIOS has not configured the device.
 	 */
-	if (line == 0 || line == X86_PCI_INTERRUPT_LINE_NO_CONNECTION)
+	if (line == 0 || line == X86_PCI_INTERRUPT_LINE_NO_CONNECTION) {
+		printf("pci_intr_map: no mapping for pin %c (line=%02x)\n",
+		       '@' + pin, line);
 		goto bad;
-
-	if (line >= NUM_LEGACY_IRQS) {
-		printf("pci_intr_map: bad interrupt line %d\n", line);
-		goto bad;
+	} else {
+		if (line >= NUM_LEGACY_IRQS) {
+			printf("pci_intr_map: bad interrupt line %d\n", line);
+			goto bad;
+		}
+		if (line == 2) {
+			printf("pci_intr_map: changed line 2 to line 9\n");
+			line = 9;
+		}
 	}
-	if (line == 2) {
-		printf("pci_intr_map: changed line 2 to line 9\n");
-		line = 9;
-	}
-
 #if NIOAPIC > 0
 	if (mp_busses != NULL) {
 		if (mp_isa_bus != NULL &&

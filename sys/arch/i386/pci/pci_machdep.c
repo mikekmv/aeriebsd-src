@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -28,7 +27,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Copyright (c) 1996 Christopher G. Demetriou.  All rights reserved.
  * Copyright (c) 1994 Charles Hannum.  All rights reserved.
@@ -58,7 +56,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Machine-specific functions for PCI autoconfiguration.
  *
@@ -94,7 +91,6 @@ extern bios_pciinfo_t *bios_pciinfo;
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 #include <dev/pci/pcidevs.h>
-#include <dev/pci/ppbreg.h>
 
 #include "ioapic.h"
 
@@ -400,10 +396,7 @@ not2:
 int
 pci_intr_map(struct pci_attach_args *pa, pci_intr_handle_t *ihp)
 {
-	int pin = pa->pa_intrpin;
-	int line = pa->pa_intrline;
 #if NIOAPIC > 0
-	int rawpin = pa->pa_rawintrpin;
 	struct mp_intr_map *mip;
 	int bus, dev, func;
 #endif
@@ -412,13 +405,15 @@ pci_intr_map(struct pci_attach_args *pa, pci_intr_handle_t *ihp)
 	pci_chipset_tag_t pc = pa->pa_pc;
 	pcitag_t intrtag = pa->pa_intrtag;
 #endif
+	int pin = pa->pa_intrpin;
+	int line = pa->pa_intrline;
 
 	if (pin == 0) {
 		/* No IRQ used. */
 		goto bad;
 	}
 
-	if (pin > PCI_INTERRUPT_PIN_MAX) {
+	if (pin > 4) {
 		printf("pci_intr_map: bad interrupt pin %d\n", pin);
 		goto bad;
 	}
@@ -443,13 +438,18 @@ pci_intr_map(struct pci_attach_args *pa, pci_intr_handle_t *ihp)
 				return 0;
 			}
 		}
+		if (mip == NULL && pa->pa_bridgetag) {
+			int bridgebus, bridgedev;
 
-		if (pa->pa_bridgetag) {
-			int pin = PPB_INTERRUPT_SWIZZLE(rawpin, dev);
-			if (pa->pa_bridgeih[pin - 1].line != -1) {
-				ihp->line = pa->pa_bridgeih[pin - 1].line;
-				ihp->line |= line;
-				return 0;
+			pci_decompose_tag(pc, *pa->pa_bridgetag,
+			    &bridgebus, &bridgedev, NULL);
+			mpspec_pin = (bridgedev << 2)|((pin + dev - 1) & 0x3);
+			for (mip = mp_busses[bridgebus].mb_intrs; mip != NULL;
+			    mip = mip->next) {
+				if (mip->bus_pin == mpspec_pin) {
+					ihp->line = mip->ioapic_ih | line;
+					return 0;
+				}
 			}
 		}
 		/*
@@ -478,18 +478,19 @@ pci_intr_map(struct pci_attach_args *pa, pci_intr_handle_t *ihp)
 	 * that the BIOS did its job, we also recognize that as meaning that
 	 * the BIOS has not configured the device.
 	 */
-	if (line == 0 || line == I386_PCI_INTERRUPT_LINE_NO_CONNECTION)
+	if (line == 0 || line == 255) {
+		printf("pci_intr_map: no mapping for pin %c\n", '@' + pin);
 		goto bad;
-
-	if (line >= ICU_LEN) {
-		printf("pci_intr_map: bad interrupt line %d\n", line);
-		goto bad;
+	} else {
+		if (line >= ICU_LEN) {
+			printf("pci_intr_map: bad interrupt line %d\n", line);
+			goto bad;
+		}
+		if (line == 2) {
+			printf("pci_intr_map: changed line 2 to line 9\n");
+			line = 9;
+		}
 	}
-	if (line == 2) {
-		printf("pci_intr_map: changed line 2 to line 9\n");
-		line = 9;
-	}
-
 #if NIOAPIC > 0
 	if (!(ihp->line & PCI_INT_VIA_ISA) && mp_busses != NULL) {
 		if (mip == NULL && mp_isa_bus) {

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996 Christopher G. Demetriou.  All rights reserved.
  *
@@ -45,7 +44,6 @@ struct ppb_softc {
 	struct device sc_dev;		/* generic device glue */
 	pci_chipset_tag_t sc_pc;	/* our PCI chipset... */
 	pcitag_t sc_tag;		/* ...and tag. */
-	pci_intr_handle_t sc_ih[4];
 	void *sc_intrhand;
 	struct device *sc_psc;
 	int sc_cap_off;
@@ -106,7 +104,6 @@ ppbattach(struct device *parent, struct device *self, void *aux)
 	struct pcibus_attach_args pba;
 	pci_intr_handle_t ih;
 	pcireg_t busdata, reg;
-	int pin;
 
 	sc->sc_pc = pc;
 	sc->sc_tag = pa->pa_tag;
@@ -116,6 +113,12 @@ ppbattach(struct device *parent, struct device *self, void *aux)
 	if (PPB_BUSINFO_SECONDARY(busdata) == 0) {
 		printf(": not configured by system firmware\n");
 		return;
+	}
+
+	for (pin = PCI_INTERRUPT_PIN_A; pin <= PCI_INTERRUPT_PIN_D; pin++) {
+		pa->pa_intrpin = pa->pa_rawintrpin = pin;
+		pa->pa_intrline = 0;
+		pci_intr_map(pa, &sc->sc_ih[pin - PCI_INTERRUPT_PIN_A]);
 	}
 
 #if 0
@@ -153,12 +156,6 @@ ppbattach(struct device *parent, struct device *self, void *aux)
 
 	printf("\n");
 
-	for (pin = PCI_INTERRUPT_PIN_A; pin <= PCI_INTERRUPT_PIN_D; pin++) {
-		pa->pa_intrpin = pa->pa_rawintrpin = pin;
-		pa->pa_intrline = 0;
-		pci_intr_map(pa, &sc->sc_ih[pin - PCI_INTERRUPT_PIN_A]);
-	}
-
 	/*
 	 * Attach the PCI bus that hangs off of it.
 	 *
@@ -175,7 +172,6 @@ ppbattach(struct device *parent, struct device *self, void *aux)
 #endif
 	pba.pba_domain = pa->pa_domain;
 	pba.pba_bus = PPB_BUSINFO_SECONDARY(busdata);
-	pba.pba_bridgeih = sc->sc_ih;
 	pba.pba_bridgetag = &sc->sc_tag;
 	pba.pba_intrswiz = pa->pa_intrswiz;
 	pba.pba_intrtag = pa->pa_intrtag;

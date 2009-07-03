@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995, 1996 Christopher G. Demetriou.  All rights reserved.
  * Copyright (c) 1994 Charles Hannum.  All rights reserved.
@@ -28,7 +27,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * PCI bus autoconfiguration.
  */
@@ -154,7 +152,6 @@ pciattach(struct device *parent, struct device *self, void *aux)
 	sc->sc_domain = pba->pba_domain;
 	sc->sc_bus = pba->pba_bus;
 	sc->sc_bridgetag = pba->pba_bridgetag;
-	sc->sc_bridgeih = pba->pba_bridgeih;
 	sc->sc_maxndevs = pci_bus_maxdevs(pba->pba_pc, pba->pba_bus);
 	sc->sc_intrswiz = pba->pba_intrswiz;
 	sc->sc_intrtag = pba->pba_intrtag;
@@ -282,7 +279,6 @@ pci_probe_device(struct pci_softc *sc, pcitag_t tag,
 	pa.pa_id = id;
 	pa.pa_class = class;
 	pa.pa_bridgetag = sc->sc_bridgetag;
-	pa.pa_bridgeih = sc->sc_bridgeih;
 
 	/* This is a simplification of the NetBSD code.
 	   We don't support turning off I/O or memory
