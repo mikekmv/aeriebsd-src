@@ -242,8 +242,7 @@ remove:
 		ncp->nc_vhash.le_prev = NULL;
 	}
 
-	pool_put(&nch_pool, ncp);
-	numcache--;
+	TAILQ_INSERT_HEAD(&nclruhead, ncp, nc_lru);
 	return (-1);
 }
 
@@ -391,7 +390,7 @@ cache_enter(struct vnode *dvp, struct vnode *vp, struct componentname *cnp)
  * Name cache initialization, from vfs_init() when we are booting
  */
 void
-nchinit(void)
+nchinit()
 {
 
 	TAILQ_INIT(&nclruhead);
@@ -426,17 +425,22 @@ cache_purge(struct vnode *vp)
 /*
  * Cache flush, a whole filesystem; called when filesys is umounted to
  * remove entries that would now be invalid
+ *
+ * The line "nxtcp = nchhead" near the end is to avoid potential problems
+ * if the cache lru chain is modified while we are dumping the
+ * inode.  This makes the algorithm O(n^2), but do you think I care?
  */
 void
 cache_purgevfs(struct mount *mp)
 {
 	struct namecache *ncp, *nxtcp;
-   
+
 	for (ncp = TAILQ_FIRST(&nclruhead); ncp != TAILQ_END(&nclruhead);
 	    ncp = nxtcp) {
-		nxtcp = TAILQ_NEXT(ncp, nc_lru);
-		if (ncp->nc_dvp == NULL || ncp->nc_dvp->v_mount != mp)
+		if (ncp->nc_dvp == NULL || ncp->nc_dvp->v_mount != mp) {
+			nxtcp = TAILQ_NEXT(ncp, nc_lru);
 			continue;
+		}
 		/* free the resources we had */
 		ncp->nc_vp = NULL;
 		ncp->nc_dvp = NULL;
@@ -449,7 +453,8 @@ cache_purgevfs(struct mount *mp)
 			LIST_REMOVE(ncp, nc_vhash);
 			ncp->nc_vhash.le_prev = NULL;
 		}
-		pool_put(&nch_pool, ncp);
-		numcache--;
+		/* cause rescan of list, it may have altered */
+		nxtcp = TAILQ_FIRST(&nclruhead);
+		TAILQ_INSERT_HEAD(&nclruhead, ncp, nc_lru);
 	}
 }
