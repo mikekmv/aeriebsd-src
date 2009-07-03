@@ -171,7 +171,7 @@ umass_scsi_cmd(struct scsi_xfer *xs)
 	struct umass_softc *sc = sc_link->adapter_softc;
 
 	struct scsi_generic *cmd;
-	int cmdlen, dir, s;
+	int cmdlen, dir, rslt, s;
 
 #ifdef UMASS_DEBUG
 	microtime(&sc->tv);
@@ -261,10 +261,16 @@ umass_scsi_cmd(struct scsi_xfer *xs)
 	/* Return if command finishes early. */
  done:
 	xs->flags |= ITSDONE;
+	if (xs->flags & SCSI_POLL)
+		rslt = COMPLETE;
+	else
+		rslt = SUCCESSFULLY_QUEUED;
+
 	s = splbio();
 	scsi_done(xs);
 	splx(s);
-	return (COMPLETE);
+
+	return (rslt);
 }
 
 void
