@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.19 2009/06/22 18:40:55 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.20 2009/06/23 13:39:33 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -293,6 +293,10 @@ icbd_dispatch(struct bufferevent *bev, void *arg)
 		(void)bufferevent_read(bev, is->buffer, 1);
 		/* we're about to read the whole packet */
 		is->length = (size_t)(unsigned char)is->buffer[0];
+		if (is->length == 0) {
+			icbd_drop(is, "invalid packet");
+			return;
+		}
 		if (EVBUFFER_LENGTH(EVBUFFER_INPUT(bev)) < is->length) {
 			/* set watermark to the expected length */
 			bufferevent_setwatermark(bev, EV_READ, is->length, 0);
