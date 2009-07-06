@@ -1,4 +1,3 @@
-
 /*
  * value of $KSH_VERSION (or $SH_VERSION)
  */

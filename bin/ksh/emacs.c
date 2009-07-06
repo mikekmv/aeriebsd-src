@@ -1,4 +1,3 @@
-
 /*
  *  Emacs-like command line editing and history
  *
@@ -17,7 +16,7 @@
 #include "edit.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: emacs.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 static	Area	aedit;
@@ -322,7 +321,6 @@ x_emacs(char *buf, size_t len)
 	xlp_valid = true;
 	xmp = NULL;
 	x_curprefix = 0;
-	macroptr = (char *) 0;
 	x_histp = histptr + 1;
 	x_last_command = XFUNC_error;
 
@@ -363,6 +361,9 @@ x_emacs(char *buf, size_t len)
 
 		f = x_curprefix == -1 ? XFUNC_insert :
 		    x_tab[x_curprefix][c&CHARMASK];
+
+		if (macroptr && f == XFUNC_ins_string)
+		    f = XFUNC_insert;
 
 		if (!(x_ftab[f].xf_flags & XF_PREFIX) &&
 		    x_last_command != XFUNC_set_arg) {
@@ -1765,8 +1766,10 @@ x_e_getc(void)
 	} else {
 		if (macroptr) {
 			c = *macroptr++;
-			if (!*macroptr)
-				macroptr = (char *) 0;
+			if (!c) {
+				macroptr = NULL;
+				c = x_getc();
+			}
 		} else
 			c = x_getc();
 	}

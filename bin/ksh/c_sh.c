@@ -1,4 +1,3 @@
-
 /*
  * built-in Bourne commands
  */
@@ -9,7 +8,7 @@
 #include <sys/resource.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: c_sh.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
+static const char rcsid[] = "$ABSD: c_sh.c,v 1.2 2008/12/26 18:50:17 mickey Exp $";
 #endif
 
 static void p_time(struct shf *, int, struct timeval *, int, char *, char *);
@@ -712,7 +711,7 @@ c_times(char **wp)
  * time pipeline (really a statement, not a built-in command)
  */
 int
-timex(struct op *t, int f)
+timex(struct op *t, int f, volatile int *xerrok)
 {
 #define TF_NOARGS	BIT(0)
 #define TF_NOREAL	BIT(1)		/* don't report real time */
@@ -737,7 +736,7 @@ timex(struct op *t, int f)
 		 */
 		timerclear(&j_usrtime);
 		timerclear(&j_systime);
-		rv = execute(t->left, f | XTIME);
+		rv = execute(t->left, f | XTIME, xerrok);
 		if (t->left->type == TCOM)
 			tf |= t->left->str[0];
 		gettimeofday(&tv1, NULL);
@@ -859,7 +858,7 @@ c_mknod(char **wp)
 		}
 	}
 	argv = &wp[builtin_opt.optind];
-	if (argv[0] == '\0')
+	if (argv[0] == NULL)
 		goto usage;
 	for (argc = 0; argv[argc]; argc++)
 		;
@@ -883,6 +882,7 @@ c_mknod(char **wp)
 		umask(oldmode);
 	return ret;
 usage:
+	builtin_argv0 = NULL;
 	bi_errorf("usage: mknod [-m mode] name [b | c] major minor");
 	bi_errorf("usage: mknod [-m mode] name p");
 	return 1;

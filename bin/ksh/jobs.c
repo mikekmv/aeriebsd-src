@@ -1,8 +1,6 @@
-
 /*
  * Process and job control
  */
-
 /*
  * Reworked/Rewritten version of Eric Gisin's/Ron Natalie's code by
  * Larry Bouzane (larry@cs.mun.ca) and hacked again by
@@ -22,7 +20,7 @@
 #include "tty.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: jobs.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 /* Order important! */
@@ -334,7 +332,7 @@ j_change(void)
 
 /* execute tree in child subprocess */
 int
-exchild(struct op *t, int flags,
+exchild(struct op *t, int flags, volatile int *xerrok,
     int close_fd)	/* used if XPCLOSE or XCCLOSE */
 {
 	static Proc	*last_proc;	/* for pipelines */
@@ -351,7 +349,7 @@ exchild(struct op *t, int flags,
 		/* Clear XFORK|XPCLOSE|XCCLOSE|XCOPROC|XPIPEO|XPIPEI|XXCOM|XBGND
 		 * (also done in another execute() below)
 		 */
-		return execute(t, flags & (XEXEC | XERROK));
+		return execute(t, flags & (XEXEC | XERROK), xerrok);
 
 	/* no SIGCHLD's while messing with job and process lists */
 	sigprocmask(SIG_BLOCK, &sm_sigchld, &omask);
@@ -481,7 +479,7 @@ exchild(struct op *t, int flags,
 		Flag(FTALKING) = 0;
 		tty_close();
 		cleartraps();
-		execute(t, (flags & XERROK) | XEXEC); /* no return */
+		execute(t, (flags & XERROK) | XEXEC, NULL); /* no return */
 		internal_errorf(0, "exchild: execute() returned");
 		unwind(LLEAVE);
 		/* NOTREACHED */

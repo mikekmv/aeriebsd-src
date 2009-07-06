@@ -1,4 +1,3 @@
-
 /*
  * execute command tree
  */
@@ -9,14 +8,14 @@
 #include <sys/stat.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: exec.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 /* Does ps4 get parameter substitutions done? */
 # define PS4_SUBSTITUTE(s)	substitute((s), 0)
 
 static int	comexec(struct op *, struct tbl *volatile, char **,
-		    int volatile);
+		    int volatile, volatile int *);
 static void	scriptexec(struct op *, char **);
 static int	call_builtin(struct tbl *, char **);
 static int	iosetup(struct ioword *, struct tbl *);
@@ -34,9 +33,9 @@ static void	dbteste_error(Test_env *, int, const char *);
  */
 int
 execute(struct op *volatile t,
-    volatile int flags)		/* if XEXEC don't fork */
+    volatile int flags, volatile int *xerrok)		/* if XEXEC don't fork */
 {
-	int i;
+	int i, dummy = 0;
 	volatile int rv = 0;
 	int pv[2];
 	char ** volatile ap;
@@ -47,6 +46,10 @@ execute(struct op *volatile t,
 	if (t == NULL)
 		return 0;
 
+	/* Caller doesn't care if XERROK should propagate. */
+	if (xerrok == NULL)
+		xerrok = &dummy;
+
 	/* Is this the end of a pipeline?  If so, we want to evaluate the
 	 * command arguments
 	bool eval_done = false;
@@ -56,7 +59,7 @@ execute(struct op *volatile t,
 	}
 	 */
 	if ((flags&XFORK) && !(flags&XEXEC) && t->type != TPIPE)
-		return exchild(t, flags & ~XTIME, -1); /* run in sub-process */
+		return exchild(t, flags & ~XTIME, xerrok, -1); /* run in sub-process */
 
 	newenv(E_EXEC);
 	if (trap)
@@ -114,11 +117,11 @@ execute(struct op *volatile t,
 
 	switch (t->type) {
 	case TCOM:
-		rv = comexec(t, tp, ap, flags);
+		rv = comexec(t, tp, ap, flags, xerrok);
 		break;
 
 	case TPAREN:
-		rv = execute(t->left, flags|XFORK);
+		rv = execute(t->left, flags|XFORK, xerrok);
 		break;
 
 	case TPIPE:
@@ -134,7 +137,7 @@ execute(struct op *volatile t,
 			 *    (: ; cat /etc/termcap) | sleep 1
 			 *  will hang forever).
 			 */
-			exchild(t->left, flags|XPIPEO|XCCLOSE, pv[0]);
+			exchild(t->left, flags|XPIPEO|XCCLOSE, NULL, pv[0]);
 			(void) ksh_dup2(pv[0], 0, false); /* stdin of next */
 			closepipe(pv);
 			flags |= XPIPEI;
@@ -143,17 +146,17 @@ execute(struct op *volatile t,
 		restfd(1, e->savefd[1]); /* stdout of last */
 		e->savefd[1] = 0; /* no need to re-restore this */
 		/* Let exchild() close 0 in parent, after fork, before wait */
-		i = exchild(t, flags|XPCLOSE, 0);
+		i = exchild(t, flags|XPCLOSE, xerrok, 0);
 		if (!(flags&XBGND) && !(flags&XXCOM))
 			rv = i;
 		break;
 
 	case TLIST:
 		while (t->type == TLIST) {
-			execute(t->left, flags & XERROK);
+			execute(t->left, flags & XERROK, NULL);
 			t = t->right;
 		}
-		rv = execute(t, flags & XERROK);
+		rv = execute(t, flags & XERROK, xerrok);
 		break;
 
 	case TCOPROC:
@@ -211,7 +214,7 @@ execute(struct op *volatile t,
 		 */
 		flags &= ~XEXEC;
 		exchild(t->left, flags|XBGND|XFORK|XCOPROC|XCCLOSE,
-		    coproc.readw);
+		    NULL, coproc.readw);
 		break;
 	    }
 
@@ -220,20 +223,24 @@ execute(struct op *volatile t,
 		 * forks again for async...  parent should optimize
 		 * this to "foo &"...
 		 */
-		rv = execute(t->left, (flags&~XEXEC)|XBGND|XFORK);
+		rv = execute(t->left, (flags&~XEXEC)|XBGND|XFORK, xerrok);
 		break;
 
 	case TOR:
 	case TAND:
-		rv = execute(t->left, XERROK);
-		if (t->right != NULL && (rv == 0) == (t->type == TAND))
-			rv = execute(t->right, flags & XERROK);
-		else
-			flags |= XERROK;
+		rv = execute(t->left, XERROK, xerrok);
+		if ((rv == 0) == (t->type == TAND))
+			rv = execute(t->right, XERROK, xerrok);
+		flags |= XERROK;
+		if (xerrok)
+			*xerrok = 1;
 		break;
 
 	case TBANG:
-		rv = !execute(t->right, XERROK);
+		rv = !execute(t->right, XERROK, xerrok);
+		flags |= XERROK;
+		if (xerrok)
+			*xerrok = 1;
 		break;
 
 	case TDBRACKET:
@@ -275,7 +282,7 @@ execute(struct op *volatile t,
 		if (t->type == TFOR) {
 			while (*ap != NULL) {
 				setstr(global(t->str), *ap++, KSH_UNWIND_ERROR);
-				rv = execute(t->left, flags & XERROK);
+				rv = execute(t->left, flags & XERROK, xerrok);
 			}
 		} else { /* TSELECT */
 			for (;;) {
@@ -285,7 +292,7 @@ execute(struct op *volatile t,
 				}
 				is_first = false;
 				setstr(global(t->str), cp, KSH_UNWIND_ERROR);
-				rv = execute(t->left, flags & XERROK);
+				rv = execute(t->left, flags & XERROK, xerrok);
 			}
 		}
 	    }
@@ -308,17 +315,17 @@ execute(struct op *volatile t,
 			}
 		}
 		rv = 0; /* in case of a continue */
-		while ((execute(t->left, XERROK) == 0) == (t->type == TWHILE))
-			rv = execute(t->right, flags & XERROK);
+		while ((execute(t->left, XERROK, NULL) == 0) == (t->type == TWHILE))
+			rv = execute(t->right, flags & XERROK, xerrok);
 		break;
 
 	case TIF:
 	case TELIF:
 		if (t->right == NULL)
 			break;	/* should be error */
-		rv = execute(t->left, XERROK) == 0 ?
-		    execute(t->right->left, flags & XERROK) :
-		    execute(t->right->right, flags & XERROK);
+		rv = execute(t->left, XERROK, NULL) == 0 ?
+		    execute(t->right->left, flags & XERROK, xerrok) :
+		    execute(t->right->right, flags & XERROK, xerrok);
 		break;
 
 	case TCASE:
@@ -330,11 +337,11 @@ execute(struct op *volatile t,
 				goto Found;
 		break;
 	  Found:
-		rv = execute(t->left, flags & XERROK);
+		rv = execute(t->left, flags & XERROK, xerrok);
 		break;
 
 	case TBRACE:
-		rv = execute(t->left, flags & XERROK);
+		rv = execute(t->left, flags & XERROK, xerrok);
 		break;
 
 	case TFUNCT:
@@ -345,7 +352,7 @@ execute(struct op *volatile t,
 		/* Clear XEXEC so nested execute() call doesn't exit
 		 * (allows "ls -l | time grep foo").
 		 */
-		rv = timex(t, flags & ~XEXEC);
+		rv = timex(t, flags & ~XEXEC, xerrok);
 		break;
 
 	case TEXEC:		/* an eval'd TCOM */
@@ -365,7 +372,8 @@ execute(struct op *volatile t,
 	quitenv(NULL);		/* restores IO */
 	if ((flags&XEXEC))
 		unwind(LEXIT);	/* exit child */
-	if (rv != 0 && !(flags & XERROK)) {
+	if (rv != 0 && !(flags & XERROK) &&
+	    (xerrok == NULL || !*xerrok)) {
 		trapsig(SIGERR_);
 		if (Flag(FERREXIT))
 			unwind(LERROR);
@@ -378,7 +386,8 @@ execute(struct op *volatile t,
  */
 
 static int
-comexec(struct op *t, struct tbl *volatile tp, char **ap, volatile int flags)
+comexec(struct op *t, struct tbl *volatile tp, char **ap, volatile int flags,
+    volatile int *xerrok)
 {
 	int i;
 	volatile int rv = 0;
@@ -589,7 +598,7 @@ comexec(struct op *t, struct tbl *volatile tp, char **ap, volatile int flags)
 		i = sigsetjmp(e->jbuf, 0);
 		if (i == 0) {
 			/* seems odd to pass XERROK here, but at&t ksh does */
-			exstat = execute(tp->val.t, flags & XERROK);
+			exstat = execute(tp->val.t, flags & XERROK, xerrok);
 			i = LRETURN;
 		}
 		kshname = old_kshname;
@@ -664,7 +673,7 @@ comexec(struct op *t, struct tbl *volatile tp, char **ap, volatile int flags)
 		texec.left = t;	/* for tprint */
 		texec.str = tp->val.s;
 		texec.args = ap;
-		rv = exchild(&texec, flags, -1);
+		rv = exchild(&texec, flags, xerrok, -1);
 		break;
 	}
   Leave:

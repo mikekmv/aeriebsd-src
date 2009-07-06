@@ -1,4 +1,3 @@
-
 /*
  * shell buffered IO and formatted output
  */
@@ -8,7 +7,7 @@
 #include <sys/stat.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: io.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 static int initio_done;

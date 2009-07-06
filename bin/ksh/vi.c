@@ -1,10 +1,10 @@
-
 /*
  *	vi command editing
  *	written by John Rochester (initially for nsh)
  *	bludgeoned to fit pdksh by Larry Bouzane, Jeff Sparkes & Eric Gisin
  *
  */
+
 #include "config.h"
 #ifdef VI
 
@@ -14,7 +14,7 @@
 #include "edit.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: vi.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 
 #define CMDLEN		2048
@@ -416,13 +416,18 @@ vi_hook(int ch)
 			refresh(0);
 			return 0;
 		} else if (ch == edchars.werase) {
+			struct edstate new_es, *save_es;
 			int i;
 			int n = srchlen;
 
-			while (n > 0 && isspace(locpat[n - 1]))
-				n--;
-			while (n > 0 && !isspace(locpat[n - 1]))
-				n--;
+			new_es.cursor = n;
+			new_es.cbuf = locpat;
+
+			save_es = es;
+			es = &new_es;
+			n = backword(1);
+			es = save_es;
+
 			for (i = srchlen; --i >= n; )
 				es->linelen -= char_len((unsigned char)locpat[i]);
 			srchlen = n;
@@ -599,7 +604,7 @@ vi_insert(int ch)
 	}
 	if (ch == edchars.werase) {
 		if (es->cursor != 0) {
-			tcursor = Backword(1);
+			tcursor = backword(1);
 			memmove(&es->cbuf[tcursor], &es->cbuf[es->cursor],
 			    es->linelen - es->cursor);
 			es->linelen -= es->cursor - tcursor;

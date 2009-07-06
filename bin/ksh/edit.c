@@ -1,4 +1,3 @@
-
 /*
  * Command line editing - common code
  *
@@ -18,7 +17,7 @@
 #include <sys/stat.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: edit.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 static void x_sigwinch(int);

@@ -1,10 +1,8 @@
-
 /*
  * command history
  *
  * only implements in-memory history.
  */
-
 /*
  *	This file contains
  *	a)	the original in-memory history  mechanism
@@ -19,7 +17,7 @@
 
 #ifdef HISTORY
 #ifndef lint
-static const char rcsid[] = "$ABSD: history.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
+static const char rcsid[] = "$ABSD: history.c,v 1.2 2008/12/26 18:50:18 mickey Exp $";
 #endif
 
 # include <sys/file.h>
@@ -677,7 +675,8 @@ hist_init(Source *s)
 			if (base != MAP_FAILED)
 				munmap((caddr_t)base, hsize);
 			hist_finish();
-			unlink(hname);
+			if (unlink(hname) != 0)
+				return;
 			goto retry;
 		}
 		if (hsize > 2) {
@@ -685,7 +684,8 @@ hist_init(Source *s)
 			if (lines > histsize) {
 				/* we need to make the file smaller */
 				if (hist_shrink(base, hsize))
-					unlink(hname);
+					if (unlink(hname) != 0)
+						return;
 				munmap((caddr_t)base, hsize);
 				hist_finish();
 				goto retry;

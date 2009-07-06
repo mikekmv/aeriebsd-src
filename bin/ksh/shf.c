@@ -1,4 +1,3 @@
-
 /*
  *  Shell file I/O routines
  */
@@ -8,7 +7,7 @@
 #include "ksh_limval.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: shf.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 
 /* flags to shf_emptybuf() */

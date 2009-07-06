@@ -1,4 +1,3 @@
-
 /*
  * signal handling
  */
@@ -6,7 +5,7 @@
 #include "sh.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: trap.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 
 Trap sigtraps[NSIG + 1];

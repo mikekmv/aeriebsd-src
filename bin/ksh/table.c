@@ -1,4 +1,3 @@
-
 /*
  * dynamic hashed associative table for commands and variables
  */
@@ -6,13 +5,13 @@
 #include "sh.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: table.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 
 #define	INIT_TBLS	8	/* initial table size (power of 2) */
 
 static void	texpand(struct table *, int);
-static int	tnamecmp(void *, void *);
+static int	tnamecmp(const void *, const void *);
 
 
 unsigned int
@@ -157,9 +156,11 @@ ktnext(struct tstate *ts)
 }
 
 static int
-tnamecmp(void *p1, void *p2)
+tnamecmp(const void *p1, const void *p2)
 {
-	return strcmp(((struct tbl *)p1)->name, ((struct tbl *)p2)->name);
+	char *name1 = (*(struct tbl **)p1)->name;
+	char *name2 = (*(struct tbl **)p2)->name;
+	return strcmp(name1, name2);
 }
 
 struct tbl **

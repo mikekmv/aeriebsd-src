@@ -1,4 +1,3 @@
-
 /*
  * startup, main loop, environments and error handling
  */
@@ -10,7 +9,7 @@
 #include <pwd.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: main.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
+static const char rcsid[] = "$ABSD: main.c,v 1.2 2008/12/26 18:50:18 mickey Exp $";
 #endif
 
 extern char **environ;
@@ -569,7 +568,7 @@ shell(Source *volatile s, volatile int toplevel)
 		}
 
 		if (t && (!Flag(FNOEXEC) || (s->flags & SF_TTY)))
-			exstat = execute(t, 0);
+			exstat = execute(t, 0, NULL);
 
 		if (t != NULL && t->type != TEOF && interactive && really_exit)
 			really_exit = 0;

@@ -1,4 +1,3 @@
-
 /*
  * shell parser (C version)
  */
@@ -7,7 +6,7 @@
 #include "c_test.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syn.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
+static const char rcsid[] = "$ABSD: syn.c,v 1.2 2008/12/26 18:50:18 mickey Exp $";
 #endif
 
 struct nesting_state {

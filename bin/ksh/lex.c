@@ -1,4 +1,3 @@
-
 /*
  * lexical analysis and source input
  */
@@ -8,7 +7,7 @@
 #include <ctype.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: lex.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
+static const char rcsid[] = "$ABSD: lex.c,v 1.2 2008/12/26 18:50:18 mickey Exp $";
 #endif
 
 /* Structure to keep track of the lexing state and the various pieces of info

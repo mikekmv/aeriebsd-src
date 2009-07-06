@@ -1,4 +1,3 @@
-
 /*
  * test(1); version 7-like  --  author Erik Baalbergen
  * modified by Eric Gisin to be used as built-in.
@@ -13,7 +12,7 @@
 #include "c_test.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: c_test.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 /* test(1) accepts the following grammar:
@@ -460,15 +459,23 @@ test_primary(Test_env *te, int do_eval)
 		}
 		return res;
 	}
-	if ((op = (Test_op) (*te->isa)(te, TM_UNOP))) {
-		/* unary expression */
-		opnd1 = (*te->getopnd)(te, op, do_eval);
-		if (!opnd1) {
-			(*te->error)(te, -1, "missing argument");
-			return 0;
-		}
+	/*
+	 * Binary should have precedence over unary in this case
+	 * so that something like test \( -f = -f \) is accepted
+	 */
+	if ((te->flags & TEF_DBRACKET) || (&te->pos.wp[1] < te->wp_end &&
+	    !test_isop(te, TM_BINOP, te->pos.wp[1]))) {
+		if ((op = (Test_op) (*te->isa)(te, TM_UNOP))) {
+			/* unary expression */
+			opnd1 = (*te->getopnd)(te, op, do_eval);
+			if (!opnd1) {
+				(*te->error)(te, -1, "missing argument");
+				return 0;
+			}
 
-		return (*te->eval)(te, op, opnd1, (const char *) 0, do_eval);
+			return (*te->eval)(te, op, opnd1, (const char *) 0,
+			    do_eval);
+		}
 	}
 	opnd1 = (*te->getopnd)(te, TO_NONOP, do_eval);
 	if (!opnd1) {

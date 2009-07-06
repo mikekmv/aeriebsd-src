@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989, 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -41,7 +40,7 @@ static const char copyright[] =
 #if 0
 static char sccsid[] = "@(#)mknod.c	8.1 (Berkeley) 6/5/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: mknod.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -100,4 +99,3 @@ domkfifo(int argc, char **argv, mode_t mode)
 	}
 	return(rv);
 }
-

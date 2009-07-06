@@ -1,4 +1,3 @@
-
 /*
  * Korn expression evaluation
  */
@@ -10,7 +9,7 @@
 #include <ctype.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: expr.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
 #endif
 
 /* The order of these enums is constrained by the order of opinfo[] */
@@ -543,7 +542,8 @@ do_ppmm(Expr_state *es, enum token op, struct tbl *vasn, bool is_prefix)
 static void
 assign_check(Expr_state *es, enum token op, struct tbl *vasn)
 {
-	if (vasn->name[0] == '\0' && !(vasn->flag & EXPRLVALUE))
+	if (es->tok == END ||
+	    (vasn->name[0] == '\0' && !(vasn->flag & EXPRLVALUE)))
 		evalerr(es, ET_LVALUE, opinfo[(int) op].name);
 	else if (vasn->flag & RDONLY)
 		evalerr(es, ET_RDONLY, opinfo[(int) op].name);

@@ -1,4 +1,3 @@
-
 /*
  * command tree climbing
  */
@@ -6,7 +5,7 @@
 #include "sh.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: tree.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 
 #define INDENT	4
@@ -709,4 +708,5 @@ iofree(struct ioword **iow, Area *ap)
 			afree((void*)p->heredoc, ap);
 		afree((void*)p, ap);
 	}
+	afree(iow, ap);
 }

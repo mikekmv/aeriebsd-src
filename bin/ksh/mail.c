@@ -1,4 +1,3 @@
-
 /*
  * Mailbox checking code by Robert J. Gibson, adapted for PD ksh by
  * John R. MacMillan
@@ -11,7 +10,7 @@
 #include <time.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: mail.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
 #endif
 
 #define MBMESSAGE	"you have mail in $_"

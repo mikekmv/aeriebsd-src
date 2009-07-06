@@ -1,11 +1,3 @@
-
-#include "sh.h"
-#include <sys/stat.h>
-
-#ifndef lint
-static const char rcsid[] = "$ABSD$";
-#endif
-
 /*
  *	Contains a routine to search a : separated list of
  *	paths (a la CDPATH) and make appropriate file names.
@@ -14,6 +6,13 @@ static const char rcsid[] = "$ABSD$";
  *
  *	Larry Bouzane (larry@cs.mun.ca)
  */
+
+#include "sh.h"
+#include <sys/stat.h>
+
+#ifndef lint
+static const char rcsid[] = "$ABSD: path.c,v 1.1.1.1 2008/08/26 14:36:30 root Exp $";
+#endif
 
 static char	*do_phys_path(XString *, char *, const char *);
 

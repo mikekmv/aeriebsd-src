@@ -8,7 +8,7 @@
 #include <ctype.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: c_ksh.c,v 1.1.1.1 2008/08/26 14:36:29 root Exp $";
+static const char rcsid[] = "$ABSD: c_ksh.c,v 1.2 2008/12/26 18:50:17 mickey Exp $";
 #endif
 
 int
@@ -230,23 +230,30 @@ c_print(char **wp)
 		 * by default.
 		 */
 		wp += 1;
-		while ((s = *wp) && *s == '-' && s[1]) {
-			while (*++s)
-				if (*s == 'n')
-					nflags &= ~PO_NL;
-				else if (*s == 'e')
-					nflags |= PO_EXPAND;
-				else if (*s == 'E')
-					nflags &= ~PO_EXPAND;
-				else
-					/* bad option: don't use nflags, print
-					 * argument
-					 */
+		if (Flag(FPOSIX)) {
+			if (*wp && strcmp(*wp, "-n") == 0) {
+				flags &= ~PO_NL;
+				wp++;
+			}
+		} else {
+			while ((s = *wp) && *s == '-' && s[1]) {
+				while (*++s)
+					if (*s == 'n')
+						nflags &= ~PO_NL;
+					else if (*s == 'e')
+						nflags |= PO_EXPAND;
+					else if (*s == 'E')
+						nflags &= ~PO_EXPAND;
+					else
+						/* bad option: don't use
+						 * nflags, print argument
+						 */
+						break;
+				if (*s)
 					break;
-			if (*s)
-				break;
-			wp++;
-			flags = nflags;
+				wp++;
+				flags = nflags;
+			}
 		}
 	} else {
 		int optc;
