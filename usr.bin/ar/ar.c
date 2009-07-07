@@ -42,7 +42,7 @@ static const char copyright[] =
 static char sccsid[] = "@(#)ar.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: ar.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
+    "$ABSD: ar.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -113,7 +113,7 @@ main(int argc, char *argv[])
 			(void)strlcpy(p + 1, argv[1], len - 1);
 			argv[1] = p;
 		}
-		while ((c = getopt(argc, argv, "abcCdimopqrsTtuvx")) != -1)
+		while ((c = getopt(argc, argv, "abcCdilmopqrsTtuvx")) != -1)
 			switch(c) {
 			case 'a':
 				options |= AR_A;
@@ -131,6 +131,12 @@ main(int argc, char *argv[])
 			case 'd':
 				options |= AR_D;
 				fcall = delete;
+				break;
+			case 'l':
+				/*
+				 * "local" tmp-files option;
+				 * ignored for compatibility
+				 */
 				break;
 			case 'm':
 				options |= AR_M;
