@@ -225,12 +225,13 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 	if ((size = recvmsg(p->query->fd, &somsg, 0)) < 0) {
 		if (errno == EHOSTUNREACH || errno == EHOSTDOWN ||
 		    errno == ENETUNREACH || errno == ENETDOWN ||
-		    errno == ECONNREFUSED || errno == EADDRNOTAVAIL) {
+		    errno == ECONNREFUSED || errno == EADDRNOTAVAIL ||
+		    errno == ENOPROTOOPT || errno == ENOENT) {
 			client_log_error(p, "recvmsg", errno);
 			set_next(p, error_interval());
 			return (0);
 		} else
-			fatal("recvfrom");
+			fatal("recvmsg");
 	}
 
 	if (somsg.msg_flags & MSG_TRUNC) {
