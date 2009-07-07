@@ -49,6 +49,8 @@ void set_sys_gdt(struct sys_segment_descriptor *, void *, size_t, int, int,
 		 int);
 #endif
 
-/* MINGDTSIZ must be a multiple of PAGE_SIZE or gdt_grow breaks */
-#define MINGDTSIZ       PAGE_SIZE
+/*
+ * Maximum GDT size.  It cannot exceed 65536 since the selector field of
+ * a descriptor is just 16 bits, and used as free list link.
+ */
 #define MAXGDTSIZ       65536

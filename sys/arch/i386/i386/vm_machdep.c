@@ -143,13 +143,13 @@ cpu_exit(struct proc *p)
 #endif
 
 	pmap_deactivate(p);
+	tss_free(p->p_md.md_tss_sel);
 	sched_exit(p);
 }
 
 void
 cpu_wait(struct proc *p)
 {
-	tss_free(p->p_md.md_tss_sel);
 }
 
 /*

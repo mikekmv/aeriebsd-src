@@ -167,6 +167,7 @@ cpu_exit(struct proc *p)
 		mtrr_clean(p);
 
 	pmap_deactivate(p);
+	tss_free(p->p_md.md_tss_sel);
 	sched_exit(p);
 }
 
@@ -178,8 +179,6 @@ cpu_exit(struct proc *p)
 void
 cpu_wait(struct proc *p)
 {
-	/* Nuke the TSS. */
-	tss_free(p->p_md.md_tss_sel);
 }
 
 /*
