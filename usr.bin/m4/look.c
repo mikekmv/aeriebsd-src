@@ -222,7 +222,8 @@ macro_for_all(void (*f)(const char *, struct macro_definition *))
 
 	for (n = ohash_first(&macros, &i); n != NULL; 
 	    n = ohash_next(&macros, &i))
-		f(n->name, n->d);
+		if (n->d != NULL)
+			f(n->name, n->d);
 }
 
 void 

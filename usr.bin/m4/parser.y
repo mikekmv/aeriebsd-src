@@ -21,6 +21,7 @@ extern int yylex(void);
 extern int yyerror(const char *);
 %}
 %token NUMBER
+%token ERROR
 %left LOR
 %left LAND
 %left '|'

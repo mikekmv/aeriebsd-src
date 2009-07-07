@@ -406,7 +406,7 @@ macro(void)
 				}
 			}
 		} else if (t == EOF) {
-			if (sp > -1) {
+			if (sp > -1 && ilevel <= 0) {
 				warnx( "unexpected end of input, unclosed parenthesis:");
 				dump_stack(paren, PARLEV);
 				exit(1);
@@ -426,8 +426,9 @@ macro(void)
 		case LPAREN:
 			if (PARLEV > 0)
 				chrsave(t);
-			while (isspace(l = gpbc()))
-				;		/* skip blank, tab, nl.. */
+			while (isspace(l = gpbc())) /* skip blank, tab, nl.. */
+				if (PARLEV > 0)
+					chrsave(l);
 			pushback(l);
 			record(paren, PARLEV++);
 			break;
