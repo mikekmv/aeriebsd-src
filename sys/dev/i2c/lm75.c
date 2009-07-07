@@ -16,7 +16,7 @@
  */
 
 /*
- * National Semiconductor LM75/LM76/LM77 temperature sensor.
+ * National Semiconductor LM73/LM75/LM76/LM77 temperature sensor.
  */
 
 #include <sys/param.h>
@@ -32,6 +32,7 @@
 #define	LM_MODEL_DS1775	3
 #define	LM_MODEL_LM75A	4
 #define	LM_MODEL_LM76	5
+#define	LM_MODEL_LM73	6
 
 #define LM_POLLTIME	3	/* 3s */
 
@@ -108,6 +109,20 @@ struct cfdriver lmtemp_cd = {
  *	-54.875C	110 0100 1001	0x649
  *	-55.000C	110 0100 1000	0x648
  *
+ * Temperature on the LM73 is represented by an 11-bit two's complement
+ * integer in steps of 0.25C.  The following examples are taken from
+ * the LM73 data sheet:
+ *
+ *      +150.000C	0100 1011 0000 0000	0x4b00
+ *	+25.000C	0000 1100 1000 0000	0x0c80
+ *	+1.000C		0000 0000 1000 0000	0x0080
+ *	+0.25C		0000 0000 0010 0000	0x0020
+ *	0C		0000 0000 0000 0000	0x0000
+ *	-0.25C		1111 1111 1110 0000	0xffe0
+ *	-1.000C		1111 1111 1000 0000	0xff80
+ *	-25.000C	1111 0011 1000 0000	0xf380
+ *	-40.000C	1110 1100 0000 0000	0xec00
+ *
  * Temperature on the LM77 is represented by a 13-bit two's complement
  * integer in steps of 0.5C.  The LM76 is similar, but the integer is
  * in steps of 0.065C
@@ -142,7 +157,8 @@ lmtemp_match(struct device *parent, void *match, void *aux)
 	    strcmp(ia->ia_name, "lm76") == 0 ||
 	    strcmp(ia->ia_name, "lm77") == 0 ||
 	    strcmp(ia->ia_name, "ds1775") == 0 ||
-	    strcmp(ia->ia_name, "lm75a") == 0)
+	    strcmp(ia->ia_name, "lm75a") == 0 ||
+	    strcmp(ia->ia_name, "lm73") == 0)
 		return (1);
 	return (0);
 }
@@ -196,6 +212,10 @@ lmtemp_attach(struct device *parent, struct device *self, void *aux)
 	} else if (strcmp(ia->ia_name, "lm75a") == 0) {
 		/* For simplicity's sake, treat the LM75A as an LM75 */
 		sc->sc_model = LM_MODEL_LM75A;
+	} else if (strcmp(ia->ia_name, "lm73") == 0) {
+		sc->sc_model = LM_MODEL_LM73;
+		sc->sc_bits = 11;
+		sc->sc_ratio = 250000;	/* 0.25 degC for LSB */
 	}
 
 	printf("\n");
