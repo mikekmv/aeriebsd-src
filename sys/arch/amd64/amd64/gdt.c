@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1996, 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -27,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Modified to deal with variable-length entries for amd64 by
  * fvdl@wasabisystems.com, may 2001
@@ -38,50 +36,23 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
-#include <sys/rwlock.h>
 #include <sys/user.h>
+#include <sys/mutex.h>
 
 #include <uvm/uvm.h>
 
 #include <machine/gdt.h>
 
-int gdt_size;		/* size of GDT in bytes */
-int gdt_dyncount;	/* number of dyn. allocated GDT entries in use */
-int gdt_dynavail;
 int gdt_next;		/* next available slot for sweeping */
 int gdt_free;		/* next free slot; terminated with GNULL_SEL */
 
-struct rwlock gdt_lock_store = RWLOCK_INITIALIZER("gdtlk");
+struct mutex gdt_lock_store = MUTEX_INITIALIZER(IPL_HIGH);
+#define	gdt_lock()	(mtx_enter(&gdt_lock_store))
+#define	gdt_unlock()	(mtx_leave(&gdt_lock_store))
 
-static __inline void gdt_lock(void);
-static __inline void gdt_unlock(void);
 void gdt_init(void);
-void gdt_grow(void);
 int gdt_get_slot(void);
 void gdt_put_slot(int);
-
-/*
- * Lock and unlock the GDT, to avoid races in case gdt_{ge,pu}t_slot() sleep
- * waiting for memory.
- *
- * Note that the locking done here is not sufficient for multiprocessor
- * systems.  A freshly allocated slot will still be of type SDT_SYSNULL for
- * some time after the GDT is unlocked, so gdt_compact() could attempt to
- * reclaim it.
- */
-static __inline void
-gdt_lock(void)
-{
-	if (curproc != NULL)		/* XXX - ugh. needed for startup */
-		rw_enter_write(&gdt_lock_store);
-}
-
-static __inline void
-gdt_unlock(void)
-{
-	if (curproc != NULL)
-		rw_exit_write(&gdt_lock_store);
-}
 
 void
 set_mem_gdt(struct mem_segment_descriptor *sd, void *base, size_t limit,
