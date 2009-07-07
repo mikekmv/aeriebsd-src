@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -174,7 +173,7 @@ vfs_unbusy(struct mount *mp)
 }
 
 int
-vfs_isbusy(struct mount *mp) 
+vfs_isbusy(struct mount *mp)
 {
 	if (RWLOCK_OWNER(&mp->mnt_lock) > 0)
 		return (1);
@@ -212,7 +211,7 @@ vfs_rootmountalloc(char *fstypename, char *devname, struct mount **mpp)
 	mp->mnt_stat.f_mntonname[0] = '/';
 	(void)copystr(devname, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 0);
 	*mpp = mp;
- 	return (0);
+	return (0);
  }
 
 /*
@@ -590,7 +589,7 @@ vget(struct vnode *vp, int flags, struct proc *p)
 		splx(s);
 	}
 
- 	vp->v_usecount++;
+	vp->v_usecount++;
 	if (flags & LK_TYPE_MASK) {
 		if ((error = vn_lock(vp, flags, p)) != 0) {
 			vp->v_usecount--;
@@ -751,7 +750,7 @@ vdrop(struct vnode *vp)
 {
 #ifdef DIAGNOSTIC
 	if (vp->v_holdcnt == 0)
-		panic("vdrop: zero holdcnt"); 
+		panic("vdrop: zero holdcnt");
 #endif
 
 	vp->v_holdcnt--;
@@ -781,7 +780,7 @@ struct ctldebug debug1 = { "busyprt", &busyprt };
 #endif
 
 int
-vfs_mount_foreach_vnode(struct mount *mp, 
+vfs_mount_foreach_vnode(struct mount *mp,
     int (*func)(struct vnode *, void *), void *arg) {
 	struct vnode *vp, *nvp;
 	int error = 0;
@@ -837,7 +836,7 @@ vflush_vnode(struct vnode *vp, void *arg) {
 		vgonel(vp, p);
 		return (0);
 	}
-		
+
 	/*
 	 * If FORCECLOSE is set, forcibly close the vnode.
 	 * For block or character devices, revert to an
@@ -1216,7 +1215,7 @@ printlockedvnodes(void)
 		}
 		nmp = CIRCLEQ_NEXT(mp, mnt_list);
 		vfs_unbusy(mp);
- 	}
+	}
 
 }
 #endif
@@ -1360,7 +1359,7 @@ vfs_mountedon(struct vnode *vp)
 	struct vnode *vq;
 	int error = 0;
 
- 	if (vp->v_specmountpoint != NULL)
+	if (vp->v_specmountpoint != NULL)
 		return (EBUSY);
 	if (vp->v_flag & VALIASED) {
 		for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
@@ -1371,7 +1370,7 @@ vfs_mountedon(struct vnode *vp)
 				error = EBUSY;
 				break;
 			}
- 		}
+		}
 	}
 	return (error);
 }
@@ -1684,7 +1683,7 @@ vfs_syncwait(int verbose)
 			if (bp->b_flags & B_DELWRI) {
 				s = splbio();
 				bremfree(bp);
-				buf_acquire(bp);
+				bp->b_flags |= B_BUSY;
 				splx(s);
 				nbusy++;
 				bawrite(bp);
@@ -1855,7 +1854,7 @@ loop:
 				break;
 			}
 			bremfree(bp);
-			buf_acquire(bp);
+			bp->b_flags |= B_BUSY;
 			/*
 			 * XXX Since there are no node locks for NFS, I believe
 			 * there is a slight chance that a delayed write will
@@ -1893,7 +1892,7 @@ loop:
 		if ((bp->b_flags & B_DELWRI) == 0)
 			panic("vflushbuf: not dirty");
 		bremfree(bp);
-		buf_acquire(bp);
+		bp->b_flags |= B_BUSY;
 		splx(s);
 		/*
 		 * Wait for I/O associated with indirect blocks to complete,
@@ -2145,12 +2144,12 @@ vfs_buf_print(struct buf *bp, int full, int (*pr)(const char *, ...))
 {
 
 	(*pr)("  vp %p lblkno 0x%llx blkno 0x%llx dev 0x%x\n"
-	      "  proc %p error %d flags %b\n",
+	    "  proc %p error %d flags %b\n",
 	    bp->b_vp, (int64_t)bp->b_lblkno, (int64_t)bp->b_blkno, bp->b_dev,
 	    bp->b_proc, bp->b_error, bp->b_flags, B_BITS);
 
 	(*pr)("  bufsize 0x%lx bcount 0x%lx resid 0x%lx sync 0x%x\n"
-	      "  data %p saveaddr %p dep %p iodone %p\n",
+	    "  data %p saveaddr %p dep %p iodone %p\n",
 	    bp->b_bufsize, bp->b_bcount, (long)bp->b_resid, bp->b_synctime,
 	    bp->b_data, bp->b_saveaddr, LIST_FIRST(&bp->b_dep), bp->b_iodone);
 
@@ -2172,13 +2171,13 @@ vfs_vnode_print(struct vnode *vp, int full, int (*pr)(const char *, ...))
 
 #define	NENTS(n)	(sizeof n / sizeof(n[0]))
 	(*pr)("tag %s(%d) type %s(%d) mount %p typedata %p\n",
-	      vp->v_tag > NENTS(vtags)? "<unk>":vtags[vp->v_tag], vp->v_tag,
-	      vp->v_type > NENTS(vtypes)? "<unk>":vtypes[vp->v_type],
-	      vp->v_type, vp->v_mount, vp->v_mountedhere);
+	    vp->v_tag > NENTS(vtags)? "<unk>":vtags[vp->v_tag], vp->v_tag,
+	    vp->v_type > NENTS(vtypes)? "<unk>":vtypes[vp->v_type],
+	    vp->v_type, vp->v_mount, vp->v_mountedhere);
 
 	(*pr)("data %p usecount %d writecount %ld holdcnt %ld numoutput %d\n",
-	      vp->v_data, vp->v_usecount, vp->v_writecount,
-	      vp->v_holdcnt, vp->v_numoutput);
+	    vp->v_data, vp->v_usecount, vp->v_writecount,
+	    vp->v_holdcnt, vp->v_numoutput);
 
 	/* uvm_object_printit(&vp->v_uobj, full, pr); */
 
@@ -2211,7 +2210,7 @@ vfs_mount_print(struct mount *mp, int full, int (*pr)(const char *, ...))
 	    mp->mnt_vnodecovered, mp->mnt_syncer, mp->mnt_data);
 
 	(*pr)("vfsconf: ops %p name \"%s\" num %d ref %d flags 0x%x\n",
-            vfc->vfc_vfsops, vfc->vfc_name, vfc->vfc_typenum,
+	    vfc->vfc_vfsops, vfc->vfc_name, vfc->vfc_typenum,
 	    vfc->vfc_refcount, vfc->vfc_flags);
 
 	(*pr)("statvfs cache: bsize %x iosize %x\nblocks %llu free %llu avail %lld\n",
@@ -2225,10 +2224,10 @@ vfs_mount_print(struct mount *mp, int full, int (*pr)(const char *, ...))
 	    mp->mnt_stat.f_fsid.val[0], mp->mnt_stat.f_fsid.val[1],
 	    mp->mnt_stat.f_owner, mp->mnt_stat.f_ctime);
 
- 	(*pr)("  syncwrites %llu asyncwrites = %llu\n",
+	(*pr)("  syncwrites %llu asyncwrites = %llu\n",
 	    mp->mnt_stat.f_syncwrites, mp->mnt_stat.f_asyncwrites);
 
- 	(*pr)("  syncreads %llu asyncreads = %llu\n",
+	(*pr)("  syncreads %llu asyncreads = %llu\n",
 	    mp->mnt_stat.f_syncreads, mp->mnt_stat.f_asyncreads);
 
 	(*pr)("  fstype \"%s\" mnton \"%s\" mntfrom \"%s\"\n",

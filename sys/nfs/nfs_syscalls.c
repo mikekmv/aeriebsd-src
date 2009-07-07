@@ -715,8 +715,7 @@ nfssvc_iod(p)
 			    (B_BUSY|B_DELWRI|B_NEEDCOMMIT|B_NOCACHE))!=B_DELWRI)
 			    continue;
 			bremfree(nbp);
-			nbp->b_flags |= B_ASYNC;
-			buf_acquire(nbp);
+			nbp->b_flags |= (B_BUSY|B_ASYNC);
 			break;
 		    }
 		    /*

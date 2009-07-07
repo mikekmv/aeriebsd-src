@@ -2709,8 +2709,7 @@ again:
 				!= (B_DELWRI | B_NEEDCOMMIT))
 				continue;
 			bremfree(bp);
-			bp->b_flags |= B_WRITEINPROG;
-			buf_acquire(bp);
+			bp->b_flags |= (B_BUSY | B_WRITEINPROG);
 			/*
 			 * A list of these buffers is kept so that the
 			 * second loop knows which buffers have actually
@@ -2788,12 +2787,10 @@ loop:
 		if ((passone || !commit) && (bp->b_flags & B_NEEDCOMMIT))
 			continue;
 		bremfree(bp);
-		if (passone || !commit) {
-			bp->b_flags |= B_ASYNC;
-		} else {
-			bp->b_flags |= (B_ASYNC|B_WRITEINPROG|B_NEEDCOMMIT);
-		}
-		buf_acquire(bp);
+		if (passone || !commit)
+		    bp->b_flags |= (B_BUSY|B_ASYNC);
+		else
+		    bp->b_flags |= (B_BUSY|B_ASYNC|B_WRITEINPROG|B_NEEDCOMMIT);
 		splx(s);
 		VOP_BWRITE(bp);
 		goto loop;

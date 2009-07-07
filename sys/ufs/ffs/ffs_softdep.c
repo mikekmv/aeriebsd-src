@@ -4674,6 +4674,8 @@ softdep_fsync_mountdev(vp, waitfor)
 	struct buf *bp, *nbp;
 	struct worklist *wk;
 
+	splassert(IPL_BIO);
+
 	if (!vn_isdisk(vp, NULL))
 		panic("softdep_fsync_mountdev: vnode not a disk");
 	ACQUIRE_LOCK(&lk);
@@ -4682,9 +4684,9 @@ softdep_fsync_mountdev(vp, waitfor)
 		/* 
 		 * If it is already scheduled, skip to the next buffer.
 		 */
-		splassert(IPL_BIO);
 		if (bp->b_flags & B_BUSY)
 			continue;
+		bp->b_flags |= B_BUSY;
 
 		if ((bp->b_flags & B_DELWRI) == 0) {
 			FREE_LOCK(&lk);
@@ -4696,10 +4698,10 @@ softdep_fsync_mountdev(vp, waitfor)
 		 */
 		if ((wk = LIST_FIRST(&bp->b_dep)) == NULL ||
 		    wk->wk_type != D_BMSAFEMAP) {
+			bp->b_flags &= ~B_BUSY;
 			continue;
 		}
 		bremfree(bp);
-		buf_acquire(bp);
 		FREE_LOCK(&lk);
 		(void) bawrite(bp);
 		ACQUIRE_LOCK(&lk);
@@ -5607,7 +5609,7 @@ getdirtybuf(bp, waitfor)
 	if ((bp->b_flags & B_DELWRI) == 0)
 		return (0);
 	bremfree(bp);
-	buf_acquire(bp);
+	bp->b_flags |= B_BUSY;
 	return (1);
 }
 

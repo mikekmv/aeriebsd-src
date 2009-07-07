@@ -405,6 +405,8 @@ ffs_fsync(void *v)
 	struct buf *bp, *nbp;
 	int s, error, passes, skipmeta;
 
+	s = splbio();
+
 	if (vp->v_type == VBLK &&
 	    vp->v_specmountpoint != NULL &&
 	    (vp->v_specmountpoint->mnt_flag & MNT_SOFTDEP))
@@ -417,7 +419,6 @@ ffs_fsync(void *v)
 	skipmeta = 0;
 	if (ap->a_waitfor == MNT_WAIT)
 		skipmeta = 1;
-	s = splbio();
 loop:
 	for (bp = LIST_FIRST(&vp->v_dirtyblkhd); bp;
 	     bp = LIST_NEXT(bp, b_vnbufs))
@@ -447,8 +448,7 @@ loop:
 		}
 
 		bremfree(bp);
-		buf_acquire(bp);
-		bp->b_flags |= B_SCANNED;
+		bp->b_flags |= B_BUSY | B_SCANNED;
 		splx(s);
 		/*
 		 * On our final pass through, do all I/O synchronously

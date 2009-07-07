@@ -635,6 +635,7 @@ void	vfs_shutdown(void);	/* unmount and sync file systems */
 long	makefstype(char *);
 int	dounmount(struct mount *, int, struct proc *, struct vnode *);
 void	vfsinit(void);
+void	vfs_bufstats(void);
 int	vfs_register(struct vfsconf *);
 int	vfs_unregister(struct vfsconf *);
 #else /* _KERNEL */
