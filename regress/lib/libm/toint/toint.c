@@ -1,4 +1,3 @@
-
 /*	Written by Michael Shalayeff, 2003, Public domain.	*/
 
 #include <limits.h>
@@ -40,12 +39,6 @@ main(int argc, char *argv[])
 
 	if (toint(8.6) != 9)
 		exit(1);
-
-	i = toint(INT_MAX);
-	if (i != INT_MIN) {
-		printf("%d != %d\n", i, INT_MIN);
-		exit(1);
-	}
 
 	exit(0);
 }
