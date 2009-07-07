@@ -115,12 +115,6 @@ ppbattach(struct device *parent, struct device *self, void *aux)
 		return;
 	}
 
-	for (pin = PCI_INTERRUPT_PIN_A; pin <= PCI_INTERRUPT_PIN_D; pin++) {
-		pa->pa_intrpin = pa->pa_rawintrpin = pin;
-		pa->pa_intrline = 0;
-		pci_intr_map(pa, &sc->sc_ih[pin - PCI_INTERRUPT_PIN_A]);
-	}
-
 #if 0
 	/*
 	 * XXX can't do this, because we're not given our bus number
