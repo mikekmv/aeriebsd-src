@@ -482,21 +482,21 @@ file	dev/pci/mbg.c			mbg
 
 # UHCI USB controller
 attach	uhci at pci with uhci_pci
-file	dev/pci/uhci_pci.c		uhci
+file	dev/pci/uhci_pci.c		uhci_pci
 
 # OHCI USB controller
 attach	ohci at pci with ohci_pci
-file	dev/pci/ohci_pci.c		ohci
+file	dev/pci/ohci_pci.c		ohci_pci
 
 # EHCI USB controller
 attach	ehci at pci with ehci_pci
-file	dev/pci/ehci_pci.c		ehci
+file	dev/pci/ehci_pci.c		ehci_pci
 
 # YENTA PCI-CardBus bridge
 #device	cbb: cbbus, pcmciabus
 device	cbb: pcmciaslot
 attach	cbb at pci with cbb_pci
-file	dev/pci/pccbb.c			cbb
+file	dev/pci/pccbb.c			cbb_pci
 
 # SysKonnect 984x gigabit ethernet
 device	skc {}
@@ -743,7 +743,7 @@ file	dev/pci/nviic.c			nviic
 
 # SD Host Controller
 attach	sdhc at pci with sdhc_pci
-file	dev/pci/sdhc_pci.c		sdhc
+file	dev/pci/sdhc_pci.c		sdhc_pci
 
 # AMD NPT Family 0Fh Processors, Function 3 -- Miscellaneous Control
 device	kate
