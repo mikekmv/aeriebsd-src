@@ -45,7 +45,7 @@ CMACHFLAGS+=	-fno-builtin-printf -fno-builtin-log
 
 COPTS?=		-O2
 CFLAGS=		${DEBUG} ${CDIAGFLAGS} ${CMACHFLAGS} ${COPTS} ${PIPE}
-AFLAGS=		-x assembler-with-cpp -traditional-cpp -D_LOCORE
+AFLAGS=		-x assembler-with-cpp -D_LOCORE
 LINKFLAGS=	-Ttext 0xD0200120 -e start -N --warn-common
 STRIPFLAGS=	-g -X -x
 

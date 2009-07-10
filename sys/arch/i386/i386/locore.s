@@ -1473,7 +1473,7 @@ ENTRY(savectx)
  * XXX - debugger traps are now interrupt gates so at least bdb doesn't lose
  * control.  The sti's give the standard losing behaviour for ddb and kgdb.
  */
-#define	IDTVEC(name)	ALIGN_TEXT; .globl X/**/name; X/**/name:
+#define	IDTVEC(name)	ALIGN_TEXT; .globl __CONCAT(X,name); __CONCAT(X,name):
 
 #define	TRAP(a)		pushl $(a) ; jmp _C_LABEL(alltraps)
 #define	ZTRAP(a)	pushl $0 ; TRAP(a)
