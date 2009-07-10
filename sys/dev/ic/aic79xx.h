@@ -1481,7 +1481,7 @@ void			ahd_calc_residual(struct ahd_softc *ahd,
 					  struct scb *scb);
 void			ahd_timeout(void *);
 /*************************** Utility Functions ********************************/
-struct ahd_phase_table_entry*
+const struct ahd_phase_table_entry *
 			ahd_lookup_phase_entry(int phase);
 void			ahd_compile_devinfo(struct ahd_devinfo *devinfo,
 					    u_int our_id, u_int target,

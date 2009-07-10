@@ -84,14 +84,14 @@ struct ahd_softc_tailq ahd_tailq = TAILQ_HEAD_INITIALIZER(ahd_tailq);
 uint32_t ahd_attach_to_HostRAID_controllers = 1;
 
 /***************************** Lookup Tables **********************************/
-char *ahd_chip_names[] =
+const char *const ahd_chip_names[] =
 {
 	"NONE",
 	"aic7901",
 	"aic7902",
 	"aic7901A"
 };
-static const u_int num_chip_names = NUM_ELEMENTS(ahd_chip_names);
+const u_int num_chip_names = NUM_ELEMENTS(ahd_chip_names);
 
 /*
  * Hardware error codes.
@@ -101,7 +101,7 @@ struct ahd_hard_error_entry {
 	char *errmesg;
 };
 
-static struct ahd_hard_error_entry ahd_hard_errors[] = {
+const struct ahd_hard_error_entry ahd_hard_errors[] = {
 	{ DSCTMOUT,	"Discard Timer has timed out" },
 	{ ILLOPCODE,	"Illegal Opcode in sequencer program" },
 	{ SQPARERR,	"Sequencer Parity Error" },
@@ -109,9 +109,9 @@ static struct ahd_hard_error_entry ahd_hard_errors[] = {
 	{ MPARERR,	"Scratch or SCB Memory Parity Error" },
 	{ CIOPARERR,	"CIOBUS Parity Error" },
 };
-static const u_int num_errors = NUM_ELEMENTS(ahd_hard_errors);
+const u_int num_errors = NUM_ELEMENTS(ahd_hard_errors);
 
-static struct ahd_phase_table_entry ahd_phase_table[] =
+const struct ahd_phase_table_entry ahd_phase_table[] =
 {
 	{ P_DATAOUT,	MSG_NOOP,		"in Data-out phase"	},
 	{ P_DATAIN,	MSG_INITIATOR_DET_ERR,	"in Data-in phase"	},
@@ -129,7 +129,7 @@ static struct ahd_phase_table_entry ahd_phase_table[] =
  * In most cases we only wish to itterate over real phases, so
  * exclude the last element from the count.
  */
-static const u_int num_phases = NUM_ELEMENTS(ahd_phase_table) - 1;
+const u_int num_phases = NUM_ELEMENTS(ahd_phase_table) - 1;
 
 /* Our Sequencer Program */
 #include <dev/microcode/aic7xxx/aic79xx_seq.h>
@@ -3508,11 +3508,10 @@ ahd_print_devinfo(struct ahd_softc *ahd, struct ahd_devinfo *devinfo)
 	       devinfo->target, devinfo->lun);
 }
 
-struct ahd_phase_table_entry*
+const struct ahd_phase_table_entry *
 ahd_lookup_phase_entry(int phase)
 {
-	struct ahd_phase_table_entry *entry;
-	struct ahd_phase_table_entry *last_entry;
+	const struct ahd_phase_table_entry *entry, *last_entry;
 
 	/*
 	 * num_phases doesn't include the default entry which
