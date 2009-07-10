@@ -64,11 +64,11 @@
 #define CY_CMD_CTRL_IOR_PULSE_OFF(drive)	(4 + 16 * (drive))
 #define CY_CMD_CTRL_IOR_REC_OFF(drive)		(0 + 16 * (drive))
 
-static int8_t cy_pio_pulse[] = {9, 4, 3, 2, 2};
-static int8_t cy_pio_rec[] =   {9, 7, 4, 2, 0};
+const int8_t cy_pio_pulse[] = {9, 4, 3, 2, 2};
+const int8_t cy_pio_rec[] =   {9, 7, 4, 2, 0};
 #ifdef unused
-static int8_t cy_dma_pulse[] = {7, 2, 2};
-static int8_t cy_dma_rec[] =   {7, 1, 0};
+const int8_t cy_dma_pulse[] = {7, 2, 2};
+const int8_t cy_dma_rec[] =   {7, 1, 0};
 #endif
 
 /*

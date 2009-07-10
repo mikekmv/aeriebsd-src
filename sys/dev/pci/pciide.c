@@ -4282,7 +4282,7 @@ sii3114_mapreg_dma(struct pciide_softc *sc, struct pci_attach_args *pa)
 int
 sii3114_chansetup(struct pciide_softc *sc, int channel)
 {
-	static const char *channel_names[] = {
+	static const char *const channel_names[] = {
 		"port 0",
 		"port 1",
 		"port 2",
@@ -4605,11 +4605,11 @@ cy693_setup_channel(struct channel_softc *chp)
 	}
 }
 
-static struct sis_hostbr_type {
+const static struct sis_hostbr_type {
 	u_int16_t id;
 	u_int8_t rev;
 	u_int8_t udma_mode;
-	char *name;
+	const char *name;
 	u_int8_t type;
 #define SIS_TYPE_NOUDMA	0
 #define SIS_TYPE_66	1
@@ -4668,7 +4668,7 @@ static struct sis_hostbr_type {
 	{PCI_PRODUCT_SIS_965, 0x00, 6, "965", SIS_TYPE_133NEW}
 };
 
-static struct sis_hostbr_type *sis_hostbr_type_match;
+const struct sis_hostbr_type *sis_hostbr_type_match;
 
 int
 sis_hostbr_match(struct pci_attach_args *pa)
@@ -5726,7 +5726,7 @@ hpt_setup_channel(struct channel_softc *chp)
 	struct pciide_channel *cp = (struct pciide_channel *)chp;
 	struct pciide_softc *sc = (struct pciide_softc *)cp->wdc_channel.wdc;
 	int revision = sc->sc_rev;
-	u_int32_t *tim_pio, *tim_dma, *tim_udma;
+	const u_int32_t *tim_pio, *tim_dma, *tim_udma;
 
 	cable = pciide_pci_read(sc->sc_pc, sc->sc_tag, HPT_CSEL);
 
