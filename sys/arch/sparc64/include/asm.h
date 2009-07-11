@@ -61,6 +61,14 @@
 #endif
 #define	_ASM_LABEL(name)	name
 
+#ifdef __STDC__
+# define __CONCAT(x,y)	x ## y
+# define __STRING(x)	#x
+#else
+# define __CONCAT(x,y)	x/**/y
+# define __STRING(x)	"x"
+#endif
+
 #ifdef PIC
 /*
  * PIC_PROLOGUE() is akin to the compiler generated function prologue for
