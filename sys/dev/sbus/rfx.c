@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2004, Miodrag Vallat.
  * All rights reserved.
@@ -25,7 +24,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 /*
  * Driver for the Vitec RasterFlex family of frame buffers.
  * It should support RasterFlex-24, RasterFlex-32 and RasterFlex-HR.
@@ -151,7 +149,6 @@ struct wsdisplay_accessops rfx_accessops = {
 int	rfxmatch(struct device *, void *, void *);
 void	rfxattach(struct device *, struct device *, void *);
 
-#if defined(OpenBSD)
 struct cfattach rfx_ca = {
 	sizeof (struct rfx_softc), rfxmatch, rfxattach
 };
@@ -159,9 +156,6 @@ struct cfattach rfx_ca = {
 struct cfdriver rfx_cd = {
 	NULL, "rfx", DV_DULL
 };
-#else
-CFATTACH_DECL(rfx, sizeof (struct rfx_softc), rfxmatch, rfxattach, NULL, NULL);
-#endif
 
 /*
  * Match a supported RasterFlex card.
