@@ -46,7 +46,7 @@ CMACHFLAGS+=	-fno-stack-protector
 
 COPTS?=		-O2
 CFLAGS=		${DEBUG} ${CDIAGFLAGS} ${CMACHFLAGS} ${COPTS} ${PIPE}
-AFLAGS=		-x assembler-with-cpp -traditional-cpp -D_LOCORE
+AFLAGS=		-x assembler-with-cpp -D_LOCORE
 LINKFLAGS=	-Ttext 0xffffffff801001e0 -e start -X
 STRIPFLAGS=	-g -x
 

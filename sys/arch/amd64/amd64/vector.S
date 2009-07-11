@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2001 Wasabi Systems, Inc.
  * All rights reserved.
@@ -33,7 +32,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*-
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -263,9 +261,9 @@ calltrap:
 
 /* XXX See comment in locore.s */
 #ifdef __ELF__
-#define	XINTR(name,num)		Xintr_/**/name/**/num
+#define	XINTR(name,num)		Xintr_ ## name ## num
 #else
-#define	XINTR(name,num)		_Xintr_/**/name/**/num
+#define	XINTR(name,num)		_Xintr_ ## name ## num
 #endif
 
 #if NLAPIC > 0
@@ -396,18 +394,18 @@ IDTVEC(resume_lapic_ltimer)
  */
 
 #define	INTRSTUB(name, num, early_ack, late_ack, mask, unmask, level_mask) \
-IDTVEC(recurse_/**/name/**/num)						;\
+IDTVEC(recurse_ ## name ## num)						;\
 	INTR_RECURSE_HWFRAME						;\
 	subq	$8,%rsp							;\
 	pushq	$T_ASTFLT		/* trap # for doing ASTs */	;\
 	INTRENTRY							;\
-IDTVEC(resume_/**/name/**/num)						\
+IDTVEC(resume_ ## name ## num)						\
 	movq	$IREENT_MAGIC,TF_ERR(%rsp)				;\
 	movl	%ebx,%r13d						;\
 	movq	CPUVAR(ISOURCES) + (num) * 8, %r14			;\
 	movl	IS_MAXLEVEL(%r14),%ebx					;\
 	jmp	1f							;\
-IDTVEC(intr_/**/name/**/num)						;\
+IDTVEC(intr_ ## name ## num)						;\
 	pushq	$0			/* dummy error code */		;\
 	pushq	$T_ASTFLT		/* trap # for doing ASTs */	;\
 	INTRENTRY							;\
