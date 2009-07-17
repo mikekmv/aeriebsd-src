@@ -247,7 +247,7 @@ ntp_main(int pipe_prnt[2], struct ntpd_conf *nconf, struct passwd *pw)
 				    (struct sockaddr *)&p->addr->ss), timeout);
 				if (p->trustlevel >= TRUSTLEVEL_BADPEER &&
 				    (p->trustlevel /= 2) < TRUSTLEVEL_BADPEER)
-					log_info("peer %s now invalid",
+					log_info("peer %s is now invalid",
 					    log_sockaddr(
 					    (struct sockaddr *)&p->addr->ss));
 				client_nextaddr(p);

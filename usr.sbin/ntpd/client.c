@@ -393,7 +393,7 @@ client_dispatch(struct ntp_peer *p, u_int8_t settime)
 	if (p->trustlevel < TRUSTLEVEL_MAX) {
 		if (p->trustlevel < TRUSTLEVEL_BADPEER &&
 		    p->trustlevel + 1 >= TRUSTLEVEL_BADPEER)
-			log_info("peer %s now valid",
+			log_info("peer %s is now valid",
 			    log_sockaddr((struct sockaddr *)&p->addr->ss));
 		p->trustlevel++;
 	}
@@ -430,7 +430,7 @@ client_update(struct ntp_peer *p)
 	/*
 	 * clock filter
 	 * find the offset which arrived with the lowest delay
-	 * use that as the peer update
+	 * and lowest stratum; use that as the peer update.
 	 * invalidate it and all older ones
 	 */
 
@@ -441,7 +441,8 @@ client_update(struct ntp_peer *p)
 		good++;
 		if (!best)
 			best = reply;
-		if (reply->delay < best->delay)
+		if (reply->status.stratum <= best->status.stratum &&
+		    reply->delay < best->delay)
 			best = reply;
 	}
 
