@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2003, 2004 Henning Brauer <henning@openbsd.org>
  * Copyright (c) 2004 Alexander Guy <alexander.guy@andern.org>
@@ -196,76 +195,19 @@ int
 client_dispatch(struct ntp_peer *p, u_int8_t settime)
 {
 	extern int debug; /* from log.c */
+	struct sockaddr_storage fsa;
 	struct ntp_msg	msg;
-	struct msghdr	somsg;
-	struct iovec	iov[1];
 	struct timeval	tv1, tv2;
 	char		buf[NTP_MSGSIZE];
-	union {
-		struct cmsghdr hdr;
-		char buf[CMSG_SPACE(sizeof tv1)];
-	} cmsgbuf;
 	int64_t		T1, T2, T3, T4;
-	struct cmsghdr	*cmsg;
 	struct ntp_offset *reply;
-	ssize_t		size;
 	time_t		interval;
 
-	somsg.msg_name = NULL;
-	somsg.msg_namelen = 0;
-	somsg.msg_iov = iov;
-	iov[0].iov_base = buf;
-	iov[0].iov_len = sizeof buf;
-	somsg.msg_iovlen = 1;
-	somsg.msg_control = cmsgbuf.buf;
-	somsg.msg_controllen = sizeof cmsgbuf.buf;
-	somsg.msg_flags = 0;
-
-	getoffset(&tv2);
-	if ((size = recvmsg(p->query->fd, &somsg, 0)) < 0) {
-		if (errno == EHOSTUNREACH || errno == EHOSTDOWN ||
-		    errno == ENETUNREACH || errno == ENETDOWN ||
-		    errno == ECONNREFUSED || errno == EADDRNOTAVAIL ||
-		    errno == ENOPROTOOPT || errno == ENOENT) {
-			client_log_error(p, "recvmsg", errno);
-			set_next(p, error_interval());
-			return (0);
-		} else
-			fatal("recvmsg");
-	}
-
-	if (somsg.msg_flags & MSG_TRUNC) {
-		client_log_error(p, "recvmsg packet", EMSGSIZE);
+	if (ntp_recvmsg(p->query->fd, (struct sockaddr *)&fsa,
+	    buf, &msg, &T4) < 0) {
 		set_next(p, error_interval());
 		return (0);
 	}
-
-	if (somsg.msg_flags & MSG_CTRUNC) {
-		client_log_error(p, "recvmsg control data", E2BIG);
-		set_next(p, error_interval());
-		return (0);
-	}
-
-	T4 = 0;
-	for (cmsg = CMSG_FIRSTHDR(&somsg); cmsg != NULL;
-	    cmsg = CMSG_NXTHDR(&somsg, cmsg)) {
-		if (cmsg->cmsg_level == SOL_SOCKET &&
-		    cmsg->cmsg_type == SCM_TIMESTAMP) {
-			memcpy(&tv1, CMSG_DATA(cmsg), sizeof tv1);
-			T4 = timeval2int64(&tv1);
-			T4 += (int64_t)JAN_1970 << 31;
-			T4 += timeval2int64(&tv2);
-			break;
-		}
-	}
-
-	if (T4 == 0) {
-		client_log_error(p, "recvmsg control format", EBADF);
-		set_next(p, error_interval());
-		return (0);
-	}
-
-	ntp_getmsg((struct sockaddr *)&p->addr->ss, buf, size, &msg);
 
 	if (msg.orgtime.int_partl != p->query->msg.xmttime.int_partl ||
 	    msg.orgtime.fractionl != p->query->msg.xmttime.fractionl)
@@ -456,18 +398,4 @@ client_update(struct ntp_peer *p)
 			if (reply->rcvd <= best->rcvd)
 				reply->good = 0;
 	return (0);
-}
-
-void
-client_log_error(struct ntp_peer *peer, const char *operation, int error)
-{
-	const char *address;
-
-	address = log_sockaddr((struct sockaddr *)&peer->addr->ss);
-	if (peer->lasterror == error) {
-		log_debug("%s %s: %s", operation, address, strerror(error));
-		return;
-	}
-	peer->lasterror = error;
-	log_warn("%s %s", operation, address);
 }

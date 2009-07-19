@@ -35,7 +35,7 @@ setup_listeners(struct servent *se, struct ntpd_conf *lconf, u_int *cnt)
 	u_int8_t		*a6;
 	size_t			 sa6len = sizeof(struct in6_addr);
 	u_int			 new_cnt = 0;
-	int			 tos = IPTOS_LOWDELAY;
+	int			 val;
 
 	if (lconf->listen_all) {
 		if (getifaddrs(&ifa) == -1)
@@ -96,9 +96,14 @@ setup_listeners(struct servent *se, struct ntpd_conf *lconf, u_int *cnt)
 		if ((la->fd = socket(la->sa.ss_family, SOCK_DGRAM, 0)) == -1)
 			fatal("socket");
 
+		val = IPTOS_LOWDELAY;
 		if (la->sa.ss_family == AF_INET && setsockopt(la->fd,
-		    IPPROTO_IP, IP_TOS, &tos, sizeof(tos)) == -1)
+		    IPPROTO_IP, IP_TOS, &val, sizeof(val)) == -1)
 			log_warn("setsockopt IPTOS_LOWDELAY");
+		val = 1;
+		if (setsockopt(la->fd, SOL_SOCKET, SO_TIMESTAMP,
+		    &val, sizeof(val)) < 0)
+			log_warn("setsockopt SO_TIMESTAMP");
 
 		if (bind(la->fd, (struct sockaddr *)&la->sa,
 		    SA_LEN((struct sockaddr *)&la->sa)) == -1) {
@@ -125,29 +130,15 @@ setup_listeners(struct servent *se, struct ntpd_conf *lconf, u_int *cnt)
 int
 server_dispatch(int fd, struct ntpd_conf *lconf)
 {
-	ssize_t			 size;
-	u_int8_t		 version;
 	struct sockaddr_storage	 fsa;
-	socklen_t		 fsa_len;
-	struct ntp_msg		 query, reply;
-	char			 buf[NTP_MSGSIZE];
-	int64_t			 rectime;
+	struct ntp_msg	 query, reply;
+	char		 buf[NTP_MSGSIZE];
+	int64_t		 rectime;
+	ssize_t		 size;
+	u_int8_t	 version;
 
-	fsa_len = sizeof(fsa);
-	if ((size = recvfrom(fd, &buf, sizeof(buf), 0,
-	    (struct sockaddr *)&fsa, &fsa_len)) == -1) {
-		if (errno == EHOSTUNREACH || errno == EHOSTDOWN ||
-		    errno == ENETUNREACH || errno == ENETDOWN) {
-			log_warn("recvfrom %s",
-			    log_sockaddr((struct sockaddr *)&fsa));
-			return (0);
-		} else
-			fatal("recvfrom");
-	}
-
-	rectime = gettime_corrected();
-	if (ntp_getmsg((struct sockaddr *)&fsa, buf, size, &query) == -1)
-		return (0);
+	if (ntp_recvmsg(fd, (struct sockaddr *)&fsa, buf, &query, &rectime) < 0)
+		return 0;
 
 	version = (query.status & VERSIONMASK) >> 3;
 

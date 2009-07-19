@@ -514,3 +514,82 @@ writefreq(int64_t d)
 	}
 	return 0;
 }
+
+int
+ntp_recvmsg(int fd, struct sockaddr *ss, char *buf, struct ntp_msg *msg,
+    int64_t *t)
+{
+	struct msghdr	somsg;
+	struct timeval  tv1, tv2;
+	struct iovec	iov[1];
+	union {
+		struct cmsghdr hdr;
+		char buf[CMSG_SPACE(sizeof tv1)];
+	} cmsgbuf;
+	struct cmsghdr	*cmsg;
+	ssize_t	size;
+
+	somsg.msg_name = ss;
+	somsg.msg_namelen = sizeof(struct sockaddr_storage);
+	somsg.msg_iov = iov;
+	iov[0].iov_base = buf;
+	iov[0].iov_len = NTP_MSGSIZE;
+	somsg.msg_iovlen = 1;
+	somsg.msg_control = cmsgbuf.buf;
+	somsg.msg_controllen = sizeof cmsgbuf.buf;
+	somsg.msg_flags = 0;
+
+	getoffset(&tv2);
+	if ((size = recvmsg(fd, &somsg, 0)) < 0) {
+		if (errno == EHOSTUNREACH || errno == EHOSTDOWN ||
+		    errno == ENETUNREACH || errno == ENETDOWN ||
+		    errno == ECONNREFUSED || errno == EADDRNOTAVAIL ||
+		    errno == ENOPROTOOPT || errno == ENOENT) {
+			ntp_log_error(ss, "recvmsg");
+			return -1;
+		} else
+			fatal("recvmsg");
+	}
+
+	if (somsg.msg_flags & MSG_TRUNC) {
+		errno = EINVAL;
+		ntp_log_error(ss, "recvmsg packet");
+		return -1;
+	}
+
+	if (somsg.msg_flags & MSG_CTRUNC) {
+		errno = EINVAL;
+		ntp_log_error(ss, "recvmsg control data");
+		return -1;
+	}
+
+	*t = 0;
+	for (cmsg = CMSG_FIRSTHDR(&somsg); cmsg != NULL;
+	    cmsg = CMSG_NXTHDR(&somsg, cmsg)) {
+		if (cmsg->cmsg_level == SOL_SOCKET &&
+		    cmsg->cmsg_type == SCM_TIMESTAMP) {
+			memcpy(&tv1, CMSG_DATA(cmsg), sizeof tv1);
+			*t = timeval2int64(&tv1);
+			*t += (int64_t)JAN_1970 << 31;
+			*t += timeval2int64(&tv2);
+			break;
+		}
+	}
+
+	if (*t == 0) {
+		errno = EINVAL;
+		ntp_log_error(ss, "recvmsg control format");
+		return -1;
+	}
+
+	return ntp_getmsg(ss, buf, size, msg);
+}
+
+void
+ntp_log_error(struct sockaddr *sa, const char *msg)
+{
+	const char *address;
+
+	address = log_sockaddr(sa);
+	log_warn("%s %s", msg, address);
+}

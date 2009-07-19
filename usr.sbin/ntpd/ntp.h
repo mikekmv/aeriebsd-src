@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2004 Henning Brauer <henning@openbsd.org>
  * Copyright (c) 2004 Alexander Guy <alexander.guy@andern.org>

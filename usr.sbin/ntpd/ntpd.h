@@ -290,6 +290,10 @@ struct ntp_conf_sensor	*new_sensor(char *);
 int	ntp_getmsg(struct sockaddr *, char *, ssize_t, struct ntp_msg *);
 int	ntp_sendmsg(int, struct sockaddr *, struct ntp_msg *, ssize_t, int);
 
+/* ntpd.c */
+int	ntp_recvmsg(int, struct sockaddr *, char *, struct ntp_msg*, int64_t*);
+void	ntp_log_error(struct sockaddr *, const char *);
+
 /* server.c */
 int	setup_listeners(struct servent *, struct ntpd_conf *, u_int *);
 int	ntp_reply(int, struct sockaddr *, struct ntp_msg *, int);
@@ -301,7 +305,6 @@ int	client_addr_init(struct ntp_peer *);
 int	client_nextaddr(struct ntp_peer *);
 int	client_query(struct ntp_peer *);
 int	client_dispatch(struct ntp_peer *, u_int8_t);
-void	client_log_error(struct ntp_peer *, const char *, int);
 void	set_next(struct ntp_peer *, time_t);
 
 /* sensors.c */
