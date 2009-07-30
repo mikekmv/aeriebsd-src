@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)delete.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: delete.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
+    "$ABSD: delete.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -77,6 +77,8 @@ delete(char **argv)
 		}
 		put_arobj(&cf, NULL);
 	}
+
+	/* TODO update nametab */
 
 	size = ftello(tfp);
 	rewind(tfp);

@@ -34,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)replace.c	8.3 (Berkeley) 4/2/94";
 #else
-static const char rcsid[] = "$ABSD: replace.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
+static const char rcsid[] = "$ABSD: replace.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -79,6 +79,8 @@ replace(char **argv)
 		else
 			err(1, "stat: %s", archive);
 	}
+
+	/* TODO update nametab */
 
 	afp = open_archive(O_CREAT|O_RDWR);
 

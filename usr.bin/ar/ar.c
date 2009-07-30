@@ -42,7 +42,7 @@ static const char copyright[] =
 static char sccsid[] = "@(#)ar.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: ar.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
+    "$ABSD: ar.c,v 1.5 2009/07/07 17:34:08 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -60,7 +60,6 @@ static const char rcsid[] =
 
 CHDR chdr;
 u_int options;
-char *stab;	/* -lelf */
 
 const char *archive, *envtmp, *posarg;
 const char *posname;
