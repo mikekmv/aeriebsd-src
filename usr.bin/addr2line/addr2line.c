@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: addr2line.c,v 1.1 2009/04/15 12:43:22 mickey Exp $";
+    "$ABSD: addr2line.c,v 1.2 2009/05/11 21:43:17 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -60,8 +60,6 @@ struct nlist32 {
 	u_int16_t	desc;
 	u_int32_t	value;
 } __packed;
-
-char *stab;	/* -lelf */
 
 int
 main(int argc, char *argv[])

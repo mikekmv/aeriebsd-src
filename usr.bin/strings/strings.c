@@ -40,7 +40,7 @@ static const char copyright[] =
 static const char sccsid[] = "@(#)strings.c	8.2 (Berkeley) 1/28/94";
 #endif
 static const char rcsid[] =
-    "$ABSD: strings.c,v 1.3 2009/02/08 11:59:25 mickey Exp $";
+    "$ABSD: strings.c,v 1.4 2009/03/20 16:32:03 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -78,8 +78,6 @@ u_char	hbfr[SZXHEAD];		/* buffer for struct exec */
 u_char *bfr;
 int asdata, fflg, minlen, maxlen;
 char *offset_format;
-
-char *stab;		/* libelf needs it */
 
 void usage(void);
 int getch(void);
