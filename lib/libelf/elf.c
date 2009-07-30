@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.10 2009/04/03 11:29:36 mickey Exp $";
+    "$ABSD: elf.c,v 1.11 2009/04/17 23:50:36 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -91,6 +91,10 @@ static const char rcsid[] =
 #else
 #error "Unsupported ELF class"
 #endif
+
+int elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
+    int (*func)(struct elf_symtab *, void *, void *), void *arg,
+    const char *, const char *);
 
 #define	ELF_SDATA	".sdata"
 #define	ELF_SBSS	".sbss"
@@ -349,13 +353,6 @@ elf2nlist(Elf_Sym *sym, const Elf_Ehdr *eh, const Elf_Shdr *shdr,
 		sn = shstr + shdr[sym->st_shndx].sh_name;
 	else
 		sn = NULL;
-#if 0
-	{
-		extern char *stab;
-		printf("%d:%s %d %s\n", sym->st_shndx, sn? sn : "",
-		    ELF_ST_TYPE(sym->st_info), stab + sym->st_name);
-	}
-#endif
 
 	switch (stt = ELF_ST_TYPE(sym->st_info)) {
 	case STT_NOTYPE:
@@ -451,7 +448,7 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Shdr *shdr, const char *shstr, const char *strtab,
     size_t *pstabsize)
 {
-	char *ret;
+	char *ret = NULL;
 	int i;
 
 	for (i = 0; i < eh->e_shnum; i++) {
@@ -463,13 +460,15 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 				return (NULL);
 			}
 
-			if ((ret = malloc(*pstabsize)) == NULL)
+			if ((ret = malloc(*pstabsize)) == NULL) {
 				warn("malloc");
-			else if (pread(fileno(fp), ret, *pstabsize,
+				break;
+			} else if (pread(fileno(fp), ret, *pstabsize,
 			    foff + shdr[i].sh_offset) != *pstabsize) {
 				warn("pread: %s", name);
 				free(ret);
 				ret = NULL;
+				break;
 			}
 		}
 	}
@@ -478,65 +477,44 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 }
 
 int
-elf_symloadx(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
-    const Elf_Shdr *shdr, char *shstr, struct nlist **pnames,
-    struct nlist ***psnames, size_t *pstabsize, int *pnrawnames,
+elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
+    int (*func)(struct elf_symtab *, void *, void *), void *arg,
     const char *strtab, const char *symtab)
 {
+	const Elf_Ehdr *eh = es->ehdr;
+	const Elf_Shdr *shdr = es->shdr;
 	long symsize;
-	struct nlist *np;
 	Elf_Sym sbuf;
 	int i;
 
-	if (!(stab = elf_strload(name, fp, foff, eh, shdr, shstr, strtab,
-	    pstabsize)))
+	if (!(es->stab = elf_strload(es->name, fp, foff, eh, shdr, es->shstr,
+	    strtab, &es->stabsz)))
 		return (1);
 
 	for (i = 0; i < eh->e_shnum; i++) {
-		if (!strcmp(shstr + shdr[i].sh_name, symtab)) {
+		if (!strcmp(es->shstr + shdr[i].sh_name, symtab)) {
 			symsize = shdr[i].sh_size;
 			if (fseeko(fp, foff + shdr[i].sh_offset, SEEK_SET)) {
-				warn("%s: fseeko", name);
-				if (stab)
-					free(stab);
+				warn("%s: fseeko", es->name);
+				free(es->stab);
 				return (1);
 			}
 
-			*pnrawnames = symsize / sizeof(sbuf);
-			if ((*pnames = calloc(*pnrawnames, sizeof(*np))) == NULL) {
-				warn("%s: malloc names", name);
-				if (stab)
-					free(stab);
-				return (1);
-			}
-			if ((*psnames = calloc(*pnrawnames, sizeof(np))) == NULL) {
-				warn("%s: malloc snames", name);
-				if (stab)
-					free(stab);
-				free(*pnames);
-				return (1);
-			}
-
-			for (np = *pnames; symsize > 0; symsize -= sizeof(sbuf)) {
-				if (fread(&sbuf, sizeof(sbuf), 1, fp) != 1) {
-					warn("%s: read symbol", name);
-					if (stab)
-						free(stab);
-					free(*pnames);
-					free(*psnames);
+			es->nsyms = symsize / sizeof sbuf;
+			for (; symsize > 0; symsize -= sizeof sbuf) {
+				if (fread(&sbuf, sizeof sbuf, 1, fp) != 1) {
+					warn("%s: read symbol", es->name);
+					free(es->stab);
 					return (1);
 				}
 
 				elf_fix_sym(eh, &sbuf);
-
-				if (!sbuf.st_name ||
-				    sbuf.st_name > *pstabsize)
+				if (!sbuf.st_name || sbuf.st_name > es->stabsz)
 					continue;
 
-				elf2nlist(&sbuf, eh, shdr, shstr, np);
-				np++;
+				if ((*func)(es, &sbuf, arg))
+					return 1;
 			}
-			*pnrawnames = np - *pnames;
 		}
 	}
 	return (0);
@@ -548,6 +526,11 @@ elf_shstrload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 {
 	long shstrsize;
 	char *shstr;
+
+	if (!eh->e_shstrndx || eh->e_shstrndx >= eh->e_shnum) {
+		warnx("%s: invalid header", name);
+		return NULL;
+	}
 
 	shstrsize = shdr[eh->e_shstrndx].sh_size;
 	if (shstrsize == 0) {
@@ -576,30 +559,24 @@ elf_shstrload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 }
 
 int
-elf_symload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
-    const Elf_Shdr *shdr, struct nlist **pnames, struct nlist ***psnames,
-    size_t *pstabsize, int *pnrawnames)
+elf_symload(struct elf_symtab *es, FILE *fp, off_t foff,
+    int (*func)(struct elf_symtab *, void *, void *), void *arg)
 {
-	char *shstr;
+	int rv;
 
-	if (!(shstr = elf_shstrload(name, fp, foff, eh, shdr)))
+	if (!es->shstr && !(es->shstr = elf_shstrload(es->name, fp, foff,
+	    es->ehdr, es->shdr)))
 		return 1;
 
-	stab = NULL;
-	*pnames = NULL; *psnames = NULL;
-	if (elf_symloadx(name, fp, foff, eh, shdr, shstr, pnames,
-	    psnames, pstabsize, pnrawnames, ELF_STRTAB, ELF_SYMTAB))
-		elf_symloadx(name, fp, foff, eh, shdr, shstr, pnames,
-		    psnames, pstabsize, pnrawnames, ELF_DYNSTR, ELF_DYNSYM);
-
-	free(shstr);
-	if (stab == NULL) {
-		warnx("%s: no name list", name);
-		if (*pnames)
-			free(*pnames);
-		if (*psnames)
-			free(*psnames);
-		return (1);
+	es->stab = NULL;
+	if (elf_symloadx(es, fp, foff, func, arg, ELF_STRTAB, ELF_SYMTAB)) {
+		free(es->stab);
+		es->stab = NULL;
+		if ((rv = elf_symloadx(es, fp, foff, func, arg,
+		    ELF_DYNSTR, ELF_DYNSYM))) {
+			free(es->stab);
+			return rv;
+		}
 	}
 
 	return (0);

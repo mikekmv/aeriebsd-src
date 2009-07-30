@@ -30,7 +30,22 @@
 #define	ELFLIB_STRIPX	0x01
 #define	ELFLIB_STRIPD	0x02
 
-extern char *stab;
+struct nlist;
+struct dwarf_nebula;
+struct elf_symtab {
+		/* from the caller */
+	const char *name;	/* objname */
+	const void *ehdr;	/* file header */
+
+		/* if empty we we will provide */
+	void *shdr;		/* sections headers */
+	char *shstr;		/* sections header strings */
+
+		/* we provide these */
+	char	*stab;		/* strings table for the syms */
+	size_t	stabsz;		/* strings size */
+	u_long	nsyms;		/* number of symbols in the table */
+};
 
 int	elf32_fix_header(Elf32_Ehdr *eh);
 Elf32_Shdr*elf32_load_shdrs(const char *, FILE *, off_t, const Elf32_Ehdr *);
@@ -48,12 +63,8 @@ char	*elf32_shstrload(const char *, FILE *, off_t, const Elf32_Ehdr *,
 	    const Elf32_Shdr *shdr);
 char	*elf32_strload(const char *, FILE *, off_t, const Elf32_Ehdr *,
 	    const Elf32_Shdr *shdr, const char *, const char *, size_t *);
-int	elf32_symloadx(const char *, FILE *, off_t, const Elf32_Ehdr *,
-	    const Elf32_Shdr *, char *, struct nlist **, struct nlist ***,
-	    size_t *, int *, const char *, const char *);
-int	elf32_symload(const char *, FILE *, off_t, const Elf32_Ehdr *,
-	    const Elf32_Shdr *, struct nlist **, struct nlist ***,
-	    size_t *, int *);
+int	elf32_symload(struct elf_symtab *, FILE *, off_t,
+	    int (*func)(struct elf_symtab *, void *, void *), void *arg);
 int	elf32_strip(const char *, FILE *, const Elf32_Ehdr *,
 	    struct stat *, off_t *);
 int	elf32_symseed(const char *, FILE *, const Elf32_Ehdr *,
@@ -75,16 +86,16 @@ char	*elf64_shstrload(const char *, FILE *, off_t, const Elf64_Ehdr *,
 	    const Elf64_Shdr *shdr);
 char	*elf64_strload(const char *, FILE *, off_t, const Elf64_Ehdr *,
 	    const Elf64_Shdr *shdr, const char *, const char *, size_t *);
-int	elf64_symloadx(const char *, FILE *, off_t, const Elf64_Ehdr *,
-	    const Elf64_Shdr *, char *, struct nlist **, struct nlist ***,
-	    size_t *, int *, const char *, const char *);
-int	elf64_symload(const char *, FILE *, off_t, const Elf64_Ehdr *,
-	    const Elf64_Shdr *, struct nlist **, struct nlist ***,
-	    size_t *, int *);
+int	elf64_symload(struct elf_symtab *, FILE *, off_t,
+	    int (*func)(struct elf_symtab *, void *, void *), void *arg);
 int	elf64_strip(const char *, FILE *, const Elf64_Ehdr *,
 	    struct stat *, off_t *);
 int	elf64_symseed(const char *, FILE *, const Elf64_Ehdr *,
 	    struct stat *, off_t *, int);
+
+struct dwarf_nebula *elf_dwarfnebula(unsigned char, const char *, FILE *);
+int	dwarf_addr2line(struct dwarf_nebula *, const char *, FILE *,
+	    long long, char **, char **, int *);
 
 static inline unsigned int
 elf_hash(const unsigned char *name)

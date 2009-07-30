@@ -1,5 +1,7 @@
+
 LIB=	elf
 SRCS=	elf32.c elf64.c
+CFLAGS+=-Wall -Werror
 CLEANFILES+=elf32.c elf64.c
 WANTLINT=
 
