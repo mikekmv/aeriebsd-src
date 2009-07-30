@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.6 2009/05/26 16:35:27 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.7 2009/05/26 17:18:31 mickey Exp $";
 #endif
 #endif
 
@@ -70,8 +70,6 @@ static const char rcsid[] = "$ABSD: nm.c,v 1.6 2009/05/26 16:35:27 mickey Exp $"
 
 /* XXX get shared code to handle a.out byte-order swaps */
 #include "byte.c"
-
-#define	SYMTABMAG	"/ "
 
 union hdr {
 	struct exec aout;
@@ -262,9 +260,6 @@ process_file(int count, const char *fname)
 		return(1);
 	}
 
-	if (!issize && count > 1)
-		(void)printf("\n%s:\n", fname);
-
 	/*
 	 * first check whether this is an object file - read a object
 	 * header, and skip back to the beginning
@@ -282,12 +277,16 @@ process_file(int count, const char *fname)
 
 	/* this could be an archive */
 	if (!IS_ELF(exec_head.elf32) && N_BADMAG(exec_head.aout)) {
-		if (fread(magic, sizeof(magic), (size_t)1, fp) != 1 ||
+		if (fread(magic, sizeof magic, 1, fp) != 1 ||
 		    strncmp(magic, ARMAG, SARMAG)) {
 			warnx("%s: not object file or archive", fname);
 			(void)fclose(fp);
 			return(1);
 		}
+
+		if (!issize && count > 1)
+			(void)printf("\n%s:\n", fname);
+
 		retval = show_archive(count, fname, fp);
 	} else
 		retval = show_file(count, 1, fname, fp, 0, &exec_head);
@@ -315,7 +314,7 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 		if (len > *namelen) {
 			p -= (long)*name;
 			if ((*name = realloc(*name, baselen+len)) == NULL)
-				err(1, NULL);
+				err(1, "realloc");
 			*namelen = len;
 			p += (long)*name;
 		}
@@ -336,7 +335,7 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 		if (len > *namelen) {
 			p -= (long)*name;
 			if ((*name = realloc(*name, baselen+len)) == NULL)
-				err(1, NULL);
+				err(1, "realloc");
 			*namelen = len;
 			p += (long)*name;
 		}
@@ -482,11 +481,10 @@ show_archive(int count, const char *fname, FILE *fp)
 {
 	struct ar_hdr ar_head;
 	union hdr exec_head;
-	int i, rval;
 	off_t last_ar_off, foff, symtaboff;
 	char *name;
-	int baselen, namelen;
 	u_long mmbrlen, symtablen;
+	int rval, baselen, namelen;
 
 	baselen = strlen(fname) + 3;
 	namelen = sizeof(ar_head.ar_name);
@@ -519,8 +517,8 @@ show_archive(int count, const char *fname, FILE *fp)
 				break;
 			}
 			goto skip;
-		} else if (strncmp(ar_head.ar_name, SYMTABMAG,
-		    sizeof(SYMTABMAG) - 1) == 0) {
+		} else if (strncmp(ar_head.ar_name, RANLIBMAG2,
+		    sizeof(RANLIBMAG2) - 1) == 0) {
 			/* if nametab hasn't been seen yet -- doit later */
 			if (!nametab) {
 				symtablen = mmbrlen;
@@ -534,6 +532,10 @@ show_archive(int count, const char *fname, FILE *fp)
 			char **nt, *p, *pp;
 			int i;
 		 
+			if (issize || !armap)
+				goto skip;
+
+			/* XXX leaking p,nametab on multiple <file> args */
 			if (!(p = malloc(mmbrlen + 1))) {
 				warn("%s: alloc nametab", fname);
 				rval = 1;
@@ -567,9 +569,6 @@ show_archive(int count, const char *fname, FILE *fp)
 					pp = p;
 				}
 			*nt = NULL;
-
-			if (issize || !armap || !symtablen || !symtaboff)
-				goto skip;
 		}
 
 		if (!issize && armap && symtablen && symtaboff) {
@@ -611,7 +610,7 @@ show_archive(int count, const char *fname, FILE *fp)
 		/*
 		 * skip to next archive object
 		 */
-skip:		if (fseeko(fp, last_ar_off + mmbrlen, SEEK_SET)) {
+skip:		if (fseeko(fp, last_ar_off + mmbrlen, SEEK_SET) < 0) {
 			warn("%s", fname);
 			rval = 1;
 			break;
@@ -625,7 +624,28 @@ skip:		if (fseeko(fp, last_ar_off + mmbrlen, SEEK_SET)) {
 	return(rval);
 }
 
-char *stab;
+int nrawnames;
+
+int
+elf_symadd(struct elf_symtab *es, void *sym, void *v)
+{
+	struct nlist *nl;
+	struct nlist **np = v;
+
+	if (!*np && !(*np = calloc(es->nsyms, sizeof **np)))
+		err(1, "calloc");
+
+	nl = &(*np)[nrawnames++];
+	if (((Elf_Ehdr *)es->ehdr)->e_ident[EI_CLASS] == ELFCLASS32)
+		elf32_2nlist(sym, es->ehdr, es->shdr, es->shstr, nl);
+	else
+		elf64_2nlist(sym, es->ehdr, es->shdr, es->shstr, nl);
+	if (nl->n_un.n_strx)
+		nl->n_un.n_name = es->stab + nl->n_un.n_strx;
+	else
+		nl->n_un.n_name = "";
+	return 0;
+}
 
 /*
  * show_file()
@@ -638,7 +658,8 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 {
 	u_long text, data, bss, total;
 	struct nlist *np, *names, **snames;
-	int i, aout, nrawnames, nnames;
+	char *stab;
+	int i, aout, nnames;
 	size_t stabsize;
 	off_t staboff;
 
@@ -646,36 +667,56 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 	if (IS_ELF(head->elf32) &&
 	    head->elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
 	    head->elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
-		void *shdr;
+		struct elf_symtab es;
 
 		elf32_fix_header(&head->elf32);
-		if (!(shdr = elf32_load_shdrs(name, fp, foff, &head->elf32)))
-			return (1);
 
-		elf32_fix_shdrs(&head->elf32, shdr);
-		i = issize?
-		    elf32_size(&head->elf32, shdr, &text, &data, &bss) :
-		    elf32_symload(name, fp, foff, &head->elf32, shdr,
-			&names, &snames, &stabsize, &nrawnames);
-		free(shdr);
+		es.name = name;
+		es.ehdr = &head->elf32;
+		if (!(es.shdr = elf32_load_shdrs(name, fp, foff, es.ehdr)))
+			return (1);
+		elf32_fix_shdrs(es.ehdr, es.shdr);
+		es.shstr = NULL;
+
+		if (issize)
+			i = elf32_size(es.ehdr, es.shdr, &text, &data, &bss);
+		else {
+			nrawnames = 0;
+			names = NULL;
+			i = elf32_symload(&es, fp, foff, elf_symadd, &names);
+			stab = es.stab;
+			stabsize = es.stabsz;
+		}
+		free(es.shstr);
+		free(es.shdr);
 		if (i)
 			return (i);
 
 	} else if (IS_ELF(head->elf64) &&
 	    head->elf64.e_ident[EI_CLASS] == ELFCLASS64 &&
 	    head->elf64.e_ident[EI_VERSION] == ELF_TARG_VER) {
-		void *shdr;
+		struct elf_symtab es;
 
 		elf64_fix_header(&head->elf64);
-		if (!(shdr = elf64_load_shdrs(name, fp, foff, &head->elf64)))
-			return (1);
 
-		elf64_fix_shdrs(&head->elf64, shdr);
-		i = issize?
-		    elf64_size(&head->elf64, shdr, &text, &data, &bss) :
-		    elf64_symload(name, fp, foff, &head->elf64, shdr,
-			&names, &snames, &stabsize, &nrawnames);
-		free(shdr);
+		es.name = name;
+		es.ehdr = &head->elf64;
+		if (!(es.shdr = elf64_load_shdrs(name, fp, foff, es.ehdr)))
+			return (1);
+		elf64_fix_shdrs(es.ehdr, es.shdr);
+		es.shstr = NULL;
+
+		if (issize)
+			i = elf64_size(es.ehdr, es.shdr, &text, &data, &bss);
+		else {
+			nrawnames = 0;
+			names = NULL;
+			i = elf64_symload(&es, fp, foff, elf_symadd, &names);
+			stab = es.stab;
+			stabsize = es.stabsz;
+		}
+		free(es.shstr);
+		free(es.shdr);
 		if (i)
 			return (i);
 
@@ -719,19 +760,12 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 			return (1);
 		}
 
-		if ((snames = calloc(nrawnames, sizeof(struct nlist *))) == NULL) {
-			warn("%s: malloc snames", name);
-			free(names);
-			return (1);
-		}
-
 #ifdef __LP64__
 		for (np = names, i = nrawnames; i--; np++) {
 			struct nlist32 nl32;
 
 			if (fread(&nl32, sizeof(nl32), 1, fp) != 1) {
 				warnx("%s: cannot read symbol table", name);
-				free(snames);
 				free(names);
 				return (1);
 			}
@@ -750,7 +784,6 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 #else
 		if (fread(names, head->aout.a_syms, 1, fp) != 1) {
 			warnx("%s: cannot read symbol table", name);
-			free(snames);
 			free(names);
 			return (1);
 		}
@@ -765,7 +798,6 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 		 */
 		if (fread(&w, sizeof(w), (size_t)1, fp) != 1) {
 			warnx("%s: cannot read stab size", name);
-			free(snames);
 			free(names);
 			return(1);
 		}
@@ -773,12 +805,23 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 		MMAP(stab, stabsize, PROT_READ, MAP_PRIVATE|MAP_FILE,
 		    fileno(fp), staboff);
 		if (stab == MAP_FAILED) {
-			free(snames);
 			free(names);
 			return (1);
 		}
 
 		stabsize -= 4;		/* we already have the size */
+		for (np = names, i = nnames = 0; i < nrawnames; np++, i++) {
+			/*
+			 * make n_un.n_name a character pointer by adding
+			 * the string table's base to n_un.n_strx
+			 *
+			 * don't mess with zero offsets
+			 */
+			if (np->n_un.n_strx)
+				np->n_un.n_name = stab + np->n_un.n_strx;
+			else
+				np->n_un.n_name = "";
+		}
 	} while (0);
 
 	if (issize) {
@@ -812,6 +855,12 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 	if (sfunc == NULL && usemmap)
 		(void)madvise(stab, stabsize, MADV_SEQUENTIAL);
 
+	if ((snames = calloc(nrawnames, sizeof *snames)) == NULL) {
+		warn("%s: malloc snames", name);
+		free(names);
+		return (1);
+	}
+
 	/*
 	 * fix up the symbol table and filter out unwanted entries
 	 *
@@ -822,16 +871,6 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 	 * filter out all entries which we don't want to print anyway
 	 */
 	for (np = names, i = nnames = 0; i < nrawnames; np++, i++) {
-		/*
-		 * make n_un.n_name a character pointer by adding the string
-		 * table's base to n_un.n_strx
-		 *
-		 * don't mess with zero offsets
-		 */
-		if (np->n_un.n_strx)
-			np->n_un.n_name = stab + np->n_un.n_strx;
-		else
-			np->n_un.n_name = "";
 		if (aout && SYMBOL_TYPE(np->n_type) == N_UNDF && np->n_value)
 			np->n_type = N_COMM | (np->n_type & N_EXT);
 		if (!print_all_symbols && IS_DEBUGGER_SYMBOL(np->n_type))
