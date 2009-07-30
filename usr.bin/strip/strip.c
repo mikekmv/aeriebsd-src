@@ -38,7 +38,7 @@ static const char copyright[] =
 #ifndef lint
 /*static char sccsid[] = "from: @(#)strip.c	5.8 (Berkeley) 11/6/91";*/
 static char const rcsid[] =
-    "$ABSD: strip.c,v 1.3 2009/02/13 14:21:20 mickey Exp $";
+    "$ABSD: strip.c,v 1.4 2009/03/20 16:32:03 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -70,7 +70,6 @@ int s_sym(const char *, struct exec *, struct stat *, off_t *);
 void usage(void);
 
 int xflag = 0;
-char *stab;		/* libelf needs it */
 
 int
 main(int argc, char *argv[])
