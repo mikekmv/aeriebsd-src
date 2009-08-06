@@ -116,6 +116,10 @@ extern  const struct vfsops ntfs_vfsops;
 extern  const struct vfsops udf_vfsops;
 #endif
 
+#ifdef MILFS
+extern  const struct vfsops milfs_vfsops;
+#endif
+
 /*
  * Set up the filesystem operations for vnodes.
  */
@@ -174,6 +178,11 @@ static struct vfsconf vfsconflist[] = {
 	{ &udf_vfsops, MOUNT_UDF, 13, 0, MNT_LOCAL, NULL },
 #endif
 
+	/* Michigan Log File System (MILFS) */
+#ifdef MILFS
+	{ &milfs_vfsops, MOUNT_MILFS, 15, 0, MNT_LOCAL, NULL },
+#endif
+
 };
 
 
@@ -213,6 +222,7 @@ extern struct vnodeopv_desc ext2fs_fifoop_opv_desc;
 extern struct vnodeopv_desc xfs_vnodeop_opv_desc;
 extern struct vnodeopv_desc ntfs_vnodeop_opv_desc;
 extern struct vnodeopv_desc udf_vnodeop_opv_desc;
+extern struct vnodeopv_desc milfs_vnodeop_opv_desc;
 
 struct vnodeopv_desc *vfs_opv_descs[] = {
 	&sync_vnodeop_opv_desc,
@@ -269,6 +279,9 @@ struct vnodeopv_desc *vfs_opv_descs[] = {
 #endif
 #ifdef UDF
 	&udf_vnodeop_opv_desc,
+#endif
+#ifdef MILFS
+	&milfs_vnodeop_opv_desc,
 #endif
 
 	NULL

@@ -1,0 +1,97 @@
+.\"
+.\" Copyright (c) 2009 Michael Shalayeff
+.\" Copyright (c) 2009 Pedro Martelletto
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd July 29, 2009
+.Dt NEWFS_MILFS 8
+.Os
+.Sh NAME
+.Nm newfs_milfs
+.Nd construct a new MILFS file system
+.Sh SYNOPSIS
+.Nm newfs_milfs
+.Bk -words
+.Op Fl b Ar block-size
+.Op Fl c Ar cylinder-group-size
+.Ar partition
+.Ek
+.Sh DESCRIPTION
+The
+.Nm
+tool creates a new MILFS file system on the raw device node specified by
+.Ar partition .
+This node must have been previously labeled as a MILFS partition by
+.Xr disklabel 8 .
+If
+.Ar partition
+is not an absolute path name,
+.Nm
+will try to operate on the associated raw device.
+.Pp
+The options to
+.Nm
+are as follows:
+.Bl -tag -width Fl
+.It Fl b Ar block-size
+The block size of the file system, in bytes.
+The default is 2KB, the minimum is 512 bytes and the maximum is 256KB.
+The block size must be a power of 2.
+.It Fl c Ar cylinder-group-size
+The cylinder group size of the file system, in bytes.
+The default is 128KB, the minimum is 8KB and the maximum is 2GB.
+The cylinder group size must be an odd power of 2.
+.El
+.Pp
+For a block size of
+.Qq 2^j
+bytes and a cylinder group size of
+.Qq 2^i
+bytes, the following condition must be satisfied:
+.Qq 2 * j = 5 + i .
+.Pp
+When provided a valid block size,
+.Nm
+automatically calculates the corresponding cylinder group size.
+When provided a valid cylinder group size,
+.Nm
+automatically calculates the corresponding block size.
+.Sh EXAMPLES
+The following example illustrates the creation of a MILFS file system on the
+partition represented by the raw device node
+.Em /dev/rsd2e 
+using the default geometry for block and cylinder group sizes.
+.Pp
+.Dl # newfs -t milfs sd2e
+.Pp
+The following three examples illustrate the creation of a MILFS file system on
+the partition represented by the raw device node
+.Em /dev/rwd0f
+using 512B blocks and 8KB cylinder groups.
+They are functionally analogous.
+.Pp
+.Dl # newfs -t milfs -b 512 /dev/rwd0f
+.Dl # newfs -t milfs -c 8192 /dev/rwd0f
+.Dl # newfs -t milfs -b 512 -c 8192 /dev/rwd0f
+.Sh AUTHORS
+The
+.Nm
+utility was written by
+.An Michael Shalayeff
+and
+.An Pedro Martelletto .
+.Sh SEE ALSO
+.Xr disklabel 8 ,
+.Xr mount_milfs 8 ,
+.Xr newfs 8

@@ -260,6 +260,12 @@ struct procfs_args {
 #define PROCFS_ARGSVERSION      1
 #define PROCFSMNT_LINUXCOMPAT   0x01
 
+/*
+ * Argument to mount the Michigan Log File System (MILFS).
+ */
+struct milfs_args {
+	char *fspec;	/* Block special device to mount. */
+};
 
 /*
  * file system statistics
@@ -372,6 +378,7 @@ struct ostatfs {
 #define	MOUNT_XFS	"xfs"		/* xfs */
 #define	MOUNT_NTFS	"ntfs"		/* NTFS */
 #define	MOUNT_UDF	"udf"		/* UDF */
+#define	MOUNT_MILFS	"milfs"		/* Michigan Log File System (MILFS) */
 
 /*
  * Structure per mounted file system.  Each mounted file system has an

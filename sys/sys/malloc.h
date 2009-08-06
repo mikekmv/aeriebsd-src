@@ -181,7 +181,9 @@
 
 #define M_DRM		145	/* Direct Rendering Manager */
 
-#define	M_LAST		146	/* Must be last type + 1 */
+#define M_MILFS		146	/* Michigan Log File System memory */
+
+#define	M_LAST		147	/* Must be last type + 1 */
 
 #define	INITKMEMNAMES { \
 	"free",		/* 0 M_FREE */ \
@@ -315,6 +317,7 @@
 	"Bluetooth HID",	/* 143 M_BTHIDEV */ \
 	"AGP Memory",	/* 144 M_AGP */ \
 	"Direct Rendering Manager",	/* 145 M_DRM */ \
+	"MILFS",	/* 146 M_MILFS */ \
 }
 
 struct kmemstats {

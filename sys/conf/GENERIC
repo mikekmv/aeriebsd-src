@@ -35,6 +35,7 @@ option		QUOTA		# UFS quotas
 option		EXT2FS		# Second Extended Filesystem
 option		MFS		# memory file system
 option		XFS		# xfs filesystem
+#option		MILFS		# Michigan Log File System (MILFS) support
 
 option		TCP_SACK	# Selective Acknowledgements for TCP
 option		TCP_ECN		# Explicit Congestion Notification for TCP
