@@ -568,6 +568,32 @@ sdmmc_go_idle_state(struct sdmmc_softc *sc)
 }
 
 /*
+ * Send the "SEND_IF_COND" command, to check operating condition
+ */
+int
+sdmmc_send_if_cond(struct sdmmc_softc *sc, uint32_t card_ocr)
+{
+	struct sdmmc_command cmd;
+	uint8_t pat = 0x23;
+	uint8_t res;
+
+	bzero(&cmd, sizeof cmd);
+
+	cmd.c_opcode = SD_SEND_IF_COND;
+	cmd.c_arg = ((card_ocr & SD_OCR_VOL_MASK) != 0) << 8 | pat;
+	cmd.c_flags = SCF_CMD_BCR | SCF_RSP_R7;
+
+	if (sdmmc_mmc_command(sc, &cmd) != 0)
+		return 1;
+
+	res = cmd.c_resp[0];
+	if (res != pat)
+		return 1;
+	else
+		return 0;
+}
+
+/*
  * Retrieve (SD) or set (MMC) the relative card address (RCA).
  */
 int
