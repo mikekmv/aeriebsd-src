@@ -243,7 +243,7 @@ mkroot(void)
 	dip->di_modsec = tv.tv_sec;
 	dip->di_modusec = tv.tv_usec;
 	dip->di_gen = 0;
-	dip->di_magic = MILFS_DINODE_MAGIC;
+	dip->di_size = sizeof(struct milfs_sinode);
 
 	cdp = (struct milfs_cgdesc *)((char *)dip + bsize -
 	    sizeof(struct milfs_dinode));
