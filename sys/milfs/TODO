@@ -1,1 +1,2 @@
-- Get rid of the MAXPHYS (64k) limit in the buffer cache.
+- Get rid of the MAXPHYS (64k) limit in the buffer cache;
+- limit inode/block data allocations (pbly pool limits);
