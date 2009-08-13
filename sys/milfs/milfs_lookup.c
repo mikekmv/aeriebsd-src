@@ -21,9 +21,7 @@
 #include <sys/vnode.h>
 #include <sys/mount.h>
 
-#include <milfs/milfs_param.h>
-#include <milfs/milfs_types.h>
-#include <milfs/milfs_proto.h>
+#include <milfs/milfs.h>
 #include <milfs/milfs_extern.h>
 
 /*

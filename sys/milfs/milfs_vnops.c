@@ -22,9 +22,7 @@
 #include <sys/namei.h>
 #include <sys/vnode.h>
 
-#include <milfs/milfs_param.h>
-#include <milfs/milfs_types.h>
-#include <milfs/milfs_proto.h>
+#include <milfs/milfs.h>
 #include <milfs/milfs_extern.h>
 
 int (**milfs_vnodeop_p)(void *v);

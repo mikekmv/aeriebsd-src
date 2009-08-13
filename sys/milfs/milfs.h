@@ -18,7 +18,34 @@
 #ifndef _MILFS_TYPES_H_
 #define _MILFS_TYPES_H_
 
-#include <sys/tree.h>
+/*
+ * File system parameters.
+ */
+#define	MILFS_CGSIZE_MIN	0x00002000	/* 8KB */
+#define	MILFS_CGSIZE_MAX	0x80000000	/* 2GB */
+#define	MILFS_CGSIZE_DEFAULT	0x00020000	/* 128KB */
+#define	MILFS_BSIZE_MIN		0x00000200	/* 512B */
+#define	MILFS_BSIZE_MAX		0x00080000	/* 512KB */
+#define	MILFS_BSIZE_DEFAULT	0x00000800	/* 2KB */
+#define	MILFS_BBSIZE		0x00002000	/* 8KB */
+#define	MILFS_NAMESIZE		504
+
+/*
+ * Reserved inode numbers.
+ */
+#define	MILFS_INODE_DIRECTORY	0
+#define	MILFS_INODE_ROOT	1
+
+/*
+ * Inode modes.
+ */
+#define	MILFS_MODE_DIRECTORY	0x0001
+#define	MILFS_MODE_HASSTATIC	0x8000	/* Never committed to disk. */
+
+/*
+ * Magic for cylinder group descriptors.
+ */
+#define	MILFS_CGDESC_MAGIC	0x15ec0a92
 
 /*
  * On-disk layout of a static MILFS inode.
@@ -55,32 +82,33 @@ struct milfs_dinode {
  */
 struct milfs_cgdesc {
 	u_int32_t	cd_bsize;	/* Cylinder group block size. */
-	u_int32_t	cd_spare;	/* Reserved; currently unused. */
+	u_int32_t	cd_spare0;	/* Reserved; currently unused. */
 	u_int32_t	cd_cgsize;	/* Cylinder group size. */
 	u_int32_t	cd_magic;	/* Cylinder group magic. */
+	u_int32_t	cd_spare1[4];
 };
 
 /*
  * On-disk layout of a directory entry.
  */
 struct milfs_dirent {
-	u_int64_t	de_inode;			/* Entry inode. */
-	unsigned char	de_entry[MILFS_NAMESIZE];	/* Entry name. */
+	u_int64_t       de_inode;			/* Entry inode. */
+	unsigned char   de_entry[MILFS_NAMESIZE];	/* Entry name. */
 };
 
 /*
  * In-memory representation of a MILFS inode block.
  */
 struct milfs_block {
-	u_int64_t			mb_inode;	/* Inode number. */
-	u_int32_t			mb_offset;	/* Block offset. */
-	u_int32_t			mb_blksize;	/* Block size. */
-	u_int32_t			mb_cgno;	/* Cylinder group. */
-	u_int32_t			mb_cgblk;	/* Offset in group. */
-	int32_t				mb_modsec;	/* Modif. second. */
-	int32_t				mb_modusec;	/* Modif. usecond. */
-	u_int32_t			mb_gen;		/* Block generation. */
-	SPLAY_ENTRY(milfs_block)	mb_nodes;
+	SPLAY_ENTRY(milfs_block) mb_nodes;
+	u_int64_t	mb_inode;	/* Inode number. */
+	u_int32_t	mb_offset;	/* Block offset. */
+	u_int32_t	mb_blksize;	/* Block size. */
+	u_int32_t	mb_cgno;	/* Cylinder group. */
+	u_int32_t	mb_cgblk;	/* Offset in group. */
+	int32_t		mb_modsec;	/* Modif. second. */
+	int32_t		mb_modusec;	/* Modif. usecond. */
+	u_int32_t	mb_gen;		/* Block generation. */
 };
 
 SPLAY_HEAD(milfs_block_tree, milfs_block);
@@ -89,20 +117,20 @@ SPLAY_HEAD(milfs_block_tree, milfs_block);
  * In-memory representation of a MILFS inode.
  */
 struct milfs_inode {
-	u_int64_t			mi_inode;	/* Inode number. */
-	u_int64_t			mi_size;	/* Inode size. */
-	struct milfs_block_tree		mi_blktree;	/* Inode blocks. */
-	int64_t				mi_birthsec;
-	int32_t				mi_birthnsec;
-	int32_t				mi_changesec;
-	int32_t				mi_changeusec;
-	u_int32_t			mi_gen;
-	u_int32_t			mi_xuid;
-	u_int32_t			mi_xgid;
-	int16_t				mi_mode;
-	int16_t				mi_nlink;
-	struct vnode		       *mi_vnode;	/* Backpointer to v. */
-	SPLAY_ENTRY(milfs_inode)	mi_nodes;
+	SPLAY_ENTRY(milfs_inode) mi_nodes;
+	u_int64_t	mi_inode;       /* Inode number. */
+	u_int64_t	mi_size;        /* Inode size. */
+	struct milfs_block_tree mi_blktree; /* Inode blocks. */
+	int64_t		mi_birthsec;
+	int32_t		mi_birthnsec;
+	int32_t		mi_changesec;
+	int32_t		mi_changeusec;
+	u_int32_t	mi_gen;
+	u_int32_t	mi_xuid;
+	u_int32_t	mi_xgid;
+	int16_t		mi_mode;
+	int16_t		mi_nlink;
+	struct vnode	*mi_vnode;	/* Backpointer to v. */
 };
 
 SPLAY_HEAD(milfs_inode_tree, milfs_inode);
@@ -111,12 +139,15 @@ SPLAY_HEAD(milfs_inode_tree, milfs_inode);
  * In-memory representation of a mounted MILFS file system.
  */
 struct milfs_mount {
+	struct milfs_inode_tree mm_inotree;
+	struct vnode   *mm_devvp;	/* File system device vnode pointer. */
+	struct proc    *mm_cleaner;	/* Cleaner thread to kill */
+	u_int32_t	mm_flags;	/* Flags */
+#define	MILFS_GONE	0x00000001	/* being unmounted */
 	u_int32_t	mm_bsize;	/* File system block size. */
 	u_int32_t	mm_cgsize;	/* File system cylinder group size. */
-	struct vnode   *mm_devvp;	/* File system device vnode pointer. */
 	u_int32_t	mm_ncg;		/* Number of cylinder groups. */
 	u_int32_t	mm_blkpercg;	/* Blocks per cylinder group. */
-	struct milfs_inode_tree mm_inotree;
 };
 
 #endif /* _MILFS_TYPES_H_ */

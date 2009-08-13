@@ -27,9 +27,7 @@
 #include <sys/vnode.h>
 #include <sys/mount.h>
 
-#include <milfs/milfs_param.h>
-#include <milfs/milfs_types.h>
-#include <milfs/milfs_proto.h>
+#include <milfs/milfs.h>
 #include <milfs/milfs_extern.h>
 
 struct pool milfs_block_pool;
@@ -190,7 +188,18 @@ milfs_start(struct mount *mp, int flags, struct proc *p)
 int
 milfs_unmount(struct mount *mp, int flags, struct proc *p)
 {
+	struct milfs_mount *mmp = VFSTOMILFS(mp);
+
+	mmp->mm_flags |= MILFS_GONE;
+
 	printf("milfs_unmount called!\n");
+
+	/* wait for the cleaner to finish */
+	if (mmp->mm_cleaner) {
+		wakeup(mmp->mm_cleaner);
+		tsleep(mmp, PRIBIO, "kaput", 0);
+	}
+
 	return (EINVAL);
 }
 

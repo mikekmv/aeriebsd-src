@@ -18,16 +18,16 @@
 #include <sys/param.h>
 #include <sys/disklabel.h>
 #include <sys/fcntl.h>
+#include <sys/buf.h>
 #include <sys/ioctl.h>
 #include <sys/malloc.h>
 #include <sys/namei.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
+#include <sys/kthread.h>
 
-#include <milfs/milfs_param.h>
-#include <milfs/milfs_types.h>
-#include <milfs/milfs_proto.h>
+#include <milfs/milfs.h>
 #include <milfs/milfs_extern.h>
 
 SPLAY_GENERATE(milfs_block_tree, milfs_block, mb_nodes, milfs_block_cmp);
@@ -402,7 +402,7 @@ milfs_mountfs(struct mount *mp, struct vnode *vp)
 		brelse(bp);
 	}
 
-	if (i > 32)
+	if (i >= 32)
 		return (EINVAL);
 
 	/*
@@ -443,6 +443,13 @@ milfs_mountfs(struct mount *mp, struct vnode *vp)
 	}
 
 	mp->mnt_data = (void *)mmp;
+
+	if ((error = kthread_create(milfs_cleaner, mmp, &mmp->mm_cleaner,
+	    "milc", NULL))) {
+		free(mmp, M_MILFS);
+		/* XXX cleanup inodes */
+		return (error);
+	}
 
 	return (0);
 }

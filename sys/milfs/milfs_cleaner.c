@@ -15,36 +15,30 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _MILFS_PARAM_H_
-#define _MILFS_PARAM_H_
+#include <sys/param.h>
+#include <sys/disklabel.h>
+#include <sys/fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/malloc.h>
+#include <sys/namei.h>
+#include <sys/proc.h>
+#include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/kthread.h>
 
-/*
- * File system parameters.
- */
-#define	MILFS_CGSIZE_MIN	0x00002000	/* 8KB */
-#define	MILFS_CGSIZE_MAX	0x80000000	/* 2GB */
-#define	MILFS_CGSIZE_DEFAULT	0x00020000	/* 128KB */
-#define	MILFS_BSIZE_MIN		0x00000200	/* 512B */
-#define	MILFS_BSIZE_MAX		0x00040000	/* 256KB */
-#define	MILFS_BSIZE_DEFAULT	0x00000800	/* 2KB */
-#define	MILFS_BBSIZE		0x00002000	/* 8KB */
-#define	MILFS_NAMESIZE		504
+#include <milfs/milfs.h>
+#include <milfs/milfs_extern.h>
 
-/*
- * Reserved inode numbers.
- */
-#define	MILFS_INODE_DIRECTORY	0
-#define	MILFS_INODE_ROOT	1
+void
+milfs_cleaner(void *v)
+{
+	struct milfs_mount *mmp = v;
 
-/*
- * Inode modes.
- */
-#define	MILFS_MODE_DIRECTORY	0x0001
-#define	MILFS_MODE_HASSTATIC	0x8000		/* Never committed to disk. */
+	while (!(mmp->mm_flags & MILFS_GONE)) {
 
-/*
- * Magic for cylinder group descriptors.
- */
-#define	MILFS_CGDESC_MAGIC	0x15ec0a92
+		tsleep(mmp->mm_cleaner, PRIBIO, "milc", 0);
+	}
 
-#endif /* _MILFS_PARAM_H_ */
+	wakeup(mmp);
+	kthread_exit(0);
+}
