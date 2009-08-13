@@ -136,18 +136,24 @@ struct milfs_inode {
 SPLAY_HEAD(milfs_inode_tree, milfs_inode);
 
 /*
+ * In-memory representation of a MILFS cylinder group.
+ */
+struct milfs_cg {
+	unsigned char  *cg_bmap;	/* Block bitmap. */
+};
+
+/*
  * In-memory representation of a mounted MILFS file system.
  */
 struct milfs_mount {
 	struct milfs_inode_tree mm_inotree;
+	struct milfs_cg *mm_cg;		/* Array of cylinder groups. */
 	struct vnode   *mm_devvp;	/* File system device vnode pointer. */
 	struct proc    *mm_cleaner;	/* Cleaner thread to kill */
-	unsigned char  *mm_bmap;	/* Bitmap of allocated blocks. */
 	u_int32_t	mm_flags;	/* Flags */
 #define	MILFS_GONE	0x00000001	/* being unmounted */
 	u_int32_t	mm_bsize;	/* File system block size. */
 	u_int32_t	mm_cgsize;	/* File system cylinder group size. */
-	u_int32_t	mm_nblk;	/* Number of blocks. */
 	u_int32_t	mm_ncg;		/* Number of cylinder groups. */
 	u_int32_t	mm_blkpercg;	/* Blocks per cylinder group. */
 };

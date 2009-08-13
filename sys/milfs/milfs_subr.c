@@ -262,8 +262,7 @@ milfs_scanblk(struct milfs_mount *mmp, struct milfs_inode *mip,
 		 * Otherwise, remove 'mbp' from the tree and replace it by
 		 * 'dip'.
 		 */
-		clrbit(mmp->mm_bmap,
-		    (mbp->mb_cgno * mmp->mm_blkpercg + mbp->mb_cgblk));
+		clrbit(mmp->mm_cg[cg].cg_bmap, blk);
 		milfs_blkdelete(mip, mbp);
 	}
 
@@ -277,7 +276,7 @@ milfs_scanblk(struct milfs_mount *mmp, struct milfs_inode *mip,
 	mbp->mb_modusec = dip->di_modusec;
 	mbp->mb_gen = dip->di_gen;
 
-	setbit(mmp->mm_bmap, (cg * mmp->mm_blkpercg + blk));
+	setbit(mmp->mm_cg[cg].cg_bmap, blk);
 
 	return (0);
 }
@@ -359,7 +358,7 @@ milfs_mountfs(struct mount *mp, struct vnode *vp)
 	struct proc *p;
 	struct milfs_cgdesc *cdp;
 	struct milfs_mount *mmp;
-	u_int32_t bsize, cdoffset, cgsize, nblk, ncg;
+	u_int32_t bsize, cdoffset, cgsize, ncg;
 	u_int64_t cgblk, psize;
 
 	p = curproc;
@@ -421,19 +420,19 @@ milfs_mountfs(struct mount *mp, struct vnode *vp)
 	ncg = (psize - MILFS_BBSIZE) / cgsize;
 	if (ncg == 0)
 		return (EINVAL);
-	nblk = (psize - MILFS_BBSIZE) / bsize;
-	if (nblk == 0)
-		return (EINVAL);
 
 	mmp = malloc(sizeof(struct milfs_mount), M_MILFS, M_WAITOK | M_ZERO);
 	mmp->mm_bsize = bsize;
 	mmp->mm_cgsize = cgsize;
 	mmp->mm_devvp = vp;
 	mmp->mm_ncg = ncg;
-	mmp->mm_nblk =  nblk;
 	mmp->mm_blkpercg = mmp->mm_cgsize / mmp->mm_bsize;
-	mmp->mm_bmap = malloc((nblk / NBBY) * sizeof(unsigned char), M_MILFS,
+	mmp->mm_cg = malloc(sizeof(struct milfs_cg) * mmp->mm_ncg, M_MILFS,
 	    M_WAITOK | M_ZERO);
+
+	for (i = 0; i < mmp->mm_ncg; i++)
+		mmp->mm_cg[i].cg_bmap = malloc((mmp->mm_blkpercg / NBBY) *
+		    sizeof(unsigned char), M_MILFS, M_WAITOK | M_ZERO);
 
 	SPLAY_INIT(&mmp->mm_inotree);
 
@@ -459,13 +458,13 @@ milfs_mountfs(struct mount *mp, struct vnode *vp)
 }
 
 int
-milfs_getfreeblk(struct milfs_mount *mmp)
+milfs_getfreeblk(struct milfs_mount *mmp, int cg)
 {
 	int i, j, nbytes, nzeros;
 
-	nbytes = mmp->mm_nblk / NBBY;
+	nbytes = mmp->mm_blkpercg / NBBY;
 	for (i = 0; i < nbytes; i++) {
-		nzeros = mmp->mm_bmap[i] ^ 0xff;
+		nzeros = mmp->mm_cg[cg].cg_bmap[i] ^ 0xff;
 		if (nzeros == 0)
 			continue;
 		for (j = 0; j < NBBY; j++) {
