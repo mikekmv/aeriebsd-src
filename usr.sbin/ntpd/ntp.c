@@ -17,6 +17,7 @@
 
 #include <sys/param.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -130,6 +131,7 @@ ntp_main(int pipe_prnt[2], struct ntpd_conf *nconf, struct passwd *pw)
 	close(nullfd);
 
 	setproctitle("ntp engine");
+	setpriority(PRIO_PROCESS, getpid(), -4);
 
 	conf = nconf;
 	setup_listeners(se, conf, &listener_cnt);
