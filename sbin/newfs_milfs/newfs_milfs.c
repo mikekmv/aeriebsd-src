@@ -20,6 +20,7 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/tree.h>
 
 #include <err.h>
 #include <fcntl.h>
@@ -29,8 +30,7 @@
 #include <unistd.h>
 #include <util.h>
 
-#include <milfs/milfs_param.h>
-#include <milfs/milfs_types.h>
+#include <milfs/milfs.h>
 
 #define	plural(n)	((n) == 1 ? "" : "s")
 
