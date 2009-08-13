@@ -649,6 +649,7 @@ file kern/vfs_syscalls.c
 file kern/vfs_vnops.c
 file kern/vfs_getcwd.c
 file kern/vnode_if.c
+file milfs/milfs_lookup.c		milfs
 file milfs/milfs_subr.c			milfs
 file milfs/milfs_vfsops.c		milfs
 file milfs/milfs_vnops.c		milfs

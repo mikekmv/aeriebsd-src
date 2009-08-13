@@ -74,11 +74,39 @@ int	milfs_reallocblks(void *);
 int	milfs_bwrite(void *);
 
 /* milfs_subr.c */
+int	milfs_block_cmp(struct milfs_block *, struct milfs_block *);
+int	milfs_inode_cmp(struct milfs_inode *, struct milfs_inode *);
+int	milfs_blkisnew(struct milfs_dinode *, struct milfs_block *);
 int	milfs_mountfs(struct mount *, struct vnode *);
-int	milfs_scanblk(struct milfs_mount *, struct milfs_dinode *, int);
+int	milfs_scanblk(struct milfs_mount *, struct milfs_inode *,
+	    struct milfs_dinode *, int, int);
 int	milfs_scancg(struct milfs_mount *, int (struct milfs_mount *,
 	    struct milfs_dinode *, int));
 int	milfs_scanid(struct milfs_mount *, struct milfs_dinode *, int);
 int	milfs_scanino(struct milfs_mount *, struct milfs_dinode *, int);
+
+struct milfs_block	*milfs_blkcreate(struct milfs_inode *, u_int32_t,
+			    u_int32_t);
+struct milfs_block	*milfs_blklookup(struct milfs_inode *, u_int32_t,
+			    u_int32_t);
+struct milfs_inode	*milfs_inocreate(struct milfs_mount *, u_int64_t);
+struct milfs_inode	*milfs_inolookup(struct milfs_mount *, u_int64_t);
+struct milfs_inode	*milfs_inodirlookup(struct milfs_mount *,
+			    struct milfs_inode *, u_int64_t);
+
+void	milfs_blkdelete(struct milfs_inode *, struct milfs_block *);
+
+SPLAY_PROTOTYPE(milfs_block_tree, milfs_block, mb_nodes, milfs_block_cmp);
+SPLAY_PROTOTYPE(milfs_inode_tree, milfs_inode, mi_nodes, milfs_inode_cmp);
+
+/* milfs_lookup.c */
+int	milfs_lookup_only(struct vnode *, struct vnode **,
+	    struct componentname *);
+int	milfs_lookup_create(struct vnode *, struct vnode **,
+	    struct componentname *);
+int	milfs_lookup_rename(struct vnode *, struct vnode **,
+	    struct componentname *);
+int	milfs_lookup_delete(struct vnode *, struct vnode **,
+	    struct componentname *);
 
 #endif /* _MILFS_PROTO_H_ */

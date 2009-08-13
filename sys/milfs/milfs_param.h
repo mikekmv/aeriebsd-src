@@ -28,6 +28,7 @@
 #define	MILFS_BSIZE_MAX		0x00040000	/* 256KB */
 #define	MILFS_BSIZE_DEFAULT	0x00000800	/* 2KB */
 #define	MILFS_BBSIZE		0x00002000	/* 8KB */
+#define	MILFS_NAMESIZE		504
 
 /*
  * Reserved inode numbers.
@@ -39,11 +40,7 @@
  * Inode modes.
  */
 #define	MILFS_MODE_DIRECTORY	0x0001
-
-/*
- * Magic for dynamic inodes.
- */
-#define	MILFS_DINODE_MAGIC	0xfbd9a736
+#define	MILFS_MODE_HASSTATIC	0x8000		/* Never committed to disk. */
 
 /*
  * Magic for cylinder group descriptors.

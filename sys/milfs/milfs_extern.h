@@ -18,8 +18,14 @@
 #ifndef _MILFS_EXTERN_H_
 #define _MILFS_EXTERN_H_
 
-#define	milfs_btodb(x)	btodb(MILFS_BBSIZE + (x))
+#include <sys/pool.h>
 
-extern int	(**milfs_vnodeop_p)(void *v);
+#define	milfs_btodb(x)		btodb(MILFS_BBSIZE + (x))
+#define	milfs_blkno(mmp, mbp)	milfs_btodb((mbp)->mb_cgno * (mmp)->mm_cgsize \
+				    + (mbp)->mb_cgblk * (mmp)->mm_bsize)
+
+extern int (**milfs_vnodeop_p)(void *v);
+extern struct pool milfs_block_pool;
+extern struct pool milfs_inode_pool;
 
 #endif /* _MILFS_EXTERN_H_ */

@@ -30,81 +30,295 @@
 #include <milfs/milfs_proto.h>
 #include <milfs/milfs_extern.h>
 
+SPLAY_GENERATE(milfs_block_tree, milfs_block, mb_nodes, milfs_block_cmp);
+SPLAY_GENERATE(milfs_inode_tree, milfs_inode, mi_nodes, milfs_inode_cmp);
+
+/*
+ * Local function for sorting the block tree of a mount point.
+ */
+int
+milfs_block_cmp(struct milfs_block *mbp1, struct milfs_block *mbp2)
+{
+	if (mbp1->mb_offset < mbp2->mb_offset)
+		if (mbp1->mb_blksize > mbp2->mb_blksize)
+			return (0);	/* 1 includes 2 */
+
+	if (mbp2->mb_offset < mbp1->mb_offset)
+		if (mbp2->mb_blksize > mbp1->mb_blksize)
+			return (0);	/* 2 includes 1 */
+
+	return (mbp1->mb_offset - mbp2->mb_offset);
+}
+
+/*
+ * Local function for sorting the inode tree of a mount point.
+ */
+int
+milfs_inode_cmp(struct milfs_inode *mip1, struct milfs_inode *mip2)
+{
+	return (mip1->mi_inode - mip2->mi_inode);
+}
+
+/*
+ * Look up an inode in the inode tree of a mount point.
+ */
+struct milfs_inode *
+milfs_inolookup(struct milfs_mount *mmp, u_int64_t ino)
+{
+	struct milfs_inode mi;
+
+	mi.mi_inode = ino;
+
+	return (SPLAY_FIND(milfs_inode_tree, &mmp->mm_inotree, &mi));
+}
+
+/*
+ * Allocate a new inode structure. Insert it in the inode tree.
+ */
+struct milfs_inode *
+milfs_inocreate(struct milfs_mount *mmp, u_int64_t ino)
+{
+	struct milfs_inode *mip;
+
+	mip = pool_get(&milfs_inode_pool, PR_WAITOK | PR_ZERO);
+	if (mip == NULL)
+		return (NULL);
+
+	mip->mi_inode = ino;
+	SPLAY_INIT(&mip->mi_blktree);
+
+	SPLAY_INSERT(milfs_inode_tree, &mmp->mm_inotree, mip);
+
+	return (mip);
+}
+
+/*
+ * Look up an inode in the inode directory.
+ */
+struct milfs_inode *
+milfs_inodirlookup(struct milfs_mount *mmp, struct milfs_inode *mip,
+    u_int64_t ino)
+{
+	daddr64_t blkno;
+	int error, i, nentries;
+	struct buf *bp;
+	struct milfs_block *dmbp;
+	struct milfs_inode *dmip;
+	struct milfs_sinode *sip;
+	struct proc *p;
+
+	dmip = milfs_inolookup(mmp, MILFS_INODE_DIRECTORY);
+	if (dmip == NULL)
+		panic("milfs_inodirlookup: no inode directory");
+
+	p = curproc;
+
+	SPLAY_FOREACH(dmbp, milfs_block_tree, &dmip->mi_blktree) {
+		/* XXX pedro: ugly. improve. */
+		blkno = milfs_btodb(dmbp->mb_cgno * mmp->mm_cgsize +
+		    dmbp->mb_cgblk * mmp->mm_bsize);
+		error = bread(mmp->mm_devvp, blkno, mmp->mm_bsize, p->p_ucred,
+		    &bp);
+		if (error) {
+			brelse(bp);
+			printf("milfs_inodirlookup: read error %d\n", error);
+			return (NULL);
+		}
+
+		nentries = dmbp->mb_blksize / sizeof(struct milfs_sinode);
+		sip = (struct milfs_sinode *)bp->b_data;
+
+		for (i = 0; i < nentries; i++) {
+			if (sip[i].si_inode == ino) {
+				/*
+				 * XXX pedro: we should check if another
+				 * process was able to get the inode while we
+				 * slept.
+				 */
+				if (mip == NULL) {
+					mip = milfs_inocreate(mmp, ino);
+					if (mip == NULL) {
+						brelse(bp);
+						return (NULL);
+					}
+				}
+				mip->mi_birthsec = sip[i].si_birthsec;
+				mip->mi_birthnsec = sip[i].si_birthnsec;
+				mip->mi_changesec = sip[i].si_changesec;
+				mip->mi_changeusec = sip[i].si_changeusec;
+				mip->mi_gen = sip[i].si_gen;
+				mip->mi_xuid = sip[i].si_xuid;
+				mip->mi_xgid = sip[i].si_xgid;
+				mip->mi_mode = sip[i].si_mode |
+				    MILFS_MODE_HASSTATIC;
+				mip->mi_nlink = sip[i].si_nlink;
+
+				brelse(bp);
+
+				return (mip);
+			}
+		}
+
+		brelse(bp);
+	}
+
+	return (NULL);
+}
+
+/*
+ * Look up a block in the block tree of an inode.
+ */
+struct milfs_block *
+milfs_blklookup(struct milfs_inode *mip, u_int32_t offset, u_int32_t size)
+{
+	struct milfs_block mb;
+
+	mb.mb_offset = offset;
+	mb.mb_blksize = size;
+
+	return (SPLAY_FIND(milfs_block_tree, &mip->mi_blktree, &mb));
+}
+
+/*
+ * Allocate a new block structure. Insert it in the block tree of the inode.
+ */
+struct milfs_block *
+milfs_blkcreate(struct milfs_inode *mip, u_int32_t offset, u_int32_t size)
+{
+	struct milfs_block *mbp;
+
+	mbp = pool_get(&milfs_block_pool, PR_WAITOK | PR_ZERO);
+	if (mbp == NULL)
+		return (NULL);
+
+	mbp->mb_inode = mip->mi_inode;
+	mbp->mb_offset = offset;
+	mbp->mb_blksize = size;
+
+	SPLAY_INSERT(milfs_block_tree, &mip->mi_blktree, mbp);
+
+	mip->mi_size += size;
+
+	return (mbp);
+}
+
+/*
+ * Remove a block structure from the block tree of an inode.
+ */
+void
+milfs_blkdelete(struct milfs_inode *mip, struct milfs_block *mbp)
+{
+	SPLAY_REMOVE(milfs_block_tree, &mip->mi_blktree, mbp);
+	mip->mi_size -= mbp->mb_blksize;
+	pool_put(&milfs_block_pool, mbp);
+}
+
+/*
+ * See whether 'dip' is a more recent version of 'mbp'.
+ */
+int
+milfs_blkisnew(struct milfs_dinode *dip, struct milfs_block *mbp)
+{
+	if (dip->di_gen > mbp->mb_gen)
+		return (1);	/* Yes. */
+
+	if (dip->di_gen < mbp->mb_gen)
+		return (0);	/* No. */
+
+	if (dip->di_modsec > mbp->mb_modsec)
+		return (1);
+
+	if (dip->di_modsec < mbp->mb_modsec)
+		return (0);
+
+	if (dip->di_modusec > mbp->mb_modusec)
+		return (1);
+
+	if (dip->di_modusec < mbp->mb_modusec)
+		return (0);
+
+	panic("milfs_blkisnew: identical block attributes");
+}
+
 /*
  * Scan an inode block.
  */
 int
-milfs_scanblk(struct milfs_mount *mmp, struct milfs_dinode *dip, int cg)
+milfs_scanblk(struct milfs_mount *mmp, struct milfs_inode *mip,
+  struct milfs_dinode *dip, int cg, int blk)
 {
-#if 0
-	struct milfs_minode *mip;
-	struct milfs_mblock *mbp;
+	struct milfs_block *mbp;
 
 	/*
-	 * Only scan the block if the corresponding inode is allocated.
+	 * Do we already have a block describing this part of the inode?
 	 */
-	if (milfs_inochk_alloc(mmp, dip->di_inode) == 0)
-		return (0);
-
-	/*
-	 * Only scan the block if the corresponding inode is older.
-	 */
-	if (milfs_inochk_age(mmp, dip->di_modsec, dip->di_modusec) == 0)
-		return (0);
-
-	/*
-	 * Is it the first time we see this inode?
-	 */
-	mip = milfs_inolookup(mmp, dip->di_inode);
-	if (mip == NULL) {
-		mip = milfs_inonew(mmp, dip->di_inode);
-		if (mip == NULL)
-			return (ENOMEM);
-	}
-
-	/*
-	 * Is it the first time we see this block?
-	 */
-	mbp = milfs_blklookup(mmp, dip->di_inode, dip->di_offset);
+	mbp = milfs_blklookup(mip, dip->di_offset, dip->di_size);
 	if (mbp != NULL) {
 		/*
-		 * The block has been seen before. Figure out whether this
-		 * is a preferable (more recent) copy.
+		 * If so, see whether 'dip' is a more preferable (recent)
+		 * version of 'mbp'.
 		 */
-		if (milfs_blkpref(mmp, mbp, dip) == 0)
+		if (milfs_blkisnew(dip, mbp) == 0) {
+			/*
+			 * If it is not, keep 'mbp' and return.
+			 */
 			return (0);
-		milfs_blkdel(mmp, mbp);
+		}
+		/*
+		 * Otherwise, remove 'mbp' from the tree and replace it by
+		 * 'dip'.
+		 */
+		milfs_blkdelete(mip, mbp);
 	}
 
-	/*
-	 * Insert new block or replace old block.
-	 */
-	mbp = milfs_blknew(mmp, dip->di_inode, dip->di_offset);
+	mbp = milfs_blkcreate(mip, dip->di_offset, dip->di_size);
 	if (mbp == NULL)
 		return (ENOMEM);
-#endif
+
+	mbp->mb_cgno = cg;
+	mbp->mb_cgblk = blk;
+	mbp->mb_modsec = dip->di_modsec;
+	mbp->mb_modusec = dip->di_modusec;
+	mbp->mb_gen = dip->di_gen;
+
 	return (0);
 }
 
 /*
- * Scan for blocks belonging to the inode directory.
+ * Scan for inode blocks.
  */
 int
-milfs_scanid(struct milfs_mount *mmp, struct milfs_dinode *dip, int cg)
+milfs_scanino(struct milfs_mount *mmp, struct milfs_dinode *dip, int cg)
 {
 	int error, i;
+	struct milfs_inode *mip;
+	struct milfs_cgdesc *cdp;
 
-	for (i = 0; i < mmp->mm_blkpercg; i++) {
+	/*
+	 * Skip unallocated cylinder groups.
+	 */
+	cdp = (struct milfs_cgdesc *)&dip[mmp->mm_blkpercg - 1];
+	if (cdp->cd_magic != MILFS_CGDESC_MAGIC)
+		return (0);
+
+	for (i = 0; i < mmp->mm_blkpercg - 1; i++) {
 		/*
 		 * Skip unallocated entries.
 		 */
-		if (dip[i].di_magic != MILFS_DINODE_MAGIC)
+		if (dip[i].di_size == 0)
 			continue;
-		if (dip[i].di_inode == MILFS_INODE_DIRECTORY) {
-			error = milfs_scanblk(mmp, &dip[i], cg);
-			if (error)
-				return (error);
+		/*
+		 * Is it the first time we are seeing this inode?
+		 */
+		mip = milfs_inolookup(mmp, dip[i].di_inode);
+		if (mip == NULL) {
+			mip = milfs_inocreate(mmp, dip[i].di_inode);
+			if (mip == NULL)
+				return (ENOMEM);
 		}
+		error = milfs_scanblk(mmp, mip, &dip[i], cg, i);
+		if (error)
+			return (error);
 	}
 
 	return (0);
@@ -217,23 +431,18 @@ milfs_mountfs(struct mount *mp, struct vnode *vp)
 	mmp->mm_ncg = ncg;
 	mmp->mm_blkpercg = mmp->mm_cgsize / mmp->mm_bsize;
 
+	SPLAY_INIT(&mmp->mm_inotree);
+
 	/*
-	 * Reconstruct the inode directory.
+	 * Reconstruct the inode and block trees.
 	 */
-	error = milfs_scancg(mmp, milfs_scanid);
+	error = milfs_scancg(mmp, milfs_scanino);
 	if (error) {
 		free(mmp, M_MILFS);
 		return (error);
 	}
 
-	/*
-	 * Traverse the inode directory to see which inodes are allocated.
-	 */
-#if 0
-	error = milfs_checkid(mmp);
-#endif
-
 	mp->mnt_data = (void *)mmp;
 
-	return (EINVAL);
+	return (0);
 }

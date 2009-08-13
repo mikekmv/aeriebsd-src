@@ -32,6 +32,9 @@
 #include <milfs/milfs_proto.h>
 #include <milfs/milfs_extern.h>
 
+struct pool milfs_block_pool;
+struct pool milfs_inode_pool;
+
 const struct vfsops milfs_vfsops = {
 	milfs_mount,	/* mount */
 	milfs_start,	/* start */
@@ -57,6 +60,7 @@ milfs_mount(struct mount *mp, const char *path, void *data,
 {
 	int close_error, filmode, error;
 	mode_t accmode;
+	size_t len;
 	struct milfs_args args;
 	struct vnode *vp;
 
@@ -162,6 +166,12 @@ milfs_mount(struct mount *mp, const char *path, void *data,
 			panic("milfs_mount: could not close %p, error %d",
 			    vp, close_error);
 		vput(vp);
+	} else {
+		copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &len);
+		bzero(mp->mnt_stat.f_mntonname + len, MNAMELEN - len);
+		copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
+		    &len);
+		bzero(mp->mnt_stat.f_mntfromname + len, MNAMELEN - len);
 	}
 
 	return (error);
@@ -187,8 +197,16 @@ milfs_unmount(struct mount *mp, int flags, struct proc *p)
 int
 milfs_root(struct mount *mp, struct vnode **vpp)
 {
-	printf("milfs_root called!\n");
-	return (EINVAL);
+	int error;
+	struct vnode *vp;
+
+	error = VFS_VGET(mp, MILFS_INODE_ROOT, &vp);
+	if (error)
+		return (error);
+
+	*vpp = vp;
+
+	return (0);
 }
 
 int milfs_quotactl (struct mount *mp, int cmd, uid_t uid, caddr_t arg,
@@ -207,30 +225,64 @@ int milfs_sync(struct mount *mp, int waitfor, struct ucred *crd,
     return (EINVAL);
 }
 
-int milfs_vget (struct mount *mp, ino_t ino, struct vnode **vpp) {
-  struct timeval tv;
-  getmicrotime(&tv);
-  printf("%d, %d\n", tv.tv_sec, tv.tv_usec);
-  return EINVAL;
-}
-
-#if 0
-/* Return a locked vnode corresponding to the inode 'ino'. */
 int
 milfs_vget(struct mount *mp, ino_t ino, struct vnode **vpp)
 {
 	int error;
-	struct milfs_vnode *mvp;
+	struct milfs_inode *mip;
+	struct milfs_mount *mmp;
+	struct proc *p;
 	struct vnode *vp;
 
-	*vpp = NULL;
+	/*
+	 * See if the inode is known.
+	 */
+	mmp = (struct milfs_mount *)mp->mnt_data;
+	mip = milfs_inolookup(mmp, ino);
+	if (mip == NULL) {
+		/*
+		 * Inode is unknown. Try to find it in the inode directory.
+		 * This will also get us the static information, as a bonus.
+		 */
+		mip = milfs_inodirlookup(mmp, NULL, ino);
+		if (mip == NULL)
+			panic("milfs_vget: missing entry");
+	}
 
-	error = milfs_vhash_get(mp->mnt_data, ino, LK_EXCLUSIVE, curproc, vpp);
-	if (error)
-		return (error);
+	/*
+	 * If there is an associated vnode, try to get it.
+	 */
+	if (mip->mi_vnode != NULL) {
+		p = curproc;
+		error = vget(mip->mi_vnode, LK_EXCLUSIVE, p);
+		if (error) {
+#ifdef DIAGNOSTIC
+			if (error == ENOENT)
+				printf("milfs_vget: got ENOENT\n");
+#endif
+			*vpp = NULL;
+			return (error);
+		}
 
-	if (*vpp != NULL)
-		return (0);	/* Found in cache. */
+#ifdef DIAGNOSTIC
+		if ((mip->mi_mode & MILFS_MODE_HASSTATIC) == 0)
+			panic("milfs_vget: inode with vnode but no sinode");
+#endif
+
+		*vpp = mip->mi_vnode;
+
+		return (0);
+	}
+
+	/*
+	 * If we still haven't read the static inode entry, do it now.
+	 */
+	if ((mip->mi_mode & MILFS_MODE_HASSTATIC) == 0)
+		mip = milfs_inodirlookup(mmp, mip, 0);
+
+	/*
+	 * No cached vnode, allocate new one.
+	 */
 
 	error = getnewvnode(VT_MILFS, mp, milfs_vnodeop_p, &vp);
 	if (error) {
@@ -238,15 +290,23 @@ milfs_vget(struct mount *mp, ino_t ino, struct vnode **vpp)
 		return (error);
 	}
 
-	mvp = pool_get(&milfs_vnode_pool, PR_WAITOK|PR_ZERO);
+	vref(mmp->mm_devvp);
 
-	printf("vp = %p, mvp = %p\n", vp, mvp);
+	if (mip->mi_mode & MILFS_MODE_DIRECTORY)
+		vp->v_type = VDIR;
+	else
+		vp->v_type = VREG;
 
-	milfs_vhash_put(mvp, curproc);
+	if (mip->mi_inode == MILFS_INODE_ROOT)
+		vp->v_flag |= VROOT;
 
-	return (EINVAL);
+	mip->mi_vnode = vp;
+	vp->v_data = mip;
+
+	*vpp = vp;
+
+	return (0);
 }
-#endif
 
 int milfs_fhtovp (struct mount *mp, struct fid *fhp, struct vnode **vpp) {
   return EOPNOTSUPP;
@@ -258,10 +318,17 @@ int milfs_vptofh (struct vnode *vp, struct fid *fhp) {
 }
 
 /*
-** called once upon vfs initialization
-*/
-int milfs_init (struct vfsconf *vfsp) {
-  return 0;
+ * Called once upon VFS initialization.
+ */
+int
+milfs_init(struct vfsconf *vfsp)
+{
+	pool_init(&milfs_block_pool, sizeof(struct milfs_block), 0, 0, 0,
+	    "milblkpl", &pool_allocator_nointr);
+	pool_init(&milfs_inode_pool, sizeof(struct milfs_inode), 0, 0, 0,
+	    "milinopl", &pool_allocator_nointr);
+
+	return (0);
 }
 
 int milfs_sysctl (int *name, u_int namelen, void *oldp, size_t *oldlenp,

@@ -18,6 +18,8 @@
 #ifndef _MILFS_TYPES_H_
 #define _MILFS_TYPES_H_
 
+#include <sys/tree.h>
+
 /*
  * On-disk layout of a static MILFS inode.
  */
@@ -45,7 +47,7 @@ struct milfs_dinode {
 	int32_t		di_modsec;	/* Modification second. */
 	int32_t		di_modusec;	/* Modification microsecond. */
 	u_int32_t	di_gen;		/* Dynamic inode generation. */
-	u_int32_t	di_magic;	/* Inode magic. */
+	u_int32_t	di_size;	/* Dynamic inode size. */
 };
 
 /*
@@ -59,6 +61,53 @@ struct milfs_cgdesc {
 };
 
 /*
+ * On-disk layout of a directory entry.
+ */
+struct milfs_dirent {
+	u_int64_t	de_inode;			/* Entry inode. */
+	unsigned char	de_entry[MILFS_NAMESIZE];	/* Entry name. */
+};
+
+/*
+ * In-memory representation of a MILFS inode block.
+ */
+struct milfs_block {
+	u_int64_t			mb_inode;	/* Inode number. */
+	u_int32_t			mb_offset;	/* Block offset. */
+	u_int32_t			mb_blksize;	/* Block size. */
+	u_int32_t			mb_cgno;	/* Cylinder group. */
+	u_int32_t			mb_cgblk;	/* Offset in group. */
+	int32_t				mb_modsec;	/* Modif. second. */
+	int32_t				mb_modusec;	/* Modif. usecond. */
+	u_int32_t			mb_gen;		/* Block generation. */
+	SPLAY_ENTRY(milfs_block)	mb_nodes;
+};
+
+SPLAY_HEAD(milfs_block_tree, milfs_block);
+
+/*
+ * In-memory representation of a MILFS inode.
+ */
+struct milfs_inode {
+	u_int64_t			mi_inode;	/* Inode number. */
+	u_int64_t			mi_size;	/* Inode size. */
+	struct milfs_block_tree		mi_blktree;	/* Inode blocks. */
+	int64_t				mi_birthsec;
+	int32_t				mi_birthnsec;
+	int32_t				mi_changesec;
+	int32_t				mi_changeusec;
+	u_int32_t			mi_gen;
+	u_int32_t			mi_xuid;
+	u_int32_t			mi_xgid;
+	int16_t				mi_mode;
+	int16_t				mi_nlink;
+	struct vnode		       *mi_vnode;	/* Backpointer to v. */
+	SPLAY_ENTRY(milfs_inode)	mi_nodes;
+};
+
+SPLAY_HEAD(milfs_inode_tree, milfs_inode);
+
+/*
  * In-memory representation of a mounted MILFS file system.
  */
 struct milfs_mount {
@@ -67,6 +116,7 @@ struct milfs_mount {
 	struct vnode   *mm_devvp;	/* File system device vnode pointer. */
 	u_int32_t	mm_ncg;		/* Number of cylinder groups. */
 	u_int32_t	mm_blkpercg;	/* Blocks per cylinder group. */
+	struct milfs_inode_tree mm_inotree;
 };
 
 #endif /* _MILFS_TYPES_H_ */

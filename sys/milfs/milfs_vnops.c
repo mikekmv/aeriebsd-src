@@ -19,6 +19,7 @@
 #include <sys/kernel.h>
 #include <sys/proc.h>
 #include <sys/mount.h>
+#include <sys/namei.h>
 #include <sys/vnode.h>
 
 #include <milfs/milfs_param.h>
@@ -74,9 +75,68 @@ struct vnodeopv_desc milfs_vnodeop_opv_desc = {
 	milfs_vnodeop_entries
 };
 
-int milfs_lookup(void *v) {
-  printf("milfs_lookup called!\n");
-  return (EINVAL);
+/*
+ * This function is semantically overloaded, so it has been chopped off into
+ * smaller functions, which are called according to the lookup operation.
+ */
+int
+milfs_lookup(void *v)
+{
+	int error, nameiop;
+	struct componentname *cnp;
+	struct milfs_inode *dmip;
+	struct vnode *dvp, **vpp;
+	struct vop_lookup_args *ap;
+
+	ap = v;
+	cnp = ap->a_cnp;
+	dvp = ap->a_dvp;
+	vpp = ap->a_vpp;
+	dmip = (struct milfs_inode *)dvp->v_data;
+
+	/*
+	 * Make sure we are operating on a directory, and that it is acessible.
+	 */
+
+	if (dvp->v_type != VDIR || (dmip->mi_mode & MILFS_MODE_DIRECTORY) == 0)
+		return (ENOTDIR);
+
+	error = VOP_ACCESS(dvp, VEXEC, cnp->cn_cred, cnp->cn_proc);
+	if (error)
+		return (error);
+
+	/*
+	 * Check whether the request has been cached.
+	 */
+
+	error = cache_lookup(dvp, vpp, cnp);
+	if (error != -1)
+		return (error);
+
+	nameiop = cnp->cn_nameiop & OPMASK;
+	switch (nameiop) {
+	case LOOKUP:
+		error = milfs_lookup_only(dvp, vpp, cnp);
+		break;
+	case CREATE:
+		error = milfs_lookup_create(dvp, vpp, cnp);
+		break;
+	case DELETE:
+		error = milfs_lookup_delete(dvp, vpp, cnp);
+		break;
+	case RENAME:
+		error = milfs_lookup_rename(dvp, vpp, cnp);
+		break;
+	default:
+		panic("milfs_lookup: unknown nameiop %d", nameiop);
+	}
+
+	if (error == 0) {
+		if (cnp->cn_flags & MAKEENTRY)
+			cache_enter(dvp, *vpp, cnp);
+	}
+
+	return (error);
 }
 
 int milfs_create(void *v) {
@@ -99,14 +159,50 @@ int milfs_close(void *v) {
   return (EINVAL);
 }
 
-int milfs_access(void *v) {
-  printf("milfs_access called!\n");
-  return (EINVAL);
+int
+milfs_access(void *v)
+{
+	mode_t mode;
+	struct milfs_inode *mip;
+	struct vnode *vp;
+	struct vop_access_args *ap;
+
+	ap = v;
+	vp = ap->a_vp;
+	mip = (struct milfs_inode *)vp->v_data;
+
+	return (vaccess(vp->v_type, mip->mi_mode, mip->mi_xuid, mip->mi_xgid,
+	    mode, ap->a_cred));
 }
 
-int milfs_getattr(void *v) {
-  printf("milfs_getattr called!\n");
-  return (EINVAL);
+int
+milfs_getattr(void *v)
+{
+	struct milfs_inode *mip;
+	struct vnode *vp;
+	struct vattr *vap;
+	struct vop_getattr_args *ap;
+
+	ap = v;
+	vp = ap->a_vp;
+	vap = ap->a_vap;
+	mip = (struct milfs_inode *)vp->v_data;
+
+	vap->va_fileid = mip->mi_inode;
+	vap->va_mode = mip->mi_mode & ~MILFS_MODE_HASSTATIC;
+	vap->va_nlink = mip->mi_nlink;
+	vap->va_uid = mip->mi_xuid;
+	vap->va_gid = mip->mi_xgid;
+	vap->va_ctime.tv_sec = mip->mi_changesec;
+	vap->va_ctime.tv_nsec = mip->mi_changeusec * 1000;
+	vap->va_atime.tv_sec = vap->va_ctime.tv_sec;
+	vap->va_atime.tv_nsec = vap->va_ctime.tv_nsec;
+	vap->va_mtime.tv_sec = vap->va_ctime.tv_sec;
+	vap->va_mtime.tv_nsec = vap->va_ctime.tv_nsec;
+	vap->va_size = mip->mi_size;
+	vap->va_type = vp->v_type;
+
+	return (0);
 }
 
 int milfs_setattr(void *v) {
@@ -204,14 +300,16 @@ int milfs_reclaim(void *v) {
   return (EINVAL);
 }
 
-int milfs_lock(void *v) {
-  printf("milfs_lock called!\n");
-  return (EINVAL);
+int
+milfs_lock(void *v)
+{
+	return (0);
 }
 
-int milfs_unlock(void *v) {
-  printf("milfs_unlock called!\n");
-  return (EINVAL);
+int
+milfs_unlock(void *v)
+{
+	return (0);
 }
 
 int milfs_bmap(void *v) {
