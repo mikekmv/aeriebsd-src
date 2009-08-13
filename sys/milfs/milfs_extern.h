@@ -94,6 +94,7 @@ void	milfs_cleaner(void *);
 int	milfs_block_cmp(struct milfs_block *, struct milfs_block *);
 int	milfs_inode_cmp(struct milfs_inode *, struct milfs_inode *);
 int	milfs_blkisnew(struct milfs_dinode *, struct milfs_block *);
+int	milfs_getfreeblk(struct milfs_mount *);
 int	milfs_mountfs(struct mount *, struct vnode *);
 int	milfs_scanblk(struct milfs_mount *, struct milfs_inode *,
 	    struct milfs_dinode *, int, int);
