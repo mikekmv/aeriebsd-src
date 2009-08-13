@@ -166,7 +166,7 @@ void			 pfr_setflags_ktable(struct pfr_ktable *, int);
 void			 pfr_clstats_ktables(struct pfr_ktableworkq *, long,
 			    int);
 void			 pfr_clstats_ktable(struct pfr_ktable *, long, int);
-struct pfr_ktable	*pfr_create_ktable(struct pfr_table *, long, int);
+struct pfr_ktable	*pfr_create_ktable(struct pfr_table *, long, int, int);
 void			 pfr_destroy_ktables(struct pfr_ktableworkq *, int);
 void			 pfr_destroy_ktable(struct pfr_ktable *, int);
 int			 pfr_ktable_compare(struct pfr_ktable *,
@@ -258,7 +258,8 @@ pfr_add_addrs(struct pfr_table *tbl, struct pfr_addr *addr, int size,
 		return (ESRCH);
 	if (kt->pfrkt_flags & PFR_TFLAG_CONST)
 		return (EPERM);
-	tmpkt = pfr_create_ktable(&pfr_nulltable, 0, 0);
+	tmpkt = pfr_create_ktable(&pfr_nulltable, 0, 0,
+	    !(flags & PFR_FLAG_USERIOCTL));
 	if (tmpkt == NULL)
 		return (ENOMEM);
 	SLIST_INIT(&workq);
@@ -430,7 +431,8 @@ pfr_set_addrs(struct pfr_table *tbl, struct pfr_addr *addr, int size,
 		return (ESRCH);
 	if (kt->pfrkt_flags & PFR_TFLAG_CONST)
 		return (EPERM);
-	tmpkt = pfr_create_ktable(&pfr_nulltable, 0, 0);
+	tmpkt = pfr_create_ktable(&pfr_nulltable, 0, 0,
+	    !(flags & PFR_FLAG_USERIOCTL));
 	if (tmpkt == NULL)
 		return (ENOMEM);
 	pfr_mark_addrs(kt);
@@ -1187,7 +1189,8 @@ pfr_add_tables(struct pfr_table *tbl, int size, int *nadd, int flags)
 		key.pfrkt_flags |= PFR_TFLAG_ACTIVE;
 		p = RB_FIND(pfr_ktablehead, &pfr_ktables, &key);
 		if (p == NULL) {
-			p = pfr_create_ktable(&key.pfrkt_t, tzero, 1);
+			p = pfr_create_ktable(&key.pfrkt_t, tzero, 1,
+			    !(flags & PFR_FLAG_USERIOCTL));
 			if (p == NULL)
 				senderr(ENOMEM);
 			SLIST_FOREACH(q, &addq, pfrkt_workq) {
@@ -1213,7 +1216,8 @@ pfr_add_tables(struct pfr_table *tbl, int size, int *nadd, int flags)
 				}
 			}
 			key.pfrkt_flags = 0;
-			r = pfr_create_ktable(&key.pfrkt_t, 0, 1);
+			r = pfr_create_ktable(&key.pfrkt_t, 0, 1,
+			    !(flags & PFR_FLAG_USERIOCTL));
 			if (r == NULL)
 				senderr(ENOMEM);
 			SLIST_INSERT_HEAD(&addq, r, pfrkt_workq);
@@ -1517,7 +1521,8 @@ pfr_ina_define(struct pfr_table *tbl, struct pfr_addr *addr, int size,
 	SLIST_INIT(&tableq);
 	kt = RB_FIND(pfr_ktablehead, &pfr_ktables, (struct pfr_ktable *)tbl);
 	if (kt == NULL) {
-		kt = pfr_create_ktable(tbl, 0, 1);
+		kt = pfr_create_ktable(tbl, 0, 1,
+		    !(flags & PFR_FLAG_USERIOCTL));
 		if (kt == NULL)
 			return (ENOMEM);
 		SLIST_INSERT_HEAD(&tableq, kt, pfrkt_workq);
@@ -1533,7 +1538,8 @@ pfr_ina_define(struct pfr_table *tbl, struct pfr_addr *addr, int size,
 			kt->pfrkt_root = rt;
 			goto _skip;
 		}
-		rt = pfr_create_ktable(&key.pfrkt_t, 0, 1);
+		rt = pfr_create_ktable(&key.pfrkt_t, 0, 1,
+		    !(flags & PFR_FLAG_USERIOCTL));
 		if (rt == NULL) {
 			pfr_destroy_ktables(&tableq, 0);
 			return (ENOMEM);
@@ -1543,7 +1549,7 @@ pfr_ina_define(struct pfr_table *tbl, struct pfr_addr *addr, int size,
 	} else if (!(kt->pfrkt_flags & PFR_TFLAG_INACTIVE))
 		xadd++;
 _skip:
-	shadow = pfr_create_ktable(tbl, 0, 0);
+	shadow = pfr_create_ktable(tbl, 0, 0, !(flags & PFR_FLAG_USERIOCTL));
 	if (shadow == NULL) {
 		pfr_destroy_ktables(&tableq, 0);
 		return (ENOMEM);
@@ -1894,12 +1900,16 @@ pfr_clstats_ktable(struct pfr_ktable *kt, long tzero, int recurse)
 }
 
 struct pfr_ktable *
-pfr_create_ktable(struct pfr_table *tbl, long tzero, int attachruleset)
+pfr_create_ktable(struct pfr_table *tbl, long tzero, int attachruleset,
+    int intr)
 {
 	struct pfr_ktable	*kt;
 	struct pf_ruleset	*rs;
 
-	kt = pool_get(&pfr_ktable_pl, PR_WAITOK | PR_ZERO | PR_LIMITFAIL);
+	if (intr)
+		kt = pool_get(&pfr_ktable_pl, PR_NOWAIT|PR_ZERO|PR_LIMITFAIL);
+	else
+		kt = pool_get(&pfr_ktable_pl, PR_WAITOK|PR_ZERO|PR_LIMITFAIL);
 	if (kt == NULL)
 		return (NULL);
 	kt->pfrkt_t = *tbl;
@@ -2066,7 +2076,7 @@ pfr_update_stats(struct pfr_ktable *kt, struct pf_addr *a, sa_family_t af,
 }
 
 struct pfr_ktable *
-pfr_attach_table(struct pf_ruleset *rs, char *name)
+pfr_attach_table(struct pf_ruleset *rs, char *name, int intr)
 {
 	struct pfr_ktable	*kt, *rt;
 	struct pfr_table	 tbl;
@@ -2078,14 +2088,14 @@ pfr_attach_table(struct pf_ruleset *rs, char *name)
 		strlcpy(tbl.pfrt_anchor, ac->path, sizeof(tbl.pfrt_anchor));
 	kt = pfr_lookup_table(&tbl);
 	if (kt == NULL) {
-		kt = pfr_create_ktable(&tbl, time_second, 1);
+		kt = pfr_create_ktable(&tbl, time_second, 1, intr);
 		if (kt == NULL)
 			return (NULL);
 		if (ac != NULL) {
 			bzero(tbl.pfrt_anchor, sizeof(tbl.pfrt_anchor));
 			rt = pfr_lookup_table(&tbl);
 			if (rt == NULL) {
-				rt = pfr_create_ktable(&tbl, 0, 1);
+				rt = pfr_create_ktable(&tbl, 0, 1, intr);
 				if (rt == NULL) {
 					pfr_destroy_ktable(kt, 0);
 					return (NULL);

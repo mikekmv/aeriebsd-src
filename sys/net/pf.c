@@ -1141,7 +1141,7 @@ pf_tbladdr_setup(struct pf_ruleset *rs, struct pf_addr_wrap *aw)
 {
 	if (aw->type != PF_ADDR_TABLE)
 		return (0);
-	if ((aw->p.tbl = pfr_attach_table(rs, aw->v.tblname)) == NULL)
+	if ((aw->p.tbl = pfr_attach_table(rs, aw->v.tblname, 1)) == NULL)
 		return (1);
 	return (0);
 }
@@ -5754,6 +5754,15 @@ pf_test(int dir, struct ifnet *ifp, struct mbuf **m0,
 		break;
 	}
 
+#ifdef INET6
+	case IPPROTO_ICMPV6: {
+		action = PF_DROP;
+		DPFPRINTF(PF_DEBUG_MISC,
+		    ("pf: dropping IPv4 packet with ICMPv6 payload\n"));
+		goto done;
+	}
+#endif
+
 	default:
 		action = pf_test_state_other(&s, dir, kif, m, &pd);
 		if (action == PF_PASS) {
@@ -6103,6 +6112,13 @@ pf_test6(int dir, struct ifnet *ifp, struct mbuf **m0,
 			action = pf_test_rule(&r, &s, dir, kif,
 			    m, off, h, &pd, &a, &ruleset, &ip6intrq);
 		break;
+	}
+
+	case IPPROTO_ICMP: {
+		action = PF_DROP;
+		DPFPRINTF(PF_DEBUG_MISC,
+		    ("pf: dropping IPv6 packet with ICMPv4 payload\n"));
+		goto done;
 	}
 
 	case IPPROTO_ICMPV6: {
