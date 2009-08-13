@@ -81,9 +81,6 @@ milfs_inocreate(struct milfs_mount *mmp, u_int64_t ino)
 	struct milfs_inode *mip;
 
 	mip = pool_get(&milfs_inode_pool, PR_WAITOK | PR_ZERO);
-	if (mip == NULL)
-		return (NULL);
-
 	mip->mi_inode = ino;
 	SPLAY_INIT(&mip->mi_blktree);
 
@@ -188,9 +185,6 @@ milfs_blkcreate(struct milfs_inode *mip, u_int32_t offset, u_int32_t size)
 	struct milfs_block *mbp;
 
 	mbp = pool_get(&milfs_block_pool, PR_WAITOK | PR_ZERO);
-	if (mbp == NULL)
-		return (NULL);
-
 	mbp->mb_inode = mip->mi_inode;
 	mbp->mb_offset = offset;
 	mbp->mb_blksize = size;
