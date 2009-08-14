@@ -39,15 +39,18 @@ SPLAY_GENERATE(milfs_inode_tree, milfs_inode, mi_nodes, milfs_inode_cmp);
 int
 milfs_block_cmp(struct milfs_block *mbp1, struct milfs_block *mbp2)
 {
-	if (mbp1->mb_offset < mbp2->mb_offset)
+	if (mbp1->mb_offset < mbp2->mb_offset) {
 		if (mbp1->mb_blksize > mbp2->mb_blksize)
 			return (0);	/* 1 includes 2 */
-
-	if (mbp2->mb_offset < mbp1->mb_offset)
+		else
+			return (-1);
+	} else if (mbp1->mb_offset > mbp2->mb_offset) {
 		if (mbp2->mb_blksize > mbp1->mb_blksize)
 			return (0);	/* 2 includes 1 */
-
-	return (mbp1->mb_offset - mbp2->mb_offset);
+		else
+			return (1);
+	}
+	return (0);
 }
 
 /*
@@ -56,7 +59,11 @@ milfs_block_cmp(struct milfs_block *mbp1, struct milfs_block *mbp2)
 int
 milfs_inode_cmp(struct milfs_inode *mip1, struct milfs_inode *mip2)
 {
-	return (mip1->mi_inode - mip2->mi_inode);
+	if (mip1->mi_inode > mip2->mi_inode)
+		return (1);
+	else if (mip1->mi_inode < mip2->mi_inode)
+		return (-1);
+	return (0);
 }
 
 /*
