@@ -147,9 +147,13 @@ int milfs_mknod(void *v) {
   return (EINVAL);
 }
 
-int milfs_open(void *v) {
-  printf("milfs_open called!\n");
-  return (EINVAL);
+/*
+ * Nothing to do.
+ */
+int
+milfs_open(void *v)
+{
+	return (0);
 }
 
 int milfs_close(void *v) {
