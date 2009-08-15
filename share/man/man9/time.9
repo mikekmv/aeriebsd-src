@@ -29,19 +29,17 @@
 .\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 .\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt TIME 9
 .Os
 .Sh NAME
 .Nm boottime ,
 .Nm mono_time ,
-.Nm runtime ,
 .Nm time
 .Nd system time variables
 .Sh SYNOPSIS
 .Vt extern struct timeval boottime;
 .Vt extern volatile struct timeval mono_time;
-.Vt extern struct timeval runtime;
 .Vt extern volatile struct timeval time;
 .Sh DESCRIPTION
 The
@@ -65,20 +63,6 @@ with
 .Xr settimeofday 2 .
 .Pp
 The
-.Va runtime
-variable holds the time that the system switched to the
-current process.
-It is set after each context switch,
-and is updated when the system time is adjusted with
-.Xr settimeofday 2 .
-Because
-.Va runtime
-is used for system accounting, it is set with the high-resolution
-.Xr microtime 9
-function, rather than being copied from
-.Va time .
-.Pp
-The
 .Va mono_time
 variable is a monotonically increasing system clock.
 It is set from
@@ -98,8 +82,6 @@ or
 because those variables are updated by
 .Xr hardclock 9 .
 .Va Boottime
-and
-.Va runtime
 may be read and written without special precautions.
 .Sh SEE ALSO
 .Xr settimeofday 2 ,
@@ -107,13 +89,3 @@ may be read and written without special precautions.
 .Xr hz 9 ,
 .Xr inittodr 9 ,
 .Xr microtime 9
-.Sh BUGS
-.Va Runtime
-should not be updated when the system time is
-changed with
-.Xr settimeofday 2 ,
-because it is used for resource accounting.
-.Pp
-The notion of having a single
-.Va runtime
-variable obviously won't be appropriate in multiprocessor systems.
