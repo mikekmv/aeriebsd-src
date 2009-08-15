@@ -118,6 +118,7 @@ SPLAY_HEAD(milfs_block_tree, milfs_block);
  */
 struct milfs_inode {
 	SPLAY_ENTRY(milfs_inode) mi_nodes;
+	struct milfs_block *mi_curblk;	/* Inode current block. */
 	u_int64_t	mi_inode;       /* Inode number. */
 	u_int64_t	mi_size;        /* Inode size. */
 	struct milfs_block_tree mi_blktree; /* Inode blocks. */
