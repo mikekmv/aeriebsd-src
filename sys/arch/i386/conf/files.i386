@@ -11,6 +11,7 @@ file	arch/i386/i386/autoconf.c
 file	arch/i386/i386/conf.c
 file	arch/i386/i386/db_disasm.c	ddb
 file	arch/i386/i386/db_interface.c	ddb
+file	arch/i386/i386/db_magic.s	ddb
 file	arch/i386/i386/db_memrw.c	ddb | kgdb
 file	arch/i386/i386/db_trace.c	ddb
 file	arch/i386/i386/disksubr.c	disk
