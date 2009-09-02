@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.12 2009/07/30 11:57:12 mickey Exp $";
+    "$ABSD: elf.c,v 1.13 2009/08/14 15:34:09 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -512,8 +512,10 @@ elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
 				if (!sbuf.st_name || sbuf.st_name > es->stabsz)
 					continue;
 
-				if ((*func)(es, &sbuf, arg))
+				if ((*func)(es, &sbuf, arg)) {
+					free(es->stab);
 					return 1;
+				}
 			}
 		}
 	}
