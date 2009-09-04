@@ -1,0 +1,61 @@
+.\"
+.\" Copyright (c) 2009 Michael Shalayeff
+.\" All rights reserved.
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF MIND, USE, DATA OR PROFITS, WHETHER IN
+.\" AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+.\" OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt LD 1
+.Os
+.Sh NAME
+.Nm ld
+.Nd link editor
+.Sh SYNOPSIS
+.Nm ld
+.Op Fl dEiMnNOqrsStvVxXZ
+.Op Fl cCDefFhuy Ar name
+.Op Fl l Ar lib
+.Op Fl L Ar path
+.Op Fl R Ar file
+.Op Fl T Ar script
+.Op Fl o Ar a.out
+.Ar file
+.Fl llib
+.Ar ...
+.Sh DESCRIPTION
+.Nm
+combines several object programs into one, resolves external
+references, and searches libraries.
+
+.Sh FILES
+.Bl -tag -width /usr/local/lib/lib*.a -compact
+.It Pa /usr/lib/lib*
+Libraries.
+.It Pa /usr/local/lib/lib*
+More libraries.
+.It Pa a.out
+Output file.
+.El
+.Sh SEE ALSO
+.Xr ar 1 ,
+.Xr as 1 ,
+.Xr cc 1 ,
+.Xr nm 1 ,
+.Xr ranlib 1 ,
+.Xr a.out 5 ,
+.Xr elf 5
+.Sh HISTORY
+The
+.Nm
+command first appeared in   
+.At v6 .
