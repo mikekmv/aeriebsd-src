@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008 Michael Shalayeff
- * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
+ * Copyright (c) 2008 Anders Magnusson (ragge@ludd.ltu.se).
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -48,8 +48,8 @@ struct optab table[] = {
 
 /* PCONVs are usually not necessary */
 { PCONV,	INAREG,
-	SAREG,	TWORD|TPOINT,
-	SAREG,	TWORD|TPOINT,
+	SAREG,	TLL|TPOINT,
+	SAREG,	TLL|TPOINT,
 		0,	RLEFT,
 		"", },
 
@@ -196,7 +196,7 @@ struct optab table[] = {
 { SCONV,	INAREG,
 	SAREG,	TSWORD,
 	SAREG,	TLL,
-		NASL|NAREG,	RLEFT,
+		NASL|NAREG,	RESC1,
 		"	movslq AL,A1\n", },
 
 /* convert unsigned int to (u)long long */
@@ -246,7 +246,7 @@ struct optab table[] = {
 	SBREG|SOREG|SNAME,	TFLOAT|TDOUBLE,
 	SAREG,			TUNSIGNED|TLONG,
 		NAREG,		RESC1,
-		"	cvttsZg2siq AL,A1\n", },
+		"	cvttsZg2siq AL,Z8\n", },
 
 /* convert float/double to  unsigned long */
 { SCONV,	INAREG,
@@ -473,7 +473,7 @@ struct optab table[] = {
 	SBREG,			TDOUBLE|TFLOAT,
 	SBREG|SNAME|SOREG,	TDOUBLE|TFLOAT,
 		0,	RLEFT,
-		"	subsZf AL,AR\n", },
+		"	subsZf AR,AL\n", },
 
 /* Simple r/m->reg ops */
 /* m/r |= r */
@@ -717,7 +717,7 @@ struct optab table[] = {
 	SAREG,		TLL|TPOINT,
 	SMIXOR,		TANY,
 		0,	RDEST,
-		"	xorq AL,AL\n\n", },
+		"	xorq AL,AL\n", },
 
 { ASSIGN,	FOREFF|INAREG,
 	SAREG,		TLL|TPOINT,
@@ -812,7 +812,7 @@ struct optab table[] = {
 { ASSIGN,	FOREFF|INAREG,
 	SFLD,		TCHAR|TUCHAR,
 	SAREG|SCON,	TCHAR|TUCHAR,
-		NAREG|NBREG,	RDEST,
+		NAREG*2,	RDEST,
 		"	movb AR,A2\n"
 		"	movzbl A2,A1\n"
 		"	andl $N,AL\n"
@@ -845,6 +845,18 @@ struct optab table[] = {
 		"	andl $M,A1\n"
 		"	orl A1,AL\n"
 		"F	movl AR,AD\n"
+		"FZE", },
+
+{ ASSIGN,	FOREFF|INAREG,
+	SFLD,		TLL,
+	SAREG|SNAME|SOREG|SCON,	TLL,
+		NAREG,	RDEST,
+		"	movq AR,A1\n"
+		"	andq $N,AL\n"
+		"	salq $H,A1\n"
+		"	andq $M,A1\n"
+		"	orq A1,AL\n"
+		"F	movq AR,AD\n"
 		"FZE", },
 
 { ASSIGN,	INBREG|FOREFF,
@@ -1016,21 +1028,16 @@ struct optab table[] = {
 	SANY,	TANY,
 	SOREG,	TFLOAT|TDOUBLE,
 		NBREG|NBSL,	RESC1,
-		"	movsZf AL,AR\n", },
+		"	movsZf AL,A1\n", },
 
 /*
  * Logical/branching operators
  */
 
 /* Comparisions, take care of everything */
-{ OPLOG,	FORCC,
-	SCON,	TWORD,
-	SAREG|SOREG|SNAME,	TLL|TPOINT,
-		0, 	RESCC,
-		"	cmpq AR,AL\n", },
 
 { OPLOG,	FORCC,
-	SAREG,	TLL|TPOINT,
+	SAREG,			TLL|TPOINT,
 	SAREG|SOREG|SNAME,	TLL|TPOINT,
 		0, 	RESCC,
 		"	cmpq AR,AL\n", },
@@ -1038,6 +1045,12 @@ struct optab table[] = {
 { OPLOG,	FORCC,
 	SAREG|SOREG|SNAME,	TLL|TPOINT,
 	SAREG,			TLL|TPOINT,
+		0,	RESCC,
+		"	cmpq AR,AL\n", },
+
+{ OPLOG,	FORCC,
+	SAREG|SOREG|SNAME,	TLL|TPOINT,
+	SCON32,			TANY,
 		0,	RESCC,
 		"	cmpq AR,AL\n", },
 

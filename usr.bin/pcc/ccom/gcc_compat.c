@@ -171,6 +171,7 @@ struct atax {
 	[GCC_ATYP_SENTINEL] =	{ A_0ARG|A_1ARG, "sentinel" },
 	[GCC_ATYP_WEAK] =	{ A_0ARG, "weak" },
 	[GCC_ATYP_FORMATARG] =	{ A_1ARG, "format_arg" },
+	[GCC_ATYP_GNU_INLINE] =	{ A_0ARG, "gnu_inline" },
 };
 
 static int
@@ -198,7 +199,7 @@ setaarg(int str, union gcc_aarg *aa, NODE *p)
 		aa->sarg = (char *)p->n_sp;
 		nfree(p);
 	} else
-		aa->iarg = icons(eve(p));
+		aa->iarg = (int)icons(eve(p));
 }
 
 /*
@@ -277,7 +278,7 @@ gcc_attribs(NODE *p, void *arg)
 		break;
 	case GCC_ATYP_PACKED:
 		if (narg == 0)
-			gap->ga[num].a1.iarg = ALCHAR;
+			gap->ga[num].a1.iarg = 1; /* bitwise align */
 		else
 			gap->ga[num].a1.iarg *= SZCHAR;
 		break;
@@ -353,7 +354,7 @@ gcc_tcattrfix(NODE *p, NODE *q)
 				if (sp->sclass & FIELD)
 					sz = sp->sclass&FLDSIZ;
 				else
-					sz = tsize(sp->stype, sp->sdf, sp->ssue);
+					sz = (int)tsize(sp->stype, sp->sdf, sp->ssue);
 				SETOFF(sz, gap->ga[i].a1.iarg);
 				sp->soffset = coff;
 				coff += sz;
@@ -362,6 +363,7 @@ gcc_tcattrfix(NODE *p, NODE *q)
 				if (p->n_type == UNIONTY)
 					coff = 0;
 			}
+			SETOFF(csz, SZCHAR);
 			sue->suesize = csz;
 			sue->suealign = gap->ga[i].a1.iarg;
 			break;

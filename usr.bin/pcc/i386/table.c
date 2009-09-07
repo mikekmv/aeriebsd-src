@@ -84,12 +84,12 @@ struct optab table[] = {
 		0,	RLEFT,
 		"", },
 
-/* convert double <-> float. nothing to do here */
+/* convert between float/double/long double. */
 { SCONV,	INFL,
 	SHFL,	TLDOUBLE|TDOUBLE|TFLOAT,
 	SHFL,	TLDOUBLE|TDOUBLE|TFLOAT,
 		0,	RLEFT,
-		"", },
+		"ZI", },
 
 /* convert pointers to pointers. */
 { SCONV,	ININT,
@@ -1028,6 +1028,7 @@ struct optab table[] = {
 		"	sall $H,A1\n"
 		"	andl $M,A1\n"
 		"	orl A1,AL\n"
+		"ZB"
 		"F	movl AR,AD\n"
 		"FZE", },
 

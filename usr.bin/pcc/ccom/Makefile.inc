@@ -5,18 +5,15 @@
 PROG=   	ccom_${TARGMACH}
 MAN=		ccom.1
 
-PREFIX=		/usr/local
-BINDIR=		${PREFIX}/libexec
-MANDIR=		${PREFIX}/man/man
 TARGOS=		aeriebsd
 CLEANFILES=	cgram.h external.h external.c mkext
 
 CFLAGS+=	-DPCC_DEBUG -DGCC_COMPAT
 CFLAGS+=	-Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
-CFLAGS+=	-DLIBEXECDIR=\"${PREFIX}/libexec\"
 CPPFLAGS+=	-I. -I${.CURDIR}/.. -I${.CURDIR} -I${.CURDIR}/../../mip
 CPPFLAGS+=	-I${.CURDIR}/../../${TARGMACH}
 CPPFLAGS+=	-I${.CURDIR}/../..
+LFLAGS+=	-CFe
 
 .PATH:	${.CURDIR}/../../${TARGMACH}
 .PATH:	${.CURDIR}/../../mip
@@ -43,3 +40,5 @@ pftn.o: cgram.c
 
 cleandepend:
 	rm -f .depend ${.CURDIR}/tags cgram.h
+
+.include "../../../Makefile.inc"

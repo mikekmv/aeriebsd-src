@@ -753,16 +753,16 @@ addalledges(REGW *e)
 	/* First add to long-lived temps and hard regs */
 	RDEBUG(("addalledges longlived "));
 	for (i = 0; i < xbits; i += NUMBITS) {
-		if ((k = live[i/NUMBITS]) == 0)
-			continue;
-		while (k) {
-			j = ffs(k)-1;
-			if (i+j < MAXREGS)
-				AddEdge(&ablock[i+j], e);
-			else
-				AddEdge(&nblock[i+j+tempmin-MAXREGS], e);
-			RRDEBUG(("%d ", i+j+tempmin));
-			k &= ~(1 << j);
+		if ((k = live[i/NUMBITS])) {
+			while (k) {
+				j = ffs(k)-1;
+				if (i+j < MAXREGS)
+					AddEdge(&ablock[i+j], e);
+				else
+					AddEdge(&nblock[i+j+tempmin-MAXREGS],e);
+				RRDEBUG(("%d ", i+j+tempmin));
+				k &= ~(1 << j);
+			}
 		}
 #if NUMBITS > 32 /* XXX hack for LP64 */
 		k = (live[i/NUMBITS] >> 32);
@@ -891,6 +891,7 @@ static void
 setxarg(NODE *p)
 {
 	int i, ut = 0, in = 0;
+	REGW *rw;
 	int cw;
 
 	if (p->n_op == ICON && p->n_type == STRTY)
@@ -904,23 +905,28 @@ setxarg(NODE *p)
 		ut = 1;
 
 	switch (XASMVAL(cw)) {
+	case 'm':
 	case 'g':
-		if (p->n_left->n_op != REG && p->n_left->n_op != TEMP)
+		/* must find all TEMPs/REGs and set them live */
+		if (p->n_left->n_op != REG && p->n_left->n_op != TEMP) {
+			insnwalk(p->n_left);
 			break;
+		}
 		/* FALLTHROUGH */
 	case 'r':
 		i = regno(p->n_left);
+		rw = p->n_left->n_op == REG ? ablock : nblock;
 		if (ut) {
-			REGW *rw = p->n_left->n_op == REG ? ablock : nblock;
 			LIVEDEL(i);
-			addalledges(&rw[i]);
 		}
 		if (in) {
 			LIVEADD(i);
 		}
+		addalledges(&rw[i]);
 		break;
+
+
 	case 'i':
-	case 'm':
 	case 'n':
 		break;
 	default:
@@ -2373,7 +2379,7 @@ temparg(struct interpass *ipole, REGW *w)
 			continue; /* arg in register */
 		if (w != &nblock[regno(p->n_left)])
 			continue;
-		w->r_color = p->n_right->n_lval;
+		w->r_color = (int)p->n_right->n_lval;
 		tfree(p);
 		/* Cannot DLIST_REMOVE here, would break basic blocks */
 		/* Make it a nothing instead */

@@ -120,6 +120,7 @@ int pushfile(usch *fname);
 void popfile(void);
 void prtline(void);
 int yylex(void);
+int sloscan(void);
 void cunput(int);
 int curline(void);
 char *curfile(void);

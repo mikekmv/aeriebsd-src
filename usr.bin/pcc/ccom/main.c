@@ -42,7 +42,8 @@ int iTflag, oTflag;
 int xdebug, sdebug, gflag, c2debug, pdebug, g2debug;
 int Wstrict_prototypes, Wmissing_prototypes, Wimplicit_int,
 	Wimplicit_function_declaration, Wpointer_sign, Wshadow,
-	Wsign_compare, Wunknown_pragmas, Wunreachable_code;
+	Wsign_compare, Wunknown_pragmas, Wunreachable_code,
+	Wtruncate;
 #ifdef CHAR_UNSIGNED
 int funsigned_char = 1;
 #else
@@ -53,6 +54,9 @@ int xssaflag, xtailcallflag, xtemps, xdeljumps, xdce, xinline;
 
 int e2debug, t2debug, f2debug, b2debug;
 
+#ifdef __MSC__
+struct suedef btdims[32];
+#else
 struct suedef btdims[32] = {
 	[BOOL] = { .suesize = SZBOOL, .suealign = ALBOOL },
 	[CHAR] = { .suesize = SZCHAR, .suealign = ALCHAR },
@@ -75,6 +79,8 @@ struct suedef btdims[32] = {
 	[IMAG] = { .suesize = SZDOUBLE, .suealign = ALDOUBLE },
 	[LIMAG] = { .suesize = SZLDOUBLE, .suealign = ALLDOUBLE },
 };
+#endif
+
 char *prgname;
 
 static void prtstats(void);
@@ -82,6 +88,7 @@ static void prtstats(void);
 static struct {
 	char *n; int *f;
 } flagstr[] = {
+	{ "truncate", &Wtruncate, },
 	{ "strict-prototypes", &Wstrict_prototypes, },
 	{ "missing-prototypes", &Wmissing_prototypes, },
 	{ "implicit-int", &Wimplicit_int, },
@@ -345,16 +352,66 @@ main(int argc, char *argv[])
 
 	mkdope();
 	signal(SIGSEGV, segvcatch);
+#ifdef SIGBUS
+	signal(SIGBUS, segvcatch);
+#endif
 	fregs = FREGS;	/* number of free registers */
 	lineno = 1;
 #ifdef GCC_COMPAT
 	gcc_init();
 #endif
 
+#ifdef __MSC__
+	/* dimension table initialization */
+	btdims[VOID].suesize = 0;
+	btdims[VOID].suealign = 0;
+	btdims[BOOL].suesize = SZBOOL;
+	btdims[BOOL].suealign = ALBOOL;
+	btdims[CHAR].suesize = SZCHAR;
+	btdims[CHAR].suealign = ALCHAR;
+	btdims[INT].suesize = SZINT;
+	btdims[INT].suealign = ALINT;
+	btdims[FLOAT].suesize = SZFLOAT;
+	btdims[FLOAT].suealign = ALFLOAT;
+	btdims[DOUBLE].suesize = SZDOUBLE;
+	btdims[DOUBLE].suealign = ALDOUBLE;
+	btdims[LDOUBLE].suesize = SZLDOUBLE;
+	btdims[LDOUBLE].suealign = ALLDOUBLE;
+	btdims[LONG].suesize = SZLONG;
+	btdims[LONG].suealign = ALLONG;
+	btdims[LONGLONG].suesize = SZLONGLONG;
+	btdims[LONGLONG].suealign = ALLONGLONG;
+	btdims[SHORT].suesize = SZSHORT;
+	btdims[SHORT].suealign = ALSHORT;
+	btdims[UCHAR].suesize = SZCHAR;
+	btdims[UCHAR].suealign = ALCHAR;
+	btdims[USHORT].suesize = SZSHORT;
+	btdims[USHORT].suealign = ALSHORT;
+	btdims[UNSIGNED].suesize = SZINT;
+	btdims[UNSIGNED].suealign = ALINT;
+	btdims[ULONG].suesize = SZLONG;
+	btdims[ULONG].suealign = ALLONG;
+	btdims[ULONGLONG].suesize = SZLONGLONG;
+	btdims[ULONGLONG].suealign = ALLONGLONG;
+	btdims[FCOMPLEX].suesize = SZFLOAT * 2;
+	btdims[FCOMPLEX].suealign = ALFLOAT;
+	btdims[COMPLEX].suesize = SZDOUBLE * 2;
+	btdims[COMPLEX].suealign = ALDOUBLE;
+	btdims[LCOMPLEX].suesize = SZLDOUBLE * 2;
+	btdims[LCOMPLEX].suealign = ALLDOUBLE;
+	btdims[FIMAG].suesize = SZFLOAT;
+	btdims[FIMAG].suealign = ALFLOAT;
+	btdims[IMAG].suesize = SZDOUBLE;
+	btdims[IMAG].suealign = ALDOUBLE;
+	btdims[LIMAG].suesize = SZLDOUBLE;
+	btdims[LIMAG].suealign = ALLDOUBLE;
+#endif
+
+	/* starts past any of the above */
 	reached = 1;
 
 	bjobcode();
-#ifndef TARGET_STDARGS
+#ifndef TARGET_VALIST
 	{
 		NODE *p = block(NAME, NIL, NIL, PTR|CHAR, NULL, MKSUE(CHAR));
 		struct symtab *sp = lookup(addname("__builtin_va_list"), 0);

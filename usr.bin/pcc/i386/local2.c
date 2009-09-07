@@ -444,6 +444,25 @@ argsiz(NODE *p)
 	return 0;
 }
 
+static void
+fcast(NODE *p)
+{
+	TWORD t = p->n_type;
+	int sz, c;
+
+	if (t >= p->n_left->n_type)
+		return; /* cast to more precision */
+	if (t == FLOAT)
+		sz = 4, c = 's';
+	else
+		sz = 8, c = 'l';
+
+	printf("	sub $%d,%%esp\n", sz);
+	printf("	fstp%c (%%esp)\n", c);
+	printf("	fld%c (%%esp)\n", c);
+	printf("	add $%d,%%esp\n", sz);
+}
+
 void
 zzzcode(NODE *p, int c)
 {
@@ -458,6 +477,24 @@ zzzcode(NODE *p, int c)
 				printf("	fxch\n");
 			else
 				printf("r");
+		}
+		break;
+
+	case 'B': { /* packed bitfield ops */
+		int sz, off;
+
+		l = p->n_left;
+		sz = UPKFSZ(l->n_rval);
+		off = UPKFOFF(l->n_rval);
+		if (sz + off <= SZINT)
+			break;
+		/* lower already printed */
+		expand(p, INAREG, "	movl AR,A1\n");
+		expand(p, INAREG, "	andl $M,UL\n");
+		printf("	sarl $%d,", SZINT-off);
+		expand(p, INAREG, "A1\n");
+		expand(p, INAREG, "	andl $N,A1\n");
+		expand(p, INAREG, "	orl A1,UL\n");
 		}
 		break;
 
@@ -488,6 +525,10 @@ zzzcode(NODE *p, int c)
 
 	case 'G': /* Floating point compare */
 		fcomp(p);
+		break;
+
+	case 'I': /* float casts */
+		fcast(p);
 		break;
 
 	case 'J': /* convert unsigned long long to floating point */
@@ -543,25 +584,52 @@ zzzcode(NODE *p, int c)
 		break;
 
 	case 'Q': /* emit struct assign */
-		/* XXX - optimize for small structs */
-#if defined(MACHOABI)
-		printf("\tsubl $4,%%esp\n");
-#endif
-		printf("\tpushl $%d\n", p->n_stsize);
-		expand(p, INAREG, "\tpushl AR\n");
-		expand(p, INAREG, "\tleal AL,%eax\n\tpushl %eax\n");
-#if defined(MACHOABI)
-		if (kflag) {
-			printf("\tcall L%s$stub\n", EXPREFIX "memcpy");
-			addstub(&stublist, EXPREFIX "memcpy");
-		} else {
-			printf("\tcall %s\n", EXPREFIX "memcpy");
+		/*
+		 * With <= 16 bytes, put out mov's, otherwise use movsb/w/l.
+		 * esi/edi/ecx are available.
+		 */
+		switch (p->n_stsize) {
+		case 1:
+			expand(p, INAREG, "	movb (AR),%cl\n");
+			expand(p, INAREG, "	movb %cl,AL\n");
+			break;
+		case 2:
+			expand(p, INAREG, "	movw (AR),%cx\n");
+			expand(p, INAREG, "	movw %cx,AL\n");
+			break;
+		case 4:
+			expand(p, INAREG, "	movl (AR),%ecx\n");
+			expand(p, INAREG, "	movl %ecx,AL\n");
+			break;
+		default:
+			expand(p, INAREG, "	leal AL,%edi\n");
+			expand(p, INAREG, "	movl AR,%esi\n");
+			if (p->n_stsize <= 16 && (p->n_stsize & 3) == 0) {
+				printf("	movl (%%esi),%%ecx\n");
+				printf("	movl %%ecx,(%%edi)\n");
+				printf("	movl 4(%%esi),%%ecx\n");
+				printf("	movl %%ecx,4(%%edi)\n");
+				if (p->n_stsize > 8) {
+					printf("	movl 8(%%esi),%%ecx\n");
+					printf("	movl %%ecx,8(%%edi)\n");
+				}
+				if (p->n_stsize == 16) {
+					printf("\tmovl 12(%%esi),%%ecx\n");
+					printf("\tmovl %%ecx,12(%%edi)\n");
+				}
+			} else {
+				if (p->n_stsize > 4) {
+					printf("\tmovl $%d,%%ecx\n",
+					    p->n_stsize >> 2);
+					printf("	rep movsl\n");
+				}
+				if (p->n_stsize & 2)
+					printf("	movsw\n");
+				if (p->n_stsize & 1)
+					printf("	movsb\n");
+			}
+			break;
 		}
-		printf("\taddl $16,%%esp\n");
-#else
-		printf("\tcall %s\n", EXPREFIX "memcpy");
-		printf("\taddl $12,%%esp\n");
-#endif
 		break;
 
 	case 'S': /* emit eventual move after cast from longlong */
@@ -695,7 +763,7 @@ adrcon(CONSZ val)
 void
 conput(FILE *fp, NODE *p)
 {
-	int val = p->n_lval;
+	int val = (int)p->n_lval;
 
 	switch (p->n_op) {
 	case ICON:
@@ -726,6 +794,9 @@ insput(NODE *p)
 void
 upput(NODE *p, int size)
 {
+
+	if (p->n_op == FLD)
+		p = p->n_left;
 
 	size /= SZCHAR;
 	switch (p->n_op) {
@@ -900,6 +971,90 @@ storefloat(struct interpass *ip, NODE *p)
 	}
 }
 
+static void
+outfargs(struct interpass *ip, NODE **ary, int num, int *cwp, int c)
+{
+	struct interpass *ip2;
+	NODE *q, *r;
+	int i;
+
+	for (i = 0; i < num; i++)
+		if (XASMVAL(cwp[i]) == c && (cwp[i] & (XASMASG|XASMINOUT)))
+			break;
+	if (i == num)
+		return;
+	q = ary[i]->n_left;
+	r = mklnode(REG, 0, c == 'u' ? 040 : 037, q->n_type);
+	ary[i]->n_left = tcopy(r);
+	ip2 = ipnode(mkbinode(ASSIGN, q, r, q->n_type));
+	DLIST_INSERT_AFTER(ip, ip2, qelem);
+}
+
+static void
+infargs(struct interpass *ip, NODE **ary, int num, int *cwp, int c)
+{
+	struct interpass *ip2;
+	NODE *q, *r;
+	int i;
+
+	for (i = 0; i < num; i++)
+		if (XASMVAL(cwp[i]) == c && (cwp[i] & XASMASG) == 0)
+			break;
+	if (i == num)
+		return;
+	q = ary[i]->n_left;
+	q = (cwp[i] & XASMINOUT) ? tcopy(q) : q;
+	r = mklnode(REG, 0, c == 'u' ? 040 : 037, q->n_type);
+	if ((cwp[i] & XASMINOUT) == 0)
+		ary[i]->n_left = tcopy(r);
+	ip2 = ipnode(mkbinode(ASSIGN, r, q, q->n_type));
+	DLIST_INSERT_BEFORE(ip, ip2, qelem);
+}
+
+/*
+ * Extract float args to XASM and ensure that they are put on the stack
+ * in correct order.
+ * This should be done sow other way.
+ */
+static void
+fixxfloat(struct interpass *ip, NODE *p)
+{
+	NODE *w, **ary;
+	int nn, i, c, *cwp;
+
+	nn = 1;
+	w = p->n_left;
+	if (w->n_op == ICON && w->n_type == STRTY)
+		return;
+	/* index all xasm args first */
+	for (; w->n_op == CM; w = w->n_left)
+		nn++;
+	ary = tmpcalloc(nn * sizeof(NODE *));
+	cwp = tmpcalloc(nn * sizeof(int));
+	for (i = 0, w = p->n_left; w->n_op == CM; w = w->n_left) {
+		ary[i] = w->n_right;
+		cwp[i] = xasmcode(ary[i]->n_name);
+		i++;
+	}
+	ary[i] = w;
+	cwp[i] = xasmcode(ary[i]->n_name);
+	for (i = 0; i < nn; i++)
+		if (XASMVAL(cwp[i]) == 't' || XASMVAL(cwp[i]) == 'u')
+			break;
+	if (i == nn)
+		return;
+
+	for (i = 0; i < nn; i++) {
+		c = XASMVAL(cwp[i]);
+		if (c >= '0' && c <= '9')
+			cwp[i] = (cwp[i] & ~0377) | XASMVAL(cwp[c-'0']);
+	}
+	infargs(ip, ary, nn, cwp, 'u');
+	infargs(ip, ary, nn, cwp, 't');
+	outfargs(ip, ary, nn, cwp, 't');
+	outfargs(ip, ary, nn, cwp, 'u');
+}
+
 void
 myreader(struct interpass *ipole)
 {
@@ -911,6 +1066,8 @@ myreader(struct interpass *ipole)
 			continue;
 		walkf(ip->ip_node, fixcalls, 0);
 		storefloat(ip, ip->ip_node);
+		if (ip->ip_node->n_op == XASM)
+			fixxfloat(ip, ip->ip_node);
 	}
 	if (stkpos > p2autooff)
 		p2autooff = stkpos;
@@ -1178,8 +1335,14 @@ myxasm(struct interpass *ip, NODE *p)
 	case 'b': reg = EBX; break;
 	case 'c': reg = ECX; break;
 	case 'd': reg = EDX; break;
-	case 't': reg = 0; break;
-	case 'u': reg = 1; break;
+
+	case 't':
+	case 'u':
+		p->n_name = tmpstrdup(p->n_name);
+		w = strchr(p->n_name, XASMVAL(cw));
+		*w = 'r'; /* now reg */
+		return 1;
+
 	case 'A': reg = EAXEDX; break;
 	case 'q': /* XXX let it be CLASSA as for now */
 		p->n_name = tmpstrdup(p->n_name);
@@ -1228,7 +1391,10 @@ targarg(char *w, void *arg)
 	NODE **ary = arg;
 	NODE *p, *q;
 
-	p = ary[(int)w[1]-'0']->n_left;
+	if (ary[(int)w[1]-'0'] == 0)
+		p = ary[(int)w[1]-'0'-1]->n_left; /* XXX */
+	else
+		p = ary[(int)w[1]-'0']->n_left;
 	if (optype(p->n_op) != LTYPE)
 		comperr("bad xarg op %d", p->n_op);
 	q = tcopy(p);
@@ -1264,7 +1430,7 @@ numconv(void *ip, void *p1, void *q1)
 	case 'c':
 	case 'd':
 		p->n_name = tmpcalloc(2);
-		p->n_name[0] = XASMVAL(cw);
+		p->n_name[0] = (char)XASMVAL(cw);
 		return 1;
 	default:
 		return 0;

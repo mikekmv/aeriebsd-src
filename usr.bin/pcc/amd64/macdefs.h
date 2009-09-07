@@ -65,7 +65,7 @@
 #define ALFLOAT		32
 #define ALDOUBLE	64
 #define ALLDOUBLE	128
-#define ALSTRUCT	128
+/* #undef ALSTRUCT	amd64 struct alignment is member defined */
 #define ALSTACK		64
 #define ALMAX		128 
 
@@ -133,8 +133,8 @@ typedef long long OFFSZ;
 #define STOSTARG(p)
 #define genfcall(a,b)	gencall(a,b)
 
-/* How many integer registers are needed? */
-#define	szty(t)	(t == LDOUBLE ? 2 : 1)
+/* How many integer registers are needed? (used for stack allocation) */
+#define	szty(t)	(t < LONG || t == FLOAT ? 1 : t == LDOUBLE ? 4 : 2)
 
 /*
  * The amd64 architecture has a much cleaner interface to its registers
@@ -232,6 +232,7 @@ int COLORMAP(int c, int *r);
 #define SMIXOR		(MAXSPECIAL+4)
 #define SMILWXOR	(MAXSPECIAL+5)
 #define SMIHWXOR	(MAXSPECIAL+6)
+#define SCON32		(MAXSPECIAL+7)	/* 32-bit constant */
 
 /*
  * i386-specific symbol table flags.
@@ -267,12 +268,23 @@ int numconv(void *ip, void *p, void *q);
 /*
  * builtins.
  */
+#define TARGET_VALIST
+#define TARGET_STDARGS
 #define TARGET_BUILTINS							\
+	{ "__builtin_stdarg_start", amd64_builtin_stdarg_start },	\
+	{ "__builtin_va_start", amd64_builtin_stdarg_start },	\
+	{ "__builtin_va_arg", amd64_builtin_va_arg },			\
+	{ "__builtin_va_end", amd64_builtin_va_end },			\
+	{ "__builtin_va_copy", amd64_builtin_va_copy },			\
 	{ "__builtin_frame_address", i386_builtin_frame_address },	\
 	{ "__builtin_return_address", i386_builtin_return_address },
 
 #define NODE struct node
 struct node;
+NODE *amd64_builtin_stdarg_start(NODE *f, NODE *a);
+NODE *amd64_builtin_va_arg(NODE *f, NODE *a);
+NODE *amd64_builtin_va_end(NODE *f, NODE *a);
+NODE *amd64_builtin_va_copy(NODE *f, NODE *a);
 NODE *i386_builtin_frame_address(NODE *f, NODE *a);
 NODE *i386_builtin_return_address(NODE *f, NODE *a);
 #undef NODE

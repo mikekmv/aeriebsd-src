@@ -80,6 +80,39 @@ static void putjops(NODE *, void *);
 static struct symtab *findmember(struct symtab *, char *);
 int inftn; /* currently between epilog/prolog */
 
+static char *tnames[] = {
+	"undef",
+	"farg",
+	"char",
+	"unsigned char",
+	"short",
+	"unsigned short",
+	"int",
+	"unsigned int",
+	"long",
+	"unsigned long",
+	"long long",
+	"unsigned long long",
+	"float",
+	"double",
+	"long double",
+	"strty",
+	"unionty",
+	"enumty",
+	"moety",
+	"void",
+	"signed", /* pass1 */
+	"bool", /* pass1 */
+	"fimag", /* pass1 */
+	"dimag", /* pass1 */
+	"limag", /* pass1 */
+	"fcomplex", /* pass1 */
+	"dcomplex", /* pass1 */
+	"lcomplex", /* pass1 */
+	"enumty", /* pass1 */
+	"?", "?"
+};
+
 /*	some special actions, used in finding the type of nodes */
 # define NCVT 01
 # define PUN 02
@@ -746,11 +779,11 @@ conval(NODE *p, int o, NODE *q)
 		p->n_lval ^= val;
 		break;
 	case LS:
-		i = val;
+		i = (int)val;
 		p->n_lval = p->n_lval << i;
 		break;
 	case RS:
-		i = val;
+		i = (int)val;
 		if (u) {
 			v1 = v1 >> i;
 			p->n_lval = v1;
@@ -1312,12 +1345,21 @@ tymatch(p)  register NODE *p; {
 	   are those involving FLOAT/DOUBLE, and those
 	   from LONG to INT and ULONG to UNSIGNED */
 
-
-	if (t != t1 || (ru && !lu))
+	if (t != t1 || (ru && !lu)) {
+		if (Wtruncate && o != CAST && p->n_right->n_op != ICON &&
+		    tsize(t1, 0, MKSUE(t2)) > tsize(tu, 0, MKSUE(tu)))
+			werror("conversion to '%s' from '%s' may alter its value",
+			    tnames[tu], tnames[t1]);
 		p->n_left = makety( p->n_left, tu, 0, 0, MKSUE(tu));
+	}
 
-	if (t != t2 || o==CAST || (lu && !ru))
+	if (t != t2 || o==CAST || (lu && !ru)) {
+		if (Wtruncate && o != CAST && p->n_right->n_op != ICON &&
+		    tsize(t2, 0, MKSUE(t2)) > tsize(tu, 0, MKSUE(tu)))
+			werror("conversion to '%s' from '%s' may alter its value",
+			    tnames[tu], tnames[t2]);
 		p->n_right = makety(p->n_right, tu, 0, 0, MKSUE(tu));
+	}
 
 	if( casgop(o) ){
 		p->n_type = p->n_left->n_type;
@@ -1370,6 +1412,17 @@ makety(NODE *p, TWORD t, TWORD q, union dimfun *d, struct suedef *sue)
 		p->n_sue = sue;
 		p->n_qual = q;
 		return(p);
+	}
+
+	if (p->n_op == FCON && (t >= FLOAT && t <= LDOUBLE)) {
+		if (t == FLOAT)
+			p->n_dcon = (float)p->n_dcon;
+		else if (t == DOUBLE)
+			p->n_dcon = (double)p->n_dcon;
+		else
+			p->n_dcon = (long double)p->n_dcon;
+		p->n_type = t;
+		return p;
 	}
 
 	if (p->n_op == FCON) {
@@ -1429,6 +1482,7 @@ makety(NODE *p, TWORD t, TWORD q, union dimfun *d, struct suedef *sue)
 		} else if (ISCTY(t) || ISITY(t))
 			cerror("complex constant3");
 	}
+
 	p = block(SCONV, p, NIL, t, d, sue);
 	p->n_qual = q;
 	return clocal(p);
@@ -1796,7 +1850,7 @@ comops(NODE *p)
 	while (p->n_op == COMOP) {
 		/* XXX hack for GCC ({ }) ops */
 		if (p->n_left->n_op == GOTO) {
-			int v = p->n_left->n_left->n_lval;
+			int v = (int)p->n_left->n_left->n_lval;
 			ecomp(p->n_left);
 			plabel(v+1);
 		} else
@@ -2343,9 +2397,9 @@ p2tree(NODE *p)
 	case STASG:
 		/* STASG used for stack array init */
 		if (ISARY(p->n_type)) {
-			int size1 = tsize(p->n_type, p->n_left->n_df,
+			int size1 = (int)tsize(p->n_type, p->n_left->n_df,
 			    p->n_left->n_sue)/SZCHAR;
-			p->n_stsize = tsize(p->n_type, p->n_right->n_df,
+			p->n_stsize = (int)tsize(p->n_type, p->n_right->n_df,
 			    p->n_right->n_sue)/SZCHAR;
 			if (size1 < p->n_stsize)
 				p->n_stsize = size1;
@@ -2358,8 +2412,8 @@ p2tree(NODE *p)
 	case STCALL:
 	case USTCALL:
 		/* set up size parameters */
-		p->n_stsize = (tsize(STRTY, p->n_left->n_df,
-		    p->n_left->n_sue)+SZCHAR-1)/SZCHAR;
+		p->n_stsize = (int)((tsize(STRTY, p->n_left->n_df,
+		    p->n_left->n_sue)+SZCHAR-1)/SZCHAR);
 		p->n_stalign = talign(STRTY,p->n_left->n_sue)/SZCHAR;
 		break;
 
@@ -2672,4 +2726,3 @@ getlab(void)
 {
 	return crslab++;
 }
-

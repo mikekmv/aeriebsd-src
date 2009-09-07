@@ -10,8 +10,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -118,11 +116,10 @@ static int nparams;
 NODE *arrstk[10];
 int arrstkp;
 static int intcompare;
-static NODE *parlink;
+NODE *parlink;
 
 void fixtype(NODE *p, int class);
 int fixclass(int class, TWORD type);
-int falloc(struct symtab *p, int w, int new, NODE *pty);
 static void dynalloc(struct symtab *p, int *poff);
 void inforce(OFFSZ n);
 void vfdalign(int n);
@@ -267,6 +264,15 @@ defid(NODE *ap, int class)
 		printf("	previous class: %s\n", scnames(scl));
 #endif
 
+#ifdef GCC_COMPAT
+	/* Its allowed to add attributes to existing declarations */
+	if (ap != q) {
+		p->ssue = sueget(p->ssue);
+                p->ssue->suega = gcc_attr_parse(ap->n_right);
+                ap->n_right = bcon(0);
+        }
+#endif
+
 	if (class & FIELD)
 		return;
 	switch(class) {
@@ -336,6 +342,15 @@ defid(NODE *ap, int class)
 		case USTATIC:
 			p->sclass = STATIC;
 			goto done;
+		case SNULL:
+			/*
+			 * Handle redeclarations of inlined functions.
+			 * This is allowed if the previous declaration is of
+			 * type gnu_inline.
+			 */
+			if (gcc_get_attr(p->ssue, GCC_ATYP_GNU_INLINE))
+				goto done;
+			break;
 		}
 		break;
 
@@ -374,8 +389,8 @@ redec:			uerror("redeclaration of %s", p->sname);
 #endif
 	p->stype = type;
 	p->squal = qual;
-	p->sclass = class;
-	p->slevel = blevel;
+	p->sclass = (char)class;
+	p->slevel = (char)blevel;
 	p->soffset = NOOFFSET;
 	if (q->n_sue == NULL)
 		cerror("q->n_sue == NULL");
@@ -403,7 +418,7 @@ redec:			uerror("redeclaration of %s", p->sname);
 
 	/* allocate offsets */
 	if (class&FIELD) {
-		(void) falloc(p, class&FLDSIZ, 0, NIL);  /* new entry */
+		(void) falloc(p, class&FLDSIZ, NIL);  /* new entry */
 	} else switch (class) {
 
 	case REGISTER:
@@ -416,15 +431,16 @@ redec:			uerror("redeclaration of %s", p->sname);
 			oalloc(p, &autooff);
 		break;
 	case PARAM:
-		if (ISARY(p->stype)) {
-			/* remove array type on parameters before oalloc */
-			p->stype += (PTR-ARY);
-			p->sdf++;
-		}
-		if (arrstkp)
+		if (arrstkp) {
 			dynalloc(p, &argoff);
-		else
+		} else {
+			if (ISARY(p->stype)) {
+			/* remove array type on parameters before oalloc */
+				p->stype += (PTR-ARY);
+				p->sdf++;
+			}
 			oalloc(p, &argoff);
+		}
 		break;
 		
 	case STATIC:
@@ -659,7 +675,7 @@ defstr(struct symtab *sp, int class)
 {
 	sp->ssue = permalloc(sizeof(struct suedef));
 	memset(sp->ssue, 0, sizeof(struct suedef));
-	sp->sclass = class;
+	sp->sclass = (char)class;
 	if (class == STNAME)
 		sp->stype = STRTY;
 	else if (class == UNAME)
@@ -877,7 +893,7 @@ dclstruct(struct rstack *r)
 		if (sp->sclass & FIELD)
 			sz = sp->sclass&FLDSIZ;
 		else
-			sz = tsize(sp->stype, sp->sdf, sp->ssue);
+			sz = (int)tsize(sp->stype, sp->sdf, sp->ssue);
 		if (sz > rpole->rstr)
 			rpole->rstr = sz;  /* for use with unions */
 		/*
@@ -1252,7 +1268,7 @@ oalloc(struct symtab *p, int *poff )
 
 	al = talign(p->stype, p->ssue);
 	noff = off = *poff;
-	tsz = tsize(p->stype, p->sdf, p->ssue);
+	tsz = (int)tsize(p->stype, p->sdf, p->ssue);
 #ifdef BACKAUTO
 	if (p->sclass == AUTO) {
 		noff = off + tsz;
@@ -1387,68 +1403,45 @@ dynalloc(struct symtab *p, int *poff)
  * new is 0 if new entry, 1 if redefinition, -1 if alignment
  */
 int
-falloc(struct symtab *p, int w, int new, NODE *pty)
+falloc(struct symtab *p, int w, NODE *pty)
 {
 	int al,sz,type;
 
-	type = (new<0)? pty->n_type : p->stype;
+	type = p ? p->stype : pty->n_type;
 
-	/* this must be fixed to use the current type in alignments */
-	switch( new<0?pty->n_type:p->stype ){
-
-	case CHAR:
-	case UCHAR:
-		al = ALCHAR;
-		sz = SZCHAR;
-		break;
-
-	case SHORT:
-	case USHORT:
-		al = ALSHORT;
-		sz = SZSHORT;
-		break;
-
-	case INT:
-	case UNSIGNED:
-		al = ALINT;
-		sz = SZINT;
-		break;
-
-	default:
-		if( new < 0 ) {
-			uerror( "illegal field type" );
-			al = ALINT;
-		} else
-			al = fldal( p->stype );
-		sz =SZINT;
+	if (type < CHAR || type > ULONGLONG) {
+		uerror("illegal field type");
+		type = INT;
 	}
 
-	if( w > sz ) {
-		uerror( "field too big");
+	al = btdims[type].suealign;
+	sz = btdims[type].suesize;
+
+	if (w > sz) {
+		uerror("field too big");
 		w = sz;
-		}
+	}
 
-	if( w == 0 ){ /* align only */
-		SETOFF( rpole->rstr, al );
-		if( new >= 0 ) uerror( "zero size field");
+	if (w == 0) { /* align only */
+		SETOFF(rpole->rstr, al);
+		if (p != NULL)
+			uerror("zero size field");
 		return(0);
-		}
+	}
 
-	if( rpole->rstr%al + w > sz ) SETOFF( rpole->rstr, al );
-	if( new < 0 ) {
+	if (rpole->rstr%al + w > sz)
+		SETOFF(rpole->rstr, al);
+	if (p == NULL) {
 		rpole->rstr += w;  /* we know it will fit */
 		return(0);
-		}
+	}
 
 	/* establish the field */
 
-	if( new == 1 ) { /* previous definition */
-		if( p->soffset != rpole->rstr || p->sclass != (FIELD|w) ) return(1);
-		}
 	p->soffset = rpole->rstr;
 	rpole->rstr += w;
 	p->stype = type;
-	fldty( p );
+	fldty(p);
 	return(0);
 }
 
@@ -2022,7 +2015,7 @@ tyreduce(NODE *p, struct tylnk **tylkp, int *ntdim)
 			r = p->n_right;
 			o = RB;
 		} else {
-			dim.ddim = p->n_right->n_lval;
+			dim.ddim = (int)p->n_right->n_lval;
 			nfree(p->n_right);
 #ifdef notdef
 	/* XXX - check dimensions at usage time */
@@ -2097,6 +2090,28 @@ builtin_alloca(NODE *f, NODE *a)
 }
 
 /*
+ * See if there is a goto in the tree.
+ * XXX this function is a hack for a flaw in handling of 
+ * compound expressions and inline functions and should not be 
+ * needed.
+ */
+static int
+hasgoto(NODE *p)
+{
+	int o = coptype(p->n_op);
+
+	if (o == LTYPE)
+		return 0;
+	if (p->n_op == GOTO)
+		return 1;
+	if (o == UTYPE)
+		return hasgoto(p->n_left);
+	if (hasgoto(p->n_left))
+		return 1;
+	return hasgoto(p->n_right);
+}
+
+/*
  * Determine if a value is known to be constant at compile-time and
  * hence that PCC can perform constant-folding on expressions involving
  * that value.
@@ -2107,9 +2122,33 @@ builtin_constant_p(NODE *f, NODE *a)
 	int isconst = (a != NULL && a->n_op == ICON);
 
 	tfree(f);
-	tfree(a);
+	if (a && hasgoto(a)) {
+		a = buildtree(COMOP, a, bcon(0));
+	} else {
+		tfree(a);
+		a = bcon(isconst);
+	}
 
-	return bcon(isconst);
+	return a;
+}
+
+/*
+ * Hint to the compiler whether this expression will evaluate true or false.
+ * Just ignored for now.
+ */
+static NODE *
+builtin_expect(NODE *f, NODE *a)
+{
+
+	tfree(f);
+	if (a && a->n_op == CM) {
+		tfree(a->n_right);
+		f = a->n_left;
+		nfree(a);
+		a = f;
+	}
+
+	return a;
 }
 
 /*
@@ -2140,7 +2179,7 @@ builtin_abs(NODE *f, NODE *a)
 		p = buildtree(ASSIGN, t, a);
 
 		t = tempnode(tmp1, a->n_type, a->n_df, a->n_sue);
-		shift = tsize(a->n_type, a->n_df, a->n_sue) - 1;
+		shift = (int)tsize(a->n_type, a->n_df, a->n_sue) - 1;
 		q = buildtree(RS, t, bcon(shift));
 
 		t2 = tempnode(0, a->n_type, a->n_df, a->n_sue);
@@ -2177,7 +2216,7 @@ builtin_stdarg_start(NODE *f, NODE *a)
 	/* must first deal with argument size; use int size */
 	p = a->n_right;
 	if (p->n_type < INT) {
-		sz = SZINT/tsize(p->n_type, p->n_df, p->n_sue);
+		sz = (int)(SZINT/tsize(p->n_type, p->n_df, p->n_sue));
 	} else
 		sz = 1;
 
@@ -2220,12 +2259,11 @@ builtin_va_arg(NODE *f, NODE *a)
 	rv = buildtree(ASSIGN, q, p);
 
 	r = a->n_right;
-	sz = tsize(r->n_type, r->n_df, r->n_sue)/SZCHAR;
+	sz = (int)tsize(r->n_type, r->n_df, r->n_sue)/SZCHAR;
 	/* add one to ap */
 #ifdef BACKAUTO
 	rv = buildtree(COMOP, rv , buildtree(PLUSEQ, a->n_left, bcon(sz)));
 #else
-#error fix wrong eval order in builtin_va_arg
 	ecomp(buildtree(MINUSEQ, a->n_left, bcon(sz)));
 #endif
 
@@ -2271,6 +2309,7 @@ static struct bitable {
 	{ "__builtin_alloca", builtin_alloca },
 	{ "__builtin_constant_p", builtin_constant_p },
 	{ "__builtin_abs", builtin_abs },
+	{ "__builtin_expect", builtin_expect },
 #ifndef TARGET_STDARGS
 	{ "__builtin_stdarg_start", builtin_stdarg_start },
 	{ "__builtin_va_start", builtin_stdarg_start },
@@ -2291,24 +2330,29 @@ static struct bitable {
 static void
 alprint(union arglist *al, int in)
 {
+	TWORD t;
 	int i = 0, j;
 
 	for (; al->type != TNULL; al++) {
 		for (j = in; j > 0; j--)
 			printf("  ");
 		printf("arg %d: ", i++);
-		tprint(stdout, al->type, 0);
-		if (ISARY(al->type)) {
-			al++;
-			printf(" dim %d\n", al->df->ddim);
-		} else if (BTYPE(al->type) == STRTY ||
-		    BTYPE(al->type) == UNIONTY) {
+		t = al->type;
+		tprint(stdout, t, 0);
+		while (t > BTMASK) {
+			if (ISARY(t)) {
+				al++;
+				printf(" dim %d ", al->df->ddim);
+			} else if (ISFTN(t)) {
+				al++;
+				alprint(al->df->dfun, in+1);
+			}
+			t = DECREF(t);
+		}
+		if (ISSTR(t)) {
 			al++;
 			printf(" (size %d align %d)", al->sue->suesize,
 			    al->sue->suealign);
-		} else if (ISFTN(DECREF(al->type))) {
-			al++;
-			alprint(al->df->dfun, in+1);
 		}
 		printf("\n");
 	}
@@ -2589,7 +2633,9 @@ chk2(TWORD type, union dimfun *dsym, union dimfun *ddef)
 			/* may be declared without dimension */
 			if (dsym->ddim == NOOFFSET)
 				dsym->ddim = ddef->ddim;
-			if (ddef->ddim != NOOFFSET && dsym->ddim != ddef->ddim)
+			if (dsym->ddim < 0 && ddef->ddim < 0)
+				; /* dynamic arrays as arguments */
+			else if (ddef->ddim > 0 && dsym->ddim != ddef->ddim)
 				return 1;
 			dsym++, ddef++;
 			break;
@@ -2855,9 +2901,9 @@ getsymtab(char *name, int flags)
 	s->stype = UNDEF;
 	s->squal = 0;
 	s->sclass = SNULL;
-	s->sflags = flags & SMASK;
+	s->sflags = (short)(flags & SMASK);
 	s->soffset = 0;
-	s->slevel = blevel;
+	s->slevel = (char)blevel;
 	s->sdf = NULL;
 	s->ssue = NULL;
 	return s;

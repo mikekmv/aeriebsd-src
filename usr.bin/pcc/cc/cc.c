@@ -86,6 +86,10 @@
 #define LIBDIR		"/usr/lib/"
 #endif
 
+#ifndef LIBEXECDIR
+#define LIBEXECDIR	"/usr/libexec"
+#endif
+
 #ifndef PREPROCESSOR
 #define PREPROCESSOR	"cpp"
 #endif
@@ -181,8 +185,8 @@ int	pthreads;
 int	xcflag;
 int 	ascpp;
 
-char	*passp = LIBEXECDIR PREPROCESSOR;
-char	*pass0 = LIBEXECDIR COMPILER;
+char	*passp = LIBEXECDIR "/" PREPROCESSOR;
+char	*pass0 = LIBEXECDIR "/" COMPILER;
 char	*as = ASSEMBLER;
 char	*ld = LINKER;
 char	*Bflag;
@@ -245,6 +249,8 @@ struct Wflags {
 #define	INWALL		1
 #define	NEGATIVE	2
 } Wflags[] = {
+	{ "-Wtruncate", 0 },
+	{ "-Wno-truncate", NEGATIVE },
 	{ "-Werror", 0 },
 	{ "-Wshadow", 0 },
 	{ "-Wno-shadow", NEGATIVE },

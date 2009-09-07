@@ -38,7 +38,7 @@ deflab(int label)
 	printf(LABFMT ":\n", label);
 }
 
-static int regoff[7];
+static int regoff[MAXREGS];
 static TWORD ftype;
 char *rbyte[], *rshort[], *rlong[];
 
@@ -61,7 +61,7 @@ prtprolog(struct interpass_prolog *ipp, int addto)
 	/* save permanent registers */
 	for (i = 0; i < MAXREGS; i++)
 		if (TESTBIT(ipp->ipp_regs, i))
-			fprintf(stdout, "\tmov %s,-%d(%s)\n",
+			fprintf(stdout, "\tmovq %s,-%d(%s)\n",
 			    rnames[i], regoff[i], rnames[FPREG]);
 }
 
@@ -126,6 +126,7 @@ eoftn(struct interpass_prolog *ipp)
 		printf("	ret $%d\n", 4);
 	} else {
 		printf("	leave\n");
+		printf("	ret\n");
 	}
 	printf("\t.size %s,.-%s\n", ipp->ipp_name, ipp->ipp_name);
 }
@@ -265,7 +266,10 @@ fldexpand(NODE *p, int cookie, char **cp)
 		val = (CONSZ)1 << UPKFSZ(p->n_rval);
 		--val;
 		val <<= UPKFOFF(p->n_rval);
-		printf("0x%llx", (**cp == 'M' ? val : ~val) & 0xffffffff);
+		if (p->n_type > UNSIGNED)
+			printf("0x%llx", (**cp == 'M' ? val : ~val));
+		else
+			printf("0x%llx", (**cp == 'M' ? val : ~val)&0xffffffff);
 		break;
 	default:
 		comperr("fldexpand");
@@ -273,7 +277,6 @@ fldexpand(NODE *p, int cookie, char **cp)
 	return 1;
 }
 
-#if 0
 static void
 bfext(NODE *p)
 {
@@ -309,6 +312,7 @@ bfext(NODE *p)
 	adrput(stdout, getlr(p, 'D'));
 	printf("\n");
 }
+#if 0
 
 /*
  * Push a structure on stack as argument.
@@ -372,6 +376,7 @@ zzzcode(NODE *p, int c)
 {
 	NODE *l;
 	int pr, lr, s;
+	char **rt;
 
 	switch (c) {
 #if 0
@@ -395,11 +400,11 @@ zzzcode(NODE *p, int c)
 			printf("	addq $%d, %s\n", pr, rnames[RSP]);
 		break;
 
-#if 0
 	case 'E': /* Perform bitfield sign-extension */
 		bfext(p);
 		break;
 
+#if 0
 	case 'F': /* Structure argument */
 		if (p->n_stalign != 0) /* already on stack */
 			starg(p);
@@ -492,9 +497,12 @@ zzzcode(NODE *p, int c)
 		printf("%c", s);
 		}
 		break;
-	case '1': /* special reg name printout */
+
+	case '8': /* special reg name printout (64-bit) */
+	case '1': /* special reg name printout (32-bit) */
 		l = getlr(p, '1');
-		printf("%s", rlong[l->n_rval]);
+		rt = c == '8' ? rnames : rlong;
+		printf("%s", rt[l->n_rval]);
 		break;
 
 	case 'g':
@@ -821,11 +829,9 @@ rmove(int s, int d, TWORD t)
 {
 
 	switch (t) {
-	case LONG:
-	case ULONG:
-	case LONGLONG:
-	case ULONGLONG:
-		printf("	movq %s,%s\n", rnames[s], rnames[d]);
+	case INT:
+	case UNSIGNED:
+		printf("	movl %s,%s\n", rlong[s], rlong[d]);
 		break;
 	case CHAR:
 	case UCHAR:
@@ -836,15 +842,18 @@ rmove(int s, int d, TWORD t)
 		printf("	movw %s,%s\n", rshort[s], rshort[d]);
 		break;
 	case FLOAT:
+		printf("	movss %s,%s\n", rnames[s], rnames[d]);
+		break;
 	case DOUBLE:
+		printf("	movsd %s,%s\n", rnames[s], rnames[d]);
+		break;
 	case LDOUBLE:
-#ifdef notdef
 		/* a=b()*c(); will generate this */
 		comperr("bad float rmove: %d %d", s, d);
-#endif
 		break;
 	default:
-		printf("	movl %s,%s\n", rlong[s], rlong[d]);
+		printf("	movq %s,%s\n", rnames[s], rnames[d]);
+		break;
 	}
 }
 
@@ -950,6 +959,14 @@ special(NODE *p, int shape)
 		     p->n_lval == 0 || (p->n_lval >> 32) != 0)
 			break;
 		return SRDIR;
+	case SCON32:
+		if (o != ICON || p->n_name[0])
+			break;
+		if (p->n_lval < MIN_INT || p->n_lval > MAX_INT)
+			break;
+		return SRDIR;
+	default:
+		cerror("special: %x\n", shape);
 	}
 	return SRNOPE;
 }
@@ -968,7 +985,7 @@ mflags(char *str)
 int
 myxasm(struct interpass *ip, NODE *p)
 {
-cerror("myxasm");
+	return 0;
 #if 0
 	struct interpass *ip2;
 	NODE *in = 0, *ut = 0;

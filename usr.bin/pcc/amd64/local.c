@@ -310,6 +310,19 @@ clocal(NODE *p)
 		nfree(l);
 		break;
 
+	case CALL:
+	case STCALL:
+		if (p->n_type == VOID)
+			break; /* nothing to do */
+
+		/* have the call at left of a COMOP to avoid arg trashing */
+		r = tempnode(0, p->n_type, p->n_df, p->n_sue);
+		m = regno(r);
+		r = buildtree(ASSIGN, r, p);
+		p = tempnode(m, r->n_type, r->n_df, r->n_sue);
+		p = buildtree(COMOP, r, p);
+		break;
+
 	case UCALL:
 	case USTCALL:
 		if (kflag == 0)
@@ -698,6 +711,7 @@ spalloc(NODE *t, NODE *p, OFFSZ off)
 {
 	NODE *sp;
 
+cerror("spalloc");
 	p = buildtree(MUL, p, bcon(off/SZCHAR)); /* XXX word alignment? */
 
 	/* sub the size from sp */
@@ -815,7 +829,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 
 	t = p->n_type;
 	if (t > BTMASK)
-		t = INT; /* pointer */
+		t = LONG; /* pointer */
 
 	while (p->n_op == SCONV || p->n_op == PCONV) {
 		NODE *l = p->n_left;
@@ -835,13 +849,13 @@ ninval(CONSZ off, int fsz, NODE *p)
 	if (p->n_op != ICON && p->n_op != FCON)
 		cerror("ninval: init node not constant");
 
-	if (p->n_op == ICON && p->n_sp != NULL && DEUNSIGN(t) != INT)
+	if (p->n_op == ICON && p->n_sp != NULL && DEUNSIGN(t) != LONG)
 		uerror("element not constant");
 
 	switch (t) {
 	case LONG:
 	case ULONG:
-		printf("\t.long 0x%llx", p->n_lval);
+		printf("\t.quad 0x%llx", p->n_lval);
 		if ((q = p->n_sp) != NULL) {
 			if ((q->sclass == STATIC && q->slevel > 0)) {
 				printf("+" LABFMT, q->soffset);
@@ -1038,6 +1052,7 @@ fixdef(struct symtab *sp)
 		    constructor ? 'c' : 'd');
 		printf("\t.p2align 2\n");
 		printf("\t.long %s\n", exname(sp->sname));
+		printf("\t.previous\n");
 		constructor = destructor = 0;
 	}
 }

@@ -121,7 +121,7 @@ cktree(NODE *p, void *arg)
 	if (p->n_op == CBRANCH) {
 		 if (!logop(p->n_left->n_op))
 			cerror("%p) not logop branch", p);
-		i = p->n_right->n_lval;
+		i = (int)p->n_right->n_lval;
 		if (i < p2env.ipp->ip_lblnum || i >= p2env.epp->ip_lblnum)
 			cerror("%p) label %d outside boundaries %d-%d",
 			    p, i, p2env.ipp->ip_lblnum, p2env.epp->ip_lblnum);
@@ -134,7 +134,7 @@ cktree(NODE *p, void *arg)
 		cerror("%p) temporary %d outside boundaries %d-%d",
 		    p, regno(p), p2env.ipp->ip_tmpnum, p2env.epp->ip_tmpnum);
 	if (p->n_op == GOTO && p->n_left->n_op == ICON) {
-		i = p->n_left->n_lval;
+		i = (int)p->n_left->n_lval;
 		if (i < p2env.ipp->ip_lblnum || i >= p2env.epp->ip_lblnum)
 			cerror("%p) label %d outside boundaries %d-%d",
 			    p, i, p2env.ipp->ip_lblnum, p2env.epp->ip_lblnum);
@@ -216,9 +216,9 @@ stkarg(int tnr, int *soff)
 		    p->n_left->n_op == PLUS &&
 		    p->n_left->n_left->n_op == REG &&
 		    p->n_left->n_right->n_op == ICON)
-			*soff = p->n_left->n_right->n_lval;
+			*soff = (int)p->n_left->n_right->n_lval;
 		else if (p->n_op == OREG)
-			*soff = p->n_lval;
+			*soff = (int)p->n_lval;
 		else
 			comperr("stkarg: bad arg");
 		tfree(ip->ip_node);
@@ -643,7 +643,7 @@ again:	switch (o = p->n_op) {
 	case CBRANCH:
 		p1 = p->n_left;
 		p2 = p->n_right;
-		p1->n_label = p2->n_lval;
+		p1->n_label = (int)p2->n_lval;
 		(void)geninsn(p1, FORCC);
 		p->n_su = 0;
 		break;
@@ -789,7 +789,7 @@ genxasm(NODE *p)
 	if (p->n_left->n_op != ICON || p->n_left->n_type != STRTY) {
 		for (q = p->n_left; q->n_op == CM; q = q->n_left)
 			n++;
-		nary = tmpalloc(sizeof(NODE *)*n);
+		nary = tmpcalloc(sizeof(NODE *)*(n+1));
 		o = n;
 		for (q = p->n_left; q->n_op == CM; q = q->n_left) {
 			gencode(q->n_right->n_left, INREGS);
@@ -810,8 +810,13 @@ genxasm(NODE *p)
 				; /* handled by target */
 			else if (w[1] < '0' || w[1] > (n + '0'))
 				uerror("bad xasm arg number %c", w[1]);
+			else {
+				if (w[1] == (n + '0'))
+					q = nary[(int)w[1]-'0' - 1]; /* XXX */
 			else
-				adrput(stdout, nary[(int)w[1]-'0']->n_left);
+					q = nary[(int)w[1]-'0'];
+				adrput(stdout, q->n_left);
+			}
 			w++;
 		} else if (*w == '\\') { /* Always 3-digit octal */
 			int num = *++w - '0';
@@ -1003,6 +1008,11 @@ e2print(NODE *p, int down, int *a, int *b)
 
 	fprintf(prfil, "%p) %s", p, opst[p->n_op] );
 	switch( p->n_op ) { /* special cases */
+
+	case FLD:
+		fprintf(prfil, " sz=%d, shift=%d",
+		    UPKFSZ(p->n_rval), UPKFOFF(p->n_rval));
+		break;
 
 	case REG:
 		fprintf(prfil, " %s", rnames[p->n_rval] );
@@ -1497,7 +1507,7 @@ again:
 	case 'r': /* general reg */
 		/* set register class */
 		p->n_label = gclass(p->n_left->n_type);
-		if (p->n_left->n_op == REG || p->n_left->n_op == TEMP)
+		if (p->n_left->n_op == REG)
 			break;
 		q = p->n_left;
 		r = (cw & XASMINOUT ? tcopy(q) : q);

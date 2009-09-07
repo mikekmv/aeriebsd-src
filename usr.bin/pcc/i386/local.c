@@ -359,6 +359,9 @@ clocal(NODE *p)
 
 	register struct symtab *q;
 	register NODE *r, *l;
+#if defined(os_openbsd)
+	register NODE *s, *n;
+#endif
 	register int o;
 	register int m;
 	TWORD t;
@@ -540,6 +543,8 @@ clocal(NODE *p)
 		break;
 		
 	case SCONV:
+		if (p->n_left->n_op == COMOP)
+			break;  /* may propagate wrong type later */
 		l = p->n_left;
 
 		if (p->n_type == l->n_type) {
@@ -621,7 +626,7 @@ clocal(NODE *p)
 			nfree(p);
 			return l;
 		} else if (l->n_op == FCON) {
-			l->n_lval = l->n_dcon;
+			l->n_lval = (CONSZ)l->n_dcon;
 			l->n_sp = NULL;
 			l->n_op = ICON;
 			l->n_type = m;
@@ -688,6 +693,51 @@ clocal(NODE *p)
 		p->n_right = block(SCONV, p->n_right, NIL,
 		    CHAR, 0, MKSUE(CHAR));
 		break;
+#if defined(os_openbsd)
+		/* If not using pcc struct return */
+	case STASG:
+		r = p->n_right;
+		if (r->n_op != STCALL && r->n_op != USTCALL)
+			break;
+		m = tsize(BTYPE(r->n_type), r->n_df, r->n_sue);
+		if (m == SZCHAR)
+			m = CHAR;
+		else if (m == SZSHORT)
+			m = SHORT;
+		else if (m == SZINT)
+			m = INT;
+		else if (m == SZLONGLONG)
+			m = LONGLONG;
+		else
+			break;
+
+		l = buildtree(ADDROF, p->n_left, NIL);
+		nfree(p);
+
+		r->n_op -= (STCALL-CALL);
+		r->n_type = m;
+
+		/* r = long, l = &struct */
+
+		n = tempnode(0, m, r->n_df, r->n_sue);
+		r = buildtree(ASSIGN, ccopy(n), r);
+
+		s = tempnode(0, l->n_type, l->n_df, l->n_sue);
+		l = buildtree(ASSIGN, ccopy(s), l);
+
+		p = buildtree(COMOP, r, l);
+
+		l = buildtree(CAST,
+		    block(NAME, NIL, NIL, m|PTR, 0, MKSUE(m)), ccopy(s));
+		r = l->n_right;
+		nfree(l->n_left);
+		nfree(l);
+
+		r = buildtree(ASSIGN, buildtree(UMUL, r, NIL), n);
+		p = buildtree(COMOP, p, r);
+		p = buildtree(COMOP, p, s);
+		break;
+#endif
 	}
 #ifdef PCC_DEBUG
 	if (xdebug) {
@@ -990,14 +1040,14 @@ infld(CONSZ off, int fsz, CONSZ val)
 		    off, fsz, val, inbits);
 	val &= ((CONSZ)1 << fsz)-1;
 	while (fsz + inbits >= SZCHAR) {
-		inval |= (val << inbits);
+		inval |= (int)(val << inbits);
 		printf("\t.byte %d\n", inval & 255);
 		fsz -= (SZCHAR - inbits);
 		val >>= (SZCHAR - inbits);
 		inval = inbits = 0;
 	}
 	if (fsz) {
-		inval |= (val << inbits);
+		inval |= (int)(val << inbits);
 		inbits += fsz;
 	}
 }
@@ -1059,7 +1109,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 	switch (t) {
 	case LONGLONG:
 	case ULONGLONG:
-		i = (p->n_lval >> 32);
+		i = (int)(p->n_lval >> 32);
 		p->n_lval &= 0xffffffff;
 		p->n_type = INT;
 		ninval(off, 32, p);
@@ -1198,7 +1248,7 @@ defzero(struct symtab *sp)
 #endif
 
 	al = talign(sp->stype, sp->ssue)/SZCHAR;
-	off = tsize(sp->stype, sp->sdf, sp->ssue);
+	off = (int)tsize(sp->stype, sp->sdf, sp->ssue);
 	off = (off+(SZCHAR-1))/SZCHAR;
 	printf("	.%scomm ", sp->sclass == STATIC ? "l" : "");
 	if (sp->slevel == 0)
@@ -1344,6 +1394,11 @@ fixdef(struct symtab *sp)
 #endif
 		printf("\t.p2align 2\n");
 		printf("\t.long %s\n", exname(sp->sname));
+#ifdef MACHOABI
+		printf("\t.text\n");
+#else
+		printf("\t.previous\n");
+#endif
 		constructor = destructor = 0;
 	}
 #ifdef os_win32
@@ -1366,7 +1421,7 @@ i386_builtin_return_address(NODE *f, NODE *a)
 	if (a == NULL || a->n_op != ICON)
 		goto bad;
 
-	nframes = a->n_lval;
+	nframes = (int)a->n_lval;
 
 	tfree(f);
 	tfree(a);
@@ -1394,7 +1449,7 @@ i386_builtin_frame_address(NODE *f, NODE *a)
 	if (a == NULL || a->n_op != ICON)
 		goto bad;
 
-	nframes = a->n_lval;
+	nframes = (int)a->n_lval;
 
 	tfree(f);
 	tfree(a);
