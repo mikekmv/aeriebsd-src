@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.1 2009/09/04 09:34:05 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -41,6 +41,9 @@ static const char rcsid[] = "$ABSD$";
 #define	elf_fix_header	elf32_fix_header
 #define	elf_ld_chkhdr	elf32_ld_chkhdr
 #define	elf2nlist	elf32_2nlist
+#define	elf_load_shdrs	elf32_load_shdrs
+#define	elf_fix_shdrs	elf32_fix_shdrs
+#define	elf_loadrelocs	elf32_loadrelocs
 #define	elf_symload	elf32_symload
 #define	elf_symadd	elf32_symadd
 #define	elf_objadd	elf32_objadd
@@ -53,6 +56,9 @@ static const char rcsid[] = "$ABSD$";
 #define	elf_fix_header	elf64_fix_header
 #define	elf_ld_chkhdr	elf64_ld_chkhdr
 #define	elf2nlist	elf64_2nlist
+#define	elf_load_shdrs	elf64_load_shdrs
+#define	elf_fix_shdrs	elf64_fix_shdrs
+#define	elf_loadrelocs	elf64_loadrelocs
 #define	elf_symload	elf64_symload
 #define	elf_symadd	elf64_symadd
 #define	elf_objadd	elf64_objadd
@@ -189,8 +195,8 @@ int
 ldmap_obj(struct objlist *ol, void *v)
 {
 	struct ldorder *neworder = v;
-	Elf_Shdr *shdr = ol->ol_sections;
-	struct section *sect;
+	Elf_Shdr *shdr = ol->ol_sects;
+	struct section *sect = ol->ol_sections;
 	struct symlist *sym;
 	char *sname;
 	int i, n;
@@ -200,16 +206,11 @@ ldmap_obj(struct objlist *ol, void *v)
 #else
 	n = ol->ol_hdr.elf64.e_shnum;
 #endif
-	for (i = 0; i < n; i++, shdr++) {
+	for (i = 0; i < n; i++, sect++, shdr++) {
 		sname = ol->ol_snames + shdr->sh_name;
 		if (strcmp(sname, neworder->ldo_name))
 			continue;
 
-		if (!(sect = calloc(1, sizeof *sect)))
-			err(1, "calloc");
-
-		sect->os_obj = ol;
-		sect->os_no = i;
 		shdr->sh_addr = neworder->ldo_addr;
 		neworder->ldo_addr += shdr->sh_size;
 /* TODO align addr to shdr->sh_addralign */
@@ -217,9 +218,9 @@ ldmap_obj(struct objlist *ol, void *v)
 		/* assign addrs to all symbols in this section */
 		TAILQ_FOREACH(sym, &ol->ol_syms, sl_entry) {
 #if ELFSIZE == 32
-			Elf_Sym *esym = &sym->sl_elfsym.sym32;
+			Elf32_Sym *esym = &sym->sl_elfsym.sym32;
 #else
-			Elf_Sym *esym = &sym->sl_elfsym.sym64;
+			Elf64_Sym *esym = &sym->sl_elfsym.sym64;
 #endif
 			if (esym->st_shndx != i)
 				continue;
@@ -250,7 +251,74 @@ ldload(const char *name, const struct ldorder *order)
 }
 
 int
-elf_symadd(struct elf_symtab *es, void *vs, void *v)
+elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
+    FILE *fp, off_t foff)
+{
+	off_t off;
+	struct relist *r;
+	Elf_Rel rel;
+	Elf_RelA rela;
+	int i, n, sz;
+
+	off = ftello(fp);
+	if (fseeko(fp, foff + shdr->sh_offset, SEEK_SET) < 0)
+		err(1, "fseeko: %s", ol->ol_path);
+
+	sz = shdr->sh_type == SHT_REL? sizeof rel : sizeof rela;
+	n = shdr->sh_size / sz;
+	if (!(r = calloc(n, sizeof *r)))
+		err(1, "calloc");
+
+	s->os_rels = r;
+	s->os_nrls = n;
+	if (shdr->sh_type == SHT_REL) {
+		for (i = 0; i < n; i++) {
+			if (fread(&rel, sizeof rel, 1, fp) != 1)
+				err(1, "fread: %s", ol->ol_path);
+
+			r->rl_sym = NULL;
+			r->rl_addend = 0;
+#if ELFSIZE == 32
+			r->rl_addr = swap32(rel.r_offset);
+			rel.r_info = swap32(rel.r_info);
+#else
+			r->rl_addr = swap64(rel.r_offset);
+			rel.r_info = swap64(rel.r_info);
+#endif
+			r->rl_symidx = ELF_R_SYM(rel.r_info);
+			r->rl_type = ELF_R_TYPE(rel.r_info);
+		}
+	} else {
+		for (i = 0; i < n; i++) {
+			if (fread(&rela, sizeof rela, 1, fp) != 1)
+				err(1, "fread: %s", ol->ol_path);
+
+			r->rl_sym = NULL;
+#if ELFSIZE == 32
+			r->rl_addr = swap32(rela.r_offset);
+			r->rl_addend = swap32(rela.r_addend);
+			rela.r_info = swap32(rela.r_info);
+#else
+			r->rl_addr = swap64(rela.r_offset);
+			r->rl_addend = swap64(rela.r_addend);
+			rela.r_info = swap64(rela.r_info);
+#endif
+			r->rl_symidx = ELF_R_SYM(rela.r_info);
+			r->rl_type = ELF_R_TYPE(rela.r_info);
+		}
+	}
+
+	if (fseeko(fp, off, SEEK_SET) < 0)
+		err(1, "fseeko: %s", ol->ol_path);
+
+	if (s->os_nrls > ELF_RELSORT)
+		qsort(s->os_rels, s->os_nrls, sizeof *s->os_rels,
+		    rel_symcmp);
+	return 0;
+}
+
+int
+elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 {
 	struct nlist nl;
 	struct objlist *ol = v;
@@ -271,32 +339,32 @@ elf_symadd(struct elf_symtab *es, void *vs, void *v)
 	sym = sym_isundef(nl.n_un.n_name);
 	if ((nl.n_type & N_TYPE) == N_UNDF) {
 		if (sym || isdef)
-			return 0;
+			return rel_fixsyms(ol, isdef? isdef : sym, is);
 		sym = sym_undef(nl.n_un.n_name);
 		sym->sl_obj = ol;
-		return 0;
-	}
-
-	if (isdef) {
+	} else if (isdef) {
+		sym = isdef;
 		warnx("%s: multiply defined, previously in %s",
 		    nl.n_un.n_name, ol->ol_name);
 		errors++;
-		return 0;
+	} else {
+		if (sym)
+			sym_define(sym, ol, vs);
+		else
+			sym = sym_add(nl.n_un.n_name, ol, vs);
 	}
 
-	if (sym)
-		sym_define(sym, ol, vs);
-	else
-		sym = sym_add(nl.n_un.n_name, ol, vs);
-
-	return 0;
+	return rel_fixsyms(ol, sym, is);
 }
 
 int
 elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 {
+	struct section *s, *se;
 	struct elf_symtab es;
 	Elf_Ehdr *eh;
+	Elf_Shdr *shdr;
+	int i, n;
 
 #if ELFSIZE == 32
 	eh = &ol->ol_hdr.elf32;
@@ -306,22 +374,54 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 	elf_fix_header(eh);
 	if (elf_ld_chkhdr(ol->ol_name, eh, ET_REL,
 	    &machine, &elfclass, &endian))
-		return -1;
+		return 1;
+
+	if (!(shdr = elf_load_shdrs(ol->ol_name, fp, foff, eh)))
+		return 1;
+	elf_fix_shdrs(eh, shdr);
+
+	n = ol->ol_nsect = eh->e_shnum;
+	if (!(ol->ol_sections = calloc(n, sizeof(struct section))))
+		err(1, "malloc");
+
+	/* scan thru the section list looking for progbits and relocs */
+	for (i = 0; i < n; i++) {
+		s = &ol->ol_sections[i];
+		s->os_no = i;
+		s->os_sect = &shdr[i];
+		s->os_obj = ol;
+
+		if (shdr[i].sh_type != SHT_PROGBITS)
+			continue;
+
+		if (i + 1 >= n)
+			continue;
+
+		if (shdr[i + 1].sh_type != SHT_RELA &&
+		    shdr[i + 1].sh_type != SHT_REL)
+			continue;
+
+		if (elf_loadrelocs(ol, s, &shdr[i + 1], fp, foff))
+			continue;
+	}
 
 	es.name = ol->ol_name;
-	es.ehdr = &ol->ol_hdr.elf32;
-	es.shdr = NULL;
+	es.ehdr = eh;
+	es.shdr = shdr;
 	es.shstr = NULL;
 
-	if (elf_symload(&es, fp, foff, elf32_symadd, ol))
+	if (elf_symload(&es, fp, foff, elf_symadd, ol))
 		return 1;
 	free(es.stab);
 
-	ol->ol_sections = es.shdr;
+	ol->ol_sects = es.shdr;
 	ol->ol_snames = es.shstr;
 
-/* TODO load relocs */
-
+	/* (re)sort the relocs by the address for the loader's pleasure */
+	for (s = ol->ol_sections, se = s + n; s < se; s++)
+		if (s->os_nrls)
+			qsort(s->os_rels, s->os_nrls, sizeof *s->os_rels,
+			    rel_addrcmp);
 	return 0;
 }
 

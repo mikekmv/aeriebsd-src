@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: syms.c,v 1.1 2009/09/04 09:34:05 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -124,4 +124,74 @@ sym_undcheck(void)
 	}
 
 	return 0;
+}
+
+/*
+ * scan all sections in this object and fix all relocs
+ * referencing this symbol
+ */
+int
+rel_fixsyms(struct objlist *ol, struct symlist *sym, int is)
+{
+	struct section *s;
+	int i;
+
+	for (i = 0, s = ol->ol_sections; i < ol->ol_nsect; s++, i++) {
+		struct relist *r, *er;
+
+		if (!s->os_nrls)
+			continue;
+
+		if (s->os_nrls > ELF_RELSORT) {
+			struct relist rk, *r0;
+
+			rk.rl_symidx = is;
+			if (!(r0 = bsearch(&rk, s->os_rels, s->os_nrls,
+			    sizeof rk, rel_symcmp)))
+				continue;
+
+			for (r = r0, er = s->os_rels; er <= r; r--)
+				if (r->rl_symidx == is)
+					r->rl_sym = sym;
+				else
+					break;
+
+			for (r0++, er = s->os_rels + s->os_nrls; r0 < er; r0++)
+				if (r->rl_symidx == is)
+					r->rl_sym = sym;
+				else
+					break;
+
+		} else
+			for (r = s->os_rels, er = r + s->os_nrls; r < er; r++)
+				if (r->rl_symidx == is)
+					r->rl_sym = sym;
+	}
+
+	return 0;
+}
+
+/*
+ * these are comparison functions used to sort relocation
+ * array in elf_loadrelocs()
+ */
+int
+rel_symcmp(const void *a0, const void *b0)
+{
+	const struct relist *a = a0, *b = b0;
+
+	return a->rl_symidx - b->rl_symidx;
+}
+
+int
+rel_addrcmp(const void *a0, const void *b0)
+{
+	const struct relist *a = a0, *b = b0;
+
+	if (a->rl_addr < b->rl_addr)
+		return -1;
+	else if (a->rl_addr > b->rl_addr)
+		return 1;
+	else
+		return 0;
 }

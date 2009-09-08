@@ -18,6 +18,8 @@
 #include <sys/queue.h>
 #include <sys/tree.h>
 
+#define	ELF_RELSORT	16
+
 struct pathlist {
 	TAILQ_ENTRY(pathlist) pl_entry;
 	const char *pl_path;
@@ -35,12 +37,21 @@ struct symlist {
 	const char *sl_name;
 };
 
+struct relist {
+	uint64_t rl_addr, rl_addend;
+	struct symlist *rl_sym;
+	int rl_symidx;
+	u_char rl_type;
+};
+
 struct section {
 	TAILQ_ENTRY(section) os_entry;
 
+	struct relist *os_rels;
 	struct objlist *os_obj;
 	void *os_sect;
 	int os_no;	/* elf section number */
+	int os_nrls;
 };
 
 struct objlist {
@@ -54,8 +65,10 @@ struct objlist {
 	off_t ol_off;
 	const char *ol_path;
 	const char *ol_name;
-	void *ol_sections;
+	void *ol_sects;
 	char *ol_snames;
+	struct section *ol_sections;
+	int ol_nsect;
 
 	int ol_flags;
 };
@@ -81,12 +94,15 @@ extern const struct ldorder
     i386_order[], m68k_order[], mips_order[], ppc_order[],
     sh_order[], sparc_order[], sparc64_order[], vax_order[];
 
-int ldprintmap(struct ldorder *);
 int obj_foreach(int (*)(struct objlist *, void *), void *);
 
 /* ld2.c */
-int elf32_symadd(struct elf_symtab *, void *, void *);
-int elf64_symadd(struct elf_symtab *, void *, void *);
+int elf32_symadd(struct elf_symtab *, int, void *, void *);
+int elf64_symadd(struct elf_symtab *, int, void *, void *);
+int elf32_loadrelocs(struct objlist *, struct section *, Elf_Shdr *,
+    FILE *, off_t);
+int elf64_loadrelocs(struct objlist *, struct section *, Elf_Shdr *,
+    FILE *, off_t);
 int elf32_objadd(struct objlist *, FILE *, off_t);
 int elf64_objadd(struct objlist *, FILE *, off_t);
 const struct ldorder *ldmap32(void);
@@ -105,3 +121,6 @@ struct symlist *sym_define(struct symlist *, struct objlist *, void *);
 struct symlist *sym_add(const char *, struct objlist *, void *);
 struct symlist *sym_isdefined(const char *);
 int sym_undcheck(void);
+int rel_symcmp(const void *, const void *);
+int rel_addrcmp(const void *, const void *);
+int rel_fixsyms(struct objlist *, struct symlist *, int);
