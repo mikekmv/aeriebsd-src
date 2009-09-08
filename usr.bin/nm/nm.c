@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.7 2009/05/26 17:18:31 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.8 2009/07/30 11:59:45 mickey Exp $";
 #endif
 #endif
 
@@ -627,7 +627,7 @@ skip:		if (fseeko(fp, last_ar_off + mmbrlen, SEEK_SET) < 0) {
 int nrawnames;
 
 int
-elf_symadd(struct elf_symtab *es, void *sym, void *v)
+elf_symadd(struct elf_symtab *es, int si, void *sym, void *v)
 {
 	struct nlist *nl;
 	struct nlist **np = v;
