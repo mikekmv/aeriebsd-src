@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.2 2009/09/08 17:06:35 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.3 2009/09/08 22:27:32 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -91,6 +91,11 @@ struct ldarch {
 };
 int ldnarch = sizeof(ldarch)/sizeof(ldarch[0]);
 
+/*
+ * map all the objects into the loading order;
+ * since that is done -- print out the map and the xref table;
+ * NB maybe this can be moved to the ld.c
+ */
 const struct ldorder *
 ldmap(void)
 {
@@ -191,6 +196,9 @@ ldmap(void)
 	return TAILQ_FIRST(&headorder);
 }
 
+/*
+ * map an object assigning address the to defined symbols;
+ */
 int
 ldmap_obj(struct objlist *ol, void *v)
 {
@@ -250,6 +258,13 @@ ldload(const char *name, const struct ldorder *order)
 	return 0;
 }
 
+/*
+ * load the relocations for the section;
+ * prepare for loading the symbols and sort the relocs
+ * by the symbol index;
+ * alternatively we can load relocs after symbols
+ * it all depends what is less to scan through.
+ */
 int
 elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
     FILE *fp, off_t foff)
@@ -317,6 +332,12 @@ elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
 	return 0;
 }
 
+/*
+ * add another symbol from the object;
+ * a hook called from elf_symload(3).
+ * collect undefined symbols and resolved the defined;
+ * resolve relocation reference.
+ */
 int
 elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 {
@@ -357,6 +378,13 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 	return rel_fixsyms(ol, sym, is);
 }
 
+/*
+ * add an object to the link editing process;
+ * load needed headers and relocations where available;
+ * load symbols and resolve references from relocs and other
+ * objects (as undefined);
+ * prepare the relocs for the final output and sort by address.
+ */
 int
 elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 {
@@ -425,6 +453,11 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 	return 0;
 }
 
+/*
+ * check if object is editable by linking;
+ * first object on the command line defines the machine
+ * and endianess whilst later ones have to match.
+ */
 int
 elf_ld_chkhdr(const char *path, Elf_Ehdr *eh, int type, int *mach,
     int *class, int *endian)
