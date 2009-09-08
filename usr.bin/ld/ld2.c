@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.1 2009/09/04 09:34:05 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.2 2009/09/08 17:06:35 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -97,7 +97,7 @@ ldmap(void)
 	TAILQ_HEAD(, ldorder) headorder;
 	const struct ldorder *order;
 	struct ldorder *neworder;
-	u_long point;
+	uint64_t point;
 	int i;
 
 	for (i = 0; i < ldnarch; i++)
@@ -152,7 +152,7 @@ ldmap(void)
 		TAILQ_FOREACH(order, &headorder, ldo_entry) {
 			struct section *sect;
 
-			printf("%-16s0x%08lx\t0x%lx\n", order->ldo_name,
+			printf("%-16s0x%08llx\t0x%llx\n", order->ldo_name,
 			    order->ldo_start,
 			    order->ldo_addr - order->ldo_start);
 
@@ -181,7 +181,7 @@ ldmap(void)
 					    (u_long)esym->st_value,
 					    sym->sl_name);
 				}
-			}  
+			}
 		}
 	}
 

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ld.c,v 1.1 2009/09/04 09:34:05 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -294,6 +294,9 @@ main(int argc, char *argv[])
 		return ldload64(output, ldmap64());
 }
 
+/*
+ * add another library search dir (such as from -L)
+ */
 int
 libdir_add(const char *path)
 {
@@ -326,6 +329,15 @@ libdir_add(const char *path)
 
 char **nametab;
 
+/*
+ * search the library for objects resolving
+ * currently undefined symbols;
+ * if a library index (see ranlib(1)) is available
+ * use that to pull needed objects and keep cycling
+ * until no new symbols had been resolved;
+ * otherwise scan whole library (once) checking
+ * each member for symbols to resolve.
+ */
 int
 lib_add(const char *path)
 {
@@ -400,7 +412,7 @@ lib_add(const char *path)
 			for (p = nt, i = 0; *p; )
 				if (*p++ == '\n')
 					i++;
-		
+
 			/* XXX check overflow */
 			if (!(nametab = malloc((i + 1) * sizeof *nametab)))
 				err(1, "nameidx malloc");
@@ -409,7 +421,7 @@ lib_add(const char *path)
 				if (*p == '\n') {
 					*pn++ = pp;
 					if (p[-1] == '/')
-						p[-1] = '\0'; 
+						p[-1] = '\0';
 					*p++ = '\0';
 					pp = p;
 				}
@@ -468,6 +480,9 @@ lib_add(const char *path)
 	return 0;
 }
 
+/*
+ * scan old (a.out/bsd) symdef index
+ */
 int
 lib_symdef(const char *path, FILE *fp, u_long len)
 {
@@ -475,6 +490,9 @@ lib_symdef(const char *path, FILE *fp, u_long len)
 	return -1;
 }
 
+/*
+ * scan the new (sysv/elf) library index
+ */
 int
 lib_namtab(const char *path, FILE *fp, u_long len, off_t symoff, u_long symlen)
 {
@@ -538,7 +556,6 @@ lib_namtab(const char *path, FILE *fp, u_long len, off_t symoff, u_long symlen)
 }
 
 /*
- *
  *	given the archive member header -- produce member name
  *	(pwnz0red directly from nm.c)
  */
@@ -599,6 +616,10 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 	return (0);
 }
 
+/*
+ * scan through the global objects list
+ * calling a function for each of which
+ */
 int
 obj_foreach(int (*func)(struct objlist *, void *), void *v)
 {
