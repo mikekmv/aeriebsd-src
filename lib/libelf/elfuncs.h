@@ -64,7 +64,7 @@ char	*elf32_shstrload(const char *, FILE *, off_t, const Elf32_Ehdr *,
 char	*elf32_strload(const char *, FILE *, off_t, const Elf32_Ehdr *,
 	    const Elf32_Shdr *shdr, const char *, const char *, size_t *);
 int	elf32_symload(struct elf_symtab *, FILE *, off_t,
-	    int (*func)(struct elf_symtab *, void *, void *), void *arg);
+	    int (*func)(struct elf_symtab *, int, void *, void *), void *arg);
 int	elf32_strip(const char *, FILE *, const Elf32_Ehdr *,
 	    struct stat *, off_t *);
 int	elf32_symseed(const char *, FILE *, const Elf32_Ehdr *,
@@ -87,7 +87,7 @@ char	*elf64_shstrload(const char *, FILE *, off_t, const Elf64_Ehdr *,
 char	*elf64_strload(const char *, FILE *, off_t, const Elf64_Ehdr *,
 	    const Elf64_Shdr *shdr, const char *, const char *, size_t *);
 int	elf64_symload(struct elf_symtab *, FILE *, off_t,
-	    int (*func)(struct elf_symtab *, void *, void *), void *arg);
+	    int (*func)(struct elf_symtab *, int, void *, void *), void *arg);
 int	elf64_strip(const char *, FILE *, const Elf64_Ehdr *,
 	    struct stat *, off_t *);
 int	elf64_symseed(const char *, FILE *, const Elf64_Ehdr *,

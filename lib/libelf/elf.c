@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.13 2009/08/14 15:34:09 mickey Exp $";
+    "$ABSD: elf.c,v 1.14 2009/09/02 07:15:47 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -93,7 +93,7 @@ static const char rcsid[] =
 #endif
 
 int elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
-    int (*func)(struct elf_symtab *, void *, void *), void *arg,
+    int (*func)(struct elf_symtab *, int, void *, void *), void *arg,
     const char *, const char *);
 
 #define	ELF_SDATA	".sdata"
@@ -345,7 +345,7 @@ int
 elf2nlist(Elf_Sym *sym, const Elf_Ehdr *eh, const Elf_Shdr *shdr,
     const char *shstr, struct nlist *np)
 {
-	u_char stt;
+	u_int stt;
 	const char *sn;
 	int type;
 
@@ -478,14 +478,14 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 
 int
 elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
-    int (*func)(struct elf_symtab *, void *, void *), void *arg,
+    int (*func)(struct elf_symtab *, int, void *, void *), void *arg,
     const char *strtab, const char *symtab)
 {
 	const Elf_Ehdr *eh = es->ehdr;
 	const Elf_Shdr *shdr = es->shdr;
-	long symsize;
+	size_t symsize;
 	Elf_Sym sbuf;
-	int i;
+	int i, is;
 
 	if (!(es->stab = elf_strload(es->name, fp, foff, eh, shdr, es->shstr,
 	    strtab, &es->stabsz)))
@@ -501,7 +501,7 @@ elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
 			}
 
 			es->nsyms = symsize / sizeof sbuf;
-			for (; symsize > 0; symsize -= sizeof sbuf) {
+			for (is = 0; is < es->nsyms; is++) {
 				if (fread(&sbuf, sizeof sbuf, 1, fp) != 1) {
 					warn("%s: read symbol", es->name);
 					free(es->stab);
@@ -512,13 +512,14 @@ elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
 				if (!sbuf.st_name || sbuf.st_name > es->stabsz)
 					continue;
 
-				if ((*func)(es, &sbuf, arg)) {
+				if ((*func)(es, is, &sbuf, arg)) {
 					free(es->stab);
 					return 1;
 				}
 			}
 		}
 	}
+
 	return (0);
 }
 
@@ -526,7 +527,7 @@ char *
 elf_shstrload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Shdr *shdr)
 {
-	long shstrsize;
+	size_t shstrsize;
 	char *shstr;
 
 	if (!eh->e_shstrndx || eh->e_shstrndx >= eh->e_shnum) {
@@ -562,7 +563,7 @@ elf_shstrload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 
 int
 elf_symload(struct elf_symtab *es, FILE *fp, off_t foff,
-    int (*func)(struct elf_symtab *, void *, void *), void *arg)
+    int (*func)(struct elf_symtab *, int, void *, void *), void *arg)
 {
 	int rv;
 
@@ -595,8 +596,8 @@ elf_strip(const char *name, FILE *fp, const Elf_Ehdr *eh,
 {
 	Elf_Shdr *shdr, *sp;
 	char *shstr;
-	size_t sz;
 	off_t off;
+	size_t sz;
 	int i, sn, rv = 0;
 
 	if (!(shdr = elf_load_shdrs(name, fp, 0, eh)))
@@ -630,7 +631,7 @@ elf_strip(const char *name, FILE *fp, const Elf_Ehdr *eh,
 			continue;
 		}
 
-		sn = sp - shdr;
+		sn = (int)(sp - shdr);
 		if (sp->sh_offset > sb->st_size) {
 			warnx("%s: corrupt section header", name);
 			rv = 1;
