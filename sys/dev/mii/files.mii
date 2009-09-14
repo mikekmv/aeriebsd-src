@@ -126,3 +126,7 @@ file	dev/mii/ipgphy.c			ipgphy
 device	etphy: mii_phy
 attach	etphy at mii
 file	dev/mii/etphy.c				etphy
+
+device	kszphy: mii_phy
+attach	kszphy at mii
+file	dev/mii/kszphy.c			kszphy

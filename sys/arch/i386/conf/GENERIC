@@ -646,6 +646,7 @@ rgephy*	at mii?				# Realtek 8169S/8110S PHY
 ciphy*	at mii?				# Cicada CS8201 10/100/1000 copper PHY
 gentbi*	at mii?				# Generic 1000BASE-X ten-bit PHY
 etphy*	at mii?				# Agere/LSI ET1011 TruePHY
+kszphy*	at mii?				# Micrel KSZ8041NL 10/100 PHY
 ukphy*	at mii?				# "unknown" PHYs
 
 pss0	at isa? port 0x220 irq 7 drq 6	# Personal Sound System
