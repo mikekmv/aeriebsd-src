@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)tf.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* tf.c: save and restore fill mode around table */
-# include "t..c"
+
+#include "tbl.h"
+
 savefill()
 {
 	/* remembers various things: fill mode, vs, ps in mac 35 (SF) */

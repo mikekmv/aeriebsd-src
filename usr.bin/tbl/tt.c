@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)tt.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* tt.c: subroutines for drawing horizontal lines */
-# include "t..c"
+
+#include "tbl.h"
+
 ctype(il, ic)
 {
 	if (instead[il])

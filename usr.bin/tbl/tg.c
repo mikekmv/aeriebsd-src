@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)tg.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* tg.c: process included text blocks */
-# include "t..c"
+
+#include "tbl.h"
+
 gettext(sp, ilin,icol, fn, sz)
 char *sp, *fn, *sz;
 {

@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)ti.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* ti.c: classify line intersections */
-# include "t..c"
+
+#include "tbl.h"
+
 /* determine local environment for intersections */
 interv(i,c)
 {

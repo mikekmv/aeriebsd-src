@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)t3.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* t3.c: interpret commands affecting whole table */
-# include "t..c"
+
+#include "tbl.h"
+
 struct optstr {
 	char *optnam;
 	int *optadd;

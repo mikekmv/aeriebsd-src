@@ -66,8 +66,8 @@ static char sccsid[] = "@(#)t0.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* t0.c: storage allocation */
-#
-# include "t..c"
+
+#include "tbl.h"
 int expflg = 0;
 int ctrflg = 0;
 int boxflg = 0;

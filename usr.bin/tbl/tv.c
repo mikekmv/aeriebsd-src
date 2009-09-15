@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)tv.c	4.4 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* tv.c: draw vertical lines */
-# include "t..c"
+
+#include "tbl.h"
+
 drawvert(start,end, c, lwid)
 {
 	char *exb=0, *ext=0;

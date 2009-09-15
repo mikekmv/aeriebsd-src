@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)tb.c	4.6 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* tb.c: check which entries exist, also storage allocation */
-# include "t..c"
+
+#include "tbl.h"
+
 checkuse()
 {
 	int i,c, k;

@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)t4.c	4.4 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* t4.c: read table specification */
-# include "t..c"
+
+#include "tbl.h"
+
 int oncol;
 getspec()
 {

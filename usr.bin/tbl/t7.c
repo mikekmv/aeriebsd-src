@@ -66,8 +66,11 @@ static char sccsid[] = "@(#)t7.c	4.5 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* t7.c: control to write table entries */
-# include "t..c"
-# define realsplit ((ct=='a'||ct=='n') && table[ldata][c].rcol)
+
+#include "tbl.h"
+
+#define realsplit ((ct=='a'||ct=='n') && table[ldata][c].rcol)
+
 runout()
 {
 	int i;

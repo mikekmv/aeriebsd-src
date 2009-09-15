@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)tu.c	4.4 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* tu.c: draws horizontal lines */
-# include "t..c"
+
+#include "tbl.h"
+
 makeline(i,c,lintype)
 {
 	int cr, type, shortl;

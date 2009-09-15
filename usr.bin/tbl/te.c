@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)te.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* te.c: error message control, input line count */
-# include "t..c"
+
+#include "tbl.h"
+
 error( s)
 char *s;
 {

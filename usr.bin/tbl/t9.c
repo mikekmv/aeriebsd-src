@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)t9.c	4.4 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* t9.c: write lines for tables over 200 lines */
-# include "t..c"
+
+#include "tbl.h"
+
 static useln;
 yetmore()
 {

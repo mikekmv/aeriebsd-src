@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)t5.c	4.4 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* t5.c: read data for table */
-# include "t..c"
+
+#include "tbl.h"
+
 gettbl()
 {
 	int icol, ch;

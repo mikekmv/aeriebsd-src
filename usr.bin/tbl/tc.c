@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)tc.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* tc.c: find character not in table to delimit fields */
-# include "t..c"
+
+#include "tbl.h"
+
 choochar()
 {
 	/* choose funny characters to delimit fields */

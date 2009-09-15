@@ -67,7 +67,7 @@ static char sccsid[] = "@(#)t6.c	4.5 (Berkeley) 4/18/91";
 
 /* t6.c: compute tab stops */
 
-# include "t..c"
+#include "tbl.h"
 
 maktab()
 {

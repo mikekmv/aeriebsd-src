@@ -66,8 +66,11 @@ static char sccsid[] = "@(#)t8.c	4.5 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* t8.c: write out one line of output table */
-# include "t..c"
-# define realsplit ((ct=='a'||ct=='n') && table[nl][c].rcol)
+
+#include "tbl.h"
+
+#define realsplit ((ct=='a'||ct=='n') && table[nl][c].rcol)
+
 int watchout;
 int once;
 int topat[MAXCOL];

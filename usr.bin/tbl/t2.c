@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)t2.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* t2.c:  subroutine sequencing for one table */
-# include "t..c"
+
+#include "tbl.h"
+
 tableput()
 {
 	saveline();

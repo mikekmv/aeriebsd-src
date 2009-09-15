@@ -66,7 +66,9 @@ static char sccsid[] = "@(#)tm.c	4.3 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* tm.c: split numerical fields */
-# include "t..c"
+
+#include "tbl.h"
+
 maknew( str)
 char *str;
 {

@@ -66,8 +66,8 @@ static char sccsid[] = "@(#)t1.c	4.5 (Berkeley) 4/18/91";
 #endif /* not lint */
 
 /* t1.c: main control and input switching */
-#
-# include "t..c"
+
+#include "tbl.h"
 #include <signal.h>
 #include "pathnames.h"
 
