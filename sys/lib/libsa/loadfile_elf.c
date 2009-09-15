@@ -186,6 +186,12 @@ ELFNAME(exec)(int fd, Elf_Ehdr *elf, u_long *marks, int flags)
 				havesyms = 1;
 
 		for (first = 1, i = 0; i < elf->e_shnum; i++) {
+			/* skip .shstrtab we do not want */
+			if (i == elf->e_shstrndx) {
+				shp[i].sh_offset = 0;
+				continue;
+			}
+
 			if (shp[i].sh_type == SHT_SYMTAB ||
 			    shp[i].sh_type == SHT_STRTAB) {
 				if (havesyms && (flags & LOAD_SYM)) {
@@ -229,6 +235,7 @@ ELFNAME(exec)(int fd, Elf_Ehdr *elf, u_long *marks, int flags)
 		elf->e_shoff = sizeof(Elf_Ehdr);
 		elf->e_phentsize = 0;
 		elf->e_phnum = 0;
+		elf->e_shstrndx = 0;
 		BCOPY(elf, elfp, sizeof(*elf));
 	}
 
