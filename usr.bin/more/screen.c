@@ -33,7 +33,7 @@
 static char sccsid[] = "@(#)screen.c	8.2 (Berkeley) 4/20/94";
 #else
 static const char rcsid[] =
-    "$ABSD: screen.c,v 1.1 2009/05/06 12:14:23 mickey Exp $";
+    "$ABSD: screen.c,v 1.2 2009/05/11 22:08:14 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -73,7 +73,9 @@ char
 	*sc_b_out,		/* Exit bold mode */
 	*sc_backspace,		/* Backspace cursor */
 	*sc_init,		/* Startup terminal initialization */
-	*sc_deinit;		/* Exit terminal de-intialization */
+	*sc_deinit,		/* Exit terminal de-intialization */
+	*sc_s_keypad,		/* Enter Keypad transmission */
+	*sc_e_keypad;		/* Exit Keypad transmission */
 
 int auto_wrap;			/* Terminal does \r\n when write past margin */
 int ignaw;			/* Terminal ignores \n immediately after wrap */
@@ -323,6 +325,13 @@ get_term(void)
 		if (sc_backspace == NULL || *sc_backspace == '\0')
 			sc_backspace = "\b";
 	}
+
+	sc_s_keypad = tgetstr("ks", &sp);
+	if (sc_s_keypad == NULL)
+		sc_s_keypad = "";
+	sc_e_keypad = tgetstr("ke", &sp);
+	if (sc_e_keypad == NULL)
+		sc_e_keypad = "";
 }
 
 
@@ -355,4 +364,43 @@ backspace(void)
 	putp(sc_backspace);
 	putchar(' ');
 	putp(sc_backspace);
+}
+
+void
+special_key_init(void)
+{
+	static char sbuf[1024];
+	char *sp = sbuf;
+	char *res = NULL;
+
+	/* Arrow up */
+	res = tgetstr("ku", &sp);
+	add_cmdtable(res, A_B_LINE);
+
+	/* Arrow down */
+	res = tgetstr("kd", &sp);
+	add_cmdtable(res, A_F_LINE);
+
+	/* Page up */
+	res = tgetstr("kP", &sp);
+	add_cmdtable(res, A_B_SCREEN);
+
+	/* Page down */
+	res = tgetstr("kN", &sp);
+	add_cmdtable(res, A_F_SCREEN);
+}
+
+void
+init(void)
+{
+	tputs(sc_init, sc_height, putchar);
+	tputs(sc_s_keypad, sc_height, putchar);
+	special_key_init();
+}
+
+void
+deinit(void)
+{
+	tputs(sc_init, sc_height, putchar);
+	tputs(sc_s_keypad, sc_height, putchar);
 }

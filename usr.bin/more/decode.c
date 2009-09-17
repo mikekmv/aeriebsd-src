@@ -33,7 +33,7 @@
 static char sccsid[] = "@(#)decode.c	8.1 (Berkeley) 6/6/93";
 #else
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: decode.c,v 1.1 2009/05/06 12:14:22 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -56,6 +56,7 @@ static const char rcsid[] =
 #include <sys/param.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "less.h"
 
@@ -64,8 +65,9 @@ static const char rcsid[] =
  * frequency of use, so the common commands are near the beginning.
  */
 #define	CONTROL(c)		((c)&037)
+#define	MAX_CMDTABLE		256
 
-static const char cmdtable[] = {
+char cmdtable[MAX_CMDTABLE] = {
 	'\r',0,				A_F_LINE,
 	'\n',0,				A_F_LINE,
 	'j',0,				A_F_LINE,
@@ -117,9 +119,10 @@ static const char cmdtable[] = {
 	':','t',0,			A_TAGFILE,
 	':', 'a', 0,			A_FILE_LIST,
 	'Z','Z',0,			A_QUIT,
+	A_TABLE_END,
 };
 
-const char *cmdendtable = cmdtable + sizeof(cmdtable);
+char *cmdendtable = NULL;
 
 #define	MAX_CMDLEN	16
 
@@ -204,4 +207,28 @@ cmd_search(const char *table, const char *endtable)
 	 * No match found in the entire command table.
 	 */
 	return(A_INVALID);
+}
+
+/*
+ * Add a new command to the table
+ */
+void
+add_cmdtable(char *cmd, int op)
+{
+	if (cmd == NULL)
+		return;
+	if (cmdendtable == NULL)
+		for (cmdendtable = cmdtable;
+		    *cmdendtable != A_TABLE_END;
+		    cmdendtable++);
+	/* 
+	 * If the command <cmd> + 0 + <op> doesn't fit
+	 * anymore skip it
+	 */
+	if (MAX_CMDTABLE - (cmdendtable - cmdtable) < strlen(cmd) + 2)
+		return; 
+	for (; *cmd != '\0'; cmd++)
+		*(cmdendtable++) = *cmd;
+	*(cmdendtable++) = 0; 
+	*(cmdendtable++) = op; 
 }

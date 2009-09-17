@@ -55,7 +55,15 @@
 #define	BOTTOM_PLUS_ONE	(-2)
 #define	MIDDLE		(-3)
 
+/* Special key identifier */
+#define	SP_ARR_UP	0	
+#define	SP_ARR_DOWN	1
+#define	SP_PAGE_UP	2
+#define	SP_PAGE_DOWN	3
+#define	SP_END_KEYS	4
+
 #define	A_INVALID		-1
+#define	A_TABLE_END		-2
 
 #define	A_AGAIN_SEARCH		1
 #define	A_B_LINE		2
@@ -118,11 +126,9 @@ extern char *sc_addline;
 #define	add_line()	tputs(sc_addline, sc_height, putchar)
 extern char *sc_home;
 #define	home()		putp(sc_home)
-extern char *sc_init;
-#define	init()		tputs(sc_init, sc_height, putchar)
-extern char *sc_deinit;
-#define	deinit()	tputs(sc_deinit, sc_height, putchar)
 
+void init(void);
+void deinit(void);
 void commands(void);
 void intread(void);
 void init_signals(int);
@@ -192,3 +198,5 @@ void windoch(int);
 void prev_file(int);
 int edit(char *);
 void backspace(void);
+void special_key_init(void);
+void add_cmdtable(char *, int);
