@@ -62,12 +62,168 @@
  */
 
 #ifndef lint
+#if 0
+static char sccsid[] = "@(#)t0.c	4.3 (Berkeley) 4/18/91";
+static char sccsid[] = "@(#)t1.c	4.5 (Berkeley) 4/18/91";
 static char sccsid[] = "@(#)t2.c	4.3 (Berkeley) 4/18/91";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
 #endif /* not lint */
 
-/* t2.c:  subroutine sequencing for one table */
+/* t0.c: storage allocation */
+
+#include <signal.h>
+#include "pathnames.h"
 
 #include "tbl.h"
+
+int expflg = 0;
+int ctrflg = 0;
+int boxflg = 0;
+int dboxflg = 0;
+int tab = '\t';
+int linsize;
+int pr1403;
+int delim1, delim2;
+int evenup[MAXCOL], evenflg;
+int F1 = 0;
+int F2 = 0;
+int allflg = 0;
+int leftover = 0;
+int textflg = 0;
+int left1flg = 0;
+int rightl = 0;
+char *cstore, *cspace;
+char *last;
+struct colstr *table[MAXLIN];
+int style[MAXHEAD][MAXCOL];
+int ctop[MAXHEAD][MAXCOL];
+char font[MAXHEAD][MAXCOL][2];
+char csize[MAXHEAD][MAXCOL][4];
+char vsize[MAXHEAD][MAXCOL][4];
+int lefline[MAXHEAD][MAXCOL];
+char cll[MAXCOL][CLLEN];
+/*char *rpt[MAXHEAD][MAXCOL];*/
+/*char rpttx[MAXRPT];*/
+int stynum[MAXLIN + 1];
+int nslin, nclin;
+int sep[MAXCOL];
+int fullbot[MAXLIN];
+char *instead[MAXLIN];
+int used[MAXCOL], lused[MAXCOL], rused[MAXCOL];
+int linestop[MAXLIN];
+int nlin, ncol;
+int iline = 1;
+char *ifile = "Input";
+int texname = 'a';
+int texct = 0;
+char texstr[] =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ0123456789";
+int linstart;
+char *exstore, *exlim;
+FILE *tabin /*= stdin */;
+FILE *tabout /* = stdout */;
+
+/* t1.c: main control and input switching */
+
+# ifdef gcos
+/* required by GCOS because file is passed to "tbl" by troff preprocessor */
+# define _f1 _f
+extern FILE *_f[];
+# endif
+
+# define ever (;;)
+
+int
+main(int argc, char *argv[])
+{
+# ifdef unix
+	void badsig();
+	signal(SIGPIPE, badsig);
+# endif
+# ifdef gcos
+	if(!intss())
+		tabout = fopen("qq", "w"); /* default media code is type 5 */
+# endif
+	exit(tbl(argc,argv));
+}
+
+tbl(int argc, char *argv[])
+{
+	char line[BUFSIZ];
+
+	/* required by GCOS because "stdout" is set by troff preprocessor */
+	tabin = stdin;
+	tabout = stdout;
+	setinp(argc,argv);
+	while (gets1(line)) {
+		fprintf(tabout, "%s\n",line);
+		if (prefix(".TS", line))
+			tableput();
+	}
+	fclose(tabin);
+	return(0);
+}
+
+int sargc;
+char **sargv;
+
+setinp(int argc, char *argv[])
+{
+	sargc = argc;
+	sargv = argv;
+	sargc--; sargv++;
+	if (sargc > 0)
+		swapin();
+}
+
+swapin()
+{
+	while (sargc > 0 && **sargv=='-') { /* Mem fault if no test on sargc */
+		if (sargc <= 0)
+			return(0);
+		if (match("-ms", *sargv)) {
+			*sargv = _PATH_MACROS;
+			break;
+		}
+		if (match("-mm", *sargv)) {
+			*sargv = _PATH_PYMACS;
+			break;
+		}
+		if (match("-TX", *sargv))
+			pr1403 = 1;
+		sargc--; sargv++;
+	}
+	if (sargc <= 0)
+		return(0);
+
+	if (tabin != stdin)
+		fclose(tabin);
+
+	tabin = fopen(ifile= *sargv, "r");
+	if (tabin == NULL)
+		error("Can't open file");
+	iline=1;
+
+	/* file names are all put into f. by the GCOS troff preprocessor */
+	fprintf(tabout, ".ds f. %s\n", ifile);
+
+	sargc--;
+	sargv++;
+	return(1);
+}
+
+# ifdef unix
+void
+badsig()
+{
+	signal(SIGPIPE, SIG_IGN);
+	_exit(0);
+}
+# endif
+
+/* t2.c:  subroutine sequencing for one table */
 
 tableput()
 {

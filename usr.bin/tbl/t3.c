@@ -136,15 +136,15 @@ getcomm()
 	}
 	cp++;
 	backrest(cp);
-	return;
 }
-backrest( cp)
-char *cp;
+
+backrest(char *cp)
 {
 	char *s;
-	for(s=cp; *s; s++);
+
+	for(s = cp; *s; s++)
+		;
 	un1getc('\n');
-	while (s>cp)
-	un1getc(*--s);
-	return;
+	while (s > cp)
+		un1getc(*--s);
 }
