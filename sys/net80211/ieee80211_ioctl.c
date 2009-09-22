@@ -571,8 +571,8 @@ ieee80211_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 			error = EINVAL;
 			break;
 		}
-		if (!(IEEE80211_TXPOWER_MIN < txpower->i_val &&
-			txpower->i_val < IEEE80211_TXPOWER_MAX)) {
+		if (IEEE80211_TXPOWER_MIN > txpower->i_val ||
+		    txpower->i_val > IEEE80211_TXPOWER_MAX) {
 			error = EINVAL;
 			break;
 		}
