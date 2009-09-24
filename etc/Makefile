@@ -121,8 +121,6 @@ distribution-etc-root-var: distrib-dirs
 		    ${DESTDIR}/etc/mtree; \
 		${INSTALL} -c -o root -g wheel -m 444 BSD.local.dist \
 		    ${DESTDIR}/etc/mtree; \
-		${INSTALL} -c -o root -g wheel -m 444 BSD.x11.dist \
-		    ${DESTDIR}/etc/mtree
 	cd ppp; \
 		${INSTALL} -c -o root -g wheel -m 600 chap-secrets \
 		    ${DESTDIR}/etc/ppp; \
