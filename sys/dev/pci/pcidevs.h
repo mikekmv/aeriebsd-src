@@ -1,7 +1,7 @@
 /*
  * THIS FILE AUTOMATICALLY GENERATED.  DO NOT EDIT.
  *
- *	ABSD: pcidevs,v 1.4 2009/05/29 10:43:32 mickey Exp 
+ *	ABSD: pcidevs,v 1.5 2009/09/25 15:49:42 mickey Exp 
  */
 /*
  * Copyright (c) 2009 Michael Shalayeff
@@ -2686,6 +2686,7 @@
 #define	PCI_PRODUCT_INTEL_TURBO_MEMORY	0x444e		/* Turbo Memory */
 #define	PCI_PRODUCT_INTEL_80960RD	0x5200		/* i960 RD PCI-PCI */
 #define	PCI_PRODUCT_INTEL_PRO_100_SERVER	0x5201		/* PRO 100 Server */
+#define	PCI_PRODUCT_INTEL_31154_PCIX	0x537c		/* PCIX-PCIX */
 #define	PCI_PRODUCT_INTEL_5100_HB	0x65c0		/* 5100 Host */
 #define	PCI_PRODUCT_INTEL_5100_PCIE_2	0x65e2		/* 5100 PCIE */
 #define	PCI_PRODUCT_INTEL_5100_PCIE_3	0x65e3		/* 5100 PCIE */

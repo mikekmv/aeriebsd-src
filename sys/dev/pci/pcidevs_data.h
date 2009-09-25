@@ -1,7 +1,7 @@
 /*
  * THIS FILE AUTOMATICALLY GENERATED.  DO NOT EDIT.
  *
- *	ABSD: pcidevs,v 1.4 2009/05/29 10:43:32 mickey Exp 
+ *	ABSD: pcidevs,v 1.5 2009/09/25 15:49:42 mickey Exp 
  */
 
 /*
@@ -8494,6 +8494,10 @@ static const struct pci_known_product pci_known_products[] = {
 	{
 	    PCI_VENDOR_INTEL, PCI_PRODUCT_INTEL_PRO_100_SERVER,
 	    "PRO 100 Server",
+	},
+	{
+	    PCI_VENDOR_INTEL, PCI_PRODUCT_INTEL_31154_PCIX,
+	    "PCIX-PCIX",
 	},
 	{
 	    PCI_VENDOR_INTEL, PCI_PRODUCT_INTEL_5100_HB,
