@@ -48,6 +48,7 @@ struct elf_symtab {
 };
 
 int	elf32_fix_header(Elf32_Ehdr *eh);
+int	elf32_fix_note(Elf32_Ehdr *, Elf32_Note *);
 Elf32_Shdr*elf32_load_shdrs(const char *, FILE *, off_t, const Elf32_Ehdr *);
 int	elf32_save_shdrs(const char *, FILE *, off_t, const Elf32_Ehdr *,
 	    const Elf32_Shdr *);
@@ -71,6 +72,7 @@ int	elf32_symseed(const char *, FILE *, const Elf32_Ehdr *,
 	    struct stat *, off_t *, int);
 
 int	elf64_fix_header(Elf64_Ehdr *eh);
+int	elf64_fix_note(Elf64_Ehdr *, Elf64_Note *);
 Elf64_Shdr*elf64_load_shdrs(const char *, FILE *, off_t, const Elf64_Ehdr *);
 int	elf64_save_shdrs(const char *, FILE *, off_t, const Elf64_Ehdr *,
 	    const Elf64_Shdr *);

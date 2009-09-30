@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.14 2009/09/02 07:15:47 mickey Exp $";
+    "$ABSD: elf.c,v 1.15 2009/09/08 17:02:51 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -43,6 +43,7 @@ static const char rcsid[] =
 #define	swap_half	swap16
 #define	swap_quarter	swap16
 #define	elf_fix_header	elf32_fix_header
+#define	elf_fix_note	elf32_fix_note
 #define	elf_load_shdrs	elf32_load_shdrs
 #define	elf_save_shdrs	elf32_save_shdrs
 #define	elf_load_phdrs	elf32_load_phdrs
@@ -70,9 +71,10 @@ static const char rcsid[] =
 #endif
 #define	swap_sxword	swap64
 #define	swap_xword	swap64
-#define	swap_half	swap64
+#define	swap_half	swap32
 #define	swap_quarter	swap16
 #define	elf_fix_header	elf64_fix_header
+#define	elf_fix_note	elf64_fix_note
 #define	elf_load_shdrs	elf64_load_shdrs
 #define	elf_save_shdrs	elf64_save_shdrs
 #define	elf_load_phdrs	elf64_load_phdrs
@@ -140,6 +142,20 @@ elf_fix_header(Elf_Ehdr *eh)
 	eh->e_shentsize = swap16(eh->e_shentsize);
 	eh->e_shnum = swap16(eh->e_shnum);
 	eh->e_shstrndx = swap16(eh->e_shstrndx);
+
+	return (1);
+}
+
+int
+elf_fix_note(Elf_Ehdr *eh, Elf_Note *en)
+{
+	/* nothing to do */
+	if (eh->e_ident[EI_DATA] == ELF_TARG_DATA)
+		return (0);
+
+	en->namesz = swap32(en->namesz);
+	en->descsz = swap32(en->descsz);
+	en->type = swap32(en->type);
 
 	return (1);
 }
