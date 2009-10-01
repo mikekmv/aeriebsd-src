@@ -1,7 +1,7 @@
 /*
  * THIS FILE AUTOMATICALLY GENERATED.  DO NOT EDIT.
  *
- *	ABSD: miidevs,v 1.3 2009/05/29 10:43:31 mickey Exp 
+ *	ABSD: miidevs,v 1.4 2009/09/14 16:10:13 mickey Exp 
  */
 /*-
  * Copyright (c) 2009 Michael Shalayeff
@@ -115,6 +115,8 @@
 #define	MII_OUI_xxDEC	0x040440	/* Digital Clone */
 
 #define	MII_OUI_xxMARVELL	0x000ac2	/* Marvell Semiconductor */
+
+#define	MII_OUI_MICREL	0x000885	/* Micrel Inc. */
 
 /*
  * List of known models.  Grouped by oui.
@@ -275,6 +277,9 @@
 #define	MII_STR_xxMARVELL_E1000_7	"Marvell 88E1000 7 Gigabit PHY"
 #define	MII_MODEL_xxMARVELL_E1111	0x000c
 #define	MII_STR_xxMARVELL_E1111	"Marvell 88E1111 Gigabit PHY"
+
+#define	MII_MODEL_MICREL_KSZ8041NL	0x0011
+#define	MII_STR_MICREL_KSZ8041NL	"KSZ8041NL"
 
 /* Contrived vendor/model for dcphy */
 #define	MII_MODEL_xxDEC_xxDC	0x0001
