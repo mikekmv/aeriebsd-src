@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -33,7 +32,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: atactl.c,v 1.1.1.1 2008/08/26 14:40:20 root Exp $";
+static const char rcsid[] = "$ABSD: atactl.c,v 1.2 2008/12/26 18:50:47 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -58,7 +57,7 @@ static const char rcsid[] = "$ABSD: atactl.c,v 1.1.1.1 2008/08/26 14:40:20 root 
 
 struct command {
 	const char *cmd_name;
-	void (*cmd_func)(int, char *[]);
+	void (*cmd_func)(int, int, char *[]);
 };
 
 struct bitinfo {
@@ -73,43 +72,41 @@ struct valinfo {
 
 int  main(int, char *[]);
 __dead void usage(void);
-void ata_command(struct atareq *);
-void print_bitinfo(const char *, u_int, struct bitinfo *);
-int  strtoval(const char *, struct valinfo *);
-const char *valtostr(int, struct valinfo *);
-
-int	fd;				/* file descriptor for device */
+void ata_command(int, struct atareq *);
+void print_bitinfo(const char *, u_int, const struct bitinfo *);
+int  strtoval(const char *, const struct valinfo *);
+const char *valtostr(int, const struct valinfo *);
 
 extern char *__progname;		/* from crt0.o */
 
-void    device_dump(int, char*[]);
-void	device_identify(int, char *[]);
-void	device_setidle(int, char *[]);
-void	device_idle(int, char *[]);
-void	device_checkpower(int, char *[]);
-void	device_acoustic(int, char *[]);
-void	device_apm(int, char *[]);
-void	device_feature(int, char *[]);
-void	device_sec_setpass(int, char *[]);
-void	device_sec_unlock(int, char *[]);
-void	device_sec_erase(int, char *[]);
-void	device_sec_freeze(int, char *[]);
-void	device_sec_disablepass(int, char *[]);
-void	device_smart_enable(int, char *[]);
-void	device_smart_disable(int, char *[]);
-void	device_smart_status(int, char *[]);
-void	device_smart_autosave(int, char *[]);
-void	device_smart_offline(int, char *[]);
-void	device_smart_read(int, char *[]);
-void	device_smart_readlog(int, char *[]);
-void	device_attr(int, char *[]);
+void	device_dump(int, int, char *[]);
+void	device_identify(int, int, char *[]);
+void	device_setidle(int, int, char *[]);
+void	device_idle(int, int, char *[]);
+void	device_checkpower(int, int, char *[]);
+void	device_acoustic(int, int, char *[]);
+void	device_apm(int, int, char *[]);
+void	device_feature(int, int, char *[]);
+void	device_sec_setpass(int, int, char *[]);
+void	device_sec_unlock(int, int, char *[]);
+void	device_sec_erase(int, int, char *[]);
+void	device_sec_freeze(int, int, char *[]);
+void	device_sec_disablepass(int, int, char *[]);
+void	device_smart_enable(int, int, char *[]);
+void	device_smart_disable(int, int, char *[]);
+void	device_smart_status(int, int, char *[]);
+void	device_smart_autosave(int, int, char *[]);
+void	device_smart_offline(int, int, char *[]);
+void	device_smart_read(int, int, char *[]);
+void	device_smart_readlog(int, int, char *[]);
+void	device_attr(int, int, char *[]);
 
 void	smart_print_errdata(struct smart_log_errdata *);
 int	smart_cksum(u_int8_t *, size_t);
 
-char 	*sec_getpass(int, int);
+char	*sec_getpass(int, int);
 
-struct command commands[] = {
+const struct command commands[] = {
 	{ "dump",		device_dump },
 	{ "identify",		device_identify },
 	{ "setidle",		device_setidle },
@@ -134,9 +131,9 @@ struct command commands[] = {
 	{ "secerase",		device_sec_erase },
 	{ "secfreeze",		device_sec_freeze },
 	{ "secdisablepass",	device_sec_disablepass },
-	{ "smartenable", 	device_smart_enable },
-	{ "smartdisable", 	device_smart_disable },
-	{ "smartstatus", 	device_smart_status },
+	{ "smartenable",	device_smart_enable },
+	{ "smartdisable",	device_smart_disable },
+	{ "smartstatus",	device_smart_status },
 	{ "smartautosave",	device_smart_autosave },
 	{ "smartoffline",	device_smart_offline },
 	{ "smartread",		device_smart_read },
@@ -152,14 +149,14 @@ struct command commands[] = {
  * device identification.
  */
 
-struct bitinfo ata_caps[] = {
+const struct bitinfo ata_caps[] = {
 	{ ATA_CAP_STBY, "ATA standby timer values" },
 	{ WDC_CAP_IORDY, "IORDY operation" },
 	{ WDC_CAP_IORDY_DSBL, "IORDY disabling" },
-	{ NULL, NULL },
+	{ 0, NULL },
 };
 
-struct bitinfo ata_vers[] = {
+const struct bitinfo ata_vers[] = {
 	{ WDC_VER_ATA1,	 "ATA-1" },
 	{ WDC_VER_ATA2,	 "ATA-2" },
 	{ WDC_VER_ATA3,	 "ATA-3" },
@@ -174,10 +171,10 @@ struct bitinfo ata_vers[] = {
 	{ WDC_VER_ATA12, "ATA-12" },
 	{ WDC_VER_ATA13, "ATA-13" },
 	{ WDC_VER_ATA14, "ATA-14" },
-	{ NULL, NULL },
+	{ 0, NULL },
 };
 
-struct bitinfo ata_cmd_set1[] = {
+const struct bitinfo ata_cmd_set1[] = {
 	{ WDC_CMD1_NOP, "NOP command" },
 	{ WDC_CMD1_RB, "READ BUFFER command" },
 	{ WDC_CMD1_WB, "WRITE BUFFER command" },
@@ -192,10 +189,10 @@ struct bitinfo ata_cmd_set1[] = {
 	{ WDC_CMD1_REMOV, "Removable Media feature set" },
 	{ WDC_CMD1_SEC, "Security Mode feature set" },
 	{ WDC_CMD1_SMART, "SMART feature set" },
-	{ NULL, NULL },
+	{ 0, NULL },
 };
 
-struct bitinfo ata_cmd_set2[] = {
+const struct bitinfo ata_cmd_set2[] = {
 	{ ATAPI_CMD2_FCE, "Flush Cache Ext command" },
 	{ ATAPI_CMD2_FC, "Flush Cache command" },
 	{ ATAPI_CMD2_DCO, "Device Configuration Overlay feature set" },
@@ -209,15 +206,30 @@ struct bitinfo ata_cmd_set2[] = {
 	{ ATA_CMD2_CFA, "CFA feature set" },
 	{ ATA_CMD2_RWQ, "READ/WRITE DMA QUEUED commands" },
 	{ WDC_CMD2_DM, "DOWNLOAD MICROCODE command" },
-	{ NULL, NULL },
+	{ 0, NULL },
 };
 
-struct bitinfo ata_cmd_ext[] = {
+const struct bitinfo ata_cmd_ext[] = {
 	{ ATAPI_CMDE_IIUF, "IDLE IMMEDIATE with UNLOAD FEATURE" },
 	{ ATAPI_CMDE_MSER, "Media serial number" },
 	{ ATAPI_CMDE_TEST, "SMART self-test" },
 	{ ATAPI_CMDE_SLOG, "SMART error logging" },
-	{ NULL, NULL },
+	{ 0, NULL },
+};
+
+const struct bitinfo ata_cmd_add[] = {
+	{ ATAPI_CMDA_TRIM_ZERORD, "read zero after TRIM command", },
+	{ ATAPI_CMDA_28BIT_CMD, "28-bit command", },
+	{ ATAPI_CMDA_IEEE1667, "IEEE-1667", },
+	{ ATAPI_CMDA_UCODE_DLOAD, "DOWNLOAD MICROCODE DMA", },
+	{ ATAPI_CMDA_SETMAX_PU, "SET MAX PASSWORD/UNLOCK DMA", },
+	{ ATAPI_CMDA_WRITE_BUF, "WRITE BUFFER DMA", },
+	{ ATAPI_CMDA_READ_BUF, "READ BUFFER DMA", },
+	{ ATAPI_CMDA_DEVCONF, "DEVICE CONFIG IDENTIFY/SET DMA", },
+	{ ATAPI_CMDA_LPSAERC, "Long Physical Sector Align Error Reporting", },
+	{ ATAPI_CMDA_TRIM_DETRD, "deterministic read after TRIM", },
+	{ ATAPI_CMDA_CFAST, "CFast specification" },
+	{ 0, NULL }
 };
 
 /*
@@ -225,7 +237,7 @@ struct bitinfo ata_cmd_ext[] = {
  * SMART commands.
  */
 
-struct bitinfo smart_offcap[] = {
+const struct bitinfo smart_offcap[] = {
 	{ SMART_OFFCAP_EXEC, "execute immediate" },
 	{ SMART_OFFCAP_ABORT, "abort/restart" },
 	{ SMART_OFFCAP_READSCAN, "read scanning" },
@@ -233,19 +245,19 @@ struct bitinfo smart_offcap[] = {
 	{ 0, NULL}
 };
 
-struct bitinfo smart_smartcap[] = {
+const struct bitinfo smart_smartcap[] = {
 	{ SMART_SMARTCAP_SAVE, "saving SMART data" },
 	{ SMART_SMARTCAP_AUTOSAVE, "enable/disable attribute autosave" },
 	{ 0, NULL }
 };
 
-struct valinfo smart_autosave[] = {
+const struct valinfo smart_autosave[] = {
 	{ SMART_AUTOSAVE_EN, "enable" },
 	{ SMART_AUTOSAVE_DS, "disable" },
 	{ 0, NULL }
 };
 
-struct valinfo smart_offline[] = {
+const struct valinfo smart_offline[] = {
 	{ SMART_OFFLINE_COLLECT, "collect" },
 	{ SMART_OFFLINE_SHORTOFF, "shortoffline" },
 	{ SMART_OFFLINE_EXTENOFF, "extenoffline" },
@@ -255,7 +267,7 @@ struct valinfo smart_offline[] = {
 	{ 0, NULL }
 };
 
-struct valinfo smart_readlog[] = {
+const struct valinfo smart_readlog[] = {
 	{ SMART_READLOG_DIR, "directory" },
 	{ SMART_READLOG_SUM, "summary" },
 	{ SMART_READLOG_COMP, "comp" },
@@ -263,7 +275,7 @@ struct valinfo smart_readlog[] = {
 	{ 0, NULL }
 };
 
-struct valinfo smart_offstat[] = {
+const struct valinfo smart_offstat[] = {
 	{ SMART_OFFSTAT_NOTSTART, "never started" },
 	{ SMART_OFFSTAT_COMPLETE, "completed ok" },
 	{ SMART_OFFSTAT_SUSPEND, "suspended by an interrupting command" },
@@ -272,7 +284,7 @@ struct valinfo smart_offstat[] = {
 	{ 0, NULL }
 };
 
-struct valinfo smart_selfstat[] = {
+const struct valinfo smart_selfstat[] = {
 	{ SMART_SELFSTAT_COMPLETE, "completed ok or not started" },
 	{ SMART_SELFSTAT_ABORT, "aborted" },
 	{ SMART_SELFSTAT_INTR, "hardware or software reset" },
@@ -284,7 +296,7 @@ struct valinfo smart_selfstat[] = {
 	{ 0, NULL }
 };
 
-struct valinfo smart_logstat[] = {
+const struct valinfo smart_logstat[] = {
 	{ SMART_LOG_STATE_UNK, "unknown" },
 	{ SMART_LOG_STATE_SLEEP, "sleep" },
 	{ SMART_LOG_STATE_ACTIDL, "active/idle" },
@@ -297,7 +309,7 @@ struct valinfo smart_logstat[] = {
  * device attributes.
  */
 
-struct valinfo ibm_attr_names[] = {
+const struct valinfo ibm_attr_names[] = {
 	{ 1, "Raw Read Error Rate" },
 	{ 2, "Throughput Performance" },
 	{ 3, "Spin Up Time" },
@@ -326,8 +338,9 @@ struct valinfo ibm_attr_names[] = {
 int
 main(int argc, char *argv[])
 {
-	struct command	*cmdp;
 	char dvname_store[MAXPATHLEN];
+	const struct command	*cmdp;
+	int	fd;
 
 	if (argc < 2)
 		usage();
@@ -370,7 +383,7 @@ main(int argc, char *argv[])
 	if (cmdp->cmd_name == NULL)
 		errx(1, "unknown command: %s", argv[0]);
 
-	(cmdp->cmd_func)(argc, argv);
+	(cmdp->cmd_func)(fd, argc, argv);
 
 	return (0);
 }
@@ -387,7 +400,7 @@ usage(void)
  * Wrapper that calls ATAIOCCOMMAND and checks for errors
  */
 void
-ata_command(struct atareq *req)
+ata_command(int fd, struct atareq *req)
 {
 	if (ioctl(fd, ATAIOCCOMMAND, req) == -1)
 		err(1, "ATAIOCCOMMAND failed");
@@ -416,7 +429,7 @@ ata_command(struct atareq *req)
  * Print out strings associated with particular bitmasks
  */
 void
-print_bitinfo(const char *f, u_int bits, struct bitinfo *binfo)
+print_bitinfo(const char *f, u_int bits, const struct bitinfo *binfo)
 {
 
 	for (; binfo->bitmask != NULL; binfo++)
@@ -430,7 +443,7 @@ print_bitinfo(const char *f, u_int bits, struct bitinfo *binfo)
  *    if no value found -1 is returned.
  */
 int
-strtoval(const char *str, struct valinfo *vinfo)
+strtoval(const char *str, const struct valinfo *vinfo)
 {
 	for (; vinfo->string != NULL; vinfo++)
 		if (strcmp(str, vinfo->string) == 0)
@@ -444,7 +457,7 @@ strtoval(const char *str, struct valinfo *vinfo)
  *    if no string found NULL is returned.
  */
 const char *
-valtostr(int val, struct valinfo *vinfo)
+valtostr(int val, const struct valinfo *vinfo)
 {
 	for (; vinfo->string != NULL; vinfo++)
 		if (val == vinfo->value)
@@ -462,7 +475,7 @@ valtostr(int val, struct valinfo *vinfo)
  * extract issued ATA requests from the log buffer
  */
 void
-device_dump(int argc, char *argv[])
+device_dump(int fd, int argc, char *argv[])
 {
 	unsigned char buf[131072];
 	atagettrace_t agt;
@@ -733,7 +746,7 @@ usage:
  *	Display the identity of the device
  */
 void
-device_identify(int argc, char *argv[])
+device_identify(int fd, int argc, char *argv[])
 {
 	struct ataparams *inqbuf;
 	struct atareq req;
@@ -755,7 +768,7 @@ device_identify(int argc, char *argv[])
 	req.datalen = sizeof(inbuf);
 	req.timeout = 1000;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	if (BYTE_ORDER == BIG_ENDIAN) {
 		swap16_multi((u_int16_t *)inbuf, 10);
@@ -764,10 +777,8 @@ device_identify(int argc, char *argv[])
 	}
 
 	if (!((inqbuf->atap_config & WDC_CFG_ATAPI_MASK) == WDC_CFG_ATAPI &&
-	      ((inqbuf->atap_model[0] == 'N' &&
-		  inqbuf->atap_model[1] == 'E') ||
-	       (inqbuf->atap_model[0] == 'F' &&
-		  inqbuf->atap_model[1] == 'X')))) {
+	    ((inqbuf->atap_model[0] == 'N' && inqbuf->atap_model[1] == 'E') ||
+	    (inqbuf->atap_model[0] == 'F' && inqbuf->atap_model[1] == 'X')))) {
 		swap16_multi((u_int16_t *)(inqbuf->atap_model),
 		    sizeof(inqbuf->atap_model) / 2);
 		swap16_multi((u_int16_t *)(inqbuf->atap_serial),
@@ -798,8 +809,8 @@ device_identify(int argc, char *argv[])
 	    (int) sizeof(inqbuf->atap_serial), inqbuf->atap_serial);
 
 	printf("Device type: %s, %s\n", inqbuf->atap_config & WDC_CFG_ATAPI ?
-	       "ATAPI" : "ATA", inqbuf->atap_config & ATA_CFG_FIXED ? "fixed" :
-	       "removable");
+	    "ATAPI" : "ATA", inqbuf->atap_config & ATA_CFG_FIXED ? "fixed" :
+	    "removable");
 
 	if (inqbuf->atap_cmd2_en & ATAPI_CMD2_48AD)
 		capacity = ((u_int64_t)inqbuf->atap_max_lba[3] << 48) |
@@ -839,6 +850,7 @@ device_identify(int argc, char *argv[])
 		print_bitinfo("\t%s\n", inqbuf->atap_cmd_set1, ata_cmd_set1);
 		print_bitinfo("\t%s\n", inqbuf->atap_cmd_set2, ata_cmd_set2);
 		print_bitinfo("\t%s\n", inqbuf->atap_cmd_ext, ata_cmd_ext);
+		print_bitinfo("\t%s\n", inqbuf->atap_cmd_add, ata_cmd_add);
 	}
 
 	if (inqbuf->atap_cmd_def != 0 && inqbuf->atap_cmd_def != 0xffff) {
@@ -861,7 +873,7 @@ usage:
  * issue the IDLE IMMEDIATE command to the drive
  */
 void
-device_idle(int argc, char *argv[])
+device_idle(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 
@@ -879,7 +891,7 @@ device_idle(int argc, char *argv[])
 
 	req.timeout = 1000;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -891,7 +903,7 @@ usage:
  * SECURITY SET PASSWORD command
  */
 void
-device_sec_setpass(int argc, char *argv[])
+device_sec_setpass(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 	struct sec_password pwd;
@@ -935,7 +947,7 @@ device_sec_setpass(int argc, char *argv[])
 	req.databuf = (caddr_t)inbuf;
 	req.datalen = sizeof(inbuf);
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	pwd.revision = inqbuf->atap_mpasswd_rev;
 	if (pwd.revision != 0 && pwd.revision != 0xffff && --pwd.revision == 0)
@@ -952,7 +964,7 @@ device_sec_setpass(int argc, char *argv[])
 	req.databuf = (caddr_t)&pwd;
 	req.datalen = sizeof(pwd);
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -966,7 +978,7 @@ usage:
  * SECURITY UNLOCK command
  */
 void
-device_sec_unlock(int argc, char *argv[])
+device_sec_unlock(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 	struct sec_password pwd;
@@ -995,7 +1007,7 @@ device_sec_unlock(int argc, char *argv[])
 	req.databuf = (caddr_t)&pwd;
 	req.datalen = sizeof(pwd);
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -1008,7 +1020,7 @@ usage:
  * SECURITY ERASE UNIT command
  */
 void
-device_sec_erase(int argc, char *argv[])
+device_sec_erase(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 	struct sec_password pwd;
@@ -1041,7 +1053,7 @@ device_sec_erase(int argc, char *argv[])
 	req.command = ATA_SEC_ERASE_PREPARE;
 	req.timeout = 1000;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	memset(&req, 0, sizeof(req));
 
@@ -1051,7 +1063,7 @@ device_sec_erase(int argc, char *argv[])
 	req.databuf = (caddr_t)&pwd;
 	req.datalen = sizeof(pwd);
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -1064,7 +1076,7 @@ usage:
  * SECURITY FREEZE LOCK command
  */
 void
-device_sec_freeze(int argc, char *argv[])
+device_sec_freeze(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 
@@ -1076,7 +1088,7 @@ device_sec_freeze(int argc, char *argv[])
 	req.command = ATA_SEC_FREEZE_LOCK;
 	req.timeout = 1000;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -1088,7 +1100,7 @@ usage:
  * SECURITY DISABLE PASSWORD command
  */
 void
-device_sec_disablepass(int argc, char *argv[])
+device_sec_disablepass(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 	struct sec_password pwd;
@@ -1117,7 +1129,7 @@ device_sec_disablepass(int argc, char *argv[])
 	req.databuf = (caddr_t)&pwd;
 	req.datalen = sizeof(pwd);
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -1152,7 +1164,7 @@ sec_getpass(int ident, int confirm)
  * SMART ENABLE OPERATIONS command
  */
 void
-device_smart_enable(int argc, char *argv[])
+device_smart_enable(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 
@@ -1166,7 +1178,7 @@ device_smart_enable(int argc, char *argv[])
 	req.timeout = 1000;
 	req.features = ATA_SMART_EN;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -1178,7 +1190,7 @@ usage:
  * SMART DISABLE OPERATIONS command
  */
 void
-device_smart_disable(int argc, char *argv[])
+device_smart_disable(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 
@@ -1192,7 +1204,7 @@ device_smart_disable(int argc, char *argv[])
 	req.timeout = 1000;
 	req.features = ATA_SMART_DS;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -1204,7 +1216,7 @@ usage:
  * SMART STATUS command
  */
 void
-device_smart_status(int argc, char *argv[])
+device_smart_status(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 
@@ -1218,7 +1230,7 @@ device_smart_status(int argc, char *argv[])
 	req.timeout = 1000;
 	req.features = ATA_SMART_STATUS;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	if (req.cylinder == 0xc24f)
 		printf("No SMART threshold exceeded\n");
@@ -1238,7 +1250,7 @@ usage:
  * SMART ENABLE/DISABLE ATTRIBUTE AUTOSAVE command
  */
 void
-device_smart_autosave(int argc, char *argv[])
+device_smart_autosave(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 	int val;
@@ -1256,7 +1268,7 @@ device_smart_autosave(int argc, char *argv[])
 		goto usage;
 	req.sec_num = val;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -1269,7 +1281,7 @@ usage:
  * SMART EXECUTE OFF-LINE IMMEDIATE command
  */
 void
-device_smart_offline(int argc, char *argv[])
+device_smart_offline(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 	int val;
@@ -1287,7 +1299,7 @@ device_smart_offline(int argc, char *argv[])
 		goto usage;
 	req.sec_num = val;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 usage:
@@ -1300,7 +1312,7 @@ usage:
  * SMART READ DATA command
  */
 void
-device_smart_read(int argc, char *argv[])
+device_smart_read(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 	struct smart_read data;
@@ -1319,7 +1331,7 @@ device_smart_read(int argc, char *argv[])
 	req.databuf = (caddr_t)&data;
 	req.datalen = sizeof(data);
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	if (smart_cksum((u_int8_t *)&data, sizeof(data)) != 0)
 		errx(1, "Checksum mismatch");
@@ -1358,7 +1370,7 @@ usage:
  * SMART READ LOG command
  */
 void
-device_smart_readlog(int argc, char *argv[])
+device_smart_readlog(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 	int val;
@@ -1382,7 +1394,7 @@ device_smart_readlog(int argc, char *argv[])
 		goto usage;
 	req.sec_num = val;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	if (strcmp(argv[1], "directory") == 0) {
 		struct smart_log_dir *data = (struct smart_log_dir *)inbuf;
@@ -1461,7 +1473,7 @@ device_smart_readlog(int argc, char *argv[])
 		req.databuf = (caddr_t)newbuf;
 		req.datalen = nsect * DEV_BSIZE;
 		req.timeout = 1000;
-		ata_command(&req);
+		ata_command(fd, &req);
 
 		n = 0;
 		data = (struct smart_log_comp *)
@@ -1496,20 +1508,16 @@ device_smart_readlog(int argc, char *argv[])
 				break;
 			printf("Test %d\n", n + 1);
 			printf("    LBA Low: 0x%x\n", data->desc[i].reg_lbalo);
-			printf("    status: %s\n",
-			    valtostr(SMART_SELFSTAT_STAT(
-			    data->desc[i].selfstat),
-			    smart_selfstat));
+			printf("    status: %s\n", valtostr(SMART_SELFSTAT_STAT(
+			    data->desc[i].selfstat), smart_selfstat));
 			printf("    timestamp: %d\n",
-			    MAKEWORD(data->desc[i].time1,
-				     data->desc[i].time2));
+			    MAKEWORD(data->desc[i].time1, data->desc[i].time2));
 			printf("    failure checkpoint byte: 0x%x\n",
 			    data->desc[i].chkpnt);
 			printf("    failing LBA: 0x%x\n",
 			    MAKEDWORD(data->desc[i].lbafail1,
-				      data->desc[i].lbafail2,
-				      data->desc[i].lbafail3,
-				      data->desc[i].lbafail4));
+			    data->desc[i].lbafail2, data->desc[i].lbafail3,
+			    data->desc[i].lbafail4));
 			if (--i == -1)
 				i = 20;
 		} while (++n < 21);
@@ -1540,8 +1548,8 @@ smart_print_errdata(struct smart_log_errdata *data)
 	printf("    device register: 0x%x\n", data->err.reg_dev);
 	printf("    status register: 0x%x\n", data->err.reg_stat);
 	printf("    state: %s\n", valtostr(data->err.state, smart_logstat));
-	printf("    timestamp: %d\n", MAKEWORD(data->err.time1,
-					       data->err.time2));
+	printf("    timestamp: %d\n",
+	    MAKEWORD(data->err.time1, data->err.time2));
 	printf("    history:\n");
 	SMART_PRINTREG("\tcontrol register:\t", reg_ctl);
 	SMART_PRINTREG("\tfeatures register:\t", reg_feat);
@@ -1551,8 +1559,7 @@ smart_print_errdata(struct smart_log_errdata *data)
 	SMART_PRINTREG("\tLBA High register:\t", reg_lbahi);
 	SMART_PRINTREG("\tdevice register:\t", reg_dev);
 	SMART_PRINTREG("\tcommand register:\t", reg_cmd);
-	printf("\ttimestamp:\t\t"
-	    "%d\t%d\t%d\t%d\t%d\n",
+	printf("\ttimestamp:\t\t%d\t%d\t%d\t%d\t%d\n",
 	    MAKEDWORD(data->cmd[0].time1, data->cmd[0].time2,
 		      data->cmd[0].time3, data->cmd[0].time4),
 	    MAKEDWORD(data->cmd[1].time1, data->cmd[1].time2,
@@ -1581,7 +1588,7 @@ smart_cksum(u_int8_t *data, size_t len)
  * Read device attributes
  */
 void
-device_attr(int argc, char *argv[])
+device_attr(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 	struct smart_read attr_val;
@@ -1608,13 +1615,13 @@ device_attr(int argc, char *argv[])
 	req.flags = ATACMD_READ;
 	req.databuf = (caddr_t)&attr_val;
 	req.datalen = sizeof(attr_val);
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	req.features = ATA_SMART_THRESHOLD;
 	req.flags = ATACMD_READ;
 	req.databuf = (caddr_t)&attr_thr;
 	req.datalen = sizeof(attr_thr);
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	if (attr_val.revision != attr_thr.revision) {
 		/*
@@ -1666,7 +1673,7 @@ usage:
  * Set the automatic acoustic management on the disk.
  */
 void
-device_acoustic(int argc, char *argv[])
+device_acoustic(int fd, int argc, char *argv[])
 {
 	u_char acoustic;
 	struct atareq req;
@@ -1688,7 +1695,7 @@ device_acoustic(int argc, char *argv[])
 	req.features = WDSF_AAM_EN ;
 	req.timeout = 1000;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 
@@ -1704,7 +1711,7 @@ usage:
  * to keep a uniform interface to the user.
  */
 void
-device_apm(int argc, char *argv[])
+device_apm(int fd, int argc, char *argv[])
 {
 	u_char power;
 	struct atareq req;
@@ -1726,7 +1733,7 @@ device_apm(int argc, char *argv[])
 	req.features = WDSF_APM_EN ;
 	req.timeout = 1000;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 
@@ -1741,7 +1748,7 @@ usage:
  * Management) on the disk.
  */
 void
-device_feature(int argc, char *argv[])
+device_feature(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 
@@ -1779,7 +1786,7 @@ device_feature(int argc, char *argv[])
 
 	req.timeout = 1000;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 
@@ -1793,7 +1800,7 @@ usage:
  * standby mode, depending on how we were invoked.
  */
 void
-device_setidle(int argc, char *argv[])
+device_setidle(int fd, int argc, char *argv[])
 {
 	unsigned long idle;
 	struct atareq req;
@@ -1826,7 +1833,7 @@ device_setidle(int argc, char *argv[])
 		goto usage;
 	req.timeout = 1000;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	return;
 
@@ -1840,7 +1847,7 @@ usage:
  * Query the device for the current power mode
  */
 void
-device_checkpower(int argc, char *argv[])
+device_checkpower(int fd, int argc, char *argv[])
 {
 	struct atareq req;
 
@@ -1853,7 +1860,7 @@ device_checkpower(int argc, char *argv[])
 	req.timeout = 1000;
 	req.flags = ATACMD_READREG;
 
-	ata_command(&req);
+	ata_command(fd, &req);
 
 	printf("Current power status: ");
 

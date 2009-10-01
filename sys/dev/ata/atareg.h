@@ -125,7 +125,19 @@ struct ataparams {
     u_int16_t	atap_dmatiming_recom;	/* 66: recommended DMA cycle time */
     u_int16_t	atap_piotiming;		/* 67: mini PIO cycle time without FC */
     u_int16_t	atap_piotiming_iordy;	/* 68: mini PIO cycle time with IORDY FC */
-    u_int16_t	__reserved3[2];
+    u_int16_t	atap_cmd_add;		/* 69: additional supported */
+#define ATAPI_CMDA_TRIM_ZERORD	0x0020	/* read zero after TRIM command */	
+#define ATAPI_CMDA_28BIT_CMD	0x0040	/* opt 28-bit command is supported */	
+#define ATAPI_CMDA_IEEE1667	0x0080	/* reserved for ieee-1667 */	
+#define ATAPI_CMDA_UCODE_DLOAD	0x0100	/* download microcode dma supported */	
+#define ATAPI_CMDA_SETMAX_PU	0x0200	/* SET MAX PASS/UNLOCK DMA supported */	
+#define ATAPI_CMDA_WRITE_BUF	0x0400	/* WRITE BUFFER DMA supported */	
+#define ATAPI_CMDA_READ_BUF	0x0800	/* READ BUFFER DMA supported */	
+#define ATAPI_CMDA_DEVCONF	0x1000	/* DEVICE CONF ID/SET DMA supported */	
+#define ATAPI_CMDA_LPSAERC	0x2000	/* long phys sec align err supported */	
+#define ATAPI_CMDA_TRIM_DETRD	0x4000	/* deterministic read after TRIM */	
+#define ATAPI_CMDA_CFAST	0x8000	/* CFast spec supported */	
+    u_int16_t	__reserved3;
 /* words 71-72 are ATAPI only */
     u_int16_t	atap_pkt_br;		/* 71: time (ns) to bus release */
     u_int16_t	atap_pkt_bsyclr;	/* 72: tme to clear BSY after service */
@@ -245,13 +257,18 @@ struct ataparams {
 #define WDC_SEC_SUPP	0x0001
     u_int16_t	__reserved8[31];	/* 129-159: vendor specific */
     u_int16_t	atap_cfa_power;		/* 160: CFA powermode */
-#define ATAPI_CFA_MAX_MASK  0x0FFF
-#define ATAPI_CFA_MODE1_DIS 0x1000 /* CFA Mode 1 Disabled */
-#define ATAPI_CFA_MODE1_REQ 0x2000 /* CFA Mode 1 Required */
-#define ATAPI_CFA_WORD160   0x8000 /* Word 160 supported */
-    u_int16_t	__reserved9[15];	/* 161-175: reserved for CFA */
+#define ATAPI_CFA_MAX_MASK	0x0FFF
+#define ATAPI_CFA_MODE1_DIS	0x1000 /* CFA Mode 1 Disabled */
+#define ATAPI_CFA_MODE1_REQ	0x2000 /* CFA Mode 1 Required */
+#define ATAPI_CFA_WORD160	0x8000 /* Word 160 supported */
+    u_int16_t	__reserved9[7];		/* 161-167: reserved for CFA */
+    u_int16_t	atap_nom_form_factor;	/* 168: device nomnal form factor */
+    u_int16_t	atap_dsm;		/* 169: data set management */
+#define	ATAPI_DSM_TRIM		0x0001	/* TRIM bit in DSM supported */
+    u_int8_t	atap_prod_id[8];	/* 170-173: additional prod ident */
+    u_int16_t	__reserved10[2];	/* 174-175: reserved */
     u_int8_t	atap_media_serial[60];	/* 176-205: media serial number */
-    u_int16_t	__reserved10[49];	/* 206-254: reserved */
+    u_int16_t	__reserved11[49];	/* 206-254: reserved */
 #if BYTE_ORDER == LITTLE_ENDIAN
     u_int8_t	atap_signature;		/* 255: Signature */
     u_int8_t	atap_checksum;		/*      Checksum */
