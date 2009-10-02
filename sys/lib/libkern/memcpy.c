@@ -31,6 +31,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/systm.h>
 
 /*
  * This is designed to be small, not fast.
