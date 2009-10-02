@@ -40,7 +40,7 @@ CPPFLAGS=	${INCLUDES} ${IDENT} -D_KERNEL \
 CWARNFLAGS=	-Werror -Wall -Wstrict-prototypes -Wmissing-prototypes \
 		-Wno-uninitialized -Wno-format -Wno-main \
 		-Wstack-larger-than-2047 -Wvariable-decl
-CMACHFLAGS=	-msoft-float -Wa,-many -fno-builtin-printf -fno-builtin-log
+CMACHFLAGS=	-msoft-float -Wa,-many -fno-builtin -msdata=none
 .if ${IDENT:M-DNO_PROPOLICE}
 CMACHFLAGS+=	-fno-stack-protector
 .endif
