@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.15 2009/09/08 17:02:51 mickey Exp $";
+    "$ABSD: elf.c,v 1.16 2009/09/30 23:15:42 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -161,22 +161,22 @@ elf_fix_note(Elf_Ehdr *eh, Elf_Note *en)
 }
 
 Elf_Shdr *
-elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head)
+elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 {
 	Elf_Shdr *shdr;
 
-	if ((shdr = calloc(head->e_shnum, head->e_shentsize)) == NULL) {
+	if ((shdr = calloc(eh->e_shnum, eh->e_shentsize)) == NULL) {
 		warn("%s: malloc shdr", name);
 		return (NULL);
 	}
 
-	if (fseeko(fp, foff + head->e_shoff, SEEK_SET)) {
+	if (fseeko(fp, foff + eh->e_shoff, SEEK_SET)) {
 		warn("%s: fseeko", name);
 		free(shdr);
 		return (NULL);
 	}
 
-	if (fread(shdr, head->e_shentsize, head->e_shnum, fp) != head->e_shnum) {
+	if (fread(shdr, eh->e_shentsize, eh->e_shnum, fp) != eh->e_shnum) {
 		warnx("%s: premature EOF", name);
 		free(shdr);
 		return (NULL);
@@ -186,15 +186,15 @@ elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head)
 }
 
 int
-elf_save_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head,
+elf_save_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Shdr *shdr)
 {
-	if (fseeko(fp, foff + head->e_shoff, SEEK_SET)) {
+	if (fseeko(fp, foff + eh->e_shoff, SEEK_SET)) {
 		warn("%s: fseeko", name);
 		return (1);
 	}
 
-	if (fwrite(shdr, head->e_shentsize, head->e_shnum, fp) != head->e_shnum) {
+	if (fwrite(shdr, eh->e_shentsize, eh->e_shnum, fp) != eh->e_shnum) {
 		warnx("%s: premature EOF", name);
 		return (1);
 	}
@@ -203,22 +203,22 @@ elf_save_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head,
 }
 
 Elf_Phdr *
-elf_load_phdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *head)
+elf_load_phdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 {
 	Elf_Phdr *phdr;
 
-	if ((phdr = calloc(head->e_phnum, head->e_phentsize)) == NULL) {
+	if ((phdr = calloc(eh->e_phnum, eh->e_phentsize)) == NULL) {
 		warn("%s: malloc phdr", name);
 		return (NULL);
 	}
 
-	if (fseeko(fp, foff + head->e_phoff, SEEK_SET)) {
+	if (fseeko(fp, foff + eh->e_phoff, SEEK_SET)) {
 		warn("%s: fseeko", name);
 		free(phdr);
 		return (NULL);
 	}
 
-	if (fread(phdr, head->e_phentsize, head->e_phnum, fp) != head->e_phnum) {
+	if (fread(phdr, eh->e_phentsize, eh->e_phnum, fp) != eh->e_phnum) {
 		warnx("%s: premature EOF", name);
 		free(phdr);
 		return (NULL);
@@ -437,14 +437,14 @@ elf2nlist(Elf_Sym *sym, const Elf_Ehdr *eh, const Elf_Shdr *shdr,
 }
 
 int
-elf_size(const Elf_Ehdr *head, const Elf_Shdr *shdr,
+elf_size(const Elf_Ehdr *eh, const Elf_Shdr *shdr,
     u_long *ptext, u_long *pdata, u_long *pbss)
 {
 	int i;
 
 	*ptext = *pdata = *pbss = 0;
 
-	for (i = 0; i < head->e_shnum; i++) {
+	for (i = 0; i < eh->e_shnum; i++) {
 		if (!(shdr[i].sh_flags & SHF_ALLOC))
 			;
 		else if (shdr[i].sh_flags & SHF_EXECINSTR ||
