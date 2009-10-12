@@ -263,7 +263,7 @@ struct iodesc *
 socktodesc(sock)
 	int sock;
 {
-	if (sock >= SOPEN_MAX) {
+	if (sock < 0 || sock >= SOPEN_MAX) {
 		errno = EBADF;
 		return (NULL);
 	}
