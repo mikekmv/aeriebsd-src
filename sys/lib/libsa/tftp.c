@@ -263,6 +263,11 @@ tftp_open(char *path, struct open_file *f)
 		return ENOMEM;
 
 	tftpfile->iodesc = io = socktodesc(*(int *) (f->f_devdata));
+	if (io == NULL) {
+		free(tftpfile, sizeof(*tftpfile));
+		return ENXIO;
+	}
+
 	io->destip = servip;
 	tftpfile->off = 0;
 	tftpfile->path = path;	/* XXXXXXX we hope it's static */
