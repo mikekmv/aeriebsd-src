@@ -2,7 +2,7 @@
 
 PROG=	eqn
 CFLAGS+=-I. -I${.CURDIR}
-SRCS=	diacrit.c e.y eqnbox.c font.c fromto.c funny.c glob.c integral.c io.c \
+SRCS=	diacrit.c e.y eqnbox.c font.c fromto.c funny.c integral.c io.c \
 	lex.c lookup.c mark.c matrix.c move.c over.c paren.c pile.c shift.c \
 	size.c sqrt.c text.c
 YFLAGS+=-d
