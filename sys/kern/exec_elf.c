@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996 Per Fogelstrom
  * All rights reserved.
@@ -188,7 +187,7 @@ void
 ELFNAME(load_psection)(struct exec_vmcmd_set *vcset, struct vnode *vp,
 	Elf_Phdr *ph, Elf_Addr *addr, Elf_Addr *size, int *prot, int flags)
 {
-	u_long uaddr, msize, lsize, psize, rm, rf;
+	u_long msize, lsize, psize, rm, rf;
 	long diff, offset, bdiff;
 	Elf_Addr base;
 
@@ -205,9 +204,18 @@ ELFNAME(load_psection)(struct exec_vmcmd_set *vcset, struct vnode *vp,
 
 			bdiff = ph->p_vaddr - trunc_page(ph->p_vaddr);
 
-		} else
-			diff = 0;
+		} else {
+			/*
+			 * this branch is never used since program
+			 * headers are always aligned to some >1 value.
+			 * XXX this of course may change one day
+			 */
+			bdiff = diff = 0;
+			base = *addr;
+		}
 	} else {
+		u_long uaddr;
+
 		*addr = uaddr = ph->p_vaddr;
 		if (ph->p_align > 1)
 			*addr = ELF_TRUNC(uaddr, ph->p_align);
