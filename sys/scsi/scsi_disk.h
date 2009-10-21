@@ -244,6 +244,7 @@ struct scsi_synchronize_cache {
 #define READ_COMMAND		0x08
 #define WRITE_COMMAND		0x0a
 #define READ_CAPACITY		0x25
+#define READ_DEFECT_DATA	0x37
 #define READ_CAPACITY_16	0x9e
 #define READ_BIG		0x28
 #define WRITE_BIG		0x2a
