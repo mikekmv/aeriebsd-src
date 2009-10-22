@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.16 2009/09/30 23:15:42 mickey Exp $";
+    "$ABSD: elf.c,v 1.17 2009/10/11 14:45:15 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -50,6 +50,8 @@ static const char rcsid[] =
 #define	elf_fix_shdrs	elf32_fix_shdrs
 #define	elf_fix_phdrs	elf32_fix_phdrs
 #define	elf_fix_sym	elf32_fix_sym
+#define	elf_fix_rel	elf32_fix_rel
+#define	elf_fix_rela	elf32_fix_rela
 #define	elf_size	elf32_size
 #define	elf_shstrload	elf32_shstrload
 #define	elf_strload	elf32_strload
@@ -81,6 +83,8 @@ static const char rcsid[] =
 #define	elf_fix_shdrs	elf64_fix_shdrs
 #define	elf_fix_phdrs	elf64_fix_phdrs
 #define	elf_fix_sym	elf64_fix_sym
+#define	elf_fix_rel	elf64_fix_rel
+#define	elf_fix_rela	elf64_fix_rela
 #define	elf_size	elf64_size
 #define	elf_shstrload	elf64_shstrload
 #define	elf_strload	elf64_strload
@@ -434,6 +438,33 @@ elf2nlist(Elf_Sym *sym, const Elf_Ehdr *eh, const Elf_Shdr *shdr,
 	np->n_value = sym->st_value;
 	np->n_un.n_strx = sym->st_name;
 	return (0);
+}
+
+int
+elf_fix_rel(Elf_Ehdr *eh, Elf_Rel *rel)
+{
+	/* nothing to do */
+	if (eh->e_ident[EI_DATA] == ELF_TARG_DATA)
+		return (0);
+
+	rel->r_offset = swap_addr(rel->r_offset);
+	rel->r_info = swap_xword(rel->r_offset);
+
+	return (1);
+}
+
+int
+elf_fix_rela(Elf_Ehdr *eh, Elf_RelA *rela)
+{
+	/* nothing to do */
+	if (eh->e_ident[EI_DATA] == ELF_TARG_DATA)
+		return (0);
+
+	rela->r_offset = swap_addr(rela->r_offset);
+	rela->r_info = swap_xword(rela->r_offset);
+	rela->r_addend = swap_sxword(rela->r_offset);
+
+	return (1);
 }
 
 int

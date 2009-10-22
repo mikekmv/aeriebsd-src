@@ -46,6 +46,8 @@ int	elf32_save_shdrs(const char *, FILE *, off_t, const Elf32_Ehdr *,
 Elf32_Phdr*elf32_load_phdrs(const char *, FILE *, off_t, const Elf32_Ehdr *);
 int	elf32_fix_shdrs(const Elf32_Ehdr *eh, Elf32_Shdr *shdr);
 int	elf32_fix_phdrs(const Elf32_Ehdr *eh, Elf32_Phdr *phdr);
+int	elf32_fix_rel(Elf32_Ehdr *, Elf32_Rel *);
+int	elf32_fix_rela(Elf32_Ehdr *, Elf32_Rela *);
 int	elf32_fix_sym(const Elf32_Ehdr *eh, Elf32_Sym *sym);
 int	elf32_2nlist(Elf32_Sym *, const Elf32_Ehdr *, const Elf32_Shdr *,
 	    const char *, struct nlist *);
@@ -71,6 +73,8 @@ Elf64_Phdr*elf64_load_phdrs(const char *, FILE *, off_t, const Elf64_Ehdr *);
 int	elf64_fix_shdrs(const Elf64_Ehdr *eh, Elf64_Shdr *shdr);
 int	elf64_fix_phdrs(const Elf64_Ehdr *eh, Elf64_Phdr *phdr);
 int	elf64_fix_sym(const Elf64_Ehdr *eh, Elf64_Sym *sym);
+int	elf64_fix_rel(Elf64_Ehdr *, Elf64_Rel *);
+int	elf64_fix_rela(Elf64_Ehdr *, Elf64_Rela *);
 int	elf64_2nlist(Elf64_Sym *, const Elf64_Ehdr *, const Elf64_Shdr *,
 	    const char *, struct nlist *);
 int	elf64_size(const Elf64_Ehdr *, const Elf64_Shdr *,
