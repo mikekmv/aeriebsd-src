@@ -3,6 +3,7 @@
 
 BIB?=		bib
 EQN?=		eqn
+NEQN?=		neqn
 GREMLIN?=	grn
 GRIND?=		vgrind -f
 INDXBIB?=	indxbib
