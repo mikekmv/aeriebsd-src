@@ -70,6 +70,7 @@
 #define	_PATH_DEV	"/dev/"
 #define	_PATH_DEVFD	"/dev/fd/"
 #define	_PATH_TMP	"/tmp/"
+#define	_PATH_USRLIB	"/usr/lib/"
 #define	_PATH_UUCPLOCK	"/var/spool/lock/"
 #define	_PATH_VARDB	"/var/db/"
 #define	_PATH_VAREMPTY	"/var/empty/"
