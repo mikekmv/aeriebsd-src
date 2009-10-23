@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.1 2009/09/04 09:34:05 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.2 2009/09/08 22:27:32 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -43,9 +43,15 @@ static const char rcsid[] = "$ABSD: ld.c,v 1.1 2009/09/04 09:34:05 mickey Exp $"
 TAILQ_HEAD(, pathlist) libdirs = TAILQ_HEAD_INITIALIZER(libdirs);
 TAILQ_HEAD(, objlist) objlist = TAILQ_HEAD_INITIALIZER(objlist);
 
+/*
+ * this object constain all the generated symbols and sections;
+ */
+struct objlist sysobj;
+
 int endian = ELFDATANONE;
 int elfclass = ELFCLASSNONE;
 int machine = EM_NONE;
+int magic = ZMAGIC;
 int as_needed;
 int Bflag;	/* 0 - dynamic, 1 - static, 2 - shlib */
 int check_sections = 1;
@@ -53,10 +59,13 @@ int cref;
 int nostdlib;
 int pie;
 int warncom;
-int trace;
+int trace;	/* trace objects being loaded */
+int relocatable;/* produce relocatable output */
 int strip;	/* 0 - do not, 1 - strip debug, 2 - strip all */
 int errors;	/* non-fatal errors accumulated */
 int printmap;	/* print edit map to stdout */
+const char *entry_name;
+struct symlist *sentry;
 
 #define OPTSTRING       "+c:C:dD:e:Ef:F:h:il:L:m:MnNo:OqrR:sStT:u:vVxXy:Y:z:Z"
 const struct option longopts[] = {
@@ -96,8 +105,8 @@ const struct option longopts[] = {
 	{ "library",		required_argument,	0, 'l' },
 	{ "library-path",	required_argument,	0, 'L' },
 	{ "print-map",		no_argument,		0, 'M' },
-	{ "nmagic",		no_argument,		0, 'n' },
-	{ "omagic",		no_argument,		0, 'N' },
+	{ "nmagic",		no_argument,	&magic, NMAGIC },
+	{ "omagic",		no_argument,	&magic, OMAGIC },
 	{ "output",		required_argument,	0, 'o' },
 	{ "emit-relocs",	no_argument,		0, 'q' },
 	{ "relocatable",	no_argument,		0, 'r' },
@@ -113,6 +122,26 @@ const struct option longopts[] = {
 	{ "trace-symbol",	required_argument,	0, 'y' },
 	{ NULL }
 };
+
+const struct ldarch ldarchs[] = {
+/*	{ EM_VAX, 0, vax_order, vax_fix }, */
+/*	{ EM_ALPHA, 0, alpha_order, alpha_fix }, */
+	{ EM_386, 0, i386_order, i386_fix },
+/*	{ EM_AMD64, 0, amd64_order, amd64_fix }, */
+/*	{ EM_MIPS, 0, mips_order, mips_fix }, */
+/*	{ EM_MIPS64, 0, mips64_order, mips64_fic }, */
+/*	{ EM_PARISC, 0, hppa_order, hppa_fix }, */
+/*	{ EM_PARISC64, 0, hppa64_order, hppa64_fix }, */
+/*	{ EM_PPC, 0, ppc_order, ppc_fix }, */
+/*	{ EM_PPC64, 0, ppc64_order, ppc64_fix }, */
+/*	{ EM_SPARC, 0, sparc_order, sparc_fix }, */
+/*	{ EM_SPARC64, 0, sparc64_order, sparc64_fix }, */
+/*	{ EM_SH, 0, sh_order, sh_fix }, */
+/*	{ EM_ARM, 0, arm_order, arm_fix }, */
+/*	{ EM_68K, 0, m68k_order, m68k_fix }, */
+};
+const int ldnarch = sizeof(ldarchs)/sizeof(ldarchs[0]);
+const struct ldarch *ldarch;
 
 int usage(void);
 int libdir_add(const char *);
@@ -160,6 +189,7 @@ main(int argc, char *argv[])
 			break;
 
 		case 'e':	/* entry */
+			entry_name = optarg;
 			break;
 
 		case 'E':	/* export dynamic symbols */
@@ -176,6 +206,7 @@ main(int argc, char *argv[])
 
 		case 'i':	/* perform incremental linking */
 		case 'r':
+			relocatable++;
 			break;
 
 		case 'L':	/* add to the library search path */
@@ -192,9 +223,11 @@ main(int argc, char *argv[])
 			break;
 
 		case 'n':	/* make NMAGIC output */
+			magic = NMAGIC;
 			break;
 
 		case 'N':	/* make OMAGIC output */
+			magic = OMAGIC;
 			break;
 
 		case 'o':	/* set output file format */
@@ -245,6 +278,7 @@ main(int argc, char *argv[])
 			break;
 
 		case 'Z':	/* make ZMAGIC output */
+			magic = ZMAGIC;
 			break;
 
 		default:
@@ -256,6 +290,24 @@ main(int argc, char *argv[])
 
 	if (argc < 1)
 		errx(1, "no input files");
+
+	/* make a "system" object for our self-defined syms */
+	sysobj.ol_path = output;
+	TAILQ_INIT(&sysobj.ol_syms);
+	/* allocate sections (.got .plt etc) */
+	if (Bflag != 1 || pie) {
+		sysobj.ol_nsect = 2;
+		if (!(sysobj.ol_sections = calloc(sysobj.ol_nsect,
+		    sizeof *sysobj.ol_sections)))
+			err(1, "calloc");
+		if (!(sysobj.ol_sects = calloc(sysobj.ol_nsect,
+		    MAX(sizeof(Elf32_Shdr), sizeof(Elf64_Shdr)))))
+			err(1, "calloc");
+		/* os_sect is set in ldmap() */
+		sysobj.ol_sections[0].os_obj = &sysobj;
+		sysobj.ol_sections[1].os_obj = &sysobj;
+	}
+	TAILQ_INSERT_TAIL(&objlist, &sysobj, ol_entry);
 
 	for (; argc--; argv++) {
 		if (**argv == '-')
@@ -289,9 +341,48 @@ main(int argc, char *argv[])
 
 	/* and now do the jobs */
 	if (elfclass == ELFCLASS32)
-		return ldload32(output, ldmap32());
+		return ldload32(output, ldmap32(ldarch));
 	else
-		return ldload64(output, ldmap64());
+		return ldload64(output, ldmap64(ldarch));
+}
+
+/*
+ * pre-scan thru the ldarch on the first encountered object
+ * in order to generate necessary symbols and other gedoens
+ */
+const struct ldarch *
+ldinit(void)
+{
+	const struct ldarch *lda;
+	const struct ldorder *order;
+	int i;
+
+	for (lda = ldarchs, i = 0; i < ldnarch; lda++, i++)
+		if (lda->la_mach == machine)
+			break;
+
+	if (i >= ldnarch) {
+		warn("unknown machine %d", machine);
+		return NULL;
+	}
+
+	for (i = 0, order = lda->la_order;
+	    order->ldo_order != ldo_kaput; order++, i++) {
+		/* XXX we have to check ldo_flags as in ldmap() */
+
+		switch (order->ldo_order) {
+		case ldo_symbol:
+			if (order->ldo_flags & LD_ENTRY) {
+				if (!entry_name)
+					entry_name = order->ldo_name;
+				sentry = sym_undef(entry_name);
+				break;
+			}
+			break;
+		}
+	}
+
+	return lda;
 }
 
 /*
@@ -497,7 +588,7 @@ int
 lib_namtab(const char *path, FILE *fp, u_long len, off_t symoff, u_long symlen)
 {
 	char *p, *pp;
-	u_int32_t num, *offs;
+	uint32_t num, *offs;
 	int i, more;
 
 	if (fseeko(fp, symoff, SEEK_SET) < 0)
@@ -509,7 +600,7 @@ lib_namtab(const char *path, FILE *fp, u_long len, off_t symoff, u_long symlen)
 	if (fread(pp, symlen, 1, fp) != 1)
 		err(1, "fread: %s", path);
 
-	offs = (u_int32_t *)pp;
+	offs = (uint32_t *)pp;
 	num = betoh32(*offs++);
 
 	more = 1;
@@ -557,7 +648,7 @@ lib_namtab(const char *path, FILE *fp, u_long len, off_t symoff, u_long symlen)
 
 /*
  *	given the archive member header -- produce member name
- *	(pwnz0red directly from nm.c)
+ *	(pwnz0red shamelessly from nm.c)
  */
 int
 mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)

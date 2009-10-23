@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syms.c,v 1.1 2009/09/04 09:34:05 mickey Exp $";
+static const char rcsid[] = "$ABSD: syms.c,v 1.2 2009/09/08 17:06:35 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -194,4 +194,23 @@ rel_addrcmp(const void *a0, const void *b0)
 		return 1;
 	else
 		return 0;
+}
+
+/*
+ * allocate new order piece cloning from the templar
+ */
+struct ldorder *
+order_clone(const struct ldarch *lda, const struct ldorder *order)
+{
+	struct ldorder *neworder;
+
+	if ((neworder = calloc(1, sizeof(*neworder))) == NULL)
+		err(1, "calloc");
+
+	TAILQ_INIT(&neworder->ldo_seclst);
+	neworder->ldo_type = order->ldo_type;
+	neworder->ldo_name = order->ldo_name;
+	neworder->ldo_arch = lda;
+
+	return neworder;
 }
