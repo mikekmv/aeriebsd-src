@@ -62,7 +62,11 @@
  */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)text.c	4.4 (Berkeley) 4/17/91";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
 #endif /* not lint */
 
 #include "e.h"
@@ -72,22 +76,24 @@ int	csp;
 int	psp;
 #define	CSSIZE	400
 char	cs[420];
-
 int	lf, rf;	/* temporary spots for left and right fonts */
 
-text(t,p1) int t; char *p1; {
+void
+text(int t, char *p1)
+{
 	int c;
-	char *p;
+	const char *p;
 	tbl *tp, *lookup();
 	extern tbl *restbl;
 
 	yyval = oalloc();
 	ebase[yyval] = 0;
-#ifndef NEQN
-	eht[yyval] = VERT(6 * ((ps>6)?ps:6));	/* ht in machine units */
-#else
-	eht[yyval] = VERT(2);	/* 2 half-spaces */
-#endif
+	if (neqn)
+		/* 2 half-spaces */
+		eht[yyval] = VERT(2);
+	else
+		/* ht in machine units */
+		eht[yyval] = VERT(6 * ((ps > 6)? ps : 6));
 	lfont[yyval] = rfont[yyval] = ROM;
 	if (t == QTEXT)
 		p = p1;

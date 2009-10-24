@@ -62,7 +62,11 @@
  */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)lookup.c	4.3 (Berkeley) 4/17/91";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
 #endif /* not lint */
 
 #include "e.h"
@@ -75,7 +79,7 @@ tbl	*restbl[TBLSIZE];	/* reserved words */
 tbl	*deftbl[TBLSIZE];	/* user-defined names */
 
 const struct {
-	const char *key;
+	const char key[12];
 	int	keyval;
 } keyword[] = {
 	"sub",		SUB,
@@ -114,19 +118,8 @@ const struct {
 	"right",	RIGHT,
 	"delim",	DELIM,
 	"define",	DEFINE,
-
-#ifdef	NEQN	/* make ndefine synonym for define, tdefine a no-op */
-
 	"tdefine",	TDEFINE,
-	"ndefine",	DEFINE,
-
-#else		/* tdefine = define, ndefine = no-op */
-
-	"tdefine",	DEFINE,
 	"ndefine",	NDEFINE,
-
-#endif
-
 	"gsize",	GSIZE,
 	".gsize",	GSIZE,
 	"gfont",	GFONT,
@@ -142,12 +135,12 @@ const struct {
 	"lcol",		LCOL,
 	"ccol",		CCOL,
 	"rcol",		RCOL,
-	0,	0
+	"",	0
 };
 
-const struct {
+const struct resword {
 	const char *res;
-	char	*resval;
+	const char *resval;
 } resword[] = {
 	">=",		"\\(>=",
 	"<=",		"\\(<=",
@@ -166,22 +159,6 @@ const struct {
 	"times",	"\\(mu",
 	"del",		"\\(gr",
 	"grad",		"\\(gr",
-#ifdef	NEQN
-	"<<",		"<<",
-	">>",		">>",
-	"approx",	"~\b\\d~\\u",
-	"cdot",		"\\v'-.5'.\\v'.5'",
-	"...",		"...",
-	",...,",	",...,",
-#else
-	"<<",		"<\\h'-.3m'<",
-	">>",		">\\h'-.3m'>",
-	"approx",	"\\v'-.2m'\\z\\(ap\\v'.25m'\\(ap\\v'-.05m'",
-	"cdot",		"\\v'-.3m'.\\v'.3m'",
-	"...",		"\\v'-.3m'\\ .\\ .\\ .\\ \\v'.3m'",
-	",...,",	",\\ .\\ .\\ .\\ ,\\|",
-#endif
-
 	"alpha",	"\\(*a",
 	"beta",		"\\(*b",
 	"gamma",	"\\(*g",
@@ -245,17 +222,31 @@ const struct {
 	"ln",		"\\f1ln\\fP",
 	"exp",		"\\f1exp\\fP",
 	"det",		"\\f1det\\fP",
-	0,	0
+}, neqn_resw[] = {
+	"<<",		"<<",
+	">>",		">>",
+	"approx",	"~\b\\d~\\u",
+	"cdot",		"\\v'-.5'.\\v'.5'",
+	"...",		"...",
+	",...,",	",...,",
+}, eqn_resw[] = {
+	"<<",		"<\\h'-.3m'<",
+	">>",		">\\h'-.3m'>",
+	"approx",	"\\v'-.2m'\\z\\(ap\\v'.25m'\\(ap\\v'-.05m'",
+	"cdot",		"\\v'-.3m'.\\v'.3m'",
+	"...",		"\\v'-.3m'\\ .\\ .\\ .\\ \\v'.3m'",
+	",...,",	",\\ .\\ .\\ .\\ ,\\|",
 };
 
-tbl *lookup(tblp, name, defn)	/* find name in tbl. if defn non-null, install */
-tbl **tblp;
-char *name, *defn;
+/*
+ * find name in tbl. if defn non-null, install
+ */
+tbl *
+lookup(tbl **tblp, const char *name, const char *defn)
 {
-	register tbl *p;
-	register int h;
-	register char *s = name;
-	char *malloc();
+	int h;
+	const char *s = name;
+	tbl *p;
 
 	for (h = 0; *s != '\0'; )
 		h += *s++;
@@ -270,7 +261,7 @@ char *name, *defn;
 	/* didn't find it */
 	if (defn == NULL)
 		return(NULL);
-	p = (tbl *) malloc(sizeof (tbl));
+	p = malloc(sizeof (tbl));
 	if (p == NULL)
 		error(FATAL, "out of space in lookup");
 	p->name = name;
@@ -280,12 +271,24 @@ char *name, *defn;
 	return(p);
 }
 
-init_tbl()	/* initialize all tables */
+void
+init_tbl(void)	/* initialize all tables */
 {
-	int i;
+	const struct resword *r;
+	int i, val;
 
-	for (i = 0; keyword[i].key != NULL; i++)
-		lookup(keytbl, keyword[i].key, keyword[i].keyval);
-	for (i = 0; resword[i].res != NULL; i++)
-		lookup(restbl, resword[i].res, resword[i].resval);
+	for (i = 0; keyword[i].key[0] != '\0'; i++) {
+		val = keyword[i].keyval;
+		if (neqn && val == NDEFINE)
+			val = DEFINE;
+		if (!neqn && val == TDEFINE)
+			val = DEFINE;
+		lookup(keytbl, keyword[i].key, (char *)keyword[i].keyval);
+	}
+	for (i = 0, r = resword;
+	    i < sizeof resword / sizeof resword[0]; i++, r++)
+		lookup(restbl, r->res, r->resval);
+	for (i = 0, r = neqn? neqn_resw : eqn_resw;
+	    i < sizeof eqn_resw / sizeof eqn_resw[0]; i++, r++)
+		lookup(restbl, r->res, r->resval);
 }

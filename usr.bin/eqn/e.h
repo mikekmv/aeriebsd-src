@@ -62,22 +62,14 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define	FATAL	1
 #define	ROM	'1'
-#ifndef NEQN
-#define	ITAL	'2'
-#define	BLD	'3'
-#else
-#define	ITAL	'1'
-#define	BLD	'1'
-#endif
+#define	ITAL	(neqn? '1' : '2')
+#define	BLD	(neqn? '1' : '3')
 
-#ifndef NEQN
-#define	VERT(n)	((((n)+1)/3)*3)
-#else
-#define	VERT(n)	(20 * (n))
-#endif
+#define	VERT(n)	(neqn? (20 * (n)) : ((((n)+1)/3)*3))
 #define	EFFPS(p)	((p) >= 6 ? (p) : 6)
 
 extern int	dbg;
@@ -106,9 +98,10 @@ extern int	eqnreg, eqnht;
 extern int	lefteq, righteq;
 extern int	lastchar;	/* last character read by lex */
 extern int	markline;	/* 1 if this EQ/EN contains mark or lineup */
+extern int	neqn;	/* called as neqn */
 
 typedef struct s_tbl {
-	char	*name;
-	char	*defn;
+	const char *name;
+	const char *defn;
 	struct s_tbl *next;
 } tbl;

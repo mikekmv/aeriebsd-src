@@ -72,7 +72,7 @@ char copyright[] =
 static char sccsid[] = "@(#)glob.c	4.3 (Berkeley) 4/17/91";
 static char sccsid[] = "@(#)io.c	4.6 (Berkeley) 4/17/91";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: io.c,v 1.2 2009/10/13 22:25:23 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -82,34 +82,42 @@ static const char rcsid[] = "$ABSD$";
 char	in[MAXLINE];	/* input buffer */
 int	noeqn;
 
-int	dbg;	/* debugging print if non-zero */
-int	lp[80];	/* stack for things like piles and matrices */
-int	ct;	/* pointer to lp */
+int	dbg;		/* debugging print if non-zero */
+int	lp[80];		/* stack for things like piles and matrices */
+int	ct;		/* pointer to lp */
 int	used[100];	/* available registers */
-int	ps;	/* default init point size */
+int	ps;		/* default init point size */
 int	deltaps	= 3;	/* default change in ps */
 int	gsize	= 10;	/* default initial point size */
-int	gfont	= ITAL;	/* italic */
-int	ft;	/* default font */
+int	gfont;		/* italic */
+int	ft;		/* default font */
 FILE	*curfile;	/* current input file */
 int	ifile;
-int	linect;	/* line number in file */
-int	eqline;	/* line where eqn started */
+int	linect;		/* line number in file */
+int	eqline;		/* line where eqn started */
 int	svargc;
 char	**svargv;
 int	eht[100];
 int	ebase[100];
 int	lfont[100];
 int	rfont[100];
-int	eqnreg;	/* register where final string appears */
-int	eqnht;	/* inal height of equation */
+int	eqnreg;		/* register where final string appears */
+int	eqnht;		/* inal height of equation */
 int	lefteq	= '\0';	/* left in-line delimiter */
 int	righteq	= '\0';	/* right in-line delimiter */
 int	lastchar;	/* last character read by lex */
-int	markline	= 0;	/* 1 if this EQ/EN contains mark or lineup */
+int	markline;	/* 1 if this EQ/EN contains mark or lineup */
+int	neqn;		/* called as neqn */
 
 main(int argc, char *argv[])
 {
+	extern char *__progname;
+
+	if (!strcmp(__progname, "neqn"))
+		neqn++;
+
+	gfont = ITAL;
+
 	eqnexit(eqn(argc, argv));
 }
 
@@ -201,26 +209,23 @@ in_line() {
 }
 
 putout(p1) int p1; {
-	extern int gsize, gfont;
 	int before, after;
 	if(dbg)printf(".\tanswer <- S%d, h=%d,b=%d\n",p1, eht[p1], ebase[p1]);
 	eqnht = eht[p1];
 	printf(".ds %d \\x'0'", p1);
 	/* suppposed to leave room for a subscript or superscript */
-#ifndef NEQN
-	before = eht[p1] - ebase[p1] - VERT((ps*6*12)/10);
-#else /* NEQN */
-	before = eht[p1] - ebase[p1] - VERT(3);	/* 3 = 1.5 lines */
-#endif /* NEQN */
+	if (neqn)
+		before = eht[p1] - ebase[p1] - VERT(3);	/* 3 = 1.5 lines */
+	else
+		before = eht[p1] - ebase[p1] - VERT((ps*6*12)/10);
 	if (before > 0)
 		printf("\\x'0-%du'", before);
 	printf("\\f%c\\s%d\\*(%d%s\\s\\n(99\\f\\n(98",
 		gfont, gsize, p1, rfont[p1] == ITAL ? "\\|" : "");
-#ifndef NEQN
-	after = ebase[p1] - VERT((ps*6*2)/10);
-#else /* NEQN */
-	after = ebase[p1] - VERT(1);
-#endif /* NEQN */
+	if (neqn)
+		after = ebase[p1] - VERT(1);
+	else
+		after = ebase[p1] - VERT((ps*6*2)/10);
 	if (after > 0)
 		printf("\\x'%du'", after);
 	putchar('\n');

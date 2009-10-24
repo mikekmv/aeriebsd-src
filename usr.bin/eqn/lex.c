@@ -62,7 +62,11 @@
  */
 
 #ifndef lint
+#if 0
 static char sccsid[] = "@(#)lex.c	4.4 (Berkeley) 4/17/91";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
 #endif /* not lint */
 
 #include "e.h"
@@ -288,4 +292,44 @@ delim() {
 	righteq = token[1];
 	if (lefteq == 'o' && righteq == 'f')
 		lefteq = righteq = '\0';
+}
+
+globfont() {
+	char temp[20];
+
+	getstr(temp, 20);
+	yyval = eqnreg = 0;
+	gfont = temp[0];
+	switch (gfont) {
+	case 'r': case 'R':
+		gfont = '1';
+		break;
+	case 'i': case 'I':
+		gfont = '2';
+		break;
+	case 'b': case 'B':
+		gfont = '3';
+		break;
+	}
+	printf(".ft %c\n", gfont);
+	ft = gfont;
+}
+
+globsize() {
+	char temp[20];
+
+	getstr(temp, 20);
+	if (temp[0] == '+')
+		gsize += atoi(temp+1);
+	else if (temp[0] == '-')
+		gsize -= atoi(temp+1);
+	else
+		gsize = atoi(temp);
+	yyval = eqnreg = 0;
+	setps(gsize);
+	ps = gsize;
+	if (gsize >= 12)	/* sub and sup size change */
+		deltaps = gsize / 4;
+	else
+		deltaps = gsize / 3;
 }
