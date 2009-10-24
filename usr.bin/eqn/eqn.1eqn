@@ -59,7 +59,7 @@
 .\" SUCH DAMAGE.
 .\"
 .Vx
-.Dd $Mdocdate$
+.Dd $Mdocdate: October 11 2009 $
 .Dt EQN 1
 .Os
 .EQ
@@ -95,8 +95,7 @@ Usage is almost always
 .Pp
 If no files are specified, these programs read from the standard input.
 A line beginning with `.EQ' marks the start of an equation;
-the end of an equation
-is marked by a line beginning with `.EN'.
+the end of an equation is marked by a line beginning with `.EN'.
 Neither of these lines is altered, so they may be defined
 in macro packages to get centering, numbering, etc.
 It is also possible to set two characters as `delimiters';
@@ -130,8 +129,7 @@ Braces {} are used for grouping;
 generally speaking, anywhere a single character like
 .Ar x
 could appear, a complicated construction enclosed in braces may be used instead.
-Tilde ~ represents a full space in the output,
-circumflex ^ half as much.
+Tilde ~ represents a full space in the output, circumflex ^ half as much.
 .Pp
 .vs 13p
 Subscripts and superscripts are produced with the keywords
@@ -361,7 +359,8 @@ J. F. Ossanna,
 .Em NROFF/TROFF User's Manual
 .Sh HISTORY
 .Nm Eqn
-appeared in Version 6 AT&T Unix.
+first appeared in
+.At v6 .
 .Sh BUGS
 .Pp
 To embolden digits, parens, etc., it is necessary to quote them,

@@ -31,7 +31,7 @@
 .\"
 .\"	@(#)traceroute.8	8.1 (Berkeley) 6/6/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt TRACEROUTE 8
 .Os
 .Sh NAME
@@ -259,8 +259,8 @@ Note that lines 2 & 3 are the same.
 This is due to a buggy
 kernel on the 2nd hop system \- lbl-csam.arpa \- that forwards
 packets with a zero ttl (a bug in the distributed version
-of 4.3
-.Tn BSD ) .
+of
+.Bx 4.3 ).
 Note that you have to guess what path
 the packets are taking cross-country since the
 .Tn NSFNET
@@ -303,8 +303,10 @@ C Gateway code that doesn't send "time exceeded"s.
 God only knows what's going on with 12.
 .Pp
 The silent gateway 12 in the above may be the result of a bug in
-the 4.[23]
-.Tn BSD
+the
+.Bx 4.2
+and
+.Bx 4.3
 network code (and its derivatives):  4.x (x <= 3)
 sends an unreachable message using whatever ttl remains in the
 original datagram.

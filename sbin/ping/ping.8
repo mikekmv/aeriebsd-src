@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)ping.8	8.2 (Berkeley) 12/11/93
 .\"
-.Dd $Mdocdate: May 7 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt PING 8
 .Os
 .Sh NAME
@@ -290,7 +290,11 @@ the TTL field by exactly one.
 The TCP/IP specification states that the TTL field
 for TCP packets should be set to 60,
 but many systems use smaller values
-(4.3 BSD uses 30, 4.2 used 15).
+(such as
+.Bx 4.3
+used 30, and
+.Bx 4.2
+used 15).
 .Pp
 The maximum possible value of this field is 255, and most
 .Ux
@@ -312,13 +316,17 @@ When a remote system receives a ping packet, it can do one of three things
 with the TTL field in its response:
 .Bl -bullet
 .It
-Not change it; this is what Berkeley Unix systems did before the
+Not change it; this is what Berkeley
+.Ux
+systems did before the
 .Bx 4.3 tahoe
 release.
 In this case the TTL value in the received packet will be
 255 minus the number of routers in the round trip path.
 .It
-Set it to 255; this is what current Berkeley Unix systems do.
+Set it to 255; this is what current Berkeley
+.Ux
+systems do.
 In this case the TTL value in the received packet will be
 255 minus the number of routers in the path from the remote system
 to the pinging host.

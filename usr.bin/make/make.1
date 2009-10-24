@@ -28,7 +28,7 @@
 .\"
 .\"	from: @(#)make.1	8.4 (Berkeley) 3/19/94
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt MAKE 1
 .Os
 .Sh NAME
@@ -1394,7 +1394,9 @@ For loops are expanded before tests, so a fragment such as:
 .Pp
 won't work, and should be rewritten the other way around.
 .Pp
-When handling pre-BSD 4.4 archives,
+When handling archives created on earlier than
+.Bx 4.4
+systems,
 .Nm
 may erroneously mark archive members as out of date if the archive name
 was truncated.
