@@ -1,0 +1,62 @@
+.\"
+.\" Copyright (c) 2009 Konrad Merz
+.\"
+.\" Permission to use, copy, modify, and distribute this software for
+.\" purpose with or without fee is hereby granted, provided that the
+.\" above copyright notice and this permission notice appear in all
+.\" copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+.\" WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+.\" WARRANTIES OFi MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL
+.\" THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR
+.\" OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+.\" LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+.\" NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF 
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: October 24 2009 $
+.Dt AETOUCH 1
+.Os
+.Sh NAME
+.Nm aetouch
+.Nd start processes in background and provide stdin, stdout
+and stderr via socket connection.
+.Sh SYNOPSIS
+.Nm aetouch
+.Op Ar -hd
+.Op Ar -a file
+.Op Ar command ..
+.Sh DESCRIPTION
+.Nm
+creates a background process from the given command and provides the so
+started process a pseudotty.
+.Nm
+starts also a client to take input and print output (stdin, stdout and
+stderr) for the background process. With Ctrl-a-d the client can be
+stoped whereas the background processes continues. To re-attach to the
+process execute
+.Nm
+with -a and the path to the unix socket. Its possible to attach multiple
+clients to one running process.
+.Pp
+The options are as follow:
+.Bl -tag -width Ds
+.It Fl a Op Ar file
+Attach
+.Nm
+to a running
+.Nm
+instance via socket
+.Ar file.
+.Pp 
+.It Fl d
+Will attach aetouch to the first socket found in /tmp/
+.Pp
+.It Fl h 
+print usage.
+.Pp
+.Sh SEE ALSO
+.Xr forkpty 3 ,
+.Xr pty 4,
+.Xr stdout 4 ,
