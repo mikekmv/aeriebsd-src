@@ -65,6 +65,7 @@ struct scsi_format_unit {
 #define	SFU_DLF_MASK	0x07
 #define	SFU_CMPLST	0x08
 #define	SFU_FMTDATA	0x10
+#define	SFU_LONGLIST	0x20
 	u_int8_t vendor_specific;
 	u_int8_t interleave[2];
 	u_int8_t control;
@@ -166,6 +167,7 @@ struct scsi_rw_big {
 	u_int8_t opcode;
 	u_int8_t byte2;
 #define	SRWB_RELADDR	0x01
+#define	SRRL_CORRCT	0x02	/* used by the READ_LONG */
 	u_int8_t addr[4];
 	u_int8_t reserved;
 	u_int8_t length[2];
@@ -245,13 +247,19 @@ struct scsi_synchronize_cache {
 #define WRITE_COMMAND		0x0a
 #define READ_CAPACITY		0x25
 #define READ_DEFECT_DATA	0x37
+#define READ_DEFECT_DATA_12	0xb7
 #define READ_CAPACITY_16	0x9e
+#define READ_LONG		0x3e
+#define WRITE_LONG		0x3f
 #define READ_BIG		0x28
 #define WRITE_BIG		0x2a
+#define VERIFY_BIG		0x2f
 #define READ_12			0xa8
 #define WRITE_12		0xaa
+#define VERIFY_12		0xaf
 #define READ_16			0x88
 #define WRITE_16		0x8a
+#define VERIFY_16		0xbf
 #define SYNCHRONIZE_CACHE	0x35
 
 
