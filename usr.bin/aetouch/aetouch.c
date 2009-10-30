@@ -18,21 +18,21 @@
 
 #include "aetouch.h"
 
-static void remove_client(int fd);
-static void remove_clients(void);
-static void signal_handler(int sig);
-static int mkname(char**);
-static int mkunixsock(char *);
-static int add_client(int fd);
+void remove_client(int fd);
+void master_signal(int sig);
+int mkname(char**);
+int mkunixsock(char *);
+int add_client(int fd);
 void pty_in(int, short, void*);
 void accept_client(int, short, void*);
 void client_command(int, short, void*);
 void usage(void);
+void aetexit(void);
 
 #define	MAX_CON	140
 
-static char *aepath;		/* Socket Path */
-static int aemaster;		/* Master File Discriptor to pty */
+char *aepath;		/* Socket Path */
+int aemaster;		/* Master File Discriptor to pty */
 
 SLIST_HEAD(listhaed, ae_client) ae_clients;
 struct ae_client {
@@ -52,17 +52,21 @@ usage(void)
 	_exit(1);
 }
 
+void
+aetexit(void)
+{
+	unlink(aepath);
+}
+
 int
 main(int argc, char **argv)
 {
-	struct event *ev;
+	struct event evs[3];
 	struct termios term;
 	pid_t child;
 	int master_socket;
 	int attached = 0;
-	int client;
-	int ch;
-	int nullfd;
+	int client, nullfd, ch;
 
 	while((ch = getopt(argc, argv, "dha:")) != -1) {
 		switch(ch) {
@@ -94,18 +98,27 @@ main(int argc, char **argv)
 
 	master_socket = mkunixsock(aepath);
 	if (master_socket < 0)
-		err(1, "mkunixsock");
+		err(1, "mkunixsock: %s", aepath);
 
 	child = fork();
 	if (child > 0) {
 		close(master_socket);
 		return attach(aepath);
-	} else if (child < 0)
-		err(1, "fork");
+	} else if (child < 0) {
+		warn("fork");
+		unlink(aepath);
+		exit(1);
+	}
+
+	if (atexit(&aetexit)) {
+		warn("atexit");
+		unlink(aepath);
+		exit(1);
+	}
 
 	/* We wait for the first client before we start reading */
 	if ((client = accept(master_socket, NULL, NULL)) < 0)
-		goto fail;
+		err(1, "accept");
 
 	SLIST_INIT(&ae_clients);
 	add_client(client);
@@ -114,7 +127,7 @@ main(int argc, char **argv)
 	if (child == 0) {
 		close(master_socket);
 		if (execvp(argv[0], argv) < 0)
-			err(1, "execvp");
+			err(1, "execvp: %s", argv[0]);
 	} else if (child < 0)
 		err(1, "forkpty");
 
@@ -123,9 +136,9 @@ main(int argc, char **argv)
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
-	signal(SIGINT, signal_handler);
-	signal(SIGTERM, signal_handler);
-	signal(SIGCHLD, signal_handler);
+	signal(SIGINT, master_signal);
+	signal(SIGTERM, master_signal);
+	signal(SIGCHLD, master_signal);
 
 	/* Stop in- or output to console */
 	nullfd = open("/dev/null", O_RDWR);
@@ -138,41 +151,27 @@ main(int argc, char **argv)
 	event_init();
 
 	/* Add the pseudo tty to event list */
-	if ((ev = calloc(1, sizeof(*ev))) == NULL)
-		goto fail;
-	event_set(ev, aemaster, EV_READ|EV_PERSIST, pty_in, ev);
-	if (event_add(ev, NULL) < 0)
-		goto fail;
+	event_set(&evs[0], aemaster, EV_READ|EV_PERSIST, pty_in, &evs[0]);
+	if (event_add(&evs[0], NULL) < 0)
+		err(1, "event_add0");
 
 	/* Add master socket to event list */
-	if ((ev = calloc(1, sizeof(*ev))) == NULL)
-		goto fail;
-	event_set(ev, master_socket, EV_READ|EV_PERSIST, accept_client,
-	    ev);
-	if (event_add(ev, NULL) < 0)
-		goto fail;
+	event_set(&evs[1], master_socket, EV_READ|EV_PERSIST, accept_client,
+	    &evs[1]);
+	if (event_add(&evs[1], NULL) < 0)
+		err(1, "event_add1");
 
 	/* Add the first connected client */
-	if ((ev = calloc(1, sizeof(*ev))) == NULL)
-		goto fail;
-	event_set(ev, client, EV_READ|EV_PERSIST, client_command, ev);
-	if (event_add(ev, NULL) < 0)
-		goto fail;
+	event_set(&evs[2], client, EV_READ|EV_PERSIST, client_command, &evs[2]);
+	if (event_add(&evs[2], NULL) < 0)
+		err(1, "event_add2");
 
 	event_dispatch();
 
 	return 0;
-
-fail:
-	perror("Critical");
-	close(master_socket);
-	close(aemaster);
-	unlink(aepath);
-
-	return 1;
 }
 
-static int
+int
 mkname(char **path)
 {
 	int res;
@@ -189,11 +188,11 @@ mkname(char **path)
 	return res;
 }
 
-static int
+int
 mkunixsock(char *path)
 {
 	struct sockaddr_un sock;
-	int s;
+	int s, err;
 
 	if (!path)
 		return -1;
@@ -206,26 +205,32 @@ mkunixsock(char *path)
 	sock.sun_family = PF_UNIX;
 
 	if (bind(s, (struct sockaddr *)&sock, sizeof(sock)) < 0) {
+		err = errno;
 		close(s);
+		errno = err;
 		return -1;
 	}
 
 	if (listen(s, MAX_CON) < 0) {
+		err = errno;
 		close(s);
 		unlink(path);
+		errno = err;
 		return -1;
 	}
 
 	if (chmod(path, 0600) < 0) {
+		err = errno;
 		close(s);
 		unlink(path);
+		errno = err;
 		return -1;
 	}
 
 	return s;
 }
 
-static int
+int
 add_client(int fd)
 {
 	struct ae_client *a = NULL;
@@ -238,7 +243,7 @@ add_client(int fd)
 	return 0;
 }
 
-static void
+void
 remove_client(int fd)
 {
 	struct ae_client *a;
@@ -251,17 +256,6 @@ remove_client(int fd)
 		}
 	}
 	if (found) {
-		close(a->fd);
-		SLIST_REMOVE(&ae_clients, a, ae_client, entries);
-	}
-}
-
-static void
-remove_clients(void)
-{
-	struct ae_client *a;
-
-	SLIST_FOREACH(a, &ae_clients, entries) {
 		close(a->fd);
 		SLIST_REMOVE(&ae_clients, a, ae_client, entries);
 	}
@@ -324,10 +318,8 @@ client_command(int fd, short event __attribute__((__unused__)),
 	if (len < 0 && (errno == EAGAIN || errno == EINTR))
 		return;
 
-	if (len <= 0) {
+	if (len <= 0)
 		remove_client(fd);
-		close(fd);
-	}
 
 	switch(am.type) {
 	case MSG_PUSH:
@@ -344,10 +336,8 @@ client_command(int fd, short event __attribute__((__unused__)),
 	}
 }
 
-static void
-signal_handler(int sig __attribute__((__unused__)))
+void
+master_signal(int sig __attribute__((__unused__)))
 {
-	unlink(aepath);
-	remove_clients();
 	exit(1);
 }

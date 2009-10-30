@@ -16,27 +16,39 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <paths.h>
+
 #include "aetouch.h"
 
 #define	CONTROL(c)	((c)&037)
 
-static int mksocket(char *);
-static char *getdetached(void);
+int mksocket(char *);
+char *getdetached(void);
 void master_in(int, short, void *);
 void std_in(int, short, void *);
 void restore(void);
 void signal_handler(int sig);
 
-static struct termios save_term;
-static int m_socket;
-static int ctrl_a = 0;
+struct termios save_term;
+int m_socket;
+int ctrl_a = 0;
 
 int
 attach(char *path)
 {
-	struct event *ev;
+	struct event evs[2];
 	struct termios cur_term;
 	struct ae_msg am;
+
+	/* If no file was given get any form the user */
+	if (path == NULL) {
+		path = getdetached();
+		/* No detached process found */
+		if (path == NULL) {
+			warnx("Nothing detached");
+			return 1;
+		}
+	}
 
 	/* Get current terminal and save it in save_term */
 	tcgetattr(0, &cur_term);
@@ -66,35 +78,17 @@ attach(char *path)
 
 	event_init();
 
-	/* If no file was given get any form the user */
-	if (path == NULL) {
-		path = getdetached();
-		/* No detached process found */
-		if (path == NULL) {
-			fprintf(stderr, "Nothing detached - %s"
-			    " terminate now\n", __progname);
-			return 1;
-		}
-	}
-
 	m_socket = mksocket(path);
 	if (m_socket < 0)
-		err(1, "mksocket");
+		err(1, "mksocket: %s", path);
 
-	if ((ev = calloc(1, sizeof(*ev))) == NULL)
-		return 1;
-	event_set(ev, 0, EV_READ|EV_PERSIST, std_in, ev);
-	if (event_add(ev, NULL) < 0) {
-		free(ev);
-		return 1;
-	}
-	if ((ev = calloc(1, sizeof(*ev))) == NULL)
-		return 1;
-	event_set(ev, m_socket, EV_READ|EV_PERSIST, master_in, ev);
-	if (event_add(ev, NULL) < 0) {
-		free(ev);
-		return 1;
-	}
+	event_set(&evs[0], 0, EV_READ|EV_PERSIST, std_in, &evs[0]);
+	if (event_add(&evs[0], NULL) < 0)
+		err(1, "event_add0");
+
+	event_set(&evs[1], m_socket, EV_READ|EV_PERSIST, master_in, &evs[1]);
+	if (event_add(&evs[1], NULL) < 0)
+		err(1, "event_add1");
 
 	/* Tell the master our win size */
 	ioctl(0, TIOCGWINSZ, &am.u.ws);
@@ -107,14 +101,14 @@ attach(char *path)
 
 void
 master_in(int fd, short event __attribute__((__unused__)),
-void *arg __attribute__((__unused__)))
+    void *arg __attribute__((__unused__)))
 {
 	int len;
 	char buf[BUFSIZE];
 
 	len = read(fd, buf, sizeof(buf));
 	if (len == 0) {
-		printf("\r\n[EOF - aetouch terminating]\r\n");
+		printf("\r\n[EOF - terminating]\r\n");
 		exit(0);
 	} else if (len < 0) {
 		printf("\r\n[EOS - read returned an error]\r\n");
@@ -125,7 +119,7 @@ void *arg __attribute__((__unused__)))
 
 void
 std_in(int fd, short event __attribute__((__unused__)),
-void *arg __attribute__((__unused__)))
+    void *arg __attribute__((__unused__)))
 {
 	struct ae_msg am;
 	int i, end = 0;
@@ -145,7 +139,7 @@ void *arg __attribute__((__unused__)))
 		case 'd':
 			if (ctrl_a) {
 				am.type = MSG_DTACH;
-				printf("\r\n[aetouch detached]\r\n");
+				printf("\r\n[detached]\r\n");
 				end++;
 				break;
 			}
@@ -165,7 +159,7 @@ void *arg __attribute__((__unused__)))
 	write(m_socket, &am, sizeof(am));
 }
 
-static int
+int
 mksocket(char *path)
 {
 	struct sockaddr_un sock;
@@ -199,7 +193,7 @@ signal_handler(int sig)
 	switch(sig) {
 	case SIGHUP:
 	case SIGINT:
-		printf("\r\n[aetouch detached]\r\n");
+		printf("\r\n[detached]\r\n");
 		exit(1);
 		/* NOT REACHED */
 	case SIGWINCH:
@@ -213,20 +207,19 @@ signal_handler(int sig)
 	}
 }
 
-static char *
+char *
 getdetached(void)
 {
 	DIR *dirp;
 	struct dirent *de;
-	int found = 0;
-	int len;
+	int len, found = 0;
 	char *fname;
 
 	len = asprintf(&fname, "%s.%u.", __progname, getuid());
 	if (len < 0)
 		return NULL;
 
-	dirp = opendir("/tmp");
+	dirp = opendir(_PATH_TMP);
 	while ((de = readdir(dirp)) != NULL) {
 		if (de->d_namlen < len)
 			continue;
@@ -238,7 +231,7 @@ getdetached(void)
 	free(fname);
 	fname = NULL;
 	if (found)
-		if (asprintf(&fname, "/tmp/%s", de->d_name) < 0)
+		if (asprintf(&fname, "%s%s", _PATH_TMP, de->d_name) < 0)
 			return NULL;
 	closedir(dirp);
 	return fname;
