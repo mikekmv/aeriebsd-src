@@ -29,7 +29,8 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: sigprocmask.S,v 1.2 2008/12/26 18:50:32 mickey Exp $"
+	.asciz "$ABSD: sigprocmask.S,v 1.3 2009/05/23 01:24:16 mickey Exp $"
+	.text
 #endif /* LIBC_SCCS */
 
 #include "SYS.h"

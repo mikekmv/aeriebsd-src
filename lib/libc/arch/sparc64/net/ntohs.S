@@ -38,8 +38,9 @@
 	.section	.rodata
 #if 0
 	.asciz "@(#)ntohs.s	8.1 (Berkeley) 6/4/93"
+	.text
 #else
-	.asciz "$ABSD: ntohs.S,v 1.1.1.1 2008/08/26 14:38:24 root Exp $"
+	.asciz "$ABSD: ntohs.S,v 1.2 2009/05/23 01:24:14 mickey Exp $"
 #endif
 #endif /* LIBC_SCCS and not lint */
 

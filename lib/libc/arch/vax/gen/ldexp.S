@@ -29,7 +29,8 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: ldexp.S,v 1.3 2009/05/23 01:24:15 mickey Exp $"
+	.asciz "$ABSD: ldexp.S,v 1.4 2009/05/26 23:27:20 mickey Exp $"
+	.text
 #endif /* LIBC_SCCS */
 
 /*

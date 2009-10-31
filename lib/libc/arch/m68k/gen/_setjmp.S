@@ -33,7 +33,8 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: _setjmp.S,v 1.1.1.1 2008/08/26 14:38:20 root Exp $"
+	.asciz "$ABSD: _setjmp.S,v 1.2 2009/05/23 01:24:08 mickey Exp $"
+	.text
 #endif /* LIBC_SCCS */
 
 /*

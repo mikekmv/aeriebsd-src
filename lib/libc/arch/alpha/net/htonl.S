@@ -27,7 +27,8 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: htonl.S,v 1.1.1.1 2008/08/26 14:38:15 root Exp $"
+	.asciz "$ABSD: htonl.S,v 1.2 2009/05/23 01:24:03 mickey Exp $"
+	.text
 #endif
 
 #define	NAME	htonl

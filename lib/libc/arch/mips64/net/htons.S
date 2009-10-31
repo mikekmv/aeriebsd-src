@@ -34,7 +34,8 @@
 
 #if defined(LIBC_SCCS) 
 	.section	.rodata
-	.asciz "$ABSD: htons.S,v 1.1.1.1 2008/08/26 14:38:21 root Exp $"
+	.asciz "$ABSD: htons.S,v 1.2 2009/05/23 01:24:11 mickey Exp $"
+	.text
 #endif /* LIBC_SCCS */
 
 /*

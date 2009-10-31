@@ -34,7 +34,8 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: cerror.S,v 1.2 2009/05/23 01:24:15 mickey Exp $"
+	.asciz "$ABSD: cerror.S,v 1.3 2009/05/26 23:27:19 mickey Exp $"
+	.text
 #endif /* LIBC_SCCS */
 
 #include <machine/asm.h>

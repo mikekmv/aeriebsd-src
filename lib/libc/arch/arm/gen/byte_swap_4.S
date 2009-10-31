@@ -30,7 +30,8 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: byte_swap_4.S,v 1.2 2008/12/26 18:50:29 mickey Exp $"
+	.asciz "$ABSD: byte_swap_4.S,v 1.3 2009/05/23 01:24:06 mickey Exp $"
+	.text
 #endif /* LIBC_SCCS */
 
 #include <machine/asm.h>

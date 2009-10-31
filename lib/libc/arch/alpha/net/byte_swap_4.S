@@ -29,7 +29,8 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: byte_swap_4.S,v 1.1.1.1 2008/08/26 14:38:15 root Exp $"
+	.asciz "$ABSD: byte_swap_4.S,v 1.2 2009/05/23 01:24:03 mickey Exp $"
+	.text
 #endif
 
 #ifndef NAME

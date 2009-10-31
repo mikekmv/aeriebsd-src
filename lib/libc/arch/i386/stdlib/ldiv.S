@@ -7,7 +7,8 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: ldiv.S,v 1.1.1.1 2008/08/26 14:38:19 root Exp $"
+	.asciz "$ABSD: ldiv.S,v 1.2 2009/03/26 17:30:47 mickey Exp $"
+	.text
 #endif
 
 ENTRY(ldiv)
