@@ -33,7 +33,8 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD$"
+	.asciz "$ABSD: s_tan.S,v 1.1.1.1 2008/08/26 14:38:52 root Exp $"
+	.text
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>

@@ -30,7 +30,8 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD: s_copysignf.S,v 1.1.1.1 2008/08/26 14:38:51 root Exp $"
+	.asciz "$ABSD: s_copysignf.S,v 1.2 2008/12/26 18:50:36 mickey Exp $"
+	.text
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>

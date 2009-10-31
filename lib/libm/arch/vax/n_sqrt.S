@@ -31,7 +31,8 @@
 
 #if defined(LIBM_SCCS)
 	.text
-	.asciz "$ABSD: n_sqrt.S,v 1.2 2008/12/26 18:50:36 mickey Exp $"
+	.asciz "$ABSD: n_sqrt.S,v 1.3 2009/05/26 23:27:29 mickey Exp $"
+	.text
 #endif /* LIBM_SCCS */
 
 #include <machine/asm.h>
