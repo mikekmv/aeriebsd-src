@@ -33,7 +33,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: fixunsdfsi.S,v 1.1.1.1 2008/08/26 14:38:24 root Exp $"
+	.asciz "$ABSD: fixunsdfsi.S,v 1.2 2009/05/23 01:24:14 mickey Exp $"
 #endif /* LIBC_SCCS */
 
 #include <machine/asm.h>
@@ -47,6 +47,7 @@
  * that it really matters, by using `fbul,a'.
  */
 
+	.text
 	.align	8
 Lbigd:
 	.word	0x43e00000		! .double 2^63

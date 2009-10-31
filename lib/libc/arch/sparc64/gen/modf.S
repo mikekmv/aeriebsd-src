@@ -34,7 +34,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: modf.S,v 1.1.1.1 2008/08/26 14:38:24 root Exp $"
+	.asciz "$ABSD: modf.S,v 1.2 2009/05/23 01:24:14 mickey Exp $"
 #endif /* LIBC_SCCS */
 
 #include <machine/asm.h>
@@ -79,6 +79,7 @@
  *	%f6:f7		double temp.
  */
 
+	.text
 	.align	8
 Lmagic:
 	.word	0x43300000	! sign = 0, exponent = 52 + 1023, mantissa = 0
