@@ -27,10 +27,6 @@
 
 #include <machine/asm.h>
 
-#ifndef lint
-static const char rcsid[] = "$ABSD$";
-#endif
-
 /*
  * With thanks to John Dyson for the original version of this.
  */
