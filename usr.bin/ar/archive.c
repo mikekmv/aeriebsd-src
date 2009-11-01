@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: archive.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
+    "$ABSD: archive.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -371,8 +371,7 @@ put_nametab(CF *cfp)
 void
 copy_ar(CF *cfp, off_t size)
 {
-	static const char pad = '\n';
-	char buf[8*1024];
+	char buf[MAXBSIZE];
 	off_t sz;
 	int nr, nw, off;
 
