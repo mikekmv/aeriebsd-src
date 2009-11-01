@@ -31,7 +31,7 @@
 .\"
 .\"	@(#)ar.1	8.1 (Berkeley) 6/29/93
 .\"
-.Dd $Mdocdate: April 3 2009 $
+.Dd $Mdocdate: May 26 2009 $
 .Dt AR 1
 .Os
 .Sh NAME
@@ -40,17 +40,17 @@
 .Sh SYNOPSIS
 .Nm ar
 .Fl d
-.Op Fl \Tv
+.Op Fl sTv
 .Ar archive
 .Op Ar file ...
 .Nm ar
 .Fl m
-.Op Fl \Tv
+.Op Fl sTv
 .Ar archive
 .Op Ar file ...
 .Nm ar
 .Fl m
-.Op Fl abiTv
+.Op Fl abisTv
 .Ar position archive
 .Op Ar file ...
 .Nm ar
@@ -60,17 +60,17 @@
 .Op Ar file ...
 .Nm ar
 .Fl q
-.Op Fl cTv
+.Op Fl csTv
 .Ar archive
 .Op Ar file ...
 .Nm ar
 .Fl r
-.Op Fl cuTv
+.Op Fl cusTv
 .Ar archive
 .Op Ar file ...
 .Nm ar
 .Fl r
-.Op Fl abciuTv
+.Op Fl abciusTv
 .Ar position archive
 .Op Ar file ...
 .Nm ar
@@ -192,6 +192,21 @@ New files are appended to the archive unless one of the options
 or
 .Fl i
 is specified.
+.It Fl s
+Update the archive index (only useful with
+.Fl d ,
+.Fl m ,
+.Fl q ,
+.Fl r
+flags).
+This is equivalent to running
+.Xr ranlib 1
+after the operation.
+For
+.Fl q
+this is faster than running
+.Xr ranlib 1
+afterwards as it avoids extra file copying and scanning.
 .It Fl T
 Select and/or name archive members using only the first fifteen characters
 of the archive member or command line file name.
@@ -342,4 +357,4 @@ utility is expected to offer a superset of the
 .St -p1003.2
 functionality.
 .Sh BUGS
-Nt all functions support newer name table format.
+Not all operations support newer name table format.

@@ -42,7 +42,7 @@ static const char copyright[] =
 static char sccsid[] = "@(#)ar.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: ar.c,v 1.5 2009/07/07 17:34:08 mickey Exp $";
+    "$ABSD: ar.c,v 1.6 2009/07/30 12:16:13 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -249,13 +249,13 @@ void
 usage(void)
 {
 
-	fprintf(stderr, "usage:  ar -d [-Tv] archive file ...\n"
-	    "\tar -m [-Tv] archive file ...\n"
-	    "\tar -m [-abiTv] position archive file ...\n"
+	fprintf(stderr, "usage:  ar -d [-sTv] archive file ...\n"
+	    "\tar -m [-sTv] archive file ...\n"
+	    "\tar -m [-abisTv] position archive file ...\n"
 	    "\tar -p [-Tv] archive [file ...]\n"
-	    "\tar -q [-cTv] archive file ...\n"
-	    "\tar -r [-cuTv] archive file ...\n"
-	    "\tar -r [-abciuTv] position archive file ...\n"
+	    "\tar -q [-csTv] archive file ...\n"
+	    "\tar -r [-cusTv] archive file ...\n"
+	    "\tar -r [-abciusTv] position archive file ...\n"
 	    "\tar -t [-Tv] archive [file ...]\n"
 	    "\tar -x [-CouTv] archive [file ...]\n"
 	    "\tranlib [-t] archive ...\n");
