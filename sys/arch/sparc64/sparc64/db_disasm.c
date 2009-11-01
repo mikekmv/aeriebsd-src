@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994 David S. Miller, davem@nadzieja.rutgers.edu
  * Copyright (c) 1995 Paul Kranenburg
@@ -116,14 +115,14 @@ struct sparc_insn {
 	  char *format;
 };
 
-char *regs[] = {
+const char *const regs[] = {
 	"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
 	"o0", "o1", "o2", "o3", "o4", "o5", "sp", "o7",
 	"l0", "l1", "l2", "l3", "l4", "l5", "l6", "l7",
 	"i0", "i1", "i2", "i3", "i4", "i5", "fp", "i7"
 };
 
-char *priv_regs[] = {
+const char *const priv_regs[] = {
 	"tpc", "tnpc", "tstate", "tt", "tick", "tba", "pstate", "tl",
 	"pil", "cwp", "cansave", "canrestore", "cleanwin", "otherwin",
 	"wstate", "fq",
@@ -131,18 +130,18 @@ char *priv_regs[] = {
 	"", "", "", "", "", "", "", "ver"
 };
 
-char *state_regs[] = {
+const char *const state_regs[] = {
 	"y", "", "ccr", "asi", "tick", "pc", "fprs", "asr",
 	"", "", "", "", "", "", "", "",
 	"pcr", "pic", "dcr", "gsr", "set_softint", "clr_softint", "softint", "tick_cmpr", "",
 	"", "", "", "", "", "", "", ""
 };
 
-char *ccodes[] = {
+const char *const ccodes[] = {
 	"fcc0", "fcc1", "fcc2", "fcc3", "icc", "", "xcc", ""
 };
 
-char *prefetch[] = {
+const char *const prefetch[] = {
 	"n_reads", "one_read", "n_writes", "one_write", "page"
 };
 
@@ -197,8 +196,7 @@ V8 only:
 	W -- write wim register
 */
 
-
-struct sparc_insn sparc_i[] = {
+const struct sparc_insn sparc_i[] = {
 
 	/*
 	 * Format 1: Call
@@ -876,8 +874,7 @@ db_disasm(loc, altfmt)
 	vaddr_t loc;
 	boolean_t altfmt;
 {
-	struct sparc_insn*	i_ptr = (struct sparc_insn *)&sparc_i;
-
+	const struct sparc_insn *i_ptr;
 	unsigned int insn, you_lose, bitmask;
 	int matchp;
 	char *f_ptr, *cp;
@@ -891,7 +888,7 @@ db_disasm(loc, altfmt)
 		return loc + 4;
 	}
 
-	while (i_ptr->name) {
+	for (i_ptr = &sparc_i[0]; i_ptr->name; i_ptr++) {
 		/* calculate YOU_LOSE value */
 		bitmask= (i_ptr->match);
 		you_lose = (~bitmask);
@@ -942,8 +939,7 @@ db_disasm(loc, altfmt)
 			matchp = 1;
 			break;
 		}
-		i_ptr++;
-	};
+	}
 
 	if (!matchp) {
 		db_printf("undefined\n");
@@ -1114,7 +1110,7 @@ db_disasm(loc, altfmt)
 		}
 		if (*(++f_ptr))
 			db_printf(", ");
-	};
+	}
 
 	db_printf("\n");
 

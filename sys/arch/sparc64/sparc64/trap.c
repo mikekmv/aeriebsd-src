@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996
  *	The President and Fellows of Harvard College. All rights reserved.
@@ -126,7 +125,7 @@ int rftkcnt[5] = { 0, 0, 0, 0, 0 };
  * seems to imply that we should do this, and it does make sense.
  */
 __asm(".align 64");
-struct	fpstate64 initfpstate = {
+const struct	fpstate64 initfpstate = {
 	{ ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0,
 	  ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0, ~0 }
 };
@@ -141,7 +140,7 @@ struct	fpstate64 initfpstate = {
  * and additions are marked with `+'
  */
 static const char T[] = "*trap";
-const char *trap_type[] = {
+const char * const trap_type[] = {
 	/* non-user vectors */
 	"ast",			/* 0 */
 	"power on reset",	/* 1 */
