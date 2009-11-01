@@ -10,41 +10,41 @@ FIPS_SRC=	${SSL_SRC}/fips
 .if ${MACHINE_ARCH} == "i386" || ${MACHINE_ARCH} == "arm" || \
     ${MACHINE_ARCH} == "vax" || ${MACHINE_ARCH} == "amd64" || \
     ${MACHINE_ARCH} == "alpha" || ${MACHINE_ARCH} == "sh"
-CFLAGS+= -DL_ENDIAN
+CPPFLAGS+= -DL_ENDIAN
 .else
-CFLAGS+= -DB_ENDIAN
+CPPFLAGS+= -DB_ENDIAN
 .endif 
 
 .include <bsd.own.mk>		# for 'NOPIC' definition
 .if !defined(NOPIC)
-CFLAGS+= -DDSO_DLFCN -DHAVE_DLFCN_H
+CPPFLAGS+= -DDSO_DLFCN -DHAVE_DLFCN_H
 .endif
 
 .if ${MACHINE_ARCH} == "sparc"
 PICFLAG=-fPIC
 .endif
 
-CFLAGS+= -DTERMIOS -DANSI_SOURCE -DNO_ERR -DNO_WINDOWS_BRAINDEATH
+CPPFLAGS+= -DTERMIOS -DANSI_SOURCE -DNO_ERR -DNO_WINDOWS_BRAINDEATH
 # Patented algorithms
-CFLAGS+= -DOPENSSL_NO_IDEA
-CFLAGS+= -DOPENSSL_NO_RC5
-CFLAGS+= -DOPENSSL_NO_KRB5
-CFLAGS+= -DOPENSSL_NO_MDC2
+CPPFLAGS+= -DOPENSSL_NO_IDEA
+CPPFLAGS+= -DOPENSSL_NO_RC5
+CPPFLAGS+= -DOPENSSL_NO_KRB5
+CPPFLAGS+= -DOPENSSL_NO_MDC2
 
 # Hardware engines
-CFLAGS+= -DOPENSSL_NO_HW_4758_CCA
-CFLAGS+= -DOPENSSL_NO_HW_AEP
-CFLAGS+= -DOPENSSL_NO_HW_ATALLA
-CFLAGS+= -DOPENSSL_NO_CAPIENG
-CFLAGS+= -DOPENSSL_NO_HW_CSWIFT
-CFLAGS+= -DOPENSSL_NO_HW_NCIPHER
-CFLAGS+= -DOPENSSL_NO_HW_NURON
-CFLAGS+= -DOPENSSL_NO_HW_PADLOCK # XXX enable this?
-CFLAGS+= -DOPENSSL_NO_HW_SUREWARE
-CFLAGS+= -DOPENSSL_NO_HW_UBSEC
+CPPFLAGS+= -DOPENSSL_NO_HW_4758_CCA
+CPPFLAGS+= -DOPENSSL_NO_HW_AEP
+CPPFLAGS+= -DOPENSSL_NO_HW_ATALLA
+CPPFLAGS+= -DOPENSSL_NO_CAPIENG
+CPPFLAGS+= -DOPENSSL_NO_HW_CSWIFT
+CPPFLAGS+= -DOPENSSL_NO_HW_NCIPHER
+CPPFLAGS+= -DOPENSSL_NO_HW_NURON
+CPPFLAGS+= -DOPENSSL_NO_HW_PADLOCK # XXX enable this?
+CPPFLAGS+= -DOPENSSL_NO_HW_SUREWARE
+CPPFLAGS+= -DOPENSSL_NO_HW_UBSEC
 
-CFLAGS+= -I${.CURDIR}/../${SSLEAYDIST}
-CFLAGS+= -I${LCRYPTO_SRC}
+CPPFLAGS+= -I${.CURDIR} -I${.CURDIR}/../${SSLEAYDIST}
+CPPFLAGS+= -I${LCRYPTO_SRC}
 SRCS+= o_time.c o_dir.c o_init.c fips_err.c
 SRCS+=	cryptlib.c dyn_lck.c ex_data.c cpt_err.c mem.c mem_dbg.c mem_clr.c
 SRCS+=	tmdiff.c cversion.c uid.c
@@ -199,7 +199,8 @@ SRCS+=	str_err.c str_lib.c str_mem.c str_meth.c
 	${LCRYPTO_SRC}/acss ${.CURDIR}/arch/${MACHINE_ARCH} \
 	${LCRYPTO_SRC}/bn/asm \
 	${FIPS_SRC}/ ${FIPS_SRC}/aes ${FIPS_SRC}/des ${FIPS_SRC}/dh \
-	${FIPS_SRC}/dsa ${FIPS_SRC}/rand ${FIPS_SRC}/rsa ${FIPS_SRC}/sha1
+	${FIPS_SRC}/dsa ${FIPS_SRC}/rand ${FIPS_SRC}/rsa ${FIPS_SRC}/sha1 \
+	${.CURDIR}
 
 HDRS=\
 	crypto/acss/acss.h \
@@ -274,7 +275,7 @@ HDRS_GEN=\
 	${.CURDIR}/arch/${MACHINE_ARCH}/opensslconf.h \
 	${.OBJDIR}/obj_mac.h
 
-includes: obj_mac.h
+includes: ${.CURDIR}/obj_mac.h
 	@test -d ${DESTDIR}/usr/include/openssl || \
 	    mkdir ${DESTDIR}/usr/include/openssl
 	@cd ${SSL_SRC}; \
@@ -300,12 +301,12 @@ GENERATED=obj_mac.h obj_dat.h
 CLEANFILES=${GENERATED} obj_mac.num.tmp
 SSL_OBJECTS=${SSL_SRC}/crypto/objects
 
-obj_mac.h: ${SSL_OBJECTS}/objects.h ${SSL_OBJECTS}/obj_mac.num ${SSL_OBJECTS}/objects.txt
-	cat ${SSL_OBJECTS}/obj_mac.num > obj_mac.num.tmp
-	/usr/bin/perl ${SSL_OBJECTS}/objects.pl ${SSL_OBJECTS}/objects.txt obj_mac.num.tmp obj_mac.h
+#obj_mac.h: ${SSL_OBJECTS}/objects.h ${SSL_OBJECTS}/obj_mac.num ${SSL_OBJECTS}/objects.txt
+#	cat ${SSL_OBJECTS}/obj_mac.num > obj_mac.num.tmp
+#	/usr/bin/perl ${SSL_OBJECTS}/objects.pl ${SSL_OBJECTS}/objects.txt obj_mac.num.tmp obj_mac.h
 
-obj_dat.h: obj_mac.h
-	/usr/bin/perl ${SSL_OBJECTS}/obj_dat.pl obj_mac.h obj_dat.h
+#obj_dat.h: obj_mac.h
+#	/usr/bin/perl ${SSL_OBJECTS}/obj_dat.pl obj_mac.h obj_dat.h
 
 .if (${MACHINE_ARCH} == "vax")
 # egcs bombs optimising these files
@@ -386,7 +387,5 @@ SRCS+= bf_enc.c
 SRCS+= bn_asm.c
 SRCS+= rc4_enc.c rc4_skey.c
 .endif
-
-all beforedepend: ${GENERATED}
 
 .include <bsd.lib.mk>
