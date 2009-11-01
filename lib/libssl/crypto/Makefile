@@ -273,7 +273,7 @@ HDRS=\
 
 HDRS_GEN=\
 	${.CURDIR}/arch/${MACHINE_ARCH}/opensslconf.h \
-	${.OBJDIR}/obj_mac.h
+	${.CURDIR}/obj_mac.h
 
 includes: ${.CURDIR}/obj_mac.h
 	@test -d ${DESTDIR}/usr/include/openssl || \
@@ -320,72 +320,72 @@ des_enc.po:
 	${CC} ${CFLAGS} -O1 ${CPPFLAGS} -c ${.IMPSRC} -o $@
 .endif  
 
-.if (${MACHINE_ARCH} == "i386")
-SRCS+=	rc4_skey.c
-CFLAGS+= -DAES_ASM
-CFLAGS+= -DMD5_ASM
-CFLAGS+= -DSHA1_ASM
-CFLAGS+= -DRMD160_ASM
-CFLAGS+= -DOPENBSD_DES_ASM
-CFLAGS+= -DOPENSSL_BN_ASM_PART_WORDS
-CFLAGS+= -DOPENSSL_BN_ASM_MONT
-CFLAGS+= -DOPENSSL_CPUID_OBJ
-# XXX bad relocation in CAST ASM code leads to TEXTREL for shared libcrypto
-#CFLAGS+= -DOPENBSD_CAST_ASM
-SSLASM=\
-	aes aes-586 \
-	bf bf-586 \
-	bn bn-586 \
-	bn co-586 \
-	bn mo-586 \
-	des crypt586 \
-	des des-586 \
-	md5 md5-586 \
-	rc4 rc4-586 \
-	ripemd rmd-586 \
-	sha sha1-586
-.for dir f in ${SSLASM}
-SRCS+=	${f}.S
-GENERATED+=${f}.S
-${f}.S: ${LCRYPTO_SRC}/${dir}/asm/${f}.pl ${LCRYPTO_SRC}/perlasm/x86unix.pl
-	/usr/bin/perl -I${LCRYPTO_SRC}/perlasm -I${LCRYPTO_SRC}/${dir}/asm \
-		${LCRYPTO_SRC}/${dir}/asm/${f}.pl openbsd-elf 386 > ${.TARGET}
-.endfor
-SRCS+=	x86cpuid.S
-GENERATED+=x86cpuid.S
-x86cpuid.S: ${LCRYPTO_SRC}/x86cpuid.pl
-	/usr/bin/perl -I${LCRYPTO_SRC}/perlasm \
-		${LCRYPTO_SRC}/x86cpuid.pl openbsd-elf 386 > ${.TARGET}
-SRCS+= bf_cbc.c	
-.elif (${MACHINE_ARCH} == "amd64")
-SRCS+= aes_core.c aes_cbc.c
-SRCS+= bf_enc.c
-SRCS+= x86_64-gcc.c
-#CFLAGS+= -DAES_ASM # XXX ASM implementation SEGVs with MALLOC_OPTIONS=AFGJPRX
-CFLAGS+= -DMD5_ASM
-CFLAGS+= -DSHA1_ASM
-CFLAGS+= -DOPENSSL_CPUID_OBJ
-SSLASM=\
-	bn x86_64-mont \
-	md5 md5-x86_64 \
-	rc4 rc4-x86_64 \
-	sha sha1-x86_64
-.for dir f in ${SSLASM}
-SRCS+=	${f}.S
-GENERATED+=${f}.S
-${f}.S: ${LCRYPTO_SRC}/${dir}/asm/${f}.pl
-	(cd ${LCRYPTO_SRC}/${dir} ; /usr/bin/perl ./asm/${f}.pl) > ${.TARGET}
-.endfor
-SRCS+=	x86_64cpuid.S
-GENERATED+=x86_64cpuid.S
-x86_64cpuid.S: ${LCRYPTO_SRC}/x86_64cpuid.pl
-	(cd ${LCRYPTO_SRC}/${dir} ; /usr/bin/perl ./x86_64cpuid.pl) > ${.TARGET}
-.else
+#.if (${MACHINE_ARCH} == "i386")
+#SRCS+=	rc4_skey.c
+#CFLAGS+= -DAES_ASM
+#CFLAGS+= -DMD5_ASM
+#CFLAGS+= -DSHA1_ASM
+#CFLAGS+= -DRMD160_ASM
+#CFLAGS+= -DOPENBSD_DES_ASM
+#CFLAGS+= -DOPENSSL_BN_ASM_PART_WORDS
+#CFLAGS+= -DOPENSSL_BN_ASM_MONT
+#CFLAGS+= -DOPENSSL_CPUID_OBJ
+## XXX bad relocation in CAST ASM code leads to TEXTREL for shared libcrypto
+##CFLAGS+= -DOPENBSD_CAST_ASM
+#SSLASM=\
+#	aes aes-586 \
+#	bf bf-586 \
+#	bn bn-586 \
+#	bn co-586 \
+#	bn mo-586 \
+#	des crypt586 \
+#	des des-586 \
+#	md5 md5-586 \
+#	rc4 rc4-586 \
+#	ripemd rmd-586 \
+#	sha sha1-586
+#.for dir f in ${SSLASM}
+#SRCS+=	${f}.S
+#GENERATED+=${f}.S
+#${f}.S: ${LCRYPTO_SRC}/${dir}/asm/${f}.pl ${LCRYPTO_SRC}/perlasm/x86unix.pl
+#	/usr/bin/perl -I${LCRYPTO_SRC}/perlasm -I${LCRYPTO_SRC}/${dir}/asm \
+#		${LCRYPTO_SRC}/${dir}/asm/${f}.pl openbsd-elf 386 > ${.TARGET}
+#.endfor
+#SRCS+=	x86cpuid.S
+#GENERATED+=x86cpuid.S
+#x86cpuid.S: ${LCRYPTO_SRC}/x86cpuid.pl
+#	/usr/bin/perl -I${LCRYPTO_SRC}/perlasm \
+#		${LCRYPTO_SRC}/x86cpuid.pl openbsd-elf 386 > ${.TARGET}
+#SRCS+= bf_cbc.c	
+#.elif (${MACHINE_ARCH} == "amd64")
+#SRCS+= aes_core.c aes_cbc.c
+#SRCS+= bf_enc.c
+#SRCS+= x86_64-gcc.c
+##CFLAGS+= -DAES_ASM # XXX ASM implementation SEGVs with MALLOC_OPTIONS=AFGJPRX
+#CFLAGS+= -DMD5_ASM
+#CFLAGS+= -DSHA1_ASM
+#CFLAGS+= -DOPENSSL_CPUID_OBJ
+#SSLASM=\
+#	bn x86_64-mont \
+#	md5 md5-x86_64 \
+#	rc4 rc4-x86_64 \
+#	sha sha1-x86_64
+#.for dir f in ${SSLASM}
+#SRCS+=	${f}.S
+#GENERATED+=${f}.S
+#${f}.S: ${LCRYPTO_SRC}/${dir}/asm/${f}.pl
+#	(cd ${LCRYPTO_SRC}/${dir} ; /usr/bin/perl ./asm/${f}.pl) > ${.TARGET}
+#.endfor
+#SRCS+=	x86_64cpuid.S
+#GENERATED+=x86_64cpuid.S
+#x86_64cpuid.S: ${LCRYPTO_SRC}/x86_64cpuid.pl
+#	(cd ${LCRYPTO_SRC}/${dir} ; /usr/bin/perl ./x86_64cpuid.pl) > ${.TARGET}
+#.else
 CFLAGS+=-DOPENSSL_NO_ASM
 SRCS+= aes_core.c aes_cbc.c
 SRCS+= bf_enc.c	
 SRCS+= bn_asm.c
 SRCS+= rc4_enc.c rc4_skey.c
-.endif
+#.endif
 
 .include <bsd.lib.mk>
