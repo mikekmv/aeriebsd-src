@@ -72,7 +72,7 @@ char copyright[] =
 static char sccsid[] = "@(#)glob.c	4.3 (Berkeley) 4/17/91";
 static char sccsid[] = "@(#)io.c	4.6 (Berkeley) 4/17/91";
 #else
-static const char rcsid[] = "$ABSD: io.c,v 1.2 2009/10/13 22:25:23 mickey Exp $";
+static const char rcsid[] = "$ABSD: io.c,v 1.3 2009/10/24 15:30:57 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -101,7 +101,7 @@ int	eht[100];
 int	ebase[100];
 int	lfont[100];
 int	rfont[100];
-int	eqnreg;		/* register where final string appears */
+long	eqnreg;		/* register where final string appears */
 int	eqnht;		/* inal height of equation */
 int	lefteq	= '\0';	/* left in-line delimiter */
 int	righteq	= '\0';	/* right in-line delimiter */

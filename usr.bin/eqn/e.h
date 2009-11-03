@@ -91,17 +91,20 @@ extern int	eht[];
 extern int	ebase[];
 extern int	lfont[];
 extern int	rfont[];
-extern int	yyval;
 extern int	*yypv;
-extern int	yylval;
-extern int	eqnreg, eqnht;
+extern long	eqnreg;
+extern int	eqnht;
 extern int	lefteq, righteq;
 extern int	lastchar;	/* last character read by lex */
 extern int	markline;	/* 1 if this EQ/EN contains mark or lineup */
 extern int	neqn;	/* called as neqn */
+/* these are fro the yacc himself! */
+extern long	yyval, yylval;
 
 typedef struct s_tbl {
 	const char *name;
 	const char *defn;
 	struct s_tbl *next;
 } tbl;
+
+tbl *lookup(tbl **, const char *, const char *);

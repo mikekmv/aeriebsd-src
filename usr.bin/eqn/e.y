@@ -81,12 +81,14 @@ static char sccsid[] = "@(#)shift.c	4.4 (Berkeley) 4/17/91";
 static char sccsid[] = "@(#)size.c	4.3 (Berkeley) 4/17/91";
 static char sccsid[] = "@(#)sqrt.c	4.5 (Berkeley) 3/1/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: e.y,v 1.2 2009/10/24 15:30:57 mickey Exp $";
 #endif
 #endif /* not lint */
 
 #include "e.h"
 int	fromflg;
+
+#define	YYSTYPE	long
 
 void diacrit(int, int);
 void eqnbox(int, int, int);

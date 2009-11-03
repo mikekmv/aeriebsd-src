@@ -65,12 +65,14 @@
 #if 0
 static char sccsid[] = "@(#)lex.c	4.4 (Berkeley) 4/17/91";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: lex.c,v 1.2 2009/10/24 15:30:57 mickey Exp $";
 #endif
 #endif /* not lint */
 
 #include "e.h"
 #include "y.tab.h"
+
+char *strsave(char *);
 
 #define	SSIZE	400
 char	token[SSIZE];
@@ -80,7 +82,8 @@ int	sp;
 char	ibuf[PUSHBACK+SSIZE];	/* pushback buffer for definitions, etc. */
 char	*ip	= ibuf;
 
-gtc() {
+gtc()
+{
   loop:
 	if (ip > ibuf)
 		return(*--ip);	/* already present */
@@ -127,17 +130,18 @@ register char *str;
 		putbak(*--p);
 }
 
-yylex() {
-	register int c;
-	tbl *tp, *lookup();
-	extern tbl **keytbl, **deftbl;
+yylex()
+{
+	extern tbl *keytbl[], *deftbl[];
+	tbl *tp;
+	long c;
 
-  beg:
+	for (;;) {
 	while ((c=gtc())==' ' || c=='\n')
 		;
+
 	yylval=c;
 	switch(c) {
-
 	case EOF:
 		return(EOF);
 	case '~':
@@ -157,10 +161,12 @@ yylex() {
 					token[sp++] = '\\';
 			token[sp++] = c;
 			if (sp>=SSIZE)
-				error(FATAL, "quoted string %.20s... too long", token);
+					error(FATAL,
+					    "quoted string %.20s... too long",
+					    token);
 		}
 		token[sp]='\0';
-		yylval = (int) &token[0];
+			yylval = (long) &token[0];
 		if (c == '\n')
 			error(!FATAL, "missing \" in %.20s", token);
 		return(QTEXT);
@@ -170,19 +176,20 @@ yylex() {
 
 	putbak(c);
 	getstr(token, SSIZE);
-	if (dbg)printf(".\tlex token = |%s|\n", token);
-	if ((tp = lookup(&deftbl, token, NULL)) != NULL) {
+		if (dbg)
+			printf(".\tlex token = |%s|\n", token);
+		if ((tp = lookup(deftbl, token, NULL)) != NULL) {
 		putbak(' ');
 		pbstr(tp->defn);
 		putbak(' ');
 		if (dbg)
 			printf(".\tfound %s|=%s|\n", token, tp->defn);
-	}
-	else if ((tp = lookup(&keytbl, token, NULL)) == NULL) {
-		if(dbg)printf(".\t%s is not a keyword\n", token);
+		} else if ((tp = lookup(keytbl, token, NULL)) == NULL) {
+			if (dbg)
+				printf(".\t%s is not a keyword\n", token);
 		return(CONTIG);
-	}
-	else if (tp->defn == (char *) DEFINE || tp->defn == (char *) NDEFINE || tp->defn == (char *) TDEFINE)
+		} else if (tp->defn == (char *)DEFINE ||
+		    tp->defn == (char *)NDEFINE || tp->defn == (char *)TDEFINE)
 		define(tp->defn);
 	else if (tp->defn == (char *) DELIM)
 		delim();
@@ -192,10 +199,9 @@ yylex() {
 		globfont();
 	else if (tp->defn == (char *) INCLUDE)
 		include();
-	else {
-		return((int) tp->defn);
+		else
+			return ((long)tp->defn);
 	}
-	goto beg;
 }
 
 getstr(s, n) char *s; register int n; {
@@ -222,7 +228,7 @@ getstr(s, n) char *s; register int n; {
 	if (c=='{' || c=='}' || c=='"' || c=='~' || c=='^' || c=='\t' || c==righteq)
 		putbak(c);
 	*p = '\0';
-	yylval = (int) s;
+	yylval = (long) s;
 }
 
 cstr(s, quote, maxs) char *s; int quote; {
@@ -249,10 +255,10 @@ cstr(s, quote, maxs) char *s; int quote; {
 	return(0);
 }
 
-define(type) int type; {
-	char *strsave(), *p1, *p2;
-	tbl *lookup();
+define(int type)
+{
 	extern tbl **deftbl;
+	char *p1, *p2;
 
 	getstr(token, SSIZE);	/* get name */
 	if (type != DEFINE) {
@@ -263,12 +269,13 @@ define(type) int type; {
 	if (cstr(token, 1, SSIZE))
 		error(FATAL, "Unterminated definition at %.20s", token);
 	p2 = strsave(token);
-	lookup(&deftbl, p1, p2);
-	if (dbg)printf(".\tname %s defined as %s\n", p1, p2);
+	lookup(deftbl, p1, p2);
+	if (dbg)
+		printf(".\tname %s defined as %s\n", p1, p2);
 }
 
-char *strsave(s)
-char *s;
+char *
+strsave(char *s)
 {
 	char *malloc();
 	register char *q;

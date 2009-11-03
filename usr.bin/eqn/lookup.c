@@ -65,7 +65,7 @@
 #if 0
 static char sccsid[] = "@(#)lookup.c	4.3 (Berkeley) 4/17/91";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: lookup.c,v 1.3 2009/10/24 15:30:57 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -80,7 +80,7 @@ tbl	*deftbl[TBLSIZE];	/* user-defined names */
 
 const struct {
 	const char key[12];
-	int	keyval;
+	long	keyval;
 } keyword[] = {
 	"sub",		SUB,
 	"sup",		SUP,
