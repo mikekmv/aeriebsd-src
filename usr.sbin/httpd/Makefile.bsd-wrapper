@@ -40,7 +40,7 @@ HTTPD_INCLUDEDIR=	${HTTPD_EXEC_PREFIX}/lib/apache/include
 HTTPD_RUNDIR=		${HTTPD_PREFIX}/logs
 HTTPD_LOGDIR=		${HTTPD_PREFIX}/logs
 
-CONFIG_ARGS=	--with-layout="OpenBSD" --enable-module="ssl" \
+CONFIG_ARGS=	--with-layout="AerieBSD" --enable-module="ssl" \
 	--enable-module="keynote" \
 	--enable-suexec --suexec-caller="www" \
 	--suexec-docroot="${HTTPD_HTDOCSDIR}" \

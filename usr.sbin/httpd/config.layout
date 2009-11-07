@@ -304,3 +304,23 @@
     proxycachedir: $localstatedir/cache/apache
 </Layout>
 
+#   AerieBSD Layout
+<Layout AerieBSD>
+    prefix:        /var/www
+    exec_prefix:   /usr
+    bindir:        $exec_prefix/bin
+    sbindir:       $exec_prefix/sbin
+    libexecdir:    $exec_prefix/lib/apache/modules
+    mandir:        $exec_prefix/share/man
+    sysconfdir:    $prefix/conf
+    datadir:       $prefix
+    iconsdir:      $prefix/icons
+    htdocsdir:     $prefix/htdocs
+    manualdir:     $exec_prefix/share/doc/html/httpd
+    cgidir:        $prefix/cgi-bin
+    includedir:    $exec_prefix/lib/apache/include
+    localstatedir: $prefix
+    runtimedir:    $prefix/logs
+    logfiledir:    $prefix/logs
+    proxycachedir: $prefix/proxy
+</Layout>
