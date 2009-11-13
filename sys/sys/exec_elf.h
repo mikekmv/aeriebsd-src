@@ -115,10 +115,10 @@ typedef __uint16_t	Elf64_Quarter;
 #define ELFOSABI_STANDALONE	255	/* Standalone (embedded) application */
 
 /* e_ident */
-#define IS_ELF(ehdr) ((ehdr).e_ident[EI_MAG0] == ELFMAG0 && \
-                      (ehdr).e_ident[EI_MAG1] == ELFMAG1 && \
-                      (ehdr).e_ident[EI_MAG2] == ELFMAG2 && \
-                      (ehdr).e_ident[EI_MAG3] == ELFMAG3)
+#define IS_ELF(ehdr)	((ehdr).e_ident[EI_MAG0] == ELFMAG0 && \
+			 (ehdr).e_ident[EI_MAG1] == ELFMAG1 && \
+			 (ehdr).e_ident[EI_MAG2] == ELFMAG2 && \
+			 (ehdr).e_ident[EI_MAG3] == ELFMAG3)
 
 /* ELF Header */
 typedef struct elfhdr {
@@ -257,27 +257,34 @@ typedef struct {
 #define SHT_HIUSER	0xffffffff	/*  specific indexes */
 
 /* Section names */
-#define ELF_BSS         ".bss"		/* uninitialized data */
-#define ELF_DATA        ".data"		/* initialized data */
-#define ELF_DEBUG       ".debug"	/* debug */
-#define ELF_DYNAMIC     ".dynamic"	/* dynamic linking information */
-#define ELF_DYNSTR      ".dynstr"	/* dynamic string table */
-#define ELF_DYNSYM      ".dynsym"	/* dynamic symbol table */
-#define ELF_FINI        ".fini"		/* termination code */
-#define ELF_GOT         ".got"		/* global offset table */
-#define ELF_HASH        ".hash"		/* symbol hash table */
-#define ELF_INIT        ".init"		/* initialization code */
-#define ELF_REL_DATA    ".rel.data"	/* relocation data */
-#define ELF_REL_FINI    ".rel.fini"	/* relocation termination code */
-#define ELF_REL_INIT    ".rel.init"	/* relocation initialization code */
-#define ELF_REL_DYN     ".rel.dyn"	/* relocaltion dynamic link info */
-#define ELF_REL_RODATA  ".rel.rodata"	/* relocation read-only data */
-#define ELF_REL_TEXT    ".rel.text"	/* relocation code */
-#define ELF_RODATA      ".rodata"	/* read-only data */
-#define ELF_SHSTRTAB    ".shstrtab"	/* section header string table */
-#define ELF_STRTAB      ".strtab"	/* string table */
-#define ELF_SYMTAB      ".symtab"	/* symbol table */
-#define ELF_TEXT        ".text"		/* code */
+#define ELF_BSS		".bss"		/* uninitialized data */
+#define ELF_CTORS	".ctors"		/* contructors table */
+#define ELF_DATA	".data"		/* initialized data */
+#define ELF_DEBUG	".debug"	/* debug */
+#define ELF_DTORS	".dtors"	/* destructors table */
+#define ELF_DYNAMIC	".dynamic"	/* dynamic linking information */
+#define ELF_DYNSTR	".dynstr"	/* dynamic string table */
+#define ELF_DYNSYM	".dynsym"	/* dynamic symbol table */
+#define ELF_FINI	".fini"		/* termination code */
+#define ELF_GOT		".got"		/* global offset table */
+#define ELF_HASH	".hash"		/* symbol hash table */
+#define ELF_INIT	".init"		/* initialization code */
+#define ELF_INTERP	".interp"	/* executable's interpretator */
+#define ELF_PLT		".plt"		/* procedure linkage table */
+#define ELF_REL_DATA	".rel.data"	/* relocation data */
+#define ELF_REL_FINI	".rel.fini"	/* relocation termination code */
+#define ELF_REL_INIT	".rel.init"	/* relocation initialization code */
+#define ELF_REL_DYN	".rel.dyn"	/* relocaltion dynamic link info */
+#define ELF_REL_PLT	".rel.plt"	/* relocaltion proc link tab */
+#define ELF_REL_RODATA	".rel.rodata"	/* relocation read-only data */
+#define ELF_REL_TEXT	".rel.text"	/* relocation code */
+#define ELF_RODATA	".rodata"	/* read-only data */
+#define ELF_SBSS	".sbss"		/* "small" uninitialized data */
+#define ELF_SDATA	".sdata"	/* "small" initialized data */
+#define ELF_SHSTRTAB	".shstrtab"	/* section header string table */
+#define ELF_STRTAB	".strtab"	/* string table */
+#define ELF_SYMTAB	".symtab"	/* symbol table */
+#define ELF_TEXT	".text"		/* code */
 
 
 /* Section Attribute Flags - sh_flags */
@@ -518,12 +525,12 @@ enum AuxID {
 };
 
 struct elf_args {
-        u_long  arg_entry;		/* program entry point */
-        u_long  arg_interp;		/* Interpreter load address */
-        u_long  arg_phaddr;		/* program header address */
-        u_long  arg_phentsize;		/* Size of program header */
-        u_long  arg_phnum;		/* Number of program headers */
-        u_long  arg_os;			/* OS tag */
+	u_long	arg_entry;		/* program entry point */
+	u_long	arg_interp;		/* Interpreter load address */
+	u_long	arg_phaddr;		/* program header address */
+	u_long	arg_phentsize;		/* Size of program header */
+	u_long	arg_phnum;		/* Number of program headers */
+	u_long	arg_os;			/* OS tag */
 };
 
 #endif
@@ -602,7 +609,7 @@ extern Elf_Dyn		_DYNAMIC[];
 #ifdef _KERN_DO_ELF64
 int exec_elf64_makecmds(struct proc *, struct exec_package *);
 void *elf64_copyargs(struct exec_package *, struct ps_strings *,
-        void *, void *);
+	void *, void *);
 int exec_elf64_fixup(struct proc *, struct exec_package *);
 char *elf64_check_brand(Elf64_Ehdr *);
 int elf64_os_pt_note(struct proc *, struct exec_package *, Elf64_Ehdr *,
@@ -611,7 +618,7 @@ int elf64_os_pt_note(struct proc *, struct exec_package *, Elf64_Ehdr *,
 #ifdef _KERN_DO_ELF
 int exec_elf32_makecmds(struct proc *, struct exec_package *);
 void *elf32_copyargs(struct exec_package *, struct ps_strings *,
-        void *, void *);
+	void *, void *);
 int exec_elf32_fixup(struct proc *, struct exec_package *);
 char *elf32_check_brand(Elf32_Ehdr *);
 int elf32_os_pt_note(struct proc *, struct exec_package *, Elf32_Ehdr *,
