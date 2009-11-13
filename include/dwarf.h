@@ -23,9 +23,15 @@
  */
 
 /* elf section nams */
-#define	DWARF_LINES	".debug_line"
-#define	DWARF_MACROS	".debug_macinfo"
+#define	DWARF_ABBREV	".debug_abbrev"
+#define	DWARF_ARANGES	".debug_aranges"
 #define	DWARF_FRAMES	".debug_frame"
+#define	DWARF_INFO	".debug_info"
+#define	DWARF_LINES	".debug_line"
+#define	DWARF_LOC	".debug_loc"
+#define	DWARF_MACROS	".debug_macinfo"
+#define	DWARF_PUBNAMES	".debug_pubnames"
+#define	DWARF_STR	".debug_str"
 
 /* TAG definitions */
 #define	DW_TAG_array_type		0x01
