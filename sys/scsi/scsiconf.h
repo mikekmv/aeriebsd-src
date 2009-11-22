@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1993, 1994, 1995 Charles Hannum.  All rights reserved.
  *
@@ -27,7 +26,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Originally written by Julian Elischer (julian@tfs.com)
  * for TRW Financial Systems for use under the MACH(2.5) operating system.
@@ -119,12 +117,12 @@ extern int scsi_autoconf;
  * of these statically allocated.
  */
 struct scsi_adapter {
-	int		(*scsi_cmd)(struct scsi_xfer *);
-	void		(*scsi_minphys)(struct buf *);
-	int		(*dev_probe)(struct scsi_link *);
-	void		(*dev_free)(struct scsi_link *);
-	int		(*ioctl)(struct scsi_link *, u_long, caddr_t, int,
-			    struct proc *);
+	int	(*scsi_cmd)(struct scsi_xfer *);
+	void	(*scsi_minphys)(struct buf *);
+	int	(*dev_probe)(struct scsi_link *);
+	void	(*dev_free)(struct scsi_link *);
+	int	(*ioctl)(struct scsi_link *, u_long, caddr_t, int,
+		    struct proc *);
 };
 
 /*
@@ -132,9 +130,8 @@ struct scsi_adapter {
  */
 #define SUCCESSFULLY_QUEUED	0
 #define TRY_AGAIN_LATER		1
-#define	COMPLETE		2
-#define	ESCAPE_NOT_SUPPORTED	3
-#define NO_CCB			4
+#define COMPLETE		2
+#define NO_CCB			3
 
 /*
  * These entry points are called by the low-end drivers to get services from
@@ -168,10 +165,10 @@ struct scsi_link {
 	u_int16_t adapter_buswidth;	/* 8 (regular) or 16 (wide). (0 becomes 8) */
 	u_int16_t active;		/* operations in progress */
 	u_int16_t flags;		/* flags that all devices have */
-#define	SDEV_REMOVABLE	 	0x0001	/* media is removable */
-#define	SDEV_MEDIA_LOADED 	0x0002	/* device figures are still valid */
-#define	SDEV_WAITING	 	0x0004	/* a process is waiting for this */
-#define	SDEV_OPEN	 	0x0008	/* at least 1 open session */
+#define	SDEV_REMOVABLE		0x0001	/* media is removable */
+#define	SDEV_MEDIA_LOADED	0x0002	/* device figures are still valid */
+#define	SDEV_WAITING		0x0004	/* a process is waiting for this */
+#define	SDEV_OPEN		0x0008	/* at least 1 open session */
 #define	SDEV_DBX		0x00f0	/* debugging flags (scsi_debug.h) */
 #define	SDEV_EJECTING		0x0100	/* eject on device close */
 #define	SDEV_ATAPI		0x0200	/* device is ATAPI */
@@ -255,7 +252,7 @@ struct scsi_xfer {
 	struct	scsi_generic *cmd;	/* The scsi command to execute */
 	int	cmdlen;			/* how long it is */
 	u_char	*data;			/* dma address OR a uio address */
-	int	datalen;		/* data len (blank if uio)    */
+	int	datalen;		/* data len (blank if uio) */
 	size_t	resid;			/* how much buffer was not touched */
 	int	error;			/* an error value	*/
 	struct	buf *bp;		/* If we need to associate with a buf */
