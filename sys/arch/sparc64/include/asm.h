@@ -98,7 +98,7 @@
 #define OTYPE(x)		.type x,@object
 
 #define	_ENTRY(name) \
-	.align 4; .globl name; .proc 1; FTYPE(name); name:
+	.text; .align 4; .globl name; .proc 1; FTYPE(name); name:
 
 #ifdef GPROF
 #define _PROF_PROLOGUE \
