@@ -1139,6 +1139,17 @@ if [ "x$using_shlib" = "x1" ] ; then
 		SHLIB_SUFFIX_DEPTH=2
 	    fi  
 	    ;;
+	*-aeriebsd*)
+	    CFLAGS_SHLIB="-fPIC"
+	    LDFLAGS_SHLIB_EXPORT=""
+	    SHLIB_SUFFIX_DEPTH=2
+	    LD_SHLIB="cc"
+	    LDFLAGS_SHLIB="-shared \$(CFLAGS_SHLIB)"
+	    if [ -z "`echo __ELF__ | ${CC} -E - | grep __ELF__`" ]; then
+	      LDFLAGS_SHLIB_EXPORT="-Wl,-E"
+	    fi
+	    LDFLAGS_MOD_SHLIB=$LDFLAGS_SHLIB
+	    ;;
 	*-openbsd*)
 	    PLATOSVERS=`echo $PLAT | sed 's/^.*openbsd//'`
 	    CFLAGS_SHLIB="-fPIC"
