@@ -110,9 +110,7 @@ extern "C" {
 #define HAVE_SYSVSEM_SERIALIZED_ACCEPT
 #define USE_SYSVSEM_SERIALIZED_ACCEPT
 #include <sys/param.h>
-#if (OpenBSD >= 199912)
 #define NET_SIZE_T socklen_t
-#endif
 #define SINGLE_LISTEN_UNSERIALIZED_ACCEPT
 
 #include <sys/param.h>
