@@ -174,7 +174,7 @@ nohints:
 		if ((dd = _dl_opendir(lp)) != NULL) {
 			match = 0;
 			while ((dp = _dl_readdir(dd)) != NULL) {
-				tsod = *sodp;
+				_dl_bcopy(sodp, &tsod, sizeof tsod);
 				if (_dl_match_file(&tsod, dp->d_name,
 				    dp->d_namlen)) {
 					/*
@@ -190,7 +190,8 @@ nohints:
 					    ((tsod.sod_major ==
 					    bsod.sod_major) &&
 					    tsod.sod_minor > bsod.sod_minor)) {
-						bsod = tsod;
+						_dl_bcopy(&tsod, &bsod,
+						    sizeof bsod);
 						match = 1;
 						len = _dl_strlcpy(
 						    _dl_hint_store, lp,
@@ -211,7 +212,7 @@ nohints:
 			}
 			_dl_closedir(dd);
 			if (match) {
-				*sodp = bsod;
+				_dl_bcopy(&bsod, sodp, sizeof *sodp);
 				return (_dl_hint_store);
 			}
 		}
@@ -277,7 +278,7 @@ _dl_load_shlib(const char *libname, elf_object_t *parent, int type, int flags)
 		}
 
 		_dl_build_sod(lname, &sod);
-		req_sod = sod;
+		_dl_bcopy(&sod, &req_sod, sizeof req_sod);
 
 fullpathagain:
 		hint = _dl_find_shlib(&req_sod, lpath, ignore_hints);
@@ -297,7 +298,7 @@ fullpathdone:
 	}
 
 	_dl_build_sod(libname, &sod);
-	req_sod = sod;
+	_dl_bcopy(&sod, &req_sod, sizeof req_sod);
 
 again:
 	/* No '/' in name. Scan the known places, LD_LIBRARY_PATH first.  */

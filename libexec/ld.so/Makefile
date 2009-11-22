@@ -13,13 +13,14 @@ PROG=	ld.so
 VPATH=${.CURDIR}/../../lib/libc/string
 
 SRCS=	ldasm.S loader.c resolve.c dlfcn.c dl_printf.c rtld_machine.c
-SRCS+=	util.c sod.c strsep.c strtol.c dir.c library_subr.c dl_prebind.c
+SRCS+=	util.c sod.c dir.c library_subr.c dl_prebind.c
 .if (${MACHINE_ARCH} == "i386")
 SRCS+=	library_mquery.c
 .else
 SRCS+=	library.c
 .endif
-
+# library substitutes
+SRCS+=	strsep.c strtol.c
 
 .include "${.CURDIR}/${MACHINE_ARCH}/Makefile.inc"
 .PATH:	${.CURDIR}/${MACHINE_ARCH}
