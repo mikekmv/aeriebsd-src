@@ -200,23 +200,24 @@ struct scsi_report_luns {
 /*
  * sense data format
  */
-#define T_DIRECT	0
-#define T_SEQUENTIAL	1
-#define T_PRINTER	2
-#define T_PROCESSOR	3
-#define T_WORM		4
-#define T_CDROM		5
-#define T_SCANNER 	6
-#define T_OPTICAL 	7
-#define T_RDIRECT 	14
-#define T_NODEVICE	0x1F
+#define T_DIRECT	0x00
+#define T_SEQUENTIAL	0x01
+#define T_PRINTER	0x02
+#define T_PROCESSOR	0x03
+#define T_WORM		0x04
+#define T_CDROM		0x05
+#define T_SCANNER 	0x06
+#define T_OPTICAL 	0x07
+#define T_CHANGER	0x08
+#define T_COMM		0x09
+#define T_SACL		0x0c
+#define T_ENCLOSURE	0x0d
+#define T_RDIRECT 	0x0e
+#define T_OCRW	 	0x0f
+#define T_NODEVICE	0x1f
 
-#define T_CHANGER	8
-#define T_COMM		9
-#define	T_ENCLOSURE	13
-
+#define T_FIXED		0
 #define T_REMOV		1
-#define	T_FIXED		0
 
 struct scsi_inquiry_data {
 	u_int8_t device;
