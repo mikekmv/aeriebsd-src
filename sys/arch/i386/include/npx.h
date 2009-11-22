@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -159,8 +158,11 @@ struct	emcsts {
 
 void    process_xmm_to_s87(const struct savexmm *, struct save87 *);
 void    process_s87_to_xmm(const struct save87 *, struct savexmm *);
+
 struct cpu_info;
+struct trapframe;
 
 void	npxinit(struct cpu_info *);
+void	npxtrap(struct trapframe *);
 
 #endif /* !_I386_NPX_H_ */

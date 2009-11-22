@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1995 Charles M. Hannum.  All rights reserved.
  * Copyright (c) 1990 The Regents of the University of California.
@@ -424,6 +423,10 @@ trap(struct trapframe frame)
 		KERNEL_PROC_LOCK(p);
 		trapsignal(p, SIGFPE, frame.tf_err, FPE_INTOVF, sv);
 		KERNEL_PROC_UNLOCK(p);
+		goto out;
+
+	case T_XFTRAP|T_USER:
+		npxtrap(&frame);
 		goto out;
 
 	case T_PAGEFLT:			/* allow page faults in kernel mode */

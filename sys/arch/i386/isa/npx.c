@@ -1,4 +1,3 @@
-
 #if 0
 #define IPRINTF(x)	printf x
 #else
@@ -132,8 +131,9 @@ extern int i386_fpu_present;
 extern int i386_fpu_exception;
 extern int i386_fpu_fdivbug;
 
-#define        fxsave(addr)            __asm("fxsave %0" : "=m" (*addr))
-#define        fxrstor(addr)           __asm("fxrstor %0" : : "m" (*addr))
+#define fxsave(addr)		__asm("fxsave %0" : "=m" (*addr))
+#define fxrstor(addr)		__asm("fxrstor %0" : : "m" (*addr))
+#define ldmxcsr(addr)		__asm("ldmxcsr %0" : : "m" (*addr))
 
 static __inline void
 fpu_save(union savefpu *addr)
@@ -533,6 +533,38 @@ npxintr(void *arg)
 	return (1);
 }
 
+void
+npxtrap(struct trapframe *frame)
+{
+	struct proc *p = curcpu()->ci_fpcurproc;
+	union savefpu *addr = &p->p_addr->u_pcb.pcb_savefpu;
+	u_int32_t mxcsr, statbits;
+	int code;
+	union sigval sv;
+
+#ifdef DIAGNOSTIC
+	/*
+	 * At this point, fpcurproc should be curproc.  If it wasn't, the TS
+	 * bit should be set, and we should have gotten a DNA exception.
+	 */
+	if (p != curproc)
+		panic("npxtrap: wrong process");
+#endif
+
+	fxsave(&addr->sv_xmm);
+	mxcsr = addr->sv_xmm.sv_env.en_mxcsr;
+	statbits = mxcsr;
+	mxcsr &= ~0x3f;
+	ldmxcsr(&mxcsr);
+	addr->sv_xmm.sv_ex_sw = addr->sv_xmm.sv_env.en_sw;
+	addr->sv_xmm.sv_ex_tw = addr->sv_xmm.sv_env.en_tw;
+	code = x86fpflags_to_siginfo (statbits);
+	sv.sival_int = frame->tf_eip;
+	KERNEL_PROC_LOCK(p);
+	trapsignal(p, SIGFPE, frame->tf_err, code, sv);
+	KERNEL_PROC_UNLOCK(p);
+}
+
 static int
 x86fpflags_to_siginfo(u_int32_t flags)
 {
@@ -628,6 +660,8 @@ npxdna_xmm(struct cpu_info *ci)
 
 	if ((p->p_md.md_flags & MDP_USEDFPU) == 0) {
 		fldcw(&p->p_addr->u_pcb.pcb_savefpu.sv_xmm.sv_env.en_cw);
+		if (i386_has_sse || i386_has_sse2)
+			ldmxcsr(&addr->sv_xmm.sv_env.en_mxcsr);
 		p->p_md.md_flags |= MDP_USEDFPU;
 	} else {
 		static double	zero = 0.0;
