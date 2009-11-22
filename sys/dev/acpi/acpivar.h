@@ -165,7 +165,7 @@ struct acpi_softc {
 	 */
 	struct acpi_facs	*sc_facs;	/* Shared with firmware! */
 
-	struct klist		*sc_note;
+	struct klist		sc_note;
 	struct acpi_reg_map	sc_pmregs[ACPIREG_MAXREG];
 	bus_space_handle_t	sc_ioh_pm1a_evt;
 

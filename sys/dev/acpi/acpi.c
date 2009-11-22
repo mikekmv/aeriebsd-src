@@ -393,15 +393,6 @@ acpi_attach(struct device *parent, struct device *self, void *aux)
 	SIMPLEQ_INIT(&sc->sc_tables);
 	SIMPLEQ_INIT(&sc->sc_wakedevs);
 
-#ifndef SMALL_KERNEL
-	sc->sc_note = malloc(sizeof(struct klist), M_DEVBUF, M_NOWAIT | M_ZERO);
-	if (sc->sc_note == NULL) {
-		printf(", can't allocate memory\n");
-		acpi_unmap(&handle);
-		return;
-	}
-#endif /* SMALL_KERNEL */
-
 	if (acpi_loadtables(sc, rsdp)) {
 		printf(", can't load tables\n");
 		acpi_unmap(&handle);
@@ -922,7 +913,7 @@ acpi_filtdetach(struct knote *kn)
 	struct acpi_softc *sc = kn->kn_hook;
 
 	ACPI_LOCK(sc);
-	SLIST_REMOVE(sc->sc_note, kn, knote, kn_selnext);
+	SLIST_REMOVE(&sc->sc_note, kn, knote, kn_selnext);
 	ACPI_UNLOCK(sc);
 #endif
 }
@@ -959,7 +950,7 @@ acpikqfilter(dev_t dev, struct knote *kn)
 	kn->kn_hook = sc;
 
 	ACPI_LOCK(sc);
-	SLIST_INSERT_HEAD(sc->sc_note, kn, kn_selnext);
+	SLIST_INSERT_HEAD(&sc->sc_note, kn, kn_selnext);
 	ACPI_UNLOCK(sc);
 
 	return (0);
@@ -1848,7 +1839,7 @@ acpi_isr_thread(void *arg)
 
 			acpi_evindex++;
 			dnprintf(1,"power button pressed\n");
-			KNOTE(sc->sc_note, ACPI_EVENT_COMPOSE(ACPI_EV_PWRBTN,
+			KNOTE(&sc->sc_note, ACPI_EVENT_COMPOSE(ACPI_EV_PWRBTN,
 			    acpi_evindex));
 		}
 		if (sc->sc_sleepbtn) {
@@ -1858,7 +1849,7 @@ acpi_isr_thread(void *arg)
 
 			acpi_evindex++;
 			dnprintf(1,"sleep button pressed\n");
-			KNOTE(sc->sc_note, ACPI_EVENT_COMPOSE(ACPI_EV_SLPBTN,
+			KNOTE(&sc->sc_note, ACPI_EVENT_COMPOSE(ACPI_EV_SLPBTN,
 			    acpi_evindex));
 		}
 

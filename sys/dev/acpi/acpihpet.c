@@ -18,6 +18,7 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
+#include <sys/event.h>
 #ifdef __HAVE_TIMECOUNTER
 #include <sys/timetc.h>
 #endif

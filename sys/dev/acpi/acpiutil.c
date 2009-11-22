@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/device.h>
+#include <sys/event.h>
 
 #include <machine/bus.h>
 

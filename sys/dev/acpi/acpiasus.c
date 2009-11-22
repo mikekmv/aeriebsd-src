@@ -39,6 +39,7 @@
 #include <sys/device.h>
 #include <sys/systm.h>
 #include <sys/workq.h>
+#include <sys/event.h>
 
 #include <dev/acpi/acpireg.h>
 #include <dev/acpi/acpivar.h>

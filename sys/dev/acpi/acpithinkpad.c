@@ -17,6 +17,7 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/event.h>
 
 #include <dev/acpi/acpireg.h>
 #include <dev/acpi/acpivar.h>
