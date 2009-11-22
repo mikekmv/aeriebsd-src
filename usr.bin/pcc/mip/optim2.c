@@ -608,7 +608,7 @@ cfg_build(struct p2env *p2e, struct labelinfo *labinfo)
 			    labinfo->size) 
 				comperr("Label out of range: %d", 
 					bb->last->ip_node->n_left->n_lval);
-			
+
 			cnode->bblock = labinfo->arr[bb->last->ip_node->n_right->n_lval - labinfo->low];
 			SLIST_INSERT_LAST(&cnode->bblock->parents, pnode, cfgelem);
 			SLIST_INSERT_LAST(&bb->children, cnode, cfgelem);
@@ -995,9 +995,11 @@ renamevarhelper(struct p2env *p2e,NODE *t,void *poplistarg)
 	} else {
 		if (t->n_op == TEMP) {
 			tempnr=regno(t)-defsites.low;
-			
-			x=SLIST_FIRST(&defsites.stack[tempnr])->tmpregno;
-			regno(t)=x;
+		
+			if (SLIST_FIRST(&defsites.stack[tempnr])!=NULL) {
+				x=SLIST_FIRST(&defsites.stack[tempnr])->tmpregno;
+				regno(t)=x;
+			}
 		}
 		
 		opty = optype(t->n_op);
@@ -1116,72 +1118,108 @@ removephi(struct p2env *p2e, struct labelinfo *labinfo,struct bblockinfo *bbinfo
 				
 				pip=bbparent->last;
 				
-				complex = 0;
+				complex = pred_unknown ;
 				
 				BDEBUG(("removephi: %p in %d",pip,bb->dfnum));
+
 				if (pip->type == IP_NODE && pip->ip_node->n_op == GOTO) {
 					BDEBUG((" GOTO "));
-					label=pip->ip_node->n_left->n_lval;
-					complex=1;
+					label = (int)pip->ip_node->n_left->n_lval;
+					complex = pred_goto ;
 				} else if (pip->type == IP_NODE && pip->ip_node->n_op == CBRANCH) {
 					BDEBUG((" CBRANCH "));
-					label=pip->ip_node->n_right->n_lval;
+					label = (int)pip->ip_node->n_right->n_lval;
 					
 					if (bb==labinfo->arr[label - p2e->ipp->ip_lblnum])
-						complex=2;
-				}	
-       
-				BDEBUG((" Complex: %d\n",complex));
+						complex = pred_cond ;
+                                        else
+                                                complex = pred_falltrough ;
 
-				if (complex > 0) {
-					/*
-					 This destroys basic block calculations.
-					 Maybe it shoud not
-					*/
-					ip = ipnode(mkunode(GOTO, mklnode(ICON, label, 0, INT), 0, INT));
-					DLIST_INSERT_BEFORE((bb->first), ip, qelem);
-					
-					newlabel=getlab2();
-					
-					ip = tmpalloc(sizeof(struct interpass));
-					ip->type = IP_DEFLAB;
-					/* Line number?? ip->lineno; */
-					ip->ip_lbl = newlabel;
-					DLIST_INSERT_BEFORE((bb->first), ip, qelem);
-					
-					SLIST_FOREACH(phi,&bb->phi,phielem) {
-						if (phi->intmpregno[i]>0) {
-							n_type=phi->n_type;
-							ip = ipnode(mkbinode(ASSIGN,
+		        		} else if (DLIST_PREV(bb, bbelem) == bbparent) {
+                                                complex = pred_falltrough ;
+                                        } else {
+                                            /* PANIC */
+                                            comperr("Assumption blown in rem-phi") ;
+                                        }
+       
+        				BDEBUG((" Complex: %d\n",complex)) ;
+
+	        			switch (complex) {
+	        			  case pred_goto:
+	        				/* gotos can only go to this place. No bounce tab needed */
+	        				SLIST_FOREACH(phi,&bb->phi,phielem) {
+	        					if (phi->intmpregno[i]>0) {
+	        						n_type=phi->n_type;
+	        						ip = ipnode(mkbinode(ASSIGN,
 								     mktemp(phi->newtmpregno, n_type),
 								     mktemp(phi->intmpregno[i],n_type),
 								     n_type));
 					
-							DLIST_INSERT_BEFORE((bb->first), ip, qelem);
-						}
-					}
-					
-					if (complex==1)
-						pip->ip_node->n_left->n_lval=newlabel;
-					
-					if (complex==2)
-						pip->ip_node->n_right->n_lval=newlabel;
-					
-				} else {
-					/* Construct move */
-					SLIST_FOREACH(phi,&bb->phi,phielem) {
-						if (phi->intmpregno[i]>0) {
-							n_type=phi->n_type;
-							ip = ipnode(mkbinode(ASSIGN,
-							     mktemp(phi->newtmpregno, n_type),
-							     mktemp(phi->intmpregno[i],n_type),
-							     n_type));
+	        						DLIST_INSERT_BEFORE((bbparent->last), ip, qelem);
+	        					}
+	        				}
+                                            break ;
+	        			  case pred_cond:
+	        				/* Here, we need a jump pad */
+	        				newlabel=getlab2();
 				
-							/* Insert move at bottom of parent basic block */
-							DLIST_INSERT_AFTER((bbparent->last), ip, qelem);
-						}
-					}
-				}
+	        				ip = tmpalloc(sizeof(struct interpass));
+	        				ip->type = IP_DEFLAB;
+	        				/* Line number?? ip->lineno; */
+	        				ip->ip_lbl = newlabel;
+	        				DLIST_INSERT_BEFORE((bb->first), ip, qelem);
+
+
+	        				SLIST_FOREACH(phi,&bb->phi,phielem) {
+	        					if (phi->intmpregno[i]>0) {
+	        						n_type=phi->n_type;
+	        						ip = ipnode(mkbinode(ASSIGN,
+								     mktemp(phi->newtmpregno, n_type),
+								     mktemp(phi->intmpregno[i],n_type),
+								     n_type));
+					
+	        						DLIST_INSERT_BEFORE((bb->first), ip, qelem);
+	        					}
+	        				}
+	        				/* add a jump to us */
+	        				ip = ipnode(mkunode(GOTO, mklnode(ICON, label, 0, INT), 0, INT));
+	        				DLIST_INSERT_BEFORE((bb->first), ip, qelem);
+	        				pip->ip_node->n_right->n_lval=newlabel;
+                                            break ;
+	        			  case pred_falltrough:
+                                		if (bb->first->type == IP_DEFLAB) { 
+                                                    label = bb->first->ip_lbl; 
+                                                    BDEBUG(("falltrough label %d\n", label));
+                                                } else {
+                                                    comperr("BBlock has no label?") ;
+                                                }
+
+	                                        /* 
+                                                 * add a jump to us. We _will_ be, or already have, added code in between.
+                                                 * The code is created in the wrong order and switched at the insert, thus
+                                                 * comming out correctly
+                                                 */
+
+                        	                ip = ipnode(mkunode(GOTO, mklnode(ICON, label, 0, INT), 0, INT));
+	                                        DLIST_INSERT_AFTER((bbparent->last), ip, qelem);
+
+                	                        /* Add the code to the end, add a jump to us. */
+	                                        SLIST_FOREACH(phi,&bb->phi,phielem) {
+        		                                if (phi->intmpregno[i]>0) {
+        			                                n_type=phi->n_type;
+                			                        ip = ipnode(mkbinode(ASSIGN,
+        				                                mktemp(phi->newtmpregno, n_type),
+        				                                mktemp(phi->intmpregno[i],n_type),
+        				                                n_type));
+	
+        			                                DLIST_INSERT_AFTER((bbparent->last), ip, qelem);
+        		                                }
+                	                        }
+                                            break ;
+        				  default:
+                                            comperr("assumption blown, complex is %d\n", complex) ;
+                                }
+
 				i++;
 			}
 			break;

@@ -168,8 +168,8 @@ bfcode(struct symtab **sp, int cnt)
 		if (sz != SZCHAR && sz != SZSHORT &&
 		    sz != SZINT && sz != SZLONGLONG)
 #endif
-		for (i = 0; i < cnt; i++) 
-			sp[i]->soffset += SZPOINT(INT);
+			for (i = 0; i < cnt; i++) 
+				sp[i]->soffset += SZPOINT(INT);
 	}
 
 #ifdef os_win32

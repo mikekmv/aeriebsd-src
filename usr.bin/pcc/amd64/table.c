@@ -225,7 +225,7 @@ struct optab table[] = {
 	SAREG|SOREG|SNAME,	TUNSIGNED,
 	SBREG,			TFLOAT|TDOUBLE,
 		NAREG|NBREG,	RESC2,
-		"	movl AL,A1\n	cvtsi2sZfq A1,A2\n", },
+		"	movl AL,Z1\n	cvtsi2sZfq A1,A2\n", },
 
 /* convert unsigned long to float/double */
 { SCONV,	INBREG,
@@ -1216,7 +1216,7 @@ struct optab table[] = {
 
 { OPLTYPE,	INBREG,
 	SANY,		TFLOAT|TDOUBLE,
-	SOREG|SNAME,	TFLOAT|TDOUBLE,
+	SOREG|SNAME|SBREG,	TFLOAT|TDOUBLE,
 		NBREG,	RESC1,
 		"	movsZf AL,A1\n", },
 
