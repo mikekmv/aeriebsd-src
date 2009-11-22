@@ -22,7 +22,7 @@
 /*
  * C99
  */
-#ifdef __GNUC__
+#if defined(__PCC__) || defined(__GNUC__)
 #if __STDC_VERSION__ < 199901
 #define _Complex	__complex__
 #endif
