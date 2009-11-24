@@ -5,7 +5,7 @@
 /*
  * POSIX character class support for fnmatch() and glob().
  */
-static struct cclass {
+static const struct cclass {
 	const char *name;
 	int (*isctype)(int);
 } cclasses[] = {

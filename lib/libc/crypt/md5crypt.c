@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: md5crypt.c,v 1.1.1.1 2008/08/26 14:38:26 root Exp $";
 #endif
 
 #include <unistd.h>
@@ -19,7 +19,7 @@ static const char rcsid[] = "$ABSD$";
 #include <md5.h>
 #include <string.h>
 
-static unsigned char itoa64[] =		/* 0 ... 63 => ascii - 64 */
+static const unsigned char itoa64[] =		/* 0 ... 63 => ascii - 64 */
 	"./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 static void to64(char *, u_int32_t, int);

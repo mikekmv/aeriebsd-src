@@ -35,10 +35,10 @@
  */
 
 /* character-class table */
-static struct cclass {
-	char *name;
-	char *chars;
-	char *multis;
+static const struct cclass {
+	const char *name;
+	const char *chars;
+	const char *multis;
 } cclasses[] = {
 	{ "alnum",	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz\
 0123456789",				""} ,

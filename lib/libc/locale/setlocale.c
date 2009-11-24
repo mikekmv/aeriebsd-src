@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: setlocale.c,v 1.1.1.1 2008/08/26 14:38:30 root Exp $";
 #endif
 
 #include <sys/localedef.h>
@@ -45,10 +45,11 @@ static const char rcsid[] = "$ABSD$";
 
 #include "rune.h"
 #include "rune_local.h"
+
 /*
  * Category names for getenv()
  */
-static char *categories[_LC_LAST] = {
+static const char *const categories[_LC_LAST] = {
     "LC_ALL",
     "LC_COLLATE",
     "LC_CTYPE",

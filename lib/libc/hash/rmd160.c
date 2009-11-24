@@ -23,7 +23,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: rmd160.c,v 1.1.1.1 2008/08/26 14:38:29 root Exp $";
 #endif
 
 /*
@@ -88,7 +88,7 @@ static const char rcsid[] = "$ABSD$";
 
 #define X(i)	x[i]
 
-static u_int8_t PADDING[RMD160_BLOCK_LENGTH] = {
+static const u_int8_t PADDING[RMD160_BLOCK_LENGTH] = {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0

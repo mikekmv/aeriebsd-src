@@ -45,7 +45,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: crypt.c,v 1.1.1.1 2008/08/26 14:38:26 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -176,7 +176,7 @@ static u_int32_t key_perm_maskl[8][128], key_perm_maskr[8][128];
 static u_int32_t comp_maskl[8][128], comp_maskr[8][128];
 static u_int32_t old_rawkey0, old_rawkey1;
 
-static u_char	ascii64[] =
+static const u_char	ascii64[] =
 	 "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 /*	  0000000000111111111122222222223333333333444444444455555555556666 */
 /*	  0123456789012345678901234567890123456789012345678901234567890123 */

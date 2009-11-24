@@ -34,7 +34,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: regerror.c,v 1.1.1.1 2008/08/26 14:38:32 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -49,7 +49,7 @@ static const char rcsid[] = "$ABSD$";
 
 static char *regatoi(const regex_t *, char *, int);
 
-static struct rerr {
+static const struct rerr {
 	int code;
 	char *name;
 	char *explain;

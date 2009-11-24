@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: timezone.c,v 1.1.1.1 2008/08/26 14:38:29 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -69,7 +69,7 @@ timezone(int zone, int dst)
 	return(_tztab(zone,dst));	/* default: table or created zone */
 }
 
-static struct zone {
+static const struct zone {
 	int	offset;
 	char	*stdzone;
 	char	*dlzone;

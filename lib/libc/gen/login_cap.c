@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: login_cap.c,v 1.1.1.1 2008/08/26 14:38:28 root Exp $";
+static const char rcsid[] = "$ABSD: login_cap.c,v 1.2 2009/05/26 23:27:23 mickey Exp $";
 #endif
 /*-
  * Copyright (c) 1995,1997 Berkeley Software Design, Inc. All rights reserved.
@@ -477,7 +477,7 @@ login_close(login_cap_t *lc)
 #define	CSIZE	2
 #define	CNUMB	3
 
-static struct {
+static const struct {
 	int	what;
 	int	type;
 	char *	name;
