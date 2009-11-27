@@ -1,0 +1,33 @@
+
+1. WHAT TO DO?
+2. WHO IS TO BLAME?
+3. DO WE EAT CHICKEN WITH BARE HANDS?
+
+.
+	- read style(9) for sources formating guide;
+	- always build in the obj/ tree (make obj);
+	- first build and install build tools
+	  (pcc, as, ld, nroff, make, sh, awk);
+	- make build;
+
+etc/
+	- changing any of the MAKEDEV goodies also generates mans;
+
+lib/
+	- adding new names to a lib requires minor bump;
+	- changing existing api/abi requires a major bump;
+
+lib/libssl/
+	- on new version import needs mans regen from .pod to .man
+	  (see makefile for the rules);
+
+sys/
+	- updating *devs files first commits to the source and then
+	  separately the generatees and optionally affected sources;
+
+usr.sbin/httpd/
+	- may require Configure tweaking;
+
+rejoice!
+--
+    $ABSD$
