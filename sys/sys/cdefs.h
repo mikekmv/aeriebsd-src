@@ -114,7 +114,7 @@
  * the distribution version of 2.5.5).
  */
 
-#if !__GNUC_PREREQ__(2, 5)
+#if !__GNUC_PREREQ__(2, 5) && !defined(__PCC__)
 #define	__attribute__(x)	/* delete __attribute__ if non-gcc or gcc1 */
 #if defined(__GNUC__) && !defined(__STRICT_ANSI__)
 #define	__dead		__volatile
