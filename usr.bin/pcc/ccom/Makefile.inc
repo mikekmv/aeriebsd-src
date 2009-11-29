@@ -9,7 +9,7 @@ TARGOS=		aeriebsd
 CLEANFILES=	cgram.h external.h external.c mkext
 
 CFLAGS+=	-DPCC_DEBUG -DGCC_COMPAT -DTARGOS=${TARGOS} -Dos_${TARGOS}
-CFLAGS+=	-Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
+CFLAGS+=	-g -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
 CPPFLAGS+=	-I. -I${.CURDIR}/.. -I${.CURDIR} -I${.CURDIR}/../../mip
 CPPFLAGS+=	-I${.CURDIR}/../../${TARGMACH}
 CPPFLAGS+=	-I${.CURDIR}/../..
