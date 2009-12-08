@@ -657,7 +657,7 @@ void	bus_space_free(bus_space_tag_t t, bus_space_handle_t bsh,
 			addl $2, %0				;	\
 			addl $2, %1				;	\
 			loop 1b"				:	\
-		    "+D" (_port2), "+ES" (_port1), "+c" ((_cnt))	::	\
+		    "+D" (_port2), "+S" (_port1), "+c" ((_cnt))	::	\
 		    "%edx", "%eax", "cc");				\
 	} else								\
 		i386_space_copy(_port1, _port2, 2, _cnt);		\
@@ -674,7 +674,7 @@ void	bus_space_free(bus_space_tag_t t, bus_space_handle_t bsh,
 			addl $4, %0				;	\
 			addl $4, %1				;	\
 			loop 1b"				:	\
-		    "+D" (_port2), "+ES" (_port1), "+c" ((_cnt))	::	\
+		    "+D" (_port2), "+S" (_port1), "+c" ((_cnt))	::	\
 		    "%edx", "%eax", "cc");				\
 	} else								\
 		i386_space_copy(_port1, _port2, 4, _cnt);		\
