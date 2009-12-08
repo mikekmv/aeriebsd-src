@@ -24,7 +24,7 @@
 .\" SUCH DAMAGE.
 .\"
 .\" $From: rmgroup.8,v 1.1 1996/11/04 17:21:11 wosch Exp $
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt RMGROUP 8
 .Os
 .Sh NAME
@@ -35,13 +35,13 @@
 .Ar group
 .Sh DESCRIPTION
 .Nm
-deletes the specified Unix
+deletes the specified
+.Ux
 .Ar group
 from group database.
 .Nm
 will not delete the system groups wheel, daemon, kmem, sys, tty,
-operator, bin, nogroup, nobody,
-or groups with gid 0.
+operator, bin, nogroup, nobody, or groups with gid 0.
 Do not delete these groups.
 .Sh FILES
 .Bl -tag -width /etc/groupX -compact
