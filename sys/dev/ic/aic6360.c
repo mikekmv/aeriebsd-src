@@ -787,7 +787,7 @@ aic_sense(struct aic_softc *sc, struct aic_acb *acb)
 	ss->byte2 = sc_link->lun << 5;
 	ss->length = sizeof(struct scsi_sense_data);
 	acb->scsi_cmd_length = sizeof(*ss);
-	acb->data_addr = (char *)&xs->sense;
+	acb->data_addr = (u_char *)&xs->sense;
 	acb->data_length = sizeof(struct scsi_sense_data);
 	acb->flags |= ACB_SENSE;
 	ti->senses++;
