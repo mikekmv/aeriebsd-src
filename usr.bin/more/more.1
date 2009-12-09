@@ -29,7 +29,7 @@
 .\"
 .\"	@(#)more.1	8.2 (Berkeley) 4/18/94
 .\"
-.Dd $Mdocdate: May 6 2009 $
+.Dd $Mdocdate: May 26 2009 $
 .Dt MORE 1
 .Os
 .Sh NAME
@@ -160,23 +160,49 @@ If you forget all the other commands, remember this one.
 .Ic f
 .No or
 .Ic \&^F
+.No or
+.Ic PAGEDOWN
 .Xc
 Scroll forward N lines, default one window.
 If N is more than the screen size, only the final screenful is displayed.
-.It Ic b No or Ic \&^B
+.It Xo
+.Ic b
+.No or
+.Ic \&^B
+.No or
+.Ic PAGEUP
+.Xc
 Scroll backward N lines, default one window (see option -z below).
 If N is more than the screen size, only the final screenful is displayed.
-.It Ic j No or Ic RETURN
+.It Xo
+.Ic j
+.No or
+.Ic RETURN
+.No or
+.Ic DOWNARROW
+.Xc
 Scroll forward N lines, default 1.
 The entire N lines are displayed, even if N is more than the screen size.
-.It Ic k
+.It Xo
+.Ic k
+.No or
+.Ic UPARROW
+.Xc
 Scroll backward N lines, default 1.
 The entire N lines are displayed, even if N is more than the screen size.
-.It Ic d No or Ic \&^D
+.It Xo
+.Ic d
+.No or
+.Ic \&^D
+.Xc
 Scroll forward N lines, default one half of the screen size.
 If N is specified, it becomes the new default for
 subsequent d and u commands.
-.It Ic u No or Ic \&^U
+.It Xo
+.Ic u
+.No or
+.Ic \&^U
+.Xc
 Scroll backward N lines, default one half of the screen size.
 If N is specified, it becomes the new default for
 subsequent d and u commands.
@@ -184,13 +210,21 @@ subsequent d and u commands.
 Go to line N in the file, default 1 (beginning of file).
 .It Ic G
 Go to line N in the file, default the end of the file.
-.It Ic p No or Ic \&%
+.It Xo
+.Ic p
+.No or
+.Ic \&%
+.Xc
 Go to a position N percent into the file.  N should be between 0
 and 100.  (This works if standard input is being read, but only if
 .Nm more
 has already read to the end of the file.  It is always fast, but
 not always useful.)
-.It Ic r No or Ic \&^L
+.It Xo
+.Ic r
+.No or
+.Ic \&^L
+.Xc
 Repaint the screen.
 .It Ic R
 Repaint the screen, discarding any buffered input.
