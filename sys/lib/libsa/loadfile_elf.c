@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -28,7 +27,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -77,6 +75,19 @@ ELFNAME(exec)(int fd, Elf_Ehdr *elf, u_long *marks, int flags)
 	int havesyms;
 	paddr_t minp = ~0, maxp = 0, pos = 0;
 	paddr_t offset = marks[MARK_START], shpp, elfp;
+
+	/* check the target machine (special case for some archs */
+#if defined(__i386__) && defined(BOOT_ELF64)
+	if (elf->e_machine != ELF_TARG_MACH && elf->e_machine != EM_AMD64)
+#elif defined(__amd64__) && defined(BOOT_ELF32)
+	if (elf->e_machine != ELF_TARG_MACH && elf->e_machine != EM_386)
+#else
+	if (elf->e_machine != ELF_TARG_MACH)
+#endif
+	{
+		WARN(("wrong mach"));
+		return 1;
+	}
 
 	sz = elf->e_phnum * sizeof(Elf_Phdr);
 	phdr = ALLOC(sz);
