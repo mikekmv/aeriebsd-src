@@ -603,6 +603,7 @@ int
 npxdna_xmm(struct cpu_info *ci)
 {
 	struct proc *p;
+	union savefpu *addr;
 	int s;
 
 	if (ci->ci_fpsaving) {
@@ -658,8 +659,9 @@ npxdna_xmm(struct cpu_info *ci)
 	splx(s);
 	uvmexp.fpswtch++;
 
+	addr = &p->p_addr->u_pcb.pcb_savefpu;
 	if ((p->p_md.md_flags & MDP_USEDFPU) == 0) {
-		fldcw(&p->p_addr->u_pcb.pcb_savefpu.sv_xmm.sv_env.en_cw);
+		fldcw(&addr->sv_xmm.sv_env.en_cw);
 		if (i386_has_sse || i386_has_sse2)
 			ldmxcsr(&addr->sv_xmm.sv_env.en_mxcsr);
 		p->p_md.md_flags |= MDP_USEDFPU;
@@ -672,7 +674,7 @@ npxdna_xmm(struct cpu_info *ci)
 		 */
 		fnclex();
 		__asm __volatile("ffree %%st(7)\n\tfld %0" : : "m" (zero));
-		fxrstor(&p->p_addr->u_pcb.pcb_savefpu.sv_xmm);
+		fxrstor(&addr->sv_xmm);
 	}
 
 	return (1);
