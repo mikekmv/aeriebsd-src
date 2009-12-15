@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2001-2004 Sangoma Technologies (SAN)
  * All rights reserved.  www.sangoma.com
@@ -254,29 +253,27 @@ struct sdla_hdlc_api {
 	unsigned char data[MAX_DATA_SIZE];
 };
 
-#pragma pack(1)
 typedef struct {
 	unsigned char	error_flag;
 	unsigned short	time_stamp;
 	unsigned char	reserved[13];
-} api_rx_hdr_t;
+} __packed api_rx_hdr_t;
 
 typedef struct {
 	api_rx_hdr_t	api_rx_hdr;
 	unsigned char	data[1];
-} api_rx_element_t;
+} __packed api_rx_element_t;
 
 typedef struct {
 	unsigned char	attr;
 	unsigned char   misc_Tx_bits;
 	unsigned char	reserved[14];
-} api_tx_hdr_t;
+} __packed api_tx_hdr_t;
 
 typedef struct {
 	api_tx_hdr_t	api_tx_hdr;
 	unsigned char	data[1];
-} api_tx_element_t;
-#pragma pack()
+} __packed api_tx_element_t;
 
 #undef  wan_udphdr_data
 #define wan_udphdr_data	wan_udphdr_u.aft.data

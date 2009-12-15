@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -27,7 +26,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*-
  * Copyright (c) 1992, University of Vermont and State Agricultural College.
  * Copyright (c) 1992, Garrett A. Wollman.
@@ -75,8 +73,6 @@
  * We use integer offsets exclusively to access the i82586/596 data structures.
  */
 
-#pragma pack(1)
-
 /*
  * This is the master configuration block.
  * It tells the hardware where all the rest of the stuff is.
@@ -86,7 +82,7 @@ struct __ie_sys_conf_ptr {
 	u_int8_t	ie_bus_use;		// true if 8-bit only
 	u_int8_t	mbz2[5];		// must be zero
 	u_int32_t	ie_iscp_ptr;		// 24-bit physaddr of ISCP
-};
+} __packed;
  */
 #define IE_SCP_SZ		12	/* keep paragraph alignment */
 #define IE_SCP_BUS_USE(base)	((base) + 2)
@@ -109,7 +105,7 @@ struct __ie_int_sys_conf_ptr {
 	u_int8_t	mbz;
 	u_int16_t	ie_scb_offset;	// 16-bit physaddr of next struct
 	caddr_t		ie_base;	// 24-bit physaddr for all 16-bit vars
-};
+} __packed;
  */
 #define IE_ISCP_SZ		16
 #define IE_ISCP_BUSY(base)	((base) + 0)
@@ -141,7 +137,7 @@ struct __ie_sys_ctl_block {
 	u_int16_t ie_err_align;		// Alignment errors
 	u_int16_t ie_err_resource;	// Resource errors
 	u_int16_t ie_err_overrun;	// Overrun errors
-};
+} __packed;
  */
 #define IE_SCB_SZ		16
 #define IE_SCB_STATUS(base)	((base) + 0)
@@ -207,7 +203,7 @@ struct __ie_recv_frame_desc {
 	struct __ie_en_addr src;	// source ether
 	u_int16_t	ie_length;	// 802 length/Ether type
 	u_short		mbz;		// must be zero
-};
+} __packed;
  */
 #define IE_RFRAME_SZ			24
 #define IE_RFRAME_ADDR(base,i)		((base) + (i) * 64)
@@ -247,7 +243,7 @@ struct __ie_recv_buf_desc {
 	caddr_t		ie_rbd_buffer;	// 24-pointer to buffer for this RBD
 	u_int16_t	ie_rbd_length;	// length of the buffer
 	u_int16_t	mbz;		// must be zero
-};
+} __packed;
  */
 #define IE_RBD_SZ			12
 #define IE_RBD_ADDR(base,i)		((base) + (i) * 32)
@@ -272,7 +268,7 @@ struct __ie_cmd_common {
 	u_int16_t ie_cmd_status;	// status of this command 
 	u_int16_t ie_cmd_cmd;		// command word
 	u_int16_t ie_cmd_link;		// link to next command
-};
+} __packed;
  */
 #define IE_CMD_COMMON_SZ		6
 #define IE_CMD_COMMON_STATUS(base)	((base) + 0)
@@ -318,7 +314,7 @@ struct __ie_xmit_cmd {
 	u_int16_t	ie_xmit_desc;		// pointer to buffer descriptor
 	struct __ie_en_addr ie_xmit_addr;	// destination address
 	u_int16_t	ie_xmit_length;		// 802.3 length/Ether type field
-};
+} __packed;
  */
 #define IE_CMD_XMIT_SZ			(IE_CMD_COMMON_SZ + 10)
 #define IE_CMD_XMIT_ADDR(base,i)	((base) + (i) * 32)
@@ -351,7 +347,7 @@ struct __ie_xmit_buf {
 	u_int16_t ie_xmit_flags;	// see below
 	u_int16_t ie_xmit_next;		// 16-pointer to next desc
 	caddr_t ie_xmit_buf;		// 24-pointer to the actual buffer
-};
+} __packed;
  */
 #define IE_XBD_SZ			8
 #define IE_XBD_ADDR(base,i)		((base) + (i) * 32)
@@ -374,7 +370,7 @@ struct __ie_mcast_cmd {
 	// size (in bytes) of multicast addresses
 	u_int16_t		ie_mcast_bytes;
 	struct __ie_en_addr ie_mcast_addrs[IE_MAXMCAST + 1];// space for them
-};
+} __packed;
  */
 #define IE_CMD_MCAST_SZ			(IE_CMD_COMMON_SZ + 2 /* + XXX */)
 #define IE_CMD_MCAST_BYTES(base)	((base) + IE_CMD_COMMON_SZ + 0)
@@ -387,7 +383,7 @@ struct __ie_tdr_cmd {
 	struct __ie_cmd_common com;	// common part
 #define ie_tdr_status com.ie_cmd_status
 	u_short ie_tdr_time;		// error bits and time
-};
+} __packed;
  */
 #define IE_CMD_TDR_SZ		(IE_CMD_COMMON_SZ + 2)
 #define IE_CMD_TDR_TIME(base)	((base) + IE_CMD_COMMON_SZ + 0)
@@ -407,7 +403,7 @@ struct __ie_iasetup_cmd {
 	struct __ie_cmd_common com;
 #define ie_iasetup_status com.ie_cmd_status
 	struct __ie_en_addr ie_address;
-};
+} __packed;
  */
 #define IE_CMD_IAS_SZ		(IE_CMD_COMMON_SZ + 6)
 #define IE_CMD_IAS_EADDR(base)	((base) + IE_CMD_COMMON_SZ + 0)
@@ -431,7 +427,7 @@ struct __ie_config_cmd {
 	u_int8_t ie_crs_cdt;		// CSMA/CD parameters (0x0)
 	u_int8_t ie_min_len;		// min frame length (0x40)
 	u_int8_t ie_junk;		// stuff for 82596 (0xff)
-};
+} __packed;
  */
 #define IE_CMD_CFG_SZ			(IE_CMD_COMMON_SZ + 12)
 #define IE_CMD_CFG_CNT(base)		((base) + IE_CMD_COMMON_SZ + 0)
@@ -446,5 +442,3 @@ struct __ie_config_cmd {
 #define IE_CMD_CFG_CRSCDT(base)		((base) + IE_CMD_COMMON_SZ + 9)
 #define IE_CMD_CFG_MINLEN(base)		((base) + IE_CMD_COMMON_SZ + 10)
 #define IE_CMD_CFG_JUNK(base)		((base) + IE_CMD_COMMON_SZ + 11)
-
-#pragma pack()

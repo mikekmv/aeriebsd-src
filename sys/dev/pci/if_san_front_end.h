@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2001-2004 Sangoma Technologies (SAN)
  * All rights reserved.  www.sangoma.com
@@ -37,10 +36,10 @@
 #define __IF_SAN_FRONT_END_H_
 
 /* The hardware media */
-#define WAN_MEDIA_NONE       0x00    /* Regular card */
-#define WAN_MEDIA_T1         0x01    /* T1 connection */
-#define WAN_MEDIA_E1         0x02    /* E1 connection */
-#define WAN_MEDIA_56K        0x03    /* 56K connection */
+#define WAN_MEDIA_NONE	0x00	/* Regular card */
+#define WAN_MEDIA_T1	0x01	/* T1 connection */
+#define WAN_MEDIA_E1	0x02	/* E1 connection */
+#define WAN_MEDIA_56K	0x03	/* 56K connection */
 
 /* settings for the 'adapter_type' */
 #define S508_ADPTR			0x0001	/* S508 */
@@ -62,23 +61,23 @@
 #define A100_ADPTR_1_CHN_T3E3		0x0081	/* 1 Channel T3/E3 (Proto.) */
 #define A105_ADPTR_1_CHN_T3E3		0x0082	/* 1 Channel T3/E3 */
 
-#define OPERATE_T1E1_AS_SERIAL		0x8000  /* For bitstreaming only 
-						 * Allow the application to 
+#define OPERATE_T1E1_AS_SERIAL		0x8000  /* For bitstreaming only
+						 * Allow the application to
 						 * E1 front end */
 
-#define SDLA_ADPTR_DECODE(adapter_type)			\
-		(adapter_type == S5141_ADPTR_1_CPU_SERIAL) ? "S514-1-PCI" : \
-		(adapter_type == S5142_ADPTR_2_CPU_SERIAL) ? "S514-2-PCI" : \
-		(adapter_type == S5143_ADPTR_1_CPU_FT1)    ? "S514-3-PCI" : \
-		(adapter_type == S5144_ADPTR_1_CPU_T1E1)   ? "S514-4-PCI" : \
-		(adapter_type == S5145_ADPTR_1_CPU_56K)    ? "S514-5-PCI" : \
-		(adapter_type == S5147_ADPTR_2_CPU_T1E1)   ? "S514-7-PCI" : \
-		(adapter_type == S518_ADPTR_1_CPU_ADSL)    ? "S518-PCI  " : \
-		(adapter_type == A101_ADPTR_1TE1)	   ? "AFT-A101  " : \
-		(adapter_type == A101_ADPTR_2TE1)	   ? "AFT-A102  " : \
-		(adapter_type == A105_ADPTR_1_CHN_T3E3)    ? "A105-1-PCI" : \
-		(adapter_type == A105_ADPTR_1_CHN_T3E3)    ? "A105-2    " : \
-							     "UNKNOWN   "
+#define SDLA_ADPTR_DECODE(adapter_type)				    \
+	(adapter_type == S5141_ADPTR_1_CPU_SERIAL) ? "S514-1-PCI" : \
+	(adapter_type == S5142_ADPTR_2_CPU_SERIAL) ? "S514-2-PCI" : \
+	(adapter_type == S5143_ADPTR_1_CPU_FT1)    ? "S514-3-PCI" : \
+	(adapter_type == S5144_ADPTR_1_CPU_T1E1)   ? "S514-4-PCI" : \
+	(adapter_type == S5145_ADPTR_1_CPU_56K)    ? "S514-5-PCI" : \
+	(adapter_type == S5147_ADPTR_2_CPU_T1E1)   ? "S514-7-PCI" : \
+	(adapter_type == S518_ADPTR_1_CPU_ADSL)    ? "S518-PCI  " : \
+	(adapter_type == A101_ADPTR_1TE1)	   ? "AFT-A101  " : \
+	(adapter_type == A101_ADPTR_2TE1)	   ? "AFT-A102  " : \
+	(adapter_type == A105_ADPTR_1_CHN_T3E3)    ? "A105-1-PCI" : \
+	(adapter_type == A105_ADPTR_1_CHN_T3E3)    ? "A105-2    " : \
+						     "UNKNOWN   "
 
 /* front-end UDP command */
 #define WAN_FE_GET_STAT			(WAN_FE_UDP_CMD_START + 0)
@@ -117,42 +116,42 @@
 #define WAN_FE_GET_CFG			(WAN_FE_UDP_CMD_START + 3)
 
 /*
- * return codes from interface commands 
+ * return codes from interface commands
  */
 /* the length of the FE_RX_DISC_TX_IDLE_STRUCT is invalid */
-#define LGTH_FE_CFG_DATA_INVALID       0x91
+#define LGTH_FE_CFG_DATA_INVALID	0x91
 
 /* the length of the passed configuration data is invalid */
-#define LGTH_ADAPTER_CFG_DATA_INVALID  0x91
+#define LGTH_ADAPTER_CFG_DATA_INVALID	0x91
 
 /* the passed SET_FE_RX_DISC_TX_IDLE_CFG data is invalid */
-#define INVALID_FE_CFG_DATA            0x92
+#define INVALID_FE_CFG_DATA		0x92
 
 /* an invalid adapter operating frequency was selected */
-#define ADPTR_OPERATING_FREQ_INVALID   0x92
+#define ADPTR_OPERATING_FREQ_INVALID	0x92
 
 /* set the protocol-level configuration before setting the FE configuration */
-#define PROT_CFG_BEFORE_FE_CFG         0x93
+#define PROT_CFG_BEFORE_FE_CFG		0x93
 
 /* set the front-end Rx discard/Tx idle configuration */
-#define SET_FE_RX_DISC_TX_IDLE_CFG      0x98
+#define SET_FE_RX_DISC_TX_IDLE_CFG	0x98
 
 /* read the front-end Rx discard/Tx idle configuration */
-#define READ_FE_RX_DISC_TX_IDLE_CFG     0x99
+#define READ_FE_RX_DISC_TX_IDLE_CFG	0x99
 
 /* set the T1/E1 signaling configuration */
 #define SET_TE1_SIGNALING_CFG		0x9A
 
 /* read the T1/E1 signaling configuration */
-#define READ_TE1_SIGNALING_CFG	0x9B
+#define READ_TE1_SIGNALING_CFG		0x9B
 
 
 /* the command is invalid for the adapter type */
-#define COMMAND_INVALID_FOR_ADAPTER    0x9F
+#define COMMAND_INVALID_FOR_ADAPTER	0x9F
 
 
 /*
- * Constants for the SET_FE_RX_DISC_TX_IDLE_CFG 
+ * Constants for the SET_FE_RX_DISC_TX_IDLE_CFG
  * and READ_FE_RX_DISC_TX_IDLE_CFG commands
  */
 
@@ -180,7 +179,6 @@
  * the structure used for the SET_FE_RX_DISC_TX_IDLE_CFG and
  * READ_FE_RX_DISC_TX_IDLE_CFG command
  */
-#pragma pack(1)
 typedef struct {
 	/* the length of the Rx discard buffer */
 	unsigned short lgth_Rx_disc_bfr;
@@ -190,9 +188,7 @@ typedef struct {
 
 	/* the transmit idle data buffer */
 	unsigned char Tx_idle_data_bfr[NO_ACTIVE_TX_TIME_SLOTS_E1];
-} FE_RX_DISC_TX_IDLE_STRUCT;
-#pragma pack()
-
+} __packed FE_RX_DISC_TX_IDLE_STRUCT;
 
 /*
  * Constants for front-end access
@@ -202,33 +198,27 @@ typedef struct {
  * the structure used for the READ_FRONT_END_REGISTER and
  * WRITE_FRONT_END_REGISTER command
  */
-#pragma pack(1)
 typedef struct {
 	/* the register number to be read from or written to */
 	unsigned short register_number;
 
 	/* the register value read/written */
 	unsigned char register_value;
-} FRONT_END_REG_STRUCT;
-#pragma pack()
+} __packed FRONT_END_REG_STRUCT;
 
 
 /* -----------------------------------------------------------------------------
- *            Constants for the READ_FRONT_END_STATISTICS command
+ *	Constants for the READ_FRONT_END_STATISTICS command
  * ---------------------------------------------------------------------------*/
 
 /* the front-end statistics structure */
-#pragma pack(1)
 typedef struct {
 	/* the number of front-end interrupts generated */
 	unsigned long FE_interrupt_count;
 
 	/* the number of front-end interrupt application timeouts */
 	unsigned long FE_app_timeout_count;
-} FE_STATISTICS_STRUCT;
-#pragma pack()
-
-
+} __packed FE_STATISTICS_STRUCT;
 
 /*
  * Constants for the SET_ADAPTER_CONFIGURATION
@@ -236,21 +226,16 @@ typedef struct {
  */
 
 /* the adapter configuration structure */
-#pragma pack(1)
 typedef struct {
 	unsigned short adapter_type;		/* type of adapter */
 	unsigned short adapter_config;		/* misc adapter config */
 	unsigned long operating_frequency;	/* adapter operating freq */
-} ADAPTER_CONFIGURATION_STRUCT;
-#pragma pack()
-
-
+} __packed ADAPTER_CONFIGURATION_STRUCT;
 
 typedef unsigned char (WRITE_FRONT_END_REG_T)
 	(void *, unsigned short, unsigned char);
 typedef unsigned char (READ_FRONT_END_REG_T)
 	(void *, unsigned short);
-
 
 enum {
 	AFT_LED_ON,
@@ -260,7 +245,7 @@ enum {
 
 
 /*
- * Sangoma Front-End interface structure 
+ * Sangoma Front-End interface structure
  */
 typedef struct {
 	/* In-Service or Not (T1/E1/56K) */
@@ -276,7 +261,5 @@ typedef struct {
 	void		(*set_fe_alarm)(void*,unsigned long);
 } sdla_fe_iface_t;
 
-
 #endif	/* _KERNEL */
-
 #endif

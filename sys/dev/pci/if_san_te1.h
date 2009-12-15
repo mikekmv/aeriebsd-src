@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2001-2004 Sangoma Technologies (SAN)
  * All rights reserved.  www.sangoma.com
@@ -877,16 +876,14 @@ typedef struct pmc_pmon {
 
 #ifdef _KERNEL
 
-/* 
+/*
  * Constants for the SET_T1_E1_SIGNALING_CFG/READ_T1_E1_SIGNALING_CFG commands
  */
 
 /* the structure for setting the signaling permission */
-#pragma pack(1)
 typedef struct {
 	unsigned char time_slot[32];
-} te_signaling_perm_t;
-#pragma pack()
+} __packed te_signaling_perm_t;
 
 /* settings for the signaling permission structure */
 #define TE_SIG_DISABLED		0x00 /* signaling is disabled */
@@ -898,7 +895,6 @@ typedef struct {
 /* the structure used for the
  * SET_T1_E1_SIGNALING_CFG/READ_T1_E1_SIGNALING_CFG command
  */
-#pragma pack(1)
 typedef struct {
 	/* signaling permission structure */
 	te_signaling_perm_t sig_perm;
@@ -910,15 +906,12 @@ typedef struct {
 	unsigned long ptr_te_Rx_sig_struct;
 	/* pointer to the transmit signaling structure */
 	unsigned long ptr_te_Tx_sig_struct;
-} te_signaling_cfg_t;
-#pragma pack()
+} __packed te_signaling_cfg_t;
 
 /* the structure used for reading and setting the signaling bits */
-#pragma pack(1)
 typedef struct {
 	unsigned char time_slot[32];
-} te_signaling_status_t;
-#pragma pack()
+} __packed te_signaling_status_t;
 
 typedef struct {
 	unsigned char	SIGX_chg_30_25;

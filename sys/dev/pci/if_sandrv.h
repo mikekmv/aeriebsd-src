@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2001-2004 Sangoma Technologies (SAN)
  * All rights reserved.  www.sangoma.com
@@ -40,11 +39,8 @@
 # define EXTERN extern
 #endif
 
-
-
 #define WAN_MAILBOX_SIZE	16
 #define WAN_MAX_DATA_SIZE	2032
-#pragma pack(1)
 typedef struct {
 	union {
 		struct {
@@ -52,20 +48,18 @@ typedef struct {
 			unsigned char  command;
 			unsigned short data_len;
 			unsigned char  return_code;
-		} wan_p_cmd;
+		} __packed wan_p_cmd;
 		unsigned char mbox[WAN_MAILBOX_SIZE];
-	} wan_cmd_u;
+	} __packed wan_cmd_u;
 #define wan_cmd_opp_flag	wan_cmd_u.wan_p_cmd.opp_flag
 #define wan_cmd_command		wan_cmd_u.wan_p_cmd.command
 #define wan_cmd_data_len	wan_cmd_u.wan_p_cmd.data_len
 #define wan_cmd_return_code	wan_cmd_u.wan_p_cmd.return_code
-} wan_cmd_t;
-#pragma pack()
+} __packed wan_cmd_t;
 
 /************************************************
  *	GLOBAL DEFINITION FOR SANGOMA MAILBOX	*
  ************************************************/
-#pragma pack(1)
 typedef struct {
 	wan_cmd_t	wan_cmd;
 	unsigned char	wan_data[WAN_MAX_DATA_SIZE];
@@ -73,10 +67,8 @@ typedef struct {
 #define wan_command			wan_cmd.wan_cmd_command
 #define wan_data_len			wan_cmd.wan_cmd_data_len
 #define wan_return_code			wan_cmd.wan_cmd_return_code
-} wan_mbox_t;
-#pragma pack()
+} __packed wan_mbox_t;
 #define WAN_MBOX_INIT(mbox)	memset(mbox, 0, sizeof(wan_cmd_t));
-
 
 #if defined(_KERNEL)
 
