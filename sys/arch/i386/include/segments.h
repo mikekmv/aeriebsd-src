@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1995 Charles M. Hannum.  All rights reserved.
  * Copyright (c) 1989, 1990 William F. Jolitz
@@ -48,7 +47,7 @@
  */
 
 #define	ISPL(s)		((s) & SEL_RPL)	/* what is the priority level of a selector */
-#define	SEL_KPL		0		/* kernel privilege level */	
+#define	SEL_KPL		0		/* kernel privilege level */
 #define	SEL_UPL		3		/* user privilege level */	
 #define	SEL_RPL		3		/* requester's privilege level mask */
 #define	ISLDT(s)	((s) & SEL_LDT)	/* is it local or global */
@@ -66,10 +65,6 @@
 #endif
 
 #ifndef _LOCORE
-
-#if __GNUC__ == 2 && __GNUC_MINOR__ < 7
-#pragma pack(1)
-#endif
 
 /*
  * Memory and System segment descriptors
@@ -116,10 +111,6 @@ struct region_descriptor {
 	unsigned rd_limit:16;		/* segment extent */
 	unsigned rd_base:32;		/* base address  */
 } __packed;
-
-#if __GNUC__ == 2 && __GNUC_MINOR__ < 7
-#pragma pack(4)
-#endif
 
 #ifdef _KERNEL
 extern union descriptor *gdt, ldt[];
