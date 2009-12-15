@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,7 +31,6 @@
  *
  *	@(#)nfs_vnops.c	8.16 (Berkeley) 5/27/95
  */
-
 
 /*
  * vnode op calls for Sun NFS version 2 and 3
@@ -76,6 +74,8 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/in_var.h>
+
+#include <dev/rndvar.h>
 
 /* Defs */
 #define	TRUE	1
@@ -2445,20 +2445,15 @@ nfs_sillyrename(dvp, vp, cnp)
 	}
 
 	/* Fudge together a funny name */
-	sp->s_namlen = snprintf(sp->s_name, sizeof sp->s_name,
-	    ".nfsA%05x4.4", cnp->cn_proc->p_pid);
-	if (sp->s_namlen > sizeof sp->s_name)
-		sp->s_namlen = strlen(sp->s_name);
+	do {
+		sp->s_namlen = snprintf(sp->s_name, sizeof sp->s_name,
+		    ".nfs%0X", arc4random());
+		if (sp->s_namlen > sizeof sp->s_name)
+			sp->s_namlen = strlen(sp->s_name);
 
-	/* Try lookitups until we get one that isn't there */
-	while (nfs_lookitup(dvp, sp->s_name, sp->s_namlen, sp->s_cred,
-		cnp->cn_proc, (struct nfsnode **)0) == 0) {
-		sp->s_name[4]++;
-		if (sp->s_name[4] > 'z') {
-			error = EINVAL;
-			goto bad;
-		}
-	}
+	} while (!nfs_lookitup(dvp, sp->s_name, sp->s_namlen, sp->s_cred,
+	    cnp->cn_proc, NULL));
+
 	error = nfs_renameit(dvp, cnp, sp);
 	if (error)
 		goto bad;
