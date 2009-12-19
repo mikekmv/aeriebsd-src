@@ -213,15 +213,3 @@ go_home(void)
 		refresh();
 	}
 }
-
-/* This has to be defined as a subroutine for tputs (instead of a macro) */
-int
-putstdout(int ch)
-{
-	int ret;
-
-	ret = putchar(ch);
-	if (ret == EOF)
-		exit(1);
-	return (ret);
-}

@@ -82,6 +82,7 @@ int old_system = No;
 int old_threads = No;
 int show_args = No;
 pid_t hlpid = -1;
+int combine_cpus = 0;
 
 #if Default_TOPN == Infinity
 char topn_specified = No;
@@ -115,6 +116,7 @@ char topn_specified = No;
 #define CMD_grep	20
 #define CMD_add		21
 #define CMD_hl		22
+#define CMD_cpus	23
 
 static void
 usage(void)
@@ -122,7 +124,7 @@ usage(void)
 	extern char *__progname;
 
 	fprintf(stderr,
-	    "usage: %s [-bCIinqSTu] [-d count] [-g string] [-o field] "
+	    "usage: %s [-1bCIinqSTu] [-d count] [-g string] [-o field] "
 	    "[-p pid] [-s time]\n\t[-U user] [number]\n",
 	    __progname);
 }
@@ -133,12 +135,14 @@ parseargs(int ac, char **av)
 	char *endp;
 	int i;
 
-	while ((i = getopt(ac, av, "STICbinqus:d:p:U:o:g:")) != -1) {
+	while ((i = getopt(ac, av, "1STICbinqus:d:p:U:o:g:")) != -1) {
 		switch (i) {
+		case '1':
+			combine_cpus = 1;
+			break;
 		case 'C':
 			show_args = Yes;
 			break;
-
 		case 'u':	/* toggle uid/username display */
 			do_unames = !do_unames;
 			break;
@@ -164,8 +168,8 @@ parseargs(int ac, char **av)
 		}
 
 		case 'S':	/* show system processes */
-			ps.system = Yes;
-			old_system = Yes;
+			ps.system = !ps.system;
+			old_system = !old_system;
 			break;
 
 		case 'T':	/* show threads */
@@ -189,6 +193,8 @@ parseargs(int ac, char **av)
 		case 'd':	/* number of displays to show */
 			if ((i = atoiwi(optarg)) != Invalid && i != 0) {
 				displays = i;
+				if (displays == 1)
+					interactive = No;
 				break;
 			}
 			new_message(MT_delayed,
@@ -513,7 +519,7 @@ rundisplay(void)
 	int change, i;
 	struct pollfd pfd[1];
 	uid_t uid;
-	static char command_chars[] = "\f qh?en#sdkriIuSopCTg+P";
+	static char command_chars[] = "\f qh?en#sdkriIuSopCTg+P1";
 
 	/*
 	 * assume valid command unless told
@@ -896,7 +902,11 @@ rundisplay(void)
 			ps.command = NULL;	/* grep */
 			hlpid = -1;
 			break;
-		
+		case CMD_cpus:
+			combine_cpus = !combine_cpus;
+			max_topn = display_resize();
+			reset_display();
+			break;
 		default:
 			new_message(MT_standout, " BAD CASE IN SWITCH!");
 			putr();

@@ -1,6 +1,8 @@
 
 PROG=	top
 
+CC=/usr/local/bin/cc
+
 CFLAGS+=-I. -Wall -g -Wmissing-prototypes
 SRCS=	commands.c display.c machine.c screen.c top.c username.c utils.c
 DPADD=	${LIBCURSES}

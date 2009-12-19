@@ -52,4 +52,3 @@ extern void end_screen(void);
 extern void reinit_screen(void);
 extern void get_screensize(void);
 extern void go_home(void);
-extern int putstdout(int);

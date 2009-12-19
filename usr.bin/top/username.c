@@ -60,7 +60,7 @@ struct hash_el {
 	char	name[_PW_NAME_LEN + 1];
 };
 
-static int	enter_user(uid_t, char *, int);
+static int	enter_user(uid_t, char *);
 static int	get_user(uid_t);
 
 #define	is_empty_hash(x)	(hash_table[x].name[0] == 0)
@@ -98,29 +98,24 @@ userid(char *username)
 		return ((uid_t)-1);
 
 	/* enter the result in the hash table */
-	enter_user(pwd->pw_uid, username, 1);
+	enter_user(pwd->pw_uid, username);
 
 	/* return our result */
 	return (pwd->pw_uid);
 }
 
-/*
- * wecare: 1 = enter it always, 0 = nice to have
- */
 static int
-enter_user(uid_t uid, char *name, int wecare)
+enter_user(uid_t uid, char *name)
 {
 	int hashindex;
 
 #ifdef DEBUG
-	fprintf(stderr, "enter_hash(%u, %s, %d)\n", uid, name, wecare);
+	fprintf(stderr, "enter_hash(%u, %s)\n", uid, name);
 #endif
 
 	hashindex = hashit(uid);
 
 	if (!is_empty_hash(hashindex)) {
-		if (!wecare)
-			return 0;	/* Don't clobber a slot for trash */
 		if (hash_table[hashindex].uid == uid)
 			return (hashindex);	/* Fortuitous find */
 	}
@@ -141,8 +136,8 @@ get_user(uid_t uid)
 
 	/* no performance penalty for using getpwuid makes it easy */
 	if ((pwd = getpwuid(uid)) != NULL)
-		return (enter_user(pwd->pw_uid, pwd->pw_name, 1));
+		return (enter_user(pwd->pw_uid, pwd->pw_name));
 
 	/* if we can't find the name at all, then use the uid as the name */
-	return (enter_user(uid, format_uid(uid), 1));
+	return (enter_user(uid, format_uid(uid)));
 }
