@@ -456,8 +456,8 @@ adw*	at pci?			# AdvanSys ULTRA WIDE SCSI
 scsibus* at adw?
 pcscp*	at pci?			# AMD 53c974 PCscsi-PCI SCSI
 scsibus* at pcscp?
-sea0	at isa? disable iomem 0xc8000 irq 5 # Seagate ST0[12] SCSI controllers
-scsibus* at sea?
+#sea0	at isa? disable iomem 0xc8000 irq 5 # Seagate ST0[12] SCSI controllers
+#scsibus* at sea?
 trm*	at pci?			# Tekram DC-3x5U SCSI Controllers
 scsibus* at trm?
 #uha0	at isa? port 0x330	# UltraStor [13]4f SCSI controllers
