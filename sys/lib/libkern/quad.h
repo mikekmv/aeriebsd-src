@@ -93,17 +93,7 @@ union uu {
 #define	LHALF(x)	((u_int)(x) & (((int)1 << HALF_BITS) - 1))
 #define	LHUP(x)		((u_int)(x) << HALF_BITS)
 
-/*
- * XXX
- * Compensate for gcc 1 vs gcc 2.  Gcc 1 defines ?sh?di3's second argument
- * as u_quad_t, while gcc 2 correctly uses int.  Unfortunately, we still use
- * both compilers.
- */
-#if __GNUC_PREREQ__(2, 0) || defined(lint)
 typedef unsigned int	qshift_t;
-#else
-typedef u_quad_t	qshift_t;
-#endif
 
 quad_t __adddi3(quad_t, quad_t);
 quad_t __anddi3(quad_t, quad_t);
@@ -121,6 +111,6 @@ quad_t __one_cmpldi2(quad_t);
 u_quad_t __qdivrem(u_quad_t, u_quad_t, u_quad_t *);
 quad_t __subdi3(quad_t, quad_t);
 int __ucmpdi2(u_quad_t, u_quad_t);
-u_quad_t __udivdi3(u_quad_t, u_quad_t );
-u_quad_t __umoddi3(u_quad_t, u_quad_t );
+u_quad_t __udivdi3(u_quad_t, u_quad_t);
+u_quad_t __umoddi3(u_quad_t, u_quad_t);
 quad_t __xordi3(quad_t, quad_t);
