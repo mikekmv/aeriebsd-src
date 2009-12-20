@@ -544,7 +544,7 @@ ch_usergetelemstatus(sc, cesr)
 	struct changer_element_status *user_data = NULL;
 	struct read_element_status_header *st_hdr;
 	struct read_element_status_page_header *pg_hdr;
-	struct read_element_status_descriptor *desc;
+	caddr_t desc;
 	caddr_t data = NULL;
 	size_t size, desclen, udsize;
 	int chet = cesr->cesr_type;
@@ -571,8 +571,7 @@ ch_usergetelemstatus(sc, cesr)
 		goto done;
 
 	st_hdr = (struct read_element_status_header *)data;
-	pg_hdr = (struct read_element_status_page_header *)((u_long)st_hdr +
-	    sizeof(struct read_element_status_header));
+	pg_hdr = (struct read_element_status_page_header *) (st_hdr + 1);
 	desclen = _2btol(pg_hdr->edl);
 
 	size = sizeof(struct read_element_status_header) +
@@ -594,8 +593,7 @@ ch_usergetelemstatus(sc, cesr)
 	 * Fill in the user status array.
 	 */
 	st_hdr = (struct read_element_status_header *)data;
-	pg_hdr = (struct read_element_status_page_header *)((u_long)data +
-	    sizeof(struct read_element_status_header));
+	pg_hdr = (struct read_element_status_page_header *) (st_hdr + 1);
 
 	avail = _2btol(st_hdr->count);
 	if (avail != sc->sc_counts[chet]) {
@@ -606,13 +604,12 @@ ch_usergetelemstatus(sc, cesr)
 
 	user_data = malloc(udsize, M_DEVBUF, M_WAITOK | M_ZERO);
 
-	desc = (struct read_element_status_descriptor *)((u_long)data +
-	    sizeof(struct read_element_status_header) +
-	    sizeof(struct read_element_status_page_header));
+	desc = (caddr_t)(pg_hdr + 1);
 	for (i = 0; i < avail; ++i) {
 		struct changer_element_status *ces = &(user_data[i]);
-		copy_element_status(pg_hdr->flags, desc, ces);
-		(u_long)desc += desclen;
+		copy_element_status(pg_hdr->flags,
+		    (struct read_element_status_descriptor *)desc, ces);
+		desc += desclen;
 	}
 
 	/* Copy array out to userspace. */
