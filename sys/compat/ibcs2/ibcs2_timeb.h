@@ -36,7 +36,7 @@ struct xenix_timeb {
 	unsigned short millitm;
 	short timezone;
 	short dstflag;
-} __attribute((__packed__));
+} __packed;
 
 #define xenix_timeb_len 10      /* packed struct */
 
