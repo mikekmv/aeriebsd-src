@@ -167,7 +167,7 @@ ciss_attach(struct ciss_softc *sc)
 	sc->cfg.paddr_lim = 0;			/* 32bit addrs */
 	sc->cfg.int_delay = 0;			/* disable coalescing */
 	sc->cfg.int_count = 0;
-	strlcpy(sc->cfg.hostname, "HUMPPA", sizeof(sc->cfg.hostname));
+	strlcpy((char *)sc->cfg.hostname, "HUMPPA", sizeof(sc->cfg.hostname));
 	sc->cfg.driverf |= CISS_DRV_PRF;	/* enable prefetch */
 	if (!sc->cfg.maxsg)
 		sc->cfg.maxsg = MAXPHYS / PAGE_SIZE;
@@ -1139,9 +1139,9 @@ ciss_ioctl(struct device *dev, u_long cmd, caddr_t addr)
 			bd->bd_channel = pdid->bus;  
 			bd->bd_target = pdid->target;
 			bd->bd_lun = 0;
-			strlcpy(bd->bd_vendor, pdid->model,
+			strlcpy(bd->bd_vendor, (char *)pdid->model,
 			    sizeof(bd->bd_vendor));
-			strlcpy(bd->bd_serial, pdid->serial,
+			strlcpy(bd->bd_serial, (char *)pdid->serial,
 			    sizeof(bd->bd_serial));
 			bd->bd_procdev[0] = '\0';
 		}
