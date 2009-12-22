@@ -8,7 +8,7 @@ RELOC_SUN4M=	0x440000
 
 # Note: a `RELOC' value of 0x380000 seems to work on most machines
 RELOC?=		${RELOC_TEST}
-RELOC2!=	perl -e 'printf "0x%x", ${RELOC_TEST} + 0x40000'
+RELOC2!=	0x380000	# ${RELOC_TEST} + 0x40000'
 
 CFLAGS+=	-fno-stack-protector
 
