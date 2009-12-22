@@ -892,7 +892,9 @@ ffs_inode_alloc(struct inode *pip, mode_t mode, struct ucred *cred,
 	 * XXX - just increment for now, this is wrong! (millert)
 	 *       Need a way to preserve randomization.
 	 */
-	if (DIP(ip, gen) == 0 || ++(DIP(ip, gen)) == 0)
+	if (DIP(ip, gen) != 0)
+		DIP_ADD(ip, gen, 1);
+	if (DIP(ip, gen) == 0)
 		DIP_ASSIGN(ip, gen, arc4random() & INT_MAX);
 
 	if (DIP(ip, gen) == 0 || DIP(ip, gen) == -1)

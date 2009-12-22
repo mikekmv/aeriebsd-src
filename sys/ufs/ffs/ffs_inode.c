@@ -444,8 +444,15 @@ done:
 
 #ifdef FFS2
 #define BAP(ip, i) (((ip)->i_ump->um_fstype == UM_UFS2) ? bap2[i] : bap1[i])
+#define BAP_ASSIGN(ip, i, value)	do {	\
+	if ((ip)->i_ump->um_fstype == UM_UFS2)	\
+		bap2[i] = (value);		\
+	else					\
+		bap1[i] = (value);		\
+} while (0)
 #else
 #define BAP(ip, i) bap1[i]
+#define BAP_ASSIGN(ip, i, value) do { bap1[i] = (value); } while (0)
 #endif /* FFS2 */
 
 /*
@@ -526,7 +533,7 @@ ffs_indirtrunc(struct inode *ip, daddr64_t lbn, daddr64_t dbn,
 		bcopy(bp->b_data, copy, (u_int) fs->fs_bsize);
 
 		for (i = last + 1; i < NINDIR(fs); i++)
-			BAP(ip, i) = 0;
+			BAP_ASSIGN(ip, i, 0);
 
 		if (!DOINGASYNC(vp)) {
 			error = bwrite(bp);

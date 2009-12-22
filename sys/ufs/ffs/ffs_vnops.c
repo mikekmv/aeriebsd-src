@@ -377,7 +377,7 @@ ffs_write(void *v)
 	 * tampering.
 	 */
 	if (resid > uio->uio_resid && ap->a_cred && ap->a_cred->cr_uid != 0)
-		DIP(ip, mode) &= ~(ISUID | ISGID);
+		DIP_ASSIGN(ip, mode, DIP(ip, mode) & ~(ISUID | ISGID));
 	if (resid > uio->uio_resid)
 		VN_KNOTE(vp, NOTE_WRITE | (extended ? NOTE_EXTEND : 0));
 	if (error) {

@@ -279,6 +279,22 @@ struct inode_vtbl {
 			(ip)->i_ffs2_##field += (value);		\
 	} while (0)
 
+#define DIP_AND(ip, field, value)					\
+	do {								\
+		if ((ip)->i_ump->um_fstype == UM_UFS1)			\
+			(ip)->i_ffs1_##field &= (value);		\
+		else							\
+			(ip)->i_ffs2_##field &= (value);		\
+	} while (0)
+
+#define DIP_OR(ip, field, value)					\
+	do {								\
+		if ((ip)->i_ump->um_fstype == UM_UFS1)			\
+			(ip)->i_ffs1_##field |= (value);		\
+		else							\
+			(ip)->i_ffs2_##field |= (value);		\
+	} while (0)
+
 #define SHORTLINK(ip) \
 	(((ip)->i_ump->um_fstype == UM_UFS1) ? \
 	(caddr_t)(ip)->i_ffs1_db : (caddr_t)(ip)->i_ffs2_db)
