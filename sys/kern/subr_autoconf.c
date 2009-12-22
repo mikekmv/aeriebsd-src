@@ -56,12 +56,6 @@
  * Autoconfiguration subroutines.
  */
 
-/*
- * ioconf.c exports exactly two names: cfdata and cfroots.  All system
- * devices and drivers are found via these tables.
- */
-extern short cfroots[];
-
 #define	ROOT ((struct device *)NULL)
 
 struct matchinfo {

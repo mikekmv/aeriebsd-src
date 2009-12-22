@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996-2001 Mats O Jansson <moj@stacken.kth.se>
  * All rights reserved.
@@ -27,22 +26,12 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/kernel.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
 #include <sys/time.h>
 
 #include <dev/cons.h>
-
-extern char *locnames[];
-extern short locnamp[];
-extern short cfroots[];
-extern int cfroots_size;
-extern int pv_size;
-extern short pv[];
-extern struct timezone tz;
-extern char *pdevnames[];
-extern int pdevnames_size;
-extern struct pdevinit pdevinit[];
 
 int userconf_base = 16;				/* Base for "large" numbers */
 int userconf_maxdev = -1;			/* # of used device slots   */
@@ -60,7 +49,6 @@ char userconf_histbuf[40];
 
 void userconf_init(void);
 int userconf_more(void);
-void userconf_modify(char *, int *);
 void userconf_hist_cmd(char);
 void userconf_hist_int(int);
 void userconf_hist_eoc(void);
@@ -70,8 +58,8 @@ void userconf_pdev(short);
 int userconf_number(char *, int *);
 int userconf_device(char *, int *, short *, short *);
 int userconf_attr(char *, int *);
-void userconf_modify(char *, int *);
 void userconf_change(int);
+void userconf_modify(const char *, int *);
 void userconf_disable(int);
 void userconf_enable(int);
 void userconf_help(void);
@@ -415,7 +403,7 @@ userconf_attr(char *cmd, int *val)
 }
 
 void
-userconf_modify(char *item, int *val)
+userconf_modify(const char *item, int *val)
 {
 	int ok = 0;
 	int a;
