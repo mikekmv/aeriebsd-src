@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Jordan Hargrave
  * All rights reserved.
@@ -834,7 +833,7 @@ struct ipmi_bmc_response {
 	u_int8_t	bmc_data[1];
 };
 
-struct cfattach ipmi_ca = {
+const struct cfattach ipmi_ca = {
 	sizeof(struct ipmi_softc), ipmi_match, ipmi_attach
 };
 

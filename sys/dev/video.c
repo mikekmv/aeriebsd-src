@@ -47,7 +47,7 @@ int	videoprint(void *, const char *);
 
 void	video_intr(void *);
 
-struct cfattach video_ca = {
+const struct cfattach video_ca = {
 	sizeof(struct video_softc), videoprobe, videoattach,
 	videodetach, videoactivate
 };

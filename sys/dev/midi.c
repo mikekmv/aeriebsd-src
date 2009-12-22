@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2003, 2004 Alexandre Ratchov
  *
@@ -75,7 +74,7 @@ int		   midi_writebytes(int, u_char *, int);
 void		   midiseq_in(struct midi_dev *, u_char *, int);
 #endif
 
-struct cfattach midi_ca = {
+const struct cfattach midi_ca = {
 	sizeof(struct midi_softc), midiprobe, midiattach, mididetach
 };
 
@@ -594,7 +593,7 @@ midi_unit_count(void)
 
 #if NSEQUENCER > 0
 #define MIDI_EVLEN(status) 	(midi_evlen[((status) >> 4) & 7])
-unsigned midi_evlen[] = { 2, 2, 2, 2, 1, 1, 2 };
+const unsigned midi_evlen[] = { 2, 2, 2, 2, 1, 1, 2 };
 
 void
 midi_toevent(struct midi_softc *sc, int data)

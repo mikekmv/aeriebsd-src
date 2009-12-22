@@ -1,5 +1,3 @@
-/* $RuOBSD: radio.c,v 1.7 2001/12/04 06:03:05 tm Exp $ */
-
 /*
  * Copyright (c) 2001 Maxim Tsyplakov <tm@oganer.net>
  * All rights reserved.
@@ -48,7 +46,7 @@ int	radiodetach(struct device *, int);
 int	radioactivate(struct device *, enum devact);
 int	radioprint(void *, const char *);
 
-struct cfattach radio_ca = {
+const struct cfattach radio_ca = {
 	sizeof(struct radio_softc), radioprobe, radioattach,
 	radiodetach, radioactivate
 };

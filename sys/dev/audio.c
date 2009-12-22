@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1991-1993 Regents of the University of California.
  * All rights reserved.
@@ -98,7 +97,7 @@ int	audiodebug = 0;
 
 #define ROUNDSIZE(x) x &= -16	/* round to nice boundary */
 
-int	audio_blk_ms = AUDIO_BLK_MS;
+const int audio_blk_ms = AUDIO_BLK_MS;
 
 int	audiosetinfo(struct audio_softc *, struct audio_info *);
 int	audiogetinfo(struct audio_softc *, struct audio_info *);
@@ -152,25 +151,25 @@ int	audiodetach(struct device *, int);
 int	audioactivate(struct device *, enum devact);
 
 struct portname {
-	char	*name;
+	const char *name;
 	int	mask;
 };
-static struct portname itable[] = {
+static const struct portname itable[] = {
 	{ AudioNmicrophone,	AUDIO_MICROPHONE },
 	{ AudioNline,		AUDIO_LINE_IN },
 	{ AudioNcd,		AUDIO_CD },
 	{ 0 }
 };
-static struct portname otable[] = {
+static const struct portname otable[] = {
 	{ AudioNspeaker,	AUDIO_SPEAKER },
 	{ AudioNheadphone,	AUDIO_HEADPHONE },
 	{ AudioNline,		AUDIO_LINE_OUT },
 	{ 0 }
 };
-struct gainpref {
-	char *class, *device;
+const struct gainpref {
+	const char *class, *device;
 };
-static struct gainpref ipreftab[] = {
+static const struct gainpref ipreftab[] = {
 	{ AudioCinputs, AudioNvolume },
 	{ AudioCinputs, AudioNinput  },
 	{ AudioCinputs, AudioNrecord },
@@ -178,24 +177,24 @@ static struct gainpref ipreftab[] = {
 	{ AudioCrecord, AudioNrecord },
 	{ NULL, NULL}
 };
-static struct gainpref opreftab[] = {
+static const struct gainpref opreftab[] = {
 	{ AudioCoutputs, AudioNoutput },
 	{ AudioCoutputs, AudioNdac },
 	{ AudioCinputs,  AudioNdac },
 	{ AudioCoutputs, AudioNmaster },
 	{ NULL, NULL}
 };
-static struct gainpref mpreftab[] = {
+static const struct gainpref mpreftab[] = {
 	{ AudioCoutputs, AudioNmonitor },
 	{ AudioCmonitor, AudioNmonitor },
 	{ NULL, NULL}
 };
 
-void	au_gain_match(struct audio_softc *, struct gainpref *, 
+void	au_gain_match(struct audio_softc *, const struct gainpref *, 
 		mixer_devinfo_t *, mixer_devinfo_t *, int *, int *);			    
 void	au_check_ports(struct audio_softc *, struct au_mixer_ports *,
 		            mixer_devinfo_t *, mixer_devinfo_t *, 
-		            char *, char *, struct portname *);
+		            char *, char *, const struct portname *);
 int	au_set_gain(struct audio_softc *, struct au_mixer_ports *,
 			 int, int);
 void	au_get_gain(struct audio_softc *, struct au_mixer_ports *,
@@ -216,7 +215,7 @@ int	au_portof(struct audio_softc *, char *);
 struct audio_params audio_default =
 	{ 8000, AUDIO_ENCODING_ULAW, 8, 1, 0, 1 };
 
-struct cfattach audio_ca = {
+const struct cfattach audio_ca = {
 	sizeof(struct audio_softc), audioprobe, audioattach,
 	audiodetach, audioactivate
 };
@@ -431,7 +430,7 @@ au_portof(struct audio_softc *sc, char *name)
 void
 au_check_ports(struct audio_softc *sc, struct au_mixer_ports *ports,
     mixer_devinfo_t *cl, mixer_devinfo_t *mi, char *cname, char *mname, 
-    struct portname *tbl)
+    const struct portname *tbl)
 {
 	int i, j;
 
@@ -476,7 +475,7 @@ au_check_ports(struct audio_softc *sc, struct au_mixer_ports *ports,
  * current setting.
  */
 void
-au_gain_match(struct audio_softc *sc, struct gainpref *tbl, 
+au_gain_match(struct audio_softc *sc, const struct gainpref *tbl, 
     mixer_devinfo_t *cls, mixer_devinfo_t *dev, int *index, int *pref) 
 {
 	int i;

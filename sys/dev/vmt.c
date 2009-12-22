@@ -1,5 +1,3 @@
-/*	$OpenBSD$ */
-
 /*
  * Copyright (c) 2007 David Crawshaw <david@zentus.com>
  * Copyright (c) 2008 David Gwynne <dlg@openbsd.org>
@@ -124,7 +122,7 @@ struct vmt_softc {
 };
 #define DEVNAME(_s)	((_s)->sc_dev.dv_xname)
 
-struct cfattach vmt_ca = {
+const struct cfattach vmt_ca = {
 	sizeof(struct vmt_softc),
 	vmt_match,
 	vmt_attach

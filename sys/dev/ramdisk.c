@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995 Gordon W. Ross, Leo Weppelman.
  * All rights reserved.
@@ -118,9 +117,8 @@ int  rd_probe(struct device *, void *, void *);
 int  rd_detach(struct device *, int);
 int  rd_activate(struct device *, enum devact);
 
-struct cfattach rd_ca = {
-	sizeof(struct rd_softc), rd_probe, rd_attach,
-	rd_detach, rd_activate
+const struct cfattach rd_ca = {
+	sizeof(struct rd_softc), rd_probe, rd_attach, rd_detach, rd_activate
 };
 
 void rdstrategy(struct buf *bp);
