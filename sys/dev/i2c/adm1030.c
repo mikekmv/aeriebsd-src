@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Theo de Raadt
  *
@@ -49,7 +48,7 @@ int	admtmp_match(struct device *, void *, void *);
 void	admtmp_attach(struct device *, struct device *, void *);
 void	admtmp_refresh(void *);
 
-struct cfattach admtmp_ca = {
+const struct cfattach admtmp_ca = {
 	sizeof(struct admtmp_softc), admtmp_match, admtmp_attach
 };
 

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2006 Mark Kettenis
  *
@@ -63,7 +62,7 @@
 struct wbenv_softc;
 
 struct wbenv_sensor {
-	char *desc;
+	char *const desc;
 	enum sensor_type type;
 	u_int8_t reg;
 	void (*refresh)(struct wbenv_softc *, int);
@@ -99,7 +98,7 @@ void	w83l785r_refresh_fanrpm(struct wbenv_softc *, int);
 u_int8_t wbenv_readreg(struct wbenv_softc *, u_int8_t);
 void	wbenv_writereg(struct wbenv_softc *, u_int8_t, u_int8_t);
 
-struct cfattach wbenv_ca = {
+const struct cfattach wbenv_ca = {
 	sizeof(struct wbenv_softc), wbenv_match, wbenv_attach
 };
 

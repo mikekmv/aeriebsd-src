@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2007 Theo de Raadt
  *
@@ -130,7 +129,7 @@ void	lmn_attach(struct device *, struct device *, void *);
 
 void	lmn_refresh(void *);
 
-struct cfattach lmn_ca = {
+const struct cfattach lmn_ca = {
 	sizeof(struct lmn_softc), lmn_match, lmn_attach
 };
 

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2008 Constantine A. Murenin <cnst+openbsd@bugmail.mojo.ru>
  *
@@ -82,8 +81,7 @@ int	andl_refresh_tachs(struct andl_softc *, struct ksensor *);
 uint8_t	andl_readreg(struct andl_softc *, uint8_t);
 void	andl_writereg(struct andl_softc *, uint8_t, uint8_t);
 
-
-struct cfattach andl_ca = {
+const struct cfattach andl_ca = {
 	sizeof(struct andl_softc), andl_match, andl_attach
 };
 

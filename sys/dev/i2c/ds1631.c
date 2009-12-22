@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Theo de Raadt
  *
@@ -47,7 +46,7 @@ int	maxds_match(struct device *, void *, void *);
 void	maxds_attach(struct device *, struct device *, void *);
 void	maxds_refresh(void *);
 
-struct cfattach maxds_ca = {
+const struct cfattach maxds_ca = {
 	sizeof(struct maxds_softc), maxds_match, maxds_attach
 };
 

@@ -194,7 +194,7 @@ void		 spdmem_rdr_decode(struct spdmem_softc *, struct spdmem *);
 void		 spdmem_ddr_decode(struct spdmem_softc *, struct spdmem *);
 void		 spdmem_ddr2_decode(struct spdmem_softc *, struct spdmem *);
 
-struct cfattach spdmem_ca = {
+const struct cfattach spdmem_ca = {
 	sizeof(struct spdmem_softc), spdmem_match, spdmem_attach
 };
 

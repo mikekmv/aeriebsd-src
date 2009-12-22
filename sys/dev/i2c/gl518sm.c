@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2006 Mark Kettenis
  *
@@ -68,7 +67,7 @@ void	glenv_attach(struct device *, struct device *, void *);
 
 void	glenv_refresh(void *);
 
-struct cfattach glenv_ca = {
+const struct cfattach glenv_ca = {
 	sizeof(struct glenv_softc), glenv_match, glenv_attach
 };
 

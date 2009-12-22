@@ -69,7 +69,7 @@ struct lmtemp_softc {
 int  lmtemp_match(struct device *, void *, void *);
 void lmtemp_attach(struct device *, struct device *, void *);
 
-struct cfattach lmtemp_ca = {
+const struct cfattach lmtemp_ca = {
 	sizeof(struct lmtemp_softc),
 	lmtemp_match,
 	lmtemp_attach

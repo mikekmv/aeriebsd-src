@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Theo de Raadt
  *
@@ -56,7 +55,7 @@ int     pcagpio_gpio_pin_read(void *, int);
 void    pcagpio_gpio_pin_write(void *, int, int);
 void    pcagpio_gpio_pin_ctl(void *, int, int);
 
-struct cfattach pcagpio_ca = {
+const struct cfattach pcagpio_ca = {
 	sizeof(struct pcagpio_softc), pcagpio_match, pcagpio_attach
 };
 

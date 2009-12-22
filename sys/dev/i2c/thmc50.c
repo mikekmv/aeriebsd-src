@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2007 Theo de Raadt
  *
@@ -46,7 +45,7 @@ int	thmc_match(struct device *, void *, void *);
 void	thmc_attach(struct device *, struct device *, void *);
 void	thmc_refresh(void *);
 
-struct cfattach thmc_ca = {
+const struct cfattach thmc_ca = {
 	sizeof(struct thmc_softc), thmc_match, thmc_attach
 };
 

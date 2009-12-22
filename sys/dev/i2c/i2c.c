@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2003 Wasabi Systems, Inc.
  * All rights reserved.
@@ -55,7 +54,7 @@ int	iic_match(struct device *, void *, void *);
 void	iic_attach(struct device *, struct device *, void *);
 int	iic_search(struct device *, void *, void *);
 
-struct cfattach iic_ca = {
+const struct cfattach iic_ca = {
 	sizeof (struct iic_softc),
 	iic_match,
 	iic_attach

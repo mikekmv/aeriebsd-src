@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Mark Kettenis
  *
@@ -71,7 +70,7 @@ void	lmenv_attach(struct device *, struct device *, void *);
 
 void	lmenv_refresh(void *);
 
-struct cfattach lmenv_ca = {
+const struct cfattach lmenv_ca = {
 	sizeof(struct lmenv_softc), lmenv_match, lmenv_attach
 };
 

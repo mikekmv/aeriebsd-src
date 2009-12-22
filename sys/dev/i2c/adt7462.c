@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2008 Theo de Raadt
  *
@@ -76,7 +75,7 @@ int	adtfsm_match(struct device *, void *, void *);
 void	adtfsm_attach(struct device *, struct device *, void *);
 void	adtfsm_refresh(void *);
 
-struct cfattach adtfsm_ca = {
+const struct cfattach adtfsm_ca = {
 	sizeof(struct adtfsm_softc), adtfsm_match, adtfsm_attach
 };
 

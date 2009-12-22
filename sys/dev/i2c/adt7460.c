@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Mark Kettenis
  *
@@ -129,7 +128,7 @@ void	adt_attach(struct device *, struct device *, void *);
 
 void	adt_refresh(void *);
 
-struct cfattach adt_ca = {
+const struct cfattach adt_ca = {
 	sizeof(struct adt_softc), adt_match, adt_attach
 };
 

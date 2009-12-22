@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Mark Kettenis
  *
@@ -58,7 +57,7 @@ void	fcu_attach(struct device *, struct device *, void *);
 
 void	fcu_refresh(void *);
 
-struct cfattach fcu_ca = {
+const struct cfattach fcu_ca = {
 	sizeof(struct fcu_softc), fcu_match, fcu_attach
 };
 

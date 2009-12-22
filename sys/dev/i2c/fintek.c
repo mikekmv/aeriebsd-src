@@ -51,7 +51,7 @@ int	fintek_write_reg(struct fintek_softc *sc, u_int8_t cmd, u_int8_t *data,
 	    size_t size);
 void	fintek_fullspeed(struct fintek_softc *sc);
 
-struct cfattach fintek_ca = {
+const struct cfattach fintek_ca = {
 	sizeof(struct fintek_softc), fintek_match, fintek_attach
 };
 

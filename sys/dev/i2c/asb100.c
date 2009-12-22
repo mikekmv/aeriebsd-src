@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Damien Miller <djm@openbsd.org>
  *
@@ -116,7 +115,7 @@ int	asbtm_match(struct device *, void *, void *);
 void	asbtm_attach(struct device *, struct device *, void *);
 void	asbtm_refresh(void *);
 
-struct cfattach asbtm_ca = {
+const struct cfattach asbtm_ca = {
 	sizeof(struct asbtm_softc), asbtm_match, asbtm_attach
 };
 

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Mark Kettenis
  *
@@ -37,7 +36,7 @@ int lm_i2c_detach(struct device *, int);
 u_int8_t lm_i2c_readreg(struct lm_softc *, int);
 void lm_i2c_writereg(struct lm_softc *, int, int);
 
-struct cfattach lm_i2c_ca = {
+const struct cfattach lm_i2c_ca = {
 	sizeof(struct lm_i2c_softc), lm_i2c_match,
 	lm_i2c_attach, lm_i2c_detach
 };

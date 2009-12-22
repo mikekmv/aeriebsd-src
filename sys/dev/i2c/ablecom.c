@@ -74,7 +74,7 @@ struct cfdriver ablecom_cd = {
 int	ablecommatch(struct device *, void *, void *);
 void	ablecomattach(struct device *, struct device *, void *);
 
-struct cfattach ablecom_ca = {
+const struct cfattach ablecom_ca = {
 	sizeof(struct ablecom_softc), ablecommatch, ablecomattach
 };
 

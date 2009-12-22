@@ -50,7 +50,7 @@ int pcaled_gpio_pin_read(void *arg, int pin);
 void pcaled_gpio_pin_write (void *arg, int pin, int value);
 void pcaled_gpio_pin_ctl (void *arg, int pin, int flags);
 
-struct cfattach pcaled_ca = {
+const struct cfattach pcaled_ca = {
 	sizeof(struct pcaled_softc), pcaled_match, pcaled_attach
 };
 

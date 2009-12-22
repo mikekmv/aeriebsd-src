@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2007 Constantine A. Murenin <cnst+openbsd@bugmail.mojo.ru>
  *
@@ -83,8 +82,7 @@ void	wbng_refresh_fans(struct wbng_softc *);
 uint8_t	wbng_readreg(struct wbng_softc *, uint8_t);
 void	wbng_writereg(struct wbng_softc *, uint8_t, uint8_t);
 
-
-struct cfattach wbng_ca = {
+const struct cfattach wbng_ca = {
 	sizeof(struct wbng_softc), wbng_match, wbng_attach
 };
 

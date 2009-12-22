@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2008 Theo de Raadt
  *
@@ -43,7 +42,7 @@ int	sdtemp_match(struct device *, void *, void *);
 void	sdtemp_attach(struct device *, struct device *, void *);
 void	sdtemp_refresh(void *);
 
-struct cfattach sdtemp_ca = {
+const struct cfattach sdtemp_ca = {
 	sizeof(struct sdtemp_softc), sdtemp_match, sdtemp_attach
 };
 

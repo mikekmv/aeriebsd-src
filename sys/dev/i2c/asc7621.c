@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2007 Mike Belopuhov
  * Copyright (c) 2007 Theo de Raadt
@@ -122,7 +121,7 @@ void	adl_attach(struct device *, struct device *, void *);
 
 void	adl_refresh(void *);
 
-struct cfattach adl_ca = {
+const struct cfattach adl_ca = {
 	sizeof(struct adl_softc), adl_match, adl_attach
 };
 

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Theo de Raadt
  *
@@ -61,7 +60,7 @@ int	maxtmp_match(struct device *, void *, void *);
 void	maxtmp_attach(struct device *, struct device *, void *);
 void	maxtmp_refresh(void *);
 
-struct cfattach maxtmp_ca = {
+const struct cfattach maxtmp_ca = {
 	sizeof(struct maxtmp_softc), maxtmp_match, maxtmp_attach
 };
 

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Kimihiro Nonaka
  * All rights reserved.
@@ -92,7 +91,7 @@ struct ricohrtc_softc {
 int ricohrtc_match(struct device *, void *, void *);
 void ricohrtc_attach(struct device *, struct device *, void *);
 
-struct cfattach ricohrtc_ca = {
+const struct cfattach ricohrtc_ca = {
 	sizeof(struct ricohrtc_softc), ricohrtc_match, ricohrtc_attach
 };
 

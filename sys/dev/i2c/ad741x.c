@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Theo de Raadt
  *
@@ -55,7 +54,7 @@ int	adc_match(struct device *, void *, void *);
 void	adc_attach(struct device *, struct device *, void *);
 void	adc_refresh(void *);
 
-struct cfattach adc_ca = {
+const struct cfattach adc_ca = {
 	sizeof(struct adc_softc), adc_match, adc_attach
 };
 

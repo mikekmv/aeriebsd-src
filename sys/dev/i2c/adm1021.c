@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Theo de Raadt
  *
@@ -53,7 +52,7 @@ int	admtemp_match(struct device *, void *, void *);
 void	admtemp_attach(struct device *, struct device *, void *);
 void	admtemp_refresh(void *);
 
-struct cfattach admtemp_ca = {
+const struct cfattach admtemp_ca = {
 	sizeof(struct admtemp_softc), admtemp_match, admtemp_attach
 };
 
