@@ -239,14 +239,14 @@ drmsubmatch(struct device *parent, void *match, void *aux)
 	struct cfdata *cf = match;
 	struct cfdriver *cd;
 	size_t len = 0;
-	char *sm;
+	const char *sm;
 
 	cd = cf->cf_driver;
 
 	/* is this a *drm device? */
 	len = strlen(cd->cd_name);
-	sm = cd->cd_name + len -3;
-	if (strncmp(sm,"drm",3) == 0)
+	sm = cd->cd_name + len - 3;
+	if (strncmp(sm, "drm", 3) == 0)
 		return ((*cf->cf_attach->ca_match)(parent, match, aux));
 
 	return (0);

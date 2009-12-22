@@ -173,7 +173,7 @@ brgphy_attach(struct device *parent, struct device *self, void *aux)
 	struct mii_attach_args *ma = aux;
 	struct mii_data *mii = ma->mii_data;
 	const struct mii_phydesc *mpd;
-	char *devname;
+	const char *devname;
 
 	devname = sc->mii_dev.dv_parent->dv_cfdata->cf_driver->cd_name;
 
@@ -611,7 +611,7 @@ brgphy_reset(struct mii_softc *sc)
 {
 	struct bge_softc *bge_sc = NULL;
 	struct bnx_softc *bnx_sc = NULL;
-	char *devname;
+	const char *devname;
 
 	devname = sc->mii_dev.dv_parent->dv_cfdata->cf_driver->cd_name;
 

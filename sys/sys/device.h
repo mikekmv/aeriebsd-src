@@ -134,7 +134,7 @@ struct cfattach {
 
 struct cfdriver {
 	void	**cd_devs;		/* devices found */
-	char	*cd_name;		/* device name */
+	const char *const cd_name;	/* device name */
 	enum	devclass cd_class;	/* device classification */
 	int	cd_indirect;		/* indirectly configure subdevices */
 	int	cd_ndevs;		/* size of cd_devs array */

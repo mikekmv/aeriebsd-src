@@ -84,7 +84,7 @@ int
 rlphymatch(struct device *parent, void *match, void *aux)
 {
 	struct mii_attach_args *ma = aux;
-	char *devname;
+	const char *devname;
 
 	devname = parent->dv_cfdata->cf_driver->cd_name;
 
@@ -224,7 +224,7 @@ rlphy_status(struct mii_softc *sc)
 	struct mii_data *mii = sc->mii_pdata;
 	struct ifmedia_entry *ife = mii->mii_media.ifm_cur;
 	int bmsr, bmcr, anlpar;
-	char *devname;
+	const char *devname;
 
 	devname = sc->mii_dev.dv_parent->dv_cfdata->cf_driver->cd_name;
 
