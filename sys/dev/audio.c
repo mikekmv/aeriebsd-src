@@ -166,7 +166,7 @@ static const struct portname otable[] = {
 	{ AudioNline,		AUDIO_LINE_OUT },
 	{ 0 }
 };
-const struct gainpref {
+struct gainpref {
 	const char *class, *device;
 };
 static const struct gainpref ipreftab[] = {
