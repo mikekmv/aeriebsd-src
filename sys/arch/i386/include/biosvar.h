@@ -196,7 +196,7 @@ typedef struct _bios_consdev {
 
 #define BOOTARG_BOOTMAC	7
 typedef struct _bios_bootmac {
-	char	mac[6];
+	u_char	mac[6];
 } __packed bios_bootmac_t;
 
 #if defined(_KERNEL) || defined (_STANDALONE)
