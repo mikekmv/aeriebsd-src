@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -85,7 +84,7 @@ TAILQ_HEAD(devicelist, device);
  * Configuration data (i.e., data placed in ioconf.c).
  */
 struct cfdata {
-	struct	cfattach *cf_attach;	/* config attachment */
+	const struct cfattach *cf_attach; /* config attachment */
 	struct	cfdriver *cf_driver;	/* config driver */
 	short	cf_unit;		/* unit number */
 	short	cf_fstate;		/* finding state (below) */

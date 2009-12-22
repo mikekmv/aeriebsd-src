@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -330,9 +329,9 @@ struct device *
 config_attach(struct device *parent, void *match, void *aux, cfprint_t print)
 {
 	struct cfdata *cf;
-	struct device *dev;
+	const struct cfattach *ca;
 	struct cfdriver *cd;
-	struct cfattach *ca;
+	struct device *dev;
 	struct cftable *t;
 
 	if (parent && parent->dv_cfdata->cf_driver->cd_indirect) {
@@ -397,9 +396,9 @@ config_attach(struct device *parent, void *match, void *aux, cfprint_t print)
 struct device *
 config_make_softc(struct device *parent, struct cfdata *cf)
 {
-	struct device *dev;
+	const struct cfattach *ca;
 	struct cfdriver *cd;
-	struct cfattach *ca;
+	struct device *dev;
 
 	cd = cf->cf_driver;
 	ca = cf->cf_attach;
@@ -478,7 +477,7 @@ int
 config_detach(struct device *dev, int flags)
 {
 	struct cfdata *cf;
-	struct cfattach *ca;
+	const struct cfattach *ca;
 	struct cfdriver *cd;
 	int rv = 0, i;
 #ifdef DIAGNOSTIC
@@ -603,7 +602,7 @@ config_detach(struct device *dev, int flags)
 int
 config_activate(struct device *dev)
 {
-	struct cfattach *ca = dev->dv_cfdata->cf_attach;
+	const struct cfattach *ca = dev->dv_cfdata->cf_attach;
 	int rv = 0, oflags = dev->dv_flags;
 
 	if (ca->ca_activate == NULL)
@@ -621,7 +620,7 @@ config_activate(struct device *dev)
 int
 config_deactivate(struct device *dev)
 {
-	struct cfattach *ca = dev->dv_cfdata->cf_attach;
+	const struct cfattach *ca = dev->dv_cfdata->cf_attach;
 	int rv = 0, oflags = dev->dv_flags;
 
 	if (ca->ca_activate == NULL)
