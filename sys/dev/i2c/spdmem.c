@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2007 Jonathan Gray <jsg@openbsd.org>
  *
@@ -14,7 +13,6 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
 /*
  * Copyright (c) 2007 Nicolas Joly
  * Copyright (c) 2007 Paul Goyette
@@ -206,7 +204,7 @@ struct cfdriver spdmem_cd = {
 
 #define IS_RAMBUS_TYPE (s->sm_len < 4)
 
-static const char *spdmem_basic_types[] = {
+static const char *const spdmem_basic_types[] = {
 	"unknown",
 	"FPM",
 	"EDO",
@@ -220,7 +218,7 @@ static const char *spdmem_basic_types[] = {
 	"DDR2 SDRAM FB Probe"
 };
 
-static const char *spdmem_superset_types[] = {
+static const char *const spdmem_superset_types[] = {
 	"unknown",
 	"ESDRAM",
 	"DDR ESDRAM",
@@ -228,7 +226,7 @@ static const char *spdmem_superset_types[] = {
 	"PEM SDRAM"
 };
 
-static const char *spdmem_parity_types[] = {
+static const char *const spdmem_parity_types[] = {
 	"non-parity",
 	"data parity",
 	"ECC",

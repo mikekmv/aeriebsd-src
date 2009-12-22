@@ -29,7 +29,7 @@
 /* Voltage */
 #define WB_NUM_VOLTS	10
 
-static const char *wb_volt_desc[WB_NUM_VOLTS] = {
+static const char *const wb_volt_desc[WB_NUM_VOLTS] = {
 	"VCore", "VCore", "VTT",
 	"", "", "3.3V", "12V", "5VDD", "5VSB", "VBat"
 };
