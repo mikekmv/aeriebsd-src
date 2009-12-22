@@ -46,7 +46,7 @@ SRCS+=	cread.c
 .endif
 
 .if !defined(NO_NET)
-SRCS+=	nfs.c
+SRCS+=	nfs.c tftp.c
 
 # network routines
 SRCS+=	arp.c ether.c in_cksum.c net.c netif.c rpc.c

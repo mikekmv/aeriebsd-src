@@ -1,6 +1,6 @@
 #
 #	NOTE: $S must correspond to the top of the 'sys' tree
-SADIR=	$S/lib/libsa
+SADIR?=	$S/lib/libsa
 
 SADST?=	lib/sa
 SAREL?=	../../
@@ -34,7 +34,7 @@ clean::			.NOTMAIN __always_make_salib
 	@${SAMAKE} clean
 	-rmdir -p ${SADST}
 
-depend::		.NOTMAIN __always_make_salib
+beforedepend::		.NOTMAIN __always_make_salib
 	@echo depending the standalone library objects
 	@${SAMAKE} depend
 
