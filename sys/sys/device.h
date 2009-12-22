@@ -65,12 +65,12 @@ enum devact {
 };
 
 struct device {
-	enum	devclass dv_class;	/* this device's classification */
+	char	dv_xname[16];		/* external name (name + unit) */
 	TAILQ_ENTRY(device) dv_list;	/* entry on list of all devices */
 	struct	cfdata *dv_cfdata;	/* config data that found us */
-	int	dv_unit;		/* device unit number */
-	char	dv_xname[16];		/* external name (name + unit) */
 	struct	device *dv_parent;	/* pointer to parent device */
+	enum	devclass dv_class;	/* this device's classification */
+	int	dv_unit;		/* device unit number */
 	int	dv_flags;		/* misc. flags; see below */
 	int	dv_ref;			/* ref count */
 };

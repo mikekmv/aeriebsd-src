@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -40,8 +39,8 @@
  * notified when I/O becomes possible.
  */
 struct selinfo {
-	pid_t	si_selpid;	/* process to be notified */
 	struct	klist si_note;	/* kernel note list */
+	pid_t	si_selpid;	/* process to be notified */
 	short	si_flags;	/* see below */
 };
 #define	SI_COLL	0x0001		/* collision occurred */

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -31,6 +30,7 @@
  */
 
 #include <sys/rwlock.h>
+
 /*
  * This structure is used for the management of descriptors.  It may be
  * shared by multiple processes.
@@ -55,18 +55,18 @@
 #define NDLOSLOTS(x)	(NDHISLOTS(x) << NDENTRYSHIFT)
 
 struct filedesc {
+	struct rwlock fd_lock;		/* lock for the file descs */
 	struct	file **fd_ofiles;	/* file structures for open files */
 	char	*fd_ofileflags;		/* per-process open file flags */
 	struct	vnode *fd_cdir;		/* current directory */
 	struct	vnode *fd_rdir;		/* root directory */
-	int	fd_nfiles;		/* number of open files allocated */
 	u_int	*fd_himap;		/* each bit points to 32 fds */
 	u_int	*fd_lomap;		/* bitmap of free fds */
+	int	fd_nfiles;		/* number of open files allocated */
 	int	fd_lastfile;		/* high-water mark of fd_ofiles */
 	int	fd_freefile;		/* approx. next free file */
 	u_short	fd_cmask;		/* mask for file creation */
 	u_short	fd_refcnt;		/* reference count */
-	struct rwlock fd_lock;		/* lock for the file descs */
 
 	int	fd_knlistsize;		/* size of knlist */
 	struct	klist *fd_knlist;	/* list of attached knotes */

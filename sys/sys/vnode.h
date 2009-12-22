@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -78,24 +77,16 @@ enum vtagtype	{
 LIST_HEAD(buflists, buf);
 
 struct vnode {
-	struct uvm_vnode v_uvm;			/* uvm data */
-	int	(**v_op)(void *);		/* vnode operations vector */
-	enum	vtype v_type;			/* vnode type */
-	u_int	v_flag;				/* vnode flags (see below) */
-	u_int   v_usecount;			/* reference count of users */
-	/* reference count of writers */
-	u_int   v_writecount;
-	/* Flags that can be read/written in interrupts */
-	u_int   v_bioflag;
-	u_int   v_holdcnt;			/* buffer references */
-	u_int   v_id;				/* capability identifier */
-	struct	mount *v_mount;			/* ptr to vfs we are in */
-	TAILQ_ENTRY(vnode) v_freelist;		/* vnode freelist */
-	LIST_ENTRY(vnode) v_mntvnodes;		/* vnodes for mount point */
-	struct	buflists v_cleanblkhd;		/* clean blocklist head */
-	struct	buflists v_dirtyblkhd;		/* dirty blocklist head */
-	u_int   v_numoutput;			/* num of writes in progress */
-	LIST_ENTRY(vnode) v_synclist;		/* vnode with dirty buffers */
+	struct	uvm_vnode v_uvm;	/* uvm data */
+	TAILQ_ENTRY(vnode) v_freelist;	/* vnode freelist */
+	LIST_ENTRY(vnode) v_mntvnodes;	/* vnodes for mount point */
+	LIST_ENTRY(vnode) v_synclist;	/* vnode with dirty buffers */
+	struct	selinfo v_selectinfo;	/* identity of poller(s) */
+	struct	buflists v_cleanblkhd;	/* clean blocklist head */
+	struct	buflists v_dirtyblkhd;	/* dirty blocklist head */
+	int	(**v_op)(void *);	/* vnode operations vector */
+	struct	mount *v_mount;		/* ptr to vfs we are in */
+	void	*v_data;		/* private data for fs */
 	union {
 		struct mount	*vu_mountedhere;/* ptr to mounted vfs (VDIR) */
 		struct socket	*vu_socket;	/* unix ipc (VSOCK) */
@@ -103,9 +94,15 @@ struct vnode {
 		struct fifoinfo	*vu_fifoinfo;	/* fifo (VFIFO) */
 	} v_un;
 
-	enum	vtagtype v_tag;			/* type of underlying data */
-	void	*v_data;			/* private data for fs */
-	struct	selinfo v_selectinfo;		/* identity of poller(s) */
+	enum	vtype v_type;		/* vnode type */
+	enum	vtagtype v_tag;		/* type of underlying data */
+	u_int   v_id;			/* capability identifier */
+	u_int   v_bioflag;		/* int-safe flags */
+	u_int	v_flag;			/* vnode flags (see below) */
+	u_int   v_numoutput;		/* num of writes in progress */
+	u_int   v_usecount;		/* reference count of users */
+	u_int   v_writecount;		/* reference count of writers */
+	u_int   v_holdcnt;		/* buffer references */
 };
 #define	v_mountedhere	v_un.vu_mountedhere
 #define	v_socket	v_un.vu_socket
@@ -140,25 +137,25 @@ struct vnode {
  * is unavailable (getattr) or which is not to be changed (setattr).
  */
 struct vattr {
+	struct timespec	va_atime;	/* time of last access */
+	struct timespec	va_mtime;	/* time of last modification */
+	struct timespec	va_ctime;	/* time file changed */
+	u_quad_t	va_size;	/* file size in bytes */
+	u_quad_t	va_bytes;	/* bytes of disk space held by file */
+	u_quad_t	va_filerev;	/* file modification number */
+	u_long		va_gen;		/* generation number of file */
+	u_long		va_flags;	/* flags defined for file */
+	long		va_fsid;	/* file system id (dev for now) */
+	long		va_fileid;	/* file id */
+	long		va_blocksize;	/* blocksize preferred for i/o */
+	long		va_spare;	/* remain quad aligned */
 	enum vtype	va_type;	/* vnode type (for create) */
+	dev_t		va_rdev;	/* device the special file represents */
 	mode_t		va_mode;	/* files access mode and type */
 	nlink_t		va_nlink;	/* number of references to file */
 	uid_t		va_uid;		/* owner user id */
 	gid_t		va_gid;		/* owner group id */
-	long		va_fsid;	/* file system id (dev for now) */
-	long		va_fileid;	/* file id */
-	u_quad_t	va_size;	/* file size in bytes */
-	long		va_blocksize;	/* blocksize preferred for i/o */
-	struct timespec	va_atime;	/* time of last access */
-	struct timespec	va_mtime;	/* time of last modification */
-	struct timespec	va_ctime;	/* time file changed */
-	u_long		va_gen;		/* generation number of file */
-	u_long		va_flags;	/* flags defined for file */
-	dev_t		va_rdev;	/* device the special file represents */
-	u_quad_t	va_bytes;	/* bytes of disk space held by file */
-	u_quad_t	va_filerev;	/* file modification number */
 	u_int		va_vaflags;	/* operations flags, see below */
-	long		va_spare;	/* remain quad aligned */
 };
 
 /*

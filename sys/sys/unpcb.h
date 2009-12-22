@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -63,16 +62,16 @@ struct	unpcbid {
 struct	unpcb {
 	struct	socket *unp_socket;	/* pointer back to socket */
 	struct	vnode *unp_vnode;	/* if associated with file */
-	ino_t	unp_ino;		/* fake inode number */
 	struct	unpcb *unp_conn;	/* control block of connected socket */
 	struct	unpcb *unp_refs;	/* referencing socket linked list */
 	struct 	unpcb *unp_nextref;	/* link in unp_refs list */
 	struct	mbuf *unp_addr;		/* bound address of socket */
-	int	unp_flags;		/* this unpcb contains peer eids */
 	struct	unpcbid unp_connid;	/* id of peer process */
+	struct	timespec unp_ctime;	/* holds creation time */
+	ino_t	unp_ino;		/* fake inode number */
+	int	unp_flags;		/* this unpcb contains peer eids */
 	int	unp_cc;			/* copy of rcv.sb_cc */
 	int	unp_mbcnt;		/* copy of rcv.sb_mbcnt */
-	struct	timespec unp_ctime;	/* holds creation time */
 };
 
 /*

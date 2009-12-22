@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1986, 1989, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -163,7 +162,7 @@ struct proc {
 #define	p_rlimit	p_p->ps_limit->pl_rlimit
 
 	int	p_exitsig;		/* Signal to send to parent on exit. */
-	int	p_flag;			/* P_* flags. */
+	u_int	p_flag;			/* P_* flags. */
 	u_char	p_os;			/* OS tag */
 	char	p_stat;			/* S* process status. */
 	char	p_pad1[1];
