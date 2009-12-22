@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -286,7 +285,7 @@ emitlocnames(FILE *fp)
 
 	}
 #endif
-	if (fprintf(fp, "\nchar *locnames[] = {\n") < 0)
+	if (fprintf(fp, "\nconst char *const locnames[] = {\n") < 0)
 		return (1);
 	for (j = 0; j < nlocnames; j++)
 		if (fprintf(fp, "\t\"%s\",\n", locnames[j]) < 0)
@@ -297,7 +296,7 @@ emitlocnames(FILE *fp)
 	if (fprintf(fp,
 	    "/* each entry is an index into locnames[]; -1 terminates */\n") < 0)
 		return (1);
-	if (fprintf(fp, "short locnamp[] = {") < 0)
+	if (fprintf(fp, "const short locnamp[] = {") < 0)
 		return (1);
 	for (j = 0; j < nlocnami; j++)
 		if (fprintf(fp, "%s%d,", SEP(j, 8), locnami[j]) < 0)
@@ -314,8 +313,8 @@ emitpv(FILE *fp)
 {
 	int i;
 
-	if (fprintf(fp, "\n/* size of parent vectors */\n\
-int pv_size = %d;\n", parents.used) < 0)
+	if (fprintf(fp, "\n/* size of parent vectors */\n"
+	    "const int pv_size = %d;\n", parents.used) < 0)
 		return (1);
 	if (fprintf(fp, "\n/* parent vectors */\n\
 short pv[%d] = {", parents.used) < 0)
@@ -436,7 +435,7 @@ emitroots(FILE *fp)
 	if (fputs("\t-1\n};\n", fp) < 0)
 		return (1);
 
-	return(fprintf(fp, "\nint cfroots_size = %d;\n", cnt+1) < 0);
+	return(fprintf(fp, "\nconst int cfroots_size = %d;\n", cnt+1) < 0);
 }
 
 /*
@@ -455,7 +454,7 @@ emitpseudo(FILE *fp)
 		if (fprintf(fp, "extern void %sattach(int);\n",
 		    i->i_base->d_name) < 0)
 			return (1);
-	if (fputs("\nchar *pdevnames[] = {\n", fp) < 0)
+	if (fputs("\nconst char *const pdevnames[] = {\n", fp) < 0)
 		return (1);
 	for (i = allpseudo; i != NULL; i = i->i_next) {
 		d = i->i_base;
@@ -465,7 +464,7 @@ emitpseudo(FILE *fp)
 	}
 	if (fputs("};\n", fp) < 0)
 		return (1);
-	if (fprintf(fp, "\nint pdevnames_size = %d;\n", cnt) < 0)
+	if (fprintf(fp, "\nconst int pdevnames_size = %d;\n", cnt) < 0)
 		return (1);
 	if (fputs("\nstruct pdevinit pdevinit[] = {\n", fp) < 0)
 		return (1);
