@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 1995, 1996 Wolfgang Solfrank.
  * Copyright (C) 1995, 1996 TooLs GmbH.
@@ -406,7 +405,7 @@ printf("isi iar %x lr %x\n", frame->srr0, frame->lr);
 		break;
 	case EXC_SC|EXC_USER:
 		{
-			struct sysent *callp;
+			const struct sysent *callp;
 			size_t argsize;
 			register_t code, error;
 			register_t *params, rval[2];

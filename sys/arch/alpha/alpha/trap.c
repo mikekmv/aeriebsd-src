@@ -550,7 +550,7 @@ syscall(code, framep)
 	u_int64_t code;
 	struct trapframe *framep;
 {
-	struct sysent *callp;
+	const struct sysent *callp;
 	struct proc *p;
 	int error, numsys;
 	u_int64_t opc;

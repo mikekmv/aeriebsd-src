@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996
  *	The President and Fellows of Harvard College. All rights reserved.
@@ -992,7 +991,7 @@ syscall(code, tf, pc)
 	register_t pc;
 {
 	int i, nsys, *ap, nap;
-	struct sysent *callp;
+	const struct sysent *callp;
 	struct proc *p;
 	int error, new;
 	struct args {

@@ -87,7 +87,7 @@ struct	emul {
 	void	(*e_sendsig)(sig_t, int, int, u_long, int, union sigval);
 	int	e_nosys;		/* Offset of the nosys() syscall */
 	int	e_nsysent;		/* Number of system call entries */
-	struct sysent *e_sysent;	/* System call array */
+	const struct sysent *e_sysent;	/* System call array */
 	char	**e_syscallnames;	/* System call name array */
 	int	e_arglen;		/* Extra argument size in words */
 					/* Copy arguments on the stack */

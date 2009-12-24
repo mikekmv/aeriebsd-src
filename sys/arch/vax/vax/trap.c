@@ -353,7 +353,7 @@ void
 syscall(frame)
 	struct	trapframe *frame;
 {
-	struct sysent *callp;
+	const struct sysent *callp;
 	int nsys;
 	int err, rval[2], args[8];
 	struct trapframe *exptr;

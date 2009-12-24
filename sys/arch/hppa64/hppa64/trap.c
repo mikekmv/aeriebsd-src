@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Michael Shalayeff
  * All rights reserved.

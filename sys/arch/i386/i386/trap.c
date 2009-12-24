@@ -578,9 +578,9 @@ out:
 void
 syscall(struct trapframe frame)
 {
-	caddr_t params;
-	struct sysent *callp;
+	const struct sysent *callp;
 	struct proc *p;
+	caddr_t params;
 	int orig_error, error, opc, nsys, lock;
 	register_t code, args[8], rval[2];
 #ifdef DIAGNOSTIC

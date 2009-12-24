@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997 Theo de Raadt
  *
@@ -1016,7 +1015,7 @@ syscall(code, frame)
 	struct frame frame;
 {
 	caddr_t params;
-	struct sysent *callp;
+	const struct sysent *callp;
 	struct proc *p;
 	int error, opc, nsys;
 	size_t argsize;

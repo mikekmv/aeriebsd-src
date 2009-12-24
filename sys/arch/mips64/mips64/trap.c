@@ -1,5 +1,3 @@
-/* tracked to 1.23 */
-
 /*
  * Copyright (c) 1988 University of Utah.
  * Copyright (c) 1992, 1993
@@ -398,7 +396,7 @@ printf("SIG-BUSB @%p pc %p, ra %p\n", trapframe->badvaddr, trapframe->pc, trapfr
 	case T_SYSCALL+T_USER:
 	    {
 		struct trap_frame *locr0 = p->p_md.md_regs;
-		struct sysent *callp;
+		const struct sysent *callp;
 		unsigned int code;
 		unsigned long tpc;
 		int numsys;

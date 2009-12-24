@@ -695,7 +695,7 @@ systrace_fork(struct proc *oldproc, struct proc *p)
 int
 systrace_redirect(int code, struct proc *p, void *v, register_t *retval)
 {
-	struct sysent *callp;
+	const struct sysent *callp;
 	struct str_process *strp;
 	struct str_policy *strpolicy;
 	struct fsystrace *fst = NULL;
