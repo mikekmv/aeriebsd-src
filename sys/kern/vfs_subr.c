@@ -62,12 +62,12 @@
 
 #include <miscfs/specfs/specdev.h>
 
-enum vtype iftovt_tab[16] = {
+const enum vtype iftovt_tab[16] = {
 	VNON, VFIFO, VCHR, VNON, VDIR, VNON, VBLK, VNON,
 	VREG, VNON, VLNK, VNON, VSOCK, VNON, VNON, VBAD,
 };
 
-int	vttoif_tab[9] = {
+const int vttoif_tab[9] = {
 	0, S_IFREG, S_IFDIR, S_IFBLK, S_IFCHR, S_IFLNK,
 	S_IFSOCK, S_IFIFO, S_IFMT,
 };
@@ -1147,7 +1147,7 @@ loop:
 /*
  * Print out a description of a vnode.
  */
-static char *typename[] =
+static const char *const typename[] =
    { "VNON", "VREG", "VDIR", "VBLK", "VCHR", "VLNK", "VSOCK", "VFIFO", "VBAD" };
 
 void
@@ -2162,8 +2162,8 @@ vfs_buf_print(struct buf *bp, int full, int (*pr)(const char *, ...))
 #endif
 }
 
-const char *vtypes[] = { VTYPE_NAMES };
-const char *vtags[] = { VTAG_NAMES };
+const char *const vtypes[] = { VTYPE_NAMES };
+const char *const vtags[] = { VTAG_NAMES };
 
 void
 vfs_vnode_print(struct vnode *vp, int full, int (*pr)(const char *, ...))
