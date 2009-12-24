@@ -1,3 +1,4 @@
+;	$ABSD$
 
 ; OpenBSD COMPAT_BSDOS system call name/number "master" file.
 ; (See syscalls.conf to see what it is processed into.)
