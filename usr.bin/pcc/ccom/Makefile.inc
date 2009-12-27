@@ -4,6 +4,7 @@
 
 PROG=   	ccom_${TARGMACH}
 MAN=		ccom.1
+BINDIR=		/usr/libexec
 
 TARGOS=		aeriebsd
 CLEANFILES=	cgram.h external.h external.c mkext

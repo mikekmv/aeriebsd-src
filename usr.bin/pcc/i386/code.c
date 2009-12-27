@@ -72,7 +72,7 @@ defloc(struct symtab *sp)
 	}
 #endif
 	if (nextsect) {
-		printf("	.section %s\n", nextsect);
+		printf("	.section %s,\"wa\",@progbits\n", nextsect);
 		nextsect = NULL;
 		s = -1;
 	} else if (s != lastloc)
@@ -88,12 +88,13 @@ defloc(struct symtab *sp)
 			name = exname(sp->sname);
 	if (weak)
 		printf("	.weak %s\n", name);
-	else if (sp->sclass == EXTDEF)
+	else if (sp->sclass == EXTDEF) {
 		printf("	.globl %s\n", name);
 #if defined(ELFABI)
-	if (ISFTN(t))
-		printf("\t.type %s,@function\n", name);
+		printf("\t.type %s,@%s\n", name,
+		    ISFTN(t)? "function" : "object");
 #endif
+	}
 	if (sp->slevel == 0)
 		printf("%s:\n", name);
 	else
@@ -113,7 +114,7 @@ efcode()
 	gotnr = 0;	/* new number for next fun */
 	if (cftnsp->stype != STRTY+FTN && cftnsp->stype != UNIONTY+FTN)
 		return;
-#if defined(os_openbsd)
+#if defined(os_aeriebsd)
 	/* struct return for small structs */
 	int sz = tsize(BTYPE(cftnsp->stype), cftnsp->sdf, cftnsp->ssue);
 	if (sz == SZCHAR || sz == SZSHORT || sz == SZINT || sz == SZLONGLONG) {
@@ -162,7 +163,7 @@ bfcode(struct symtab **sp, int cnt)
 
 	if (cftnsp->stype == STRTY+FTN || cftnsp->stype == UNIONTY+FTN) {
 		/* Function returns struct, adjust arg offset */
-#if defined(os_openbsd)
+#if defined(os_aeriebsd)
 		/* OpenBSD uses non-standard return for small structs */
 		int sz = tsize(BTYPE(cftnsp->stype), cftnsp->sdf, cftnsp->ssue);
 		if (sz != SZCHAR && sz != SZSHORT &&
