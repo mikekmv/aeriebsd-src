@@ -147,6 +147,8 @@ BEGIN {
 	}
 
 	printf "\n#define\ts(type)\tsizeof(type)\n\n" > sysent
+	if (switchname != "sysent")
+		printf "const " > sysent
 	printf "struct sysent %s[] = {\n",switchname > sysent
 
 	printf "/*\n * System call names.\n *\n" > sysnames
@@ -168,7 +170,10 @@ NR == 1 {
 	printf " *\n * created from\n *\t%s\n */\n\n", VERSION > sysdcl
 
 	printf " *\n * created from\n *\t%s\n */\n\n", VERSION > sysnames
-	printf "char *%s[] = {\n",namesname > sysnames
+	if (namesname == "syscallnames")
+		printf "const char *%s[] = {\n",namesname > sysnames
+	else
+		printf "const char *const %s[] = {\n",namesname > sysnames
 
 	printf " *\n * created from\n *\t%s\n */\n\n", VERSION > sysnumhdr
 
