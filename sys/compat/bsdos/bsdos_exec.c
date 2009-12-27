@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1993, 1994 Christopher G. Demetriou
  * All rights reserved.
@@ -46,9 +45,9 @@
 #include <compat/bsdos/bsdos_exec.h>
 #include <compat/bsdos/bsdos_syscall.h>
 
-extern struct sysent bsdos_sysent[];
+extern const struct sysent bsdos_sysent[];
 #ifdef SYSCALL_DEBUG
-extern char *bsdos_syscallnames[];
+extern const char *const bsdos_syscallnames[];
 #endif
 
 extern char sigcode[], esigcode[];

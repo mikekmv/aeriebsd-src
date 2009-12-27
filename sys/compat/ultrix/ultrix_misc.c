@@ -122,9 +122,9 @@
 #include <sys/conf.h>					/* iszerodev() */
 #include <sys/socketvar.h>				/* sosetopt() */
 
-extern struct sysent ultrix_sysent[];
+extern const struct sysent ultrix_sysent[];
 #ifdef SYSCALL_DEBUG
-extern char *ultrix_syscallnames[];
+extern const char *const ultrix_syscallnames[];
 #endif
 
 /*

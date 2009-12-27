@@ -988,7 +988,7 @@ int	scdebug = SCDEBUG_CALLS|SCDEBUG_RETURNS|SCDEBUG_SHOWARGS;
 void
 scdebug_call(struct proc *p, register_t code, register_t args[])
 {
-	struct sysent *sy;
+	const struct sysent *sy;
 	struct emul *em;
 	int i;
 
@@ -1021,7 +1021,7 @@ scdebug_call(struct proc *p, register_t code, register_t args[])
 void
 scdebug_ret(struct proc *p, register_t code, int error, register_t retval[])
 {
-	struct sysent *sy;
+	const struct sysent *sy;
 	struct emul *em;
 
 	if (!(scdebug & SCDEBUG_RETURNS))

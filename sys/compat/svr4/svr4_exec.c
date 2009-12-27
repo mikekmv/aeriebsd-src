@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994 Christos Zoulas
  * All rights reserved.
@@ -54,9 +53,9 @@ static void *svr4_copyargs(struct exec_package *, struct ps_strings *,
 
 const char svr4_emul_path[] = "/emul/svr4";
 extern char svr4_sigcode[], svr4_esigcode[];
-extern struct sysent svr4_sysent[];
+extern const struct sysent svr4_sysent[];
 #ifdef SYSCALL_DEBUG
-extern char *svr4_syscallnames[];
+extern const char *const svr4_syscallnames[];
 #endif
 
 struct emul emul_svr4 = {

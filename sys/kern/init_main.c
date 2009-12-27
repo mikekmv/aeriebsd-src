@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995 Christopher G. Demetriou.  All rights reserved.
  * Copyright (c) 1982, 1986, 1989, 1991, 1992, 1993
@@ -139,7 +138,7 @@ void	workq_init(void);
 
 extern char sigcode[], esigcode[];
 #ifdef SYSCALL_DEBUG
-extern char *syscallnames[];
+extern const char *syscallnames[];
 #endif
 
 struct emul emul_native = {

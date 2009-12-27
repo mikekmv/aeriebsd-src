@@ -91,7 +91,7 @@ void ELFNAME(load_psection)(struct exec_vmcmd_set *, struct vnode *,
 
 extern char sigcode[], esigcode[];
 #ifdef SYSCALL_DEBUG
-extern char *syscallnames[];
+extern const char *syscallnames[];
 #endif
 
 /* round up and down to page boundaries. */

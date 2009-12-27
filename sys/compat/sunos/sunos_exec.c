@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1993 Theo de Raadt
  * All rights reserved.
@@ -62,9 +61,9 @@ int sunos_exec_aout_prep_nmagic(struct proc *, struct exec_package *);
 int sunos_exec_aout_prep_omagic(struct proc *, struct exec_package *);
 
 extern int nsunos_sysent;
-extern struct sysent sunos_sysent[];
+extern const struct sysent sunos_sysent[];
 #ifdef SYSCALL_DEBUG
-extern char *sunos_syscallnames[];
+extern const char *const sunos_syscallnames[];
 #endif
 extern char sigcode[], esigcode[];
 const char sunos_emul_path[] = "/emul/sunos";

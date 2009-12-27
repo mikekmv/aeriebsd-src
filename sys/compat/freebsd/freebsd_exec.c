@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1993, 1994 Christopher G. Demetriou
  * All rights reserved.
@@ -46,9 +45,9 @@
 #include <compat/freebsd/freebsd_exec.h>
 #include <compat/freebsd/freebsd_util.h>
 
-extern struct sysent freebsd_sysent[];
+extern const struct sysent freebsd_sysent[];
 #ifdef SYSCALL_DEBUG
-extern char *freebsd_syscallnames[];
+extern const char *const freebsd_syscallnames[];
 #endif
 
 extern const char freebsd_emul_path[];

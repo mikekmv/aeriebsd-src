@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995, 1997 Jason R. Thorpe.  All rights reserved.
  * Copyright (c) 1993, 1994 Christopher G. Demetriou
@@ -61,9 +60,9 @@
 
 const char hpux_emul_path[] = "/emul/hpux";
 extern char sigcode[], esigcode[];
-extern struct sysent hpux_sysent[];
+extern const struct sysent hpux_sysent[];
 #ifdef SYSCALL_DEBUG
-extern char *hpux_syscallnames[];
+extern const char *const hpux_syscallnames[];
 #endif
 extern int bsdtohpuxerrnomap[];
 

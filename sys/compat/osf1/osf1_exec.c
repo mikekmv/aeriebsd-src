@@ -1,5 +1,3 @@
-/* $NetBSD$ */
-
 /*
  * Copyright (c) 1999 Christopher G. Demetriou.  All rights reserved.
  *
@@ -68,10 +66,13 @@ static int osf1_exec_ecoff_dynamic(struct proc *, struct exec_package *);
 
 #define MAX_AUX_ENTRIES                4        /* max we'll ever push (right now) */
 
-extern struct sysent osf1_sysent[];
 extern void cpu_exec_ecoff_setregs(struct proc *, struct exec_package *,
 					u_long, register_t *);
 extern char osf1_sigcode[], osf1_esigcode[];
+extern const struct sysent osf1_sysent[];
+#ifdef SYSCALL_DEBUG
+extern const char *const osf1_syscallnames[];
+#endif
 
 struct emul emul_osf1 = {
         "osf1",

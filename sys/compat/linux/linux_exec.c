@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1994, 1995, 1998, 2000 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -68,9 +67,9 @@ static void *linux_aout_copyargs(struct exec_package *,
 const char linux_emul_path[] = "/emul/linux";
 extern int linux_error[];
 extern char linux_sigcode[], linux_esigcode[];
-extern struct sysent linux_sysent[];
+extern const struct sysent linux_sysent[];
 #ifdef SYSCALL_DEBUG
-extern char *linux_syscallnames[];
+extern const char *const linux_syscallnames[];
 #endif
 
 int exec_linux_aout_prep_zmagic(struct proc *, struct exec_package *);

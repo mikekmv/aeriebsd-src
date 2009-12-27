@@ -88,7 +88,7 @@ struct	emul {
 	int	e_nosys;		/* Offset of the nosys() syscall */
 	int	e_nsysent;		/* Number of system call entries */
 	const struct sysent *e_sysent;	/* System call array */
-	char	**e_syscallnames;	/* System call name array */
+	const char *const*e_syscallnames;	/* System call name array */
 	int	e_arglen;		/* Extra argument size in words */
 					/* Copy arguments on the stack */
 	void	*(*e_copyargs)(struct exec_package *, struct ps_strings *,

@@ -35,6 +35,9 @@ void aout_compat_setup(struct exec_package *epp);
 extern char sigcode[], esigcode[];
 
 struct sysent aout_sysent[SYS_MAXSYSCALL];
+#ifdef SYSCALL_DEBUG
+extern const char *syscallnames[];
+#endif
 
 struct emul emul_aout = {
 	"aout",

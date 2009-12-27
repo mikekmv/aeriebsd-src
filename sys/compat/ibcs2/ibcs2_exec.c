@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994, 1995 Scott Bartram
  * Copyright (c) 1994 Adam Glass
@@ -73,9 +72,9 @@ static int coff_find_section(struct proc *, struct vnode *,
 	
 
 extern int bsd2ibcs_errno[];
-extern struct sysent ibcs2_sysent[];
+extern const struct sysent ibcs2_sysent[];
 #ifdef SYSCALL_DEBUG
-extern char *ibcs2_syscallnames[];
+extern const char *const ibcs2_syscallnames[];
 #endif
 extern void ibcs2_sendsig(sig_t, int, int, u_long, int, union sigval);
 extern char sigcode[], esigcode[];
