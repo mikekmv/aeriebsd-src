@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: random.c,v 1.1.1.1 2008/08/26 14:38:36 root Exp $";
+static const char rcsid[] = "$ABSD: random.c,v 1.2 2009/11/24 19:38:22 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -134,7 +134,7 @@ static const int seps [MAX_TYPES] =	{ SEP_0, SEP_1, SEP_2, SEP_3, SEP_4 };
  *	MAX_TYPES * (rptr - state) + TYPE_3 == TYPE_3.
  */
 
-static const int32_t randtbl[DEG_3 + 1] = {
+static int32_t randtbl[DEG_3 + 1] = {
 	TYPE_3,
 	0x991539b1, 0x16a5bce3, 0x6774a4cd, 0x3e01511e, 0x4e508aaa, 0x61048c05, 
 	0xf5500617, 0x846b7115, 0x6a19892c, 0x896a97af, 0xdb48f936, 0x14898454, 
@@ -158,8 +158,8 @@ static const int32_t randtbl[DEG_3 + 1] = {
  * in the initialization of randtbl) because the state table pointer is set
  * to point to randtbl[1] (as explained below).
  */
-static const int32_t *fptr = &randtbl[SEP_3 + 1];
-static const int32_t *rptr = &randtbl[1];
+static int32_t *fptr = &randtbl[SEP_3 + 1];
+static int32_t *rptr = &randtbl[1];
 
 /*
  * The following things are the pointer to the state information table, the
