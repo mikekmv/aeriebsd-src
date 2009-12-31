@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.2 2009/09/08 22:27:32 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.3 2009/10/23 21:28:03 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -53,7 +53,7 @@ int elfclass = ELFCLASSNONE;
 int machine = EM_NONE;
 int magic = ZMAGIC;
 int as_needed;
-int Bflag;	/* 0 - dynamic, 1 - static, 2 - shlib */
+int Bflag;	/* 0 - static, 1 - dynamic, 2 - shlib */
 int check_sections = 1;
 int cref;
 int nostdlib;
@@ -86,13 +86,13 @@ const struct option longopts[] = {
 	{ "warn-common",	no_argument,	&warncom, 1 },
 	{ "Bshared",		no_argument,	&Bflag, 2 },
 	{ "shared",		no_argument,	&Bflag, 2 },
-	{ "Bstatic",		no_argument,	&Bflag, 1 },
-	{ "static",		no_argument,	&Bflag, 1 },
-	{ "Bdynamic",		no_argument,	&Bflag, 0 },
+	{ "Bstatic",		no_argument,	&Bflag, 0 },
+	{ "static",		no_argument,	&Bflag, 0 },
+	{ "Bdynamic",		no_argument,	&Bflag, 1 },
 	{ "dc",			no_argument,		0, 'd' },
-	{ "dn",			no_argument,	&Bflag, 1 },
+	{ "dn",			no_argument,	&Bflag, 0 },
 	{ "dp",			no_argument,		0, 'd' },
-	{ "dy",			no_argument,	&Bflag, 0 },
+	{ "dy",			no_argument,	&Bflag, 1 },
 	{ "entry",		required_argument,	0, 'e' },
 	{ "export-dynamic",	no_argument,		0, 'E' },
 	{ "EB",			no_argument,	&endian, ELFDATA2MSB },
@@ -295,7 +295,7 @@ main(int argc, char *argv[])
 	sysobj.ol_path = output;
 	TAILQ_INIT(&sysobj.ol_syms);
 	/* allocate sections (.got .plt etc) */
-	if (Bflag != 1 || pie) {
+	if (Bflag || pie) {
 		sysobj.ol_nsect = 2;
 		if (!(sysobj.ol_sections = calloc(sysobj.ol_nsect,
 		    sizeof *sysobj.ol_sections)))
