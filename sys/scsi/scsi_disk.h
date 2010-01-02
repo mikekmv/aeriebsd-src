@@ -136,11 +136,49 @@ struct scsi_defect_descriptor_psf {
 	u_int8_t sector[2];
 };
 
+#define READ_DEFECT_DATA	0x37
+struct scsi_read_defect_data {
+	u_int8_t opcode;
+	u_int8_t resv0;
+	u_int8_t flags;
+#define	RDL_PLIST	0x10
+#define	RDL_GLIST	0x08
+#define	RDL_DLF_MASK	0x07
+	u_int8_t resv1[4];
+	u_int8_t length[2];
+	u_int8_t control;
+};
 
+struct scsi_read_defect_list_header {
+	u_int8_t reserved;
+	u_int8_t flags;	/* same as in scsi_read_defect_data */
+	u_int8_t length[2];
+};
+
+#define READ_DEFECT_DATA_12	0xb7
+struct scsi_read_defect_data_12 {
+	u_int8_t opcode;
+	u_int8_t flags;	/* see scsi_read_defect_data.flags */
+	u_int8_t resv1[4];
+	u_int8_t length[4];
+	u_int8_t resv0;
+	u_int8_t control;
+};
+
+struct scsi_read_defect_list_header_12 {
+	u_int8_t reserved;
+	u_int8_t flags;	/* same as in scsi_read_defect_data */
+	u_int8_t resv0[2];
+	u_int8_t length[4];
+};
+
+#define REASSIGN_BLOCKS		0x07
 struct scsi_reassign_blocks {
 	u_int8_t opcode;
-	u_int8_t byte2;
-	u_int8_t unused[3];
+	u_int8_t flags;
+#define	RAB_LONGLBA	1
+#define	RAB_LONGLIST	2
+	u_int8_t resv0[3];
 	u_int8_t control;
 };
 
@@ -242,12 +280,9 @@ struct scsi_synchronize_cache {
 /*
  * Disk specific opcodes
  */
-#define REASSIGN_BLOCKS		0x07
 #define READ_COMMAND		0x08
 #define WRITE_COMMAND		0x0a
 #define READ_CAPACITY		0x25
-#define READ_DEFECT_DATA	0x37
-#define READ_DEFECT_DATA_12	0xb7
 #define READ_CAPACITY_16	0x9e
 #define READ_LONG		0x3e
 #define WRITE_LONG		0x3f
