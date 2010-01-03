@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: dns.c,v 1.1 2009/06/23 13:39:33 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -114,7 +114,7 @@ dns_dispatch(int fd, short event, void *arg)
 
 	if (read(fd, &ss, ss_len) != ss_len) {
 		syslog(LOG_ERR, "dns read: %m");
-		return;
+		exit(1);
 	}
 
 	if ((gerr = getnameinfo(sa, sa->sa_len,

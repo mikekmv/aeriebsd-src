@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.18 2009/06/22 18:08:57 mikeb Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.19 2009/06/23 13:39:33 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -227,9 +227,15 @@ icb_cmd_topic(struct icb_cmdarg *ca)
 	char buf[ICB_MAXGRPLEN + ICB_MAXTOPICLEN + 25];
 	struct icb_group *ig = ca->sess->group;
 
-	if (strlen(ca->arg) == 0) {
-		(void)snprintf(buf, sizeof buf, "Topic for %s is \"%s\"",
-		    ig->name, ig->topic);
+	if (ca->arg == NULL) {
+		if (strlen(ig->topic) > 0)
+			(void)snprintf(buf, sizeof buf,
+			    "Topic for %s is \"%s\"",
+			    ig->name, ig->topic);
+		else
+			(void)snprintf(buf, sizeof buf,
+			    "No topic set for %s", ig->name);
+		
 		icb_status(ca->sess, STATUS_TOPIC, buf);
 		return;
 	}
