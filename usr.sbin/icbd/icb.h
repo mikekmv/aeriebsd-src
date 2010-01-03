@@ -28,11 +28,9 @@
 #define ICB_M_PERSONAL		 'c'
 #define ICB_M_STATUS		 'd'
 enum {
-	 STATUS_AWAY,
 	 STATUS_ARRIVE,
 	 STATUS_BOOT,
 	 STATUS_DEPART,
-	 STATUS_NOAWAY,
 	 STATUS_NOTIFY,
 	 STATUS_SIGNON,
 	 STATUS_SIGNOFF,
@@ -59,8 +57,6 @@ enum {
 
 #define ICB_M_SEP		 '\001'
 
-#define ICB_MAXFIELDS		 10
-
 struct icb_group;
 
 struct icb_session {
@@ -84,8 +80,7 @@ struct icb_session {
 #define ICB_SF_PROTOSENT	 0x01
 #define ICB_SF_LOGGEDIN		 0x02
 #define ICB_SF_NOGROUP		 0x08
-#define ICB_SF_AWAY		 0x10
-#define ICB_SF_MODERATOR	 0x20
+#define ICB_SF_MODERATOR	 0x10
 };
 
 struct icb_group {
@@ -98,13 +93,6 @@ struct icb_group {
 };
 
 LIST_HEAD(icb_grlist, icb_group) groups;
-
-struct icb_cmdarg {
-	struct icb_session	*sess;
-	char			*cmd;
-	char			*arg;
-	char			*mid;
-};
 
 struct icbd_callbacks {
 	void 	(*drop)(struct icb_session *, char *);

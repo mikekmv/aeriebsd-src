@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Mike Belopuhov
+ * Copyright (c) 2009, 2010 Mike Belopuhov
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.21 2009/06/22 18:08:57 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.22 2009/06/23 13:39:33 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,11 +33,10 @@ static const char rcsid[] = "$ABSD: icb.c,v 1.21 2009/06/22 18:08:57 mikeb Exp $
 
 extern int creategroups;
 
-void   icb_command(struct icb_session *, char *, char *, char *);
-int    icb_fields(char *, size_t);
+void   icb_command(struct icb_session *, char *, char *);
 void   icb_groupmsg(struct icb_session *, char *);
 void   icb_login(struct icb_session *, char *, char *, char *);
-char  *icb_parse(char *, size_t, size_t *);
+char  *icb_nextfield(char **);
 /* pointers to upper level functions */
 void (*icb_drop)(struct icb_session *, char *);
 void (*icb_log)(struct icb_session *, int, const char *, ...);
@@ -81,45 +80,49 @@ icb_start(struct icb_session *is)
 void
 icb_input(struct icb_session *is)
 {
-	char *fields[ICB_MAXFIELDS];
 	char *msg = is->buffer;
 	char type;
-	size_t datalen, pos = 0;
-	int i, nf;
 
 	is->last = getmonotime();
-	datalen = (size_t)(unsigned char)msg[0] - 1;
 	type = msg[1];
 	msg += 2;
 	if (!ISSETF(is->flags, ICB_SF_LOGGEDIN) && type != ICB_M_LOGIN) {
 		icb_error(is, "Not logged in");
 		return;
 	}
-	if ((nf = icb_fields(msg, datalen)) >= ICB_MAXFIELDS) {
-		icb_error(is, "Too much fields in the packet");
-		return;
-	}
-	bzero(fields, sizeof fields);
-	for (i = 0; i < nf; i++)
-		fields[i] = icb_parse(msg, datalen, &pos);
 	switch (type) {
-	case ICB_M_LOGIN:
-		if (nf < 4)
-			goto inputerr;
-		if (fields[3][0] == 'w') {
+	case ICB_M_LOGIN: {
+		char *nick, *group, *client, *cmd;
+
+		client = icb_nextfield(&msg);
+		nick = icb_nextfield(&msg);
+		group = icb_nextfield(&msg);
+		cmd = icb_nextfield(&msg);
+		if (strlen(cmd) > 0 && cmd[0] == 'w') {
 			icb_error(is, "Command not implemented");
 			icb_drop(is, NULL);
 			return;
-		} else if (strcmp(fields[3], "login") != 0)
+		}
+		if (strlen(cmd) == 0 || strcmp(cmd, "login") != 0)
 			goto inputerr;
-		icb_login(is, fields[2], fields[1], fields[0]);
+		icb_login(is, group, nick, client);
 		break;
-	case ICB_M_OPEN:
-		icb_groupmsg(is, fields[0]);
+	}
+	case ICB_M_OPEN: {
+		char *grpmsg;
+
+		grpmsg = icb_nextfield(&msg);
+		icb_groupmsg(is, grpmsg);
 		break;
-	case ICB_M_COMMAND:
- 		icb_command(is, fields[0], fields[1], fields[2]);
+	}
+	case ICB_M_COMMAND: {
+		char *cmd, *arg;
+
+		cmd = icb_nextfield(&msg);
+		arg = icb_nextfield(&msg);
+		icb_command(is, cmd, arg);
 		break;
+	}
 	case ICB_M_PROTO:
 	case ICB_M_NOOP:
 		/* ignore */
@@ -144,6 +147,11 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	struct icb_group *ig;
 	struct icb_session *s;
 
+	if (!nick || strlen(nick) == 0) {
+		icb_error(is, "Invalid nick");
+		icb_drop(is, NULL);
+		return;
+	}
 	if (!group || strlen(group) == 0)
 		group = defgrp;
 	LIST_FOREACH(ig, &groups, entry) {
@@ -195,7 +203,7 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	icb_send(is, buf, 2);
 
 	/* notify user */
-	(void)snprintf(buf, sizeof buf, "You're now in group %s%s", ig->name,
+	(void)snprintf(buf, sizeof buf, "You are now in group %s%s", ig->name,
 	    icb_ismoder(ig, is) ? " as moderator" : "");
 	icb_status(is, STATUS_STATUS, buf);
 
@@ -217,6 +225,11 @@ icb_groupmsg(struct icb_session *is, char *msg)
 	struct icb_group *ig = is->group;
 	struct icb_session *s;
 	int buflen;
+
+	if (strlen(msg) == 0) {
+		icb_error(is, "Empty message");
+		return;
+	}
 
 	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_OPEN,
 	    is->nick, ICB_M_SEP, msg);
@@ -258,16 +271,15 @@ icb_privmsg(struct icb_session *is, char *whom, char *msg)
  *  icb_command: handles command ('h') packets
  */
 void
-icb_command(struct icb_session *is, char *cmd, char *arg, char *mid)
+icb_command(struct icb_session *is, char *cmd, char *arg)
 {
-	void (*handler)(struct icb_cmdarg *);
-	struct icb_cmdarg ca = { is, cmd, arg, mid };
+	void (*handler)(struct icb_session *, char *);
 
 	if ((handler = icb_cmd_lookup(cmd)) == NULL) {
 		icb_error(is, "Unsupported command");
 		return;
 	}
-	handler(&ca);
+	handler(is, arg);
 }
 
 /*
@@ -316,11 +328,9 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 		int		 type;
 		const char	*msg;
 	} msgtab[] = {
-		{ STATUS_AWAY,		"Away" },
 		{ STATUS_ARRIVE,	"Arrive" },
 		{ STATUS_BOOT,		"Boot" },
 		{ STATUS_DEPART,	"Depart" },
-		{ STATUS_NOAWAY,	"NoAway" },
 		{ STATUS_NOTIFY,	"Notify" },
 		{ STATUS_SIGNON,	"Sign-on" },
 		{ STATUS_SIGNOFF,	"Sign-off" },
@@ -456,8 +466,7 @@ icb_who(struct icb_session *is, struct icb_group *ig)
 		    icb_ismoder(ig, s) ? '*' : ' ', ICB_M_SEP,
 		    s->nick, ICB_M_SEP, getmonotime() - s->last,
 		    ICB_M_SEP, ICB_M_SEP, s->login, ICB_M_SEP,
-		    s->client, ICB_M_SEP, s->host, ICB_M_SEP,
-		    ISSETF(s->flags, ICB_SF_AWAY) ? "[away]" : "");
+		    s->client, ICB_M_SEP, s->host, ICB_M_SEP, " ");
 		icb_cmdout(is, CMDOUT_WL, buf);
 	}
 }
@@ -502,39 +511,19 @@ icb_pass(struct icb_group *ig, struct icb_session *from,
 }
 
 /*
- *  icb_fields: counts number of fields separated with '\001'
- */
-int
-icb_fields(char *msg, size_t msglen)
-{
-	size_t i;
-	int n = 1;
-
-	for (i = 0; i < msglen; i++)
-		if (msg[i] == ICB_M_SEP)
-			n++;	
-	return (n);
-}
-
-/*
- *  icb_parse: scans message for separators and returns pointer to the
- *             beginning of the field at position specified by 'pos'
+ *  icb_nextfield: advances through a given buffer returning pointer to
+ *                 the beginning of the icb field or an empty string otherwise
  */
 char *
-icb_parse(char *msg, size_t len, size_t *pos)
+icb_nextfield(char **buf)
 {
-	char *s = msg + *pos;
-	char *t = s;
-	size_t i;
+	char *start = *buf;
 
-	if (*pos > len)
-		return (NULL);
-	for (i = 0; i < len - *pos; i++) {
-		if (t[i] == ICB_M_SEP) {
-			t[i] = '\0';
-			break;
-		}
+	while (*buf && **buf != '\0' && **buf != ICB_M_SEP)
+		(*buf)++;
+	if (*buf && **buf == ICB_M_SEP) {
+		**buf = '\0';
+		(*buf)++;
 	}
-	*pos += i + 1;
-	return (s);
+	return (start);
 }

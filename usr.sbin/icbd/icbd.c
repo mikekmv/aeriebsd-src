@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.20 2009/06/23 13:39:33 mickey Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.21 2009/07/05 23:28:02 mikeb Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -261,7 +261,6 @@ icbd_accept(int fd, short event __attribute__((__unused__)),
 		free(is);
 		return;
 	}
-	icbd_log(is, LOG_DEBUG, "connected");
 
 	/* save host information */
 	getpeerinfo(is);
@@ -341,7 +340,7 @@ icbd_ioerr(struct bufferevent *bev __attribute__((__unused__)), short what,
 		icbd_drop(is, NULL);
 	else if (what & EVBUFFER_ERROR)
 		icbd_drop(is, (what & EVBUFFER_READ) ? "read error" :
-		    "write error");	
+		    "write error");
 }
 
 void
@@ -390,17 +389,17 @@ icbd_restrict(void)
 	}
 
 	if (chroot(pw->pw_dir) < 0) {
-		syslog(LOG_ERR, "%s:%m", pw->pw_dir);
+		syslog(LOG_ERR, "%s: %m", pw->pw_dir);
 		exit(EX_UNAVAILABLE);
 	}
 
 	if (setuid(pw->pw_uid) < 0) {
-		syslog(LOG_ERR, "%d:%m", pw->pw_uid);
+		syslog(LOG_ERR, "%d: %m", pw->pw_uid);
 		exit(EX_NOPERM);
 	}
 
 	if (chdir("/") < 0) {
-		syslog(LOG_ERR, "%m");
+		syslog(LOG_ERR, "/: %m");
 		exit(EX_UNAVAILABLE);
 	}
 
