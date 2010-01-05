@@ -125,7 +125,6 @@
 
 extern struct domain inet6domain;
 extern struct ip6protosw inet6sw[];
-extern u_char ip6_protox[];
 
 struct icmp6stat icmp6stat;
 
@@ -885,6 +884,7 @@ icmp6_input(struct mbuf **mp, int *offp, int proto)
 static int
 icmp6_notify_error(struct mbuf *m, int off, int icmp6len, int code)
 {
+	extern struct ip6protosw *ip6_protox[];
 	struct icmp6_hdr *icmp6;
 	struct ip6_hdr *eip6;
 	u_int32_t notifymtu;
@@ -1071,12 +1071,9 @@ icmp6_notify_error(struct mbuf *m, int off, int icmp6len, int code)
 			ip6cp.ip6c_cmdarg = (void *)&notifymtu;
 		}
 
-		ctlfunc = (void (*)(int, struct sockaddr *, void *))
-			(inet6sw[ip6_protox[nxt]].pr_ctlinput);
-		if (ctlfunc) {
-			(void) (*ctlfunc)(code, (struct sockaddr *)&icmp6dst,
-					  &ip6cp);
-		}
+		ctlfunc = ip6_protox[nxt]->pr_ctlinput;
+		if (ctlfunc)
+			(*ctlfunc)(code, sin6tosa(&icmp6dst), &ip6cp);
 	}
 	return (0);
 

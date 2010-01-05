@@ -120,7 +120,7 @@
 extern struct domain inet6domain;
 extern struct ip6protosw inet6sw[];
 
-u_char ip6_protox[IPPROTO_MAX];
+struct ip6protosw *ip6_protox[IPPROTO_MAX];
 static int ip6qmaxlen = IFQ_MAXLEN;
 struct in6_ifaddr *in6_ifaddr;
 struct ifqueue ip6intrq;
@@ -151,12 +151,12 @@ ip6_init()
 	if (pr == 0)
 		panic("ip6_init");
 	for (i = 0; i < IPPROTO_MAX; i++)
-		ip6_protox[i] = pr - inet6sw;
+		ip6_protox[i] = pr;
 	for (pr = (struct ip6protosw *)inet6domain.dom_protosw;
 	    pr < (struct ip6protosw *)inet6domain.dom_protoswNPROTOSW; pr++)
 		if (pr->pr_domain->dom_family == PF_INET6 &&
-		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
-			ip6_protox[pr->pr_protocol] = pr - inet6sw;
+		    pr->pr_protocol && pr->pr_protocol < IPPROTO_MAX)
+			ip6_protox[pr->pr_protocol] = pr;
 	ip6intrq.ifq_maxlen = ip6qmaxlen;
 	ip6_randomid_init();
 	nd6_init();
@@ -714,7 +714,7 @@ ip6_input(struct mbuf *m)
 			goto bad;
 		}
 
-		nxt = (*inet6sw[ip6_protox[nxt]].pr_input)(&m, &off, nxt);
+		nxt = (*ip6_protox[nxt]->pr_input)(&m, &off, nxt);
 	}
 	return;
  bad:

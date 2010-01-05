@@ -130,7 +130,7 @@ int *ipctl_vars[IPCTL_MAXID] = IPCTL_VARS;
 
 extern	struct domain inetdomain;
 extern	struct protosw inetsw[];
-u_char	ip_protox[IPPROTO_MAX];
+struct protosw *ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
 struct	in_ifaddrhead in_ifaddr;
 struct	ifqueue ipintrq;
@@ -192,12 +192,12 @@ ip_init()
 	if (pr == 0)
 		panic("ip_init");
 	for (i = 0; i < IPPROTO_MAX; i++)
-		ip_protox[i] = pr - inetsw;
+		ip_protox[i] = pr;
 	for (pr = inetdomain.dom_protosw;
 	    pr < inetdomain.dom_protoswNPROTOSW; pr++)
 		if (pr->pr_domain->dom_family == PF_INET &&
-		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
-			ip_protox[pr->pr_protocol] = pr - inetsw;
+		    pr->pr_protocol && pr->pr_protocol < IPPROTO_MAX)
+			ip_protox[pr->pr_protocol] = pr;
 	LIST_INIT(&ipq);
 	ipintrq.ifq_maxlen = ipqmaxlen;
 	TAILQ_INIT(&in_ifaddr);
@@ -657,7 +657,7 @@ found:
 	 * Switch out to protocol's input routine.
 	 */
 	ipstat.ips_delivered++;
-	(*inetsw[ip_protox[ip->ip_p]].pr_input)(m, hlen, NULL, 0);
+	(*ip_protox[ip->ip_p]->pr_input)(m, hlen, NULL, 0);
 	return;
 bad:
 	m_freem(m);

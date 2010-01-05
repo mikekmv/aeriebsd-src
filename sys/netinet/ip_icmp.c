@@ -294,15 +294,12 @@ static struct sockaddr_in icmpgw = { sizeof (struct sockaddr_in), AF_INET };
 void
 icmp_input(struct mbuf *m, ...)
 {
+	extern struct protosw *ip_protox[];
 	struct icmp *icp;
 	struct ip *ip = mtod(m, struct ip *);
-	int icmplen;
-	int i;
 	struct in_ifaddr *ia;
 	void *(*ctlfunc)(int, struct sockaddr *, void *);
-	int code;
-	extern u_char ip_protox[];
-	int hlen;
+	int i, code, icmplen, hlen;
 	va_list ap;
 	struct rtentry *rt;
 
@@ -458,7 +455,7 @@ icmp_input(struct mbuf *m, ...)
 		 * XXX if the packet contains [IPv4 AH TCP], we can't make a
 		 * notification to TCP layer.
 		 */
-		ctlfunc = inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput;
+		ctlfunc = ip_protox[icp->icmp_ip.ip_p]->pr_ctlinput;
 		if (ctlfunc)
 			(*ctlfunc)(code, sintosa(&icmpsrc), &icp->icmp_ip);
 		break;
