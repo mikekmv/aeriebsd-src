@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.8 2009/07/30 11:59:45 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.9 2009/09/08 17:03:57 mickey Exp $";
 #endif
 #endif
 
@@ -640,10 +640,9 @@ elf_symadd(struct elf_symtab *es, int si, void *sym, void *v)
 		elf32_2nlist(sym, es->ehdr, es->shdr, es->shstr, nl);
 	else
 		elf64_2nlist(sym, es->ehdr, es->shdr, es->shstr, nl);
-	if (nl->n_un.n_strx)
-		nl->n_un.n_name = es->stab + nl->n_un.n_strx;
-	else
-		nl->n_un.n_name = "";
+	nl->n_un.n_name = es->stab + nl->n_un.n_strx;
+	if (*nl->n_un.n_name == '\0')
+		nrawnames--;
 	return 0;
 }
 
