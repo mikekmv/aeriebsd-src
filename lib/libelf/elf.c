@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.17 2009/10/11 14:45:15 mickey Exp $";
+    "$ABSD: elf.c,v 1.18 2009/10/22 01:41:20 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -556,7 +556,7 @@ elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
 				}
 
 				elf_fix_sym(eh, &sbuf);
-				if (!sbuf.st_name || sbuf.st_name > es->stabsz)
+				if (sbuf.st_name > es->stabsz)
 					continue;
 
 				if ((*func)(es, is, &sbuf, arg)) {
