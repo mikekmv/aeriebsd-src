@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.5 2009/10/23 21:28:03 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.6 2010/01/10 03:48:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -203,10 +203,11 @@ ldmap(struct headorder headorder)
 		shdr->sh_type = ord->ldo_type;
 		shdr->sh_flags = ord->ldo_shflags;
 		shdr->sh_addralign = 4;
-		if (ord->ldo_type == SHT_SYMTAB || ord->ldo_type == SHT_DYNSYM)
+		if (ord->ldo_type == SHT_SYMTAB ||
+		    ord->ldo_type == SHT_DYNSYM) {
 			shdr->sh_link = nsect;
-		shdr->sh_info = 0;
-		shdr->sh_entsize = sizeof *shdr;
+			shdr->sh_entsize = sizeof *esym;
+		}
 		shdr++;
 
 		/* XXX for now */
