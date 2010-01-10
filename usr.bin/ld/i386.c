@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: i386.c,v 1.3 2010/01/10 03:48:00 mickey Exp $";
+static const char rcsid[] = "$ABSD: i386.c,v 1.4 2010/01/10 05:56:01 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -137,7 +137,9 @@ i386_fix(off_t off, struct section *os, char *sbuf, int len)
 				a32 -= shdr->sh_addr + rp->rl_addr;
 			/* it may be unaligned so copy out */
 			memcpy(&v32, p, sizeof v32);
+			v32 = letoh32(v32);
 			v32 += a32 + rp->rl_addend;
+			v32 = htole32(v32);
 			memcpy(p, &v32, sizeof v32);
 			break;
 
