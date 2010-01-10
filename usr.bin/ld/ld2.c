@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.6 2010/01/10 03:48:00 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.7 2010/01/10 04:20:31 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -717,7 +717,10 @@ elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
 		err(1, "fseeko: %s", ol->ol_path);
 
 	sz = shdr->sh_type == SHT_REL? sizeof rel : sizeof rela;
-	n = shdr->sh_size / sz;
+	if (sz > shdr->sh_entsize)
+		errx(1, "%s: corrupt elf header", ol->ol_path);
+	sz = shdr->sh_entsize - sz;
+	n = shdr->sh_size / shdr->sh_entsize;
 	if (!(r = calloc(n, sizeof *r)))
 		err(1, "calloc");
 
@@ -727,6 +730,9 @@ elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
 		for (i = 0; i < n; i++, r++) {
 			if (fread(&rel, sizeof rel, 1, fp) != 1)
 				err(1, "fread: %s", ol->ol_path);
+
+			if (sz && fseeko(fp, sz, SEEK_CUR))
+				err(1, "fseeko: %s", ol->ol_path);
 
 			elf_fix_rel(eh, &rel);
 			r->rl_sym = NULL;
@@ -739,6 +745,9 @@ elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
 		for (i = 0; i < n; i++, r++) {
 			if (fread(&rela, sizeof rela, 1, fp) != 1)
 				err(1, "fread: %s", ol->ol_path);
+
+			if (sz && fseeko(fp, sz, SEEK_CUR))
+				err(1, "fseeko: %s", ol->ol_path);
 
 			r->rl_sym = NULL;
 			r->rl_addr = rela.r_offset;
