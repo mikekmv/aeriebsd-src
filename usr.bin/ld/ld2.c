@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.8 2010/01/10 04:49:06 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.9 2010/01/10 05:56:01 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -399,13 +399,18 @@ ldorder_obj(struct objlist *ol, void *v)
 	if (!os)
 		return 0;
 
-	n = ELF_HDR(ol->ol_hdr).e_shnum;
+	n = ol->ol_nsect;
 	for (i = 0; i < n; i++, os++, shdr++) {
 		if (shdr->sh_type == SHT_NULL)
 			continue;
 
+		/*
+		 * fuzzy match on section names;
+		 * this means .rodata will also pull .rodata.str
+		 */
 		sname = ol->ol_snames + shdr->sh_name;
-		if (strcmp(sname, neworder->ldo_name))
+		if (strncmp(sname, neworder->ldo_name,
+		    strlen(neworder->ldo_name)))
 			continue;
 
 		/*
@@ -417,7 +422,6 @@ TODO
 		 * we will pin on their vectors way more easily.
 		 */
 		TAILQ_INSERT_TAIL(&neworder->ldo_seclst, os, os_entry);
-		break;
 	}
 
 	return 0;
