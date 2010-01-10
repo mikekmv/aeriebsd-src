@@ -31,6 +31,7 @@ enum {
 	 STATUS_ARRIVE,
 	 STATUS_BOOT,
 	 STATUS_DEPART,
+	 STATUS_NAME,
 	 STATUS_NOTIFY,
 	 STATUS_SIGNON,
 	 STATUS_SIGNOFF,
@@ -97,7 +98,7 @@ LIST_HEAD(icb_grlist, icb_group) groups;
 struct icbd_callbacks {
 	void 	(*drop)(struct icb_session *, char *);
 	void 	(*log)(struct icb_session *, int, const char *, ...);
-	void 	(*send)(struct icb_session *, char *, size_t);
+	void 	(*send)(struct icb_session *, char *, ssize_t);
 };
 
 #ifndef nitems
@@ -118,7 +119,14 @@ int  icb_ismoder(struct icb_group *, struct icb_session *);
 int  icb_pass(struct icb_group *, struct icb_session *, struct icb_session *);
 void icb_privmsg(struct icb_session *, char *, char *);
 void icb_remove(struct icb_session *, char *);
+void icb_sendfmt(struct icb_session *, const char *, ...);
 void icb_start(struct icb_session *);
-void icb_status(struct icb_session *, int , char *);
-void icb_status_group(struct icb_group *, struct icb_session *, int , char *);
+void icb_status(struct icb_session *, int, const char *, ...);
+void icb_status_group(struct icb_group *, struct icb_session *, int ,
+         const char *, ...);
 void icb_who(struct icb_session *, struct icb_group *);
+
+/* callbacks from icbd.c */
+void (*icb_drop)(struct icb_session *, char *);
+void (*icb_log)(struct icb_session *, int, const char *, ...);
+void (*icb_send)(struct icb_session *, char *, ssize_t);

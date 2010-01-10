@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icb.c,v 1.22 2009/06/23 13:39:33 mickey Exp $";
+static const char rcsid[] = "$ABSD: icb.c,v 1.23 2010/01/03 20:54:18 kmerz Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,10 +37,6 @@ void   icb_command(struct icb_session *, char *, char *);
 void   icb_groupmsg(struct icb_session *, char *);
 void   icb_login(struct icb_session *, char *, char *, char *);
 char  *icb_nextfield(char **);
-/* pointers to upper level functions */
-void (*icb_drop)(struct icb_session *, char *);
-void (*icb_log)(struct icb_session *, int, const char *, ...);
-void (*icb_send)(struct icb_session *, char *, size_t);
 
 /*
  *  icb_init: initializes pointers to callbacks
@@ -61,16 +57,12 @@ icb_init(struct icbd_callbacks *ic)
 void
 icb_start(struct icb_session *is)
 {
-	char buf[MAXHOSTNAMELEN + 9 + 1];
 	char hname[MAXHOSTNAMELEN];
-	int buflen;
 
 	bzero(hname, sizeof hname);
 	(void)gethostname(hname, sizeof hname);
-	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%c%c%s%c%s", ICB_M_PROTO,
-	    '1', ICB_M_SEP, hname, ICB_M_SEP, "icbd");
-	buf[0] = ++buflen;
-	icb_send(is, buf, buflen + 1);
+	icb_sendfmt(is, "%c%c%c%s%c%s", ICB_M_PROTO, '1', ICB_M_SEP, hname,
+	    ICB_M_SEP, "icbd");
 	SETF(is->flags, ICB_SF_PROTOSENT);
 }
 
@@ -142,7 +134,6 @@ inputerr:
 void
 icb_login(struct icb_session *is, char *group, char *nick, char *client)
 {
-	char buf[ICB_MSGSIZE];
 	char *defgrp = "1";
 	struct icb_group *ig;
 	struct icb_session *s;
@@ -188,9 +179,8 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	is->last = getmonotime();
 
 	/* notify group */
-	(void)snprintf(buf, sizeof buf, "%s (%s@%s) entered group", is->nick,
-	    is->client, is->host);
-	icb_status_group(ig, NULL, STATUS_SIGNON, buf);
+	icb_status_group(ig, NULL, STATUS_SIGNON, "%s (%s@%s) entered group",
+	    is->nick, is->client, is->host);
 
 	CLRF(is->flags, ICB_SF_PROTOSENT);
 	SETF(is->flags, ICB_SF_LOGGEDIN);
@@ -198,21 +188,16 @@ icb_login(struct icb_session *is, char *group, char *nick, char *client)
 	LIST_INSERT_HEAD(&ig->sess, is, entry);
 
 	/* acknowledge successful login */
-	buf[0] = 1;
-	buf[1] = ICB_M_LOGIN;
-	icb_send(is, buf, 2);
+	icb_sendfmt(is, "%c", ICB_M_LOGIN);
 
 	/* notify user */
-	(void)snprintf(buf, sizeof buf, "You are now in group %s%s", ig->name,
+	icb_status(is, STATUS_STATUS, "You are now in group %s%s", ig->name,
 	    icb_ismoder(ig, is) ? " as moderator" : "");
-	icb_status(is, STATUS_STATUS, buf);
 
 	/* send user a topic name */
-	if (strlen(ig->topic) > 0) {
-		(void)snprintf(buf, sizeof buf, "Topic for %s is \"%s\"",
+	if (strlen(ig->topic) > 0)
+		icb_status(is, STATUS_TOPIC, "Topic for %s is \"%s\"",
 		    ig->name, ig->topic);
-		icb_status(is, STATUS_TOPIC, buf);
-	}
 }
 
 /*
@@ -224,16 +209,16 @@ icb_groupmsg(struct icb_session *is, char *msg)
 	char buf[ICB_MSGSIZE];
 	struct icb_group *ig = is->group;
 	struct icb_session *s;
-	int buflen;
+	int buflen = 1;
 
 	if (strlen(msg) == 0) {
 		icb_error(is, "Empty message");
 		return;
 	}
 
-	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_OPEN,
+	buflen += snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_OPEN,
 	    is->nick, ICB_M_SEP, msg);
-	buf[0] = ++buflen;
+	buf[0] = buflen;
 
 	LIST_FOREACH(s, &ig->sess, entry) {
 		if (s == is)
@@ -248,23 +233,18 @@ icb_groupmsg(struct icb_session *is, char *msg)
 void
 icb_privmsg(struct icb_session *is, char *whom, char *msg)
 {
-	char buf[ICB_MSGSIZE];
 	struct icb_group *ig = is->group;
 	struct icb_session *s;
-	int buflen;
 
 	LIST_FOREACH(s, &ig->sess, entry) {
 		if (strcmp(s->nick, whom) == 0)
 			break;
 	}
 	if (!s) {
-		icb_error(is, "No such user");
+		icb_error(is, "No such user %s", whom);
 		return;
 	}
-	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_PERSONAL,
-	    is->nick, ICB_M_SEP, msg);
-	buf[0] = ++buflen;
-	icb_send(s, buf, buflen + 1);
+	icb_sendfmt(s, "%c%s%c%s", ICB_M_PERSONAL, is->nick, ICB_M_SEP, msg);
 }
 
 /*
@@ -276,7 +256,7 @@ icb_command(struct icb_session *is, char *cmd, char *arg)
 	void (*handler)(struct icb_session *, char *);
 
 	if ((handler = icb_cmd_lookup(cmd)) == NULL) {
-		icb_error(is, "Unsupported command");
+		icb_error(is, "Unsupported command: %s", cmd);
 		return;
 	}
 	handler(is, arg);
@@ -289,8 +269,6 @@ icb_command(struct icb_session *is, char *cmd, char *arg)
 void
 icb_cmdout(struct icb_session *is, int type, char *outmsg)
 {
-	char buf[ICB_MSGSIZE];
-	int buflen;
 	char *otype = NULL;
 
 	switch (type) {
@@ -310,20 +288,18 @@ icb_cmdout(struct icb_session *is, int type, char *outmsg)
 		icb_log(is, LOG_ERR, "unknown cmdout type");
 		return;
 	}
-	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_CMDOUT,
-	    otype, ICB_M_SEP, outmsg);
-	buf[0] = ++buflen;
-	icb_send(is, buf, buflen + 1);
+	icb_sendfmt(is, "%c%s%c%s", ICB_M_CMDOUT, otype, ICB_M_SEP, outmsg);
 }
 
 /*
  *  icb_status: sends a status message ('d') to the client
  */
 void
-icb_status(struct icb_session *is, int type, char *statmsg)
+icb_status(struct icb_session *is, int type, const char *fmt, ...)
 {
+	va_list ap;
 	char buf[ICB_MSGSIZE];
-	int buflen;
+	int buflen = 1;
 	static const struct {
 		int		 type;
 		const char	*msg;
@@ -331,6 +307,7 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 		{ STATUS_ARRIVE,	"Arrive" },
 		{ STATUS_BOOT,		"Boot" },
 		{ STATUS_DEPART,	"Depart" },
+		{ STATUS_NAME,		"Name" },
 		{ STATUS_NOTIFY,	"Notify" },
 		{ STATUS_SIGNON,	"Sign-on" },
 		{ STATUS_SIGNOFF,	"Sign-off" },
@@ -342,10 +319,12 @@ icb_status(struct icb_session *is, int type, char *statmsg)
 
 	if (type < 0 || type > (int)nitems(msgtab) - 1)
 		return;
-
-	buflen = snprintf(&buf[1], sizeof buf - 1, "%c%s%c%s", ICB_M_STATUS,
-	    msgtab[type].msg, ICB_M_SEP, statmsg);
-	buf[0] = ++buflen;
+	va_start(ap, fmt);
+	buflen += snprintf(&buf[1], sizeof buf - 1, "%c%s%c", ICB_M_STATUS,
+	    msgtab[type].msg, ICB_M_SEP);
+	buflen += vsnprintf(&buf[buflen], sizeof buf - buflen, fmt, ap);
+	buf[0] = buflen;
+	va_end(ap);
 	icb_send(is, buf, buflen + 1);
 }
 
@@ -355,16 +334,21 @@ icb_status(struct icb_session *is, int type, char *statmsg)
  */
 void
 icb_status_group(struct icb_group *ig, struct icb_session *ex, int type,
-    char *statmsg)
+    const char *fmt, ...)
 {
+	char buf[ICB_MSGSIZE];
+	va_list ap;
 	struct icb_session *s;
 
+	va_start(ap, fmt);
+	(void)vsnprintf(buf, sizeof buf, fmt, ap);
 	LIST_FOREACH(s, &ig->sess, entry) {
 		if (ex && s == ex)
 			continue;
-		icb_status(s, type, statmsg);
+		icb_status(s, type, buf);
 	}
-	icb_log(NULL, LOG_DEBUG, "%s", statmsg);
+	icb_log(NULL, LOG_DEBUG, "%s", buf);
+	va_end(ap);
 }
 
 /*
@@ -380,7 +364,7 @@ icb_error(struct icb_session *is, const char *fmt, ...)
 	va_start(ap, fmt);
 	buflen += vsnprintf(&buf[2], sizeof buf - 2, fmt, ap);
 	va_end(ap);
-	buf[0] = ++buflen;
+	buf[0] = ++buflen; /* account for ICB_M_ERROR */
 	buf[1] = ICB_M_ERROR;
 	icb_send(is, buf, buflen + 1);
 	icb_log(is, LOG_DEBUG, "%s", buf + 2);
@@ -392,19 +376,18 @@ icb_error(struct icb_session *is, const char *fmt, ...)
 void
 icb_remove(struct icb_session *is, char *reason)
 {
-	char buf[ICB_MSGSIZE];
-
 	if (is->group) {
 		if (icb_ismoder(is->group, is))
 			(void)icb_pass(is->group, is, NULL);
 		LIST_REMOVE(is, entry);
 		if (reason)
-			(void)snprintf(buf, sizeof buf, "%s (%s@%s) just left"
-			    ": %s", is->nick, is->client, is->host, reason);
+			icb_status_group(is->group, NULL, STATUS_SIGNOFF,
+			    "%s (%s@%s) just left: %s", is->nick, is->client,
+			    is->host, reason);
 		else
-			(void)snprintf(buf, sizeof buf, "%s (%s@%s) just left",
-			    is->nick, is->client, is->host);
-		icb_status_group(is->group, NULL, STATUS_SIGNOFF, buf);
+			icb_status_group(is->group, NULL, STATUS_SIGNOFF,
+			    "%s (%s@%s) just left", is->nick, is->client,
+			    is->host);
 	}
 }
 
@@ -492,21 +475,16 @@ int
 icb_pass(struct icb_group *ig, struct icb_session *from,
     struct icb_session *to)
 {
-	char buf[ICB_MSGSIZE];
-
 	if (ig->moder && ig->moder != from)
 		return (-1);
 	if (!from && !to)
 		return (-1);
 	ig->moder = to;
-	if (to) {
-		(void)snprintf(buf, sizeof buf, "%s just passed you moderation"
+	if (to)
+		icb_status(to, STATUS_NOTIFY, "%s just passed you moderation"
 		    " of %s", from ? from->nick : "server", ig->name);
-		icb_status(to, STATUS_NOTIFY, buf);
-	}
-	(void)snprintf(buf, sizeof buf, "%s has passed moderation "
+	icb_status_group(ig, to, STATUS_NOTIFY, "%s has passed moderation "
 	    "to %s", from ? from->nick : "server", to ? to->nick : "server");
-	icb_status_group(ig, to, STATUS_NOTIFY, buf);
 	return (1);
 }
 
@@ -526,4 +504,21 @@ icb_nextfield(char **buf)
 		(*buf)++;
 	}
 	return (start);
+}
+
+/*
+ *  icb_sendfmt: formats a string and sends it over
+ */
+void
+icb_sendfmt(struct icb_session *is, const char *fmt, ...)
+{
+	char buf[ICB_MSGSIZE];
+	va_list ap;
+	int buflen = 1;
+
+	va_start(ap, fmt);
+	buflen += vsnprintf(&buf[1], sizeof buf - 1, fmt, ap);
+	va_end(ap);
+	buf[0] = buflen;
+	icb_send(is, buf, buflen + 1);
 }

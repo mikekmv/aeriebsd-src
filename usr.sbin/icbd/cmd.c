@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.20 2010/01/03 01:30:00 kmerz Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.21 2010/01/03 20:54:18 kmerz Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,14 +33,11 @@ extern int creategroups;
 
 void icb_cmd_boot(struct icb_session *, char *);
 void icb_cmd_change(struct icb_session *, char *);
+void icb_cmd_name(struct icb_session *, char *);
 void icb_cmd_personal(struct icb_session *, char *);
 void icb_cmd_pass(struct icb_session *, char *);
 void icb_cmd_topic(struct icb_session *, char *);
 void icb_cmd_who(struct icb_session *, char *);
-
-extern void (*icb_drop)(struct icb_session *, char *);
-extern void (*icb_log)(struct icb_session *, int, const char *, ...);
-extern void (*icb_send)(struct icb_session *, char *, size_t);
 
 void *
 icb_cmd_lookup(char *cmd)
@@ -53,6 +50,7 @@ icb_cmd_lookup(char *cmd)
 		{ "g",		icb_cmd_change },
 		{ "m",		icb_cmd_personal },
 		{ "msg",	icb_cmd_personal },
+		{ "name",	icb_cmd_name },
 		{ "pass",	icb_cmd_pass },
 		{ "topic",	icb_cmd_topic },
 		{ "w",		icb_cmd_who },
@@ -69,7 +67,6 @@ icb_cmd_lookup(char *cmd)
 void
 icb_cmd_boot(struct icb_session *is, char *arg)
 {
-	char buf[ICB_MAXNICKLEN + 12];
 	struct icb_group *ig;
 	struct icb_session *s;
 
@@ -92,17 +89,14 @@ icb_cmd_boot(struct icb_session *is, char *arg)
 	}
 
 	/* okay, here we go, but first, be polite and notify a user */
-	(void)snprintf(buf, sizeof buf, "%s booted you", is->nick);
-	icb_status(s, STATUS_BOOT, buf);
-	(void)snprintf(buf, sizeof buf, "%s was booted", s->nick);
-	icb_status_group(s->group, s, STATUS_BOOT, buf);
+	icb_status(s, STATUS_BOOT, "%s booted you", is->nick);
+	icb_status_group(s->group, s, STATUS_BOOT, "%s was booted", s->nick);
 	icb_drop(s, "booted");
 }
 
 void
 icb_cmd_change(struct icb_session *is, char *arg)
 {
-	char buf[ICB_MSGSIZE];
 	struct icb_group *ig;
 	struct icb_session *s;
 	int changing = 0;
@@ -148,29 +142,53 @@ icb_cmd_change(struct icb_session *is, char *arg)
 		if (icb_ismoder(is->group, is))
 			(void)icb_pass(is->group, is, NULL);
 		LIST_REMOVE(is, entry);
-		(void)snprintf(buf, sizeof buf, "%s (%s@%s) just left",
-		    is->nick, is->client, is->host);
-		icb_status_group(is->group, NULL, STATUS_DEPART, buf);
+		icb_status_group(is->group, NULL, STATUS_DEPART,
+		    "%s (%s@%s) just left", is->nick, is->client, is->host);
 	}
 
 	is->group = ig;
 	LIST_INSERT_HEAD(&ig->sess, is, entry);
 
 	/* notify group */
-	(void)snprintf(buf, sizeof buf, "%s (%s@%s) entered group", is->nick,
-	    is->client, is->host);
-	icb_status_group(ig, is, changing ? STATUS_ARRIVE : STATUS_SIGNON, buf);
+	icb_status_group(ig, is, changing ? STATUS_ARRIVE : STATUS_SIGNON,
+	    "%s (%s@%s) entered group", is->nick, is->client, is->host);
 
 	/* acknowledge successful join */
-	(void)snprintf(buf, sizeof buf, "You are now in group %s%s", ig->name,
+	icb_status(is, STATUS_STATUS, "You are now in group %s%s", ig->name,
 	    icb_ismoder(ig, is) ? " as moderator" : "");
-	icb_status(is, STATUS_STATUS, buf);
 
 	/* send user a topic name */
-	if (strlen(ig->topic) > 0) {
-		(void)snprintf(buf, sizeof buf, "The topic is: %s", ig->topic);
-		icb_status(is, STATUS_TOPIC, buf);
+	if (strlen(ig->topic) > 0)
+		icb_status(is, STATUS_TOPIC, "The topic is: %s", ig->topic);
+}
+
+void
+icb_cmd_name(struct icb_session *is, char *arg)
+{
+	struct icb_group *ig = is->group;
+	struct icb_session *s;
+
+	if (strlen(arg) == 0) {
+		icb_status(is, STATUS_NAME, "Your nickname is %s",
+		    is->nick);
+		return;
 	}
+	if (strcasecmp(arg, "admin") == 0) {
+		icb_error(is, "Wuff wuff!");
+		return;
+	}
+	/* sanitize user input */
+	if (strlen(arg) > ICB_MAXNICKLEN)
+		arg[ICB_MAXNICKLEN - 1] = '\0';
+	LIST_FOREACH(s, &ig->sess, entry) {
+		if (strcmp(s->nick, arg) == 0) {
+			icb_error(is, "Nick is already in use");
+			return;
+		}
+	}
+	icb_status_group(ig, NULL, STATUS_NAME,
+	    "%s changed nickname to %s", is->nick, arg);
+	strlcpy(is->nick, arg, sizeof is->nick);
 }
 
 void
@@ -196,22 +214,18 @@ icb_cmd_pass(struct icb_session *is, char *arg __attribute__((unused)))
 void
 icb_cmd_topic(struct icb_session *is, char *arg)
 {
-	char buf[ICB_MAXGRPLEN + ICB_MAXTOPICLEN + 25];
 	struct icb_group *ig = is->group;
 
 	if (strlen(arg) == 0) {	/* querying the topic */
 		if (strlen(ig->topic) > 0)
-			(void)snprintf(buf, sizeof buf, "The topic is: %s",
+			icb_status(is, STATUS_TOPIC, "The topic is: %s",
 			    ig->topic);
 		else
-			(void)snprintf(buf, sizeof buf,
-			    "The topic is not set.");
-		icb_status(is, STATUS_TOPIC, buf);
+			icb_status(is, STATUS_TOPIC, "The topic is not set.");
 	} else {		/* setting the topic */
 		strlcpy(ig->topic, arg, sizeof ig->topic);
-		(void)snprintf(buf, sizeof buf,
+		icb_status_group(ig, NULL, STATUS_TOPIC,
 		    "%s changed the topic to \"%s\"", is->nick, ig->topic);
-		icb_status_group(ig, NULL, STATUS_TOPIC, buf);
 	}
 }
 

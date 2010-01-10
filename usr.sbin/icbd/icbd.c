@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.21 2009/07/05 23:28:02 mikeb Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.22 2010/01/03 20:54:18 kmerz Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -58,7 +58,7 @@ void icbd_dispatch(struct bufferevent *, void *);
 void icbd_log(struct icb_session *, int, const char *, ...);
 void icbd_grplist(char *);
 void icbd_restrict(void);
-void icbd_write(struct icb_session *, char *, size_t);
+void icbd_write(struct icb_session *, char *, ssize_t);
 
 int
 main(int argc, char *argv[])
@@ -303,15 +303,35 @@ icbd_dispatch(struct bufferevent *bev, void *arg)
 		}
 	}
 	(void)bufferevent_read(bev, &is->buffer[1], is->length);
+#ifdef DEBUG
+	{
+		int i;
+
+		printf("-> read from %s:%d:\n", is->host, is->port);
+		for (i = 0; i < (int)is->length + 1; i++)
+			printf(" %02x", (unsigned char)is->buffer[i]);
+		printf("\n");
+	}
+#endif
 	icb_input(is);
 	is->length = 0;
 }
 
 void
-icbd_write(struct icb_session *is, char *buf, size_t size)
+icbd_write(struct icb_session *is, char *buf, ssize_t size)
 {
 	if (bufferevent_write(is->bev, buf, size) == -1)
 		syslog(LOG_ERR, "bufferevent_write: %m");
+#ifdef DEBUG
+	{
+		int i;
+
+		printf("-> wrote to %s:%d:\n", is->host, is->port);
+		for (i = 0; i < size; i++)
+			printf(" %02x", (unsigned char)buf[i]);
+		printf("\n");
+	}
+#endif
 }
 
 void
