@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Michael Shalayeff
+ * Copyright (c) 2009,2010 Michael Shalayeff
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syms.c,v 1.2 2009/09/08 17:06:35 mickey Exp $";
+static const char rcsid[] = "$ABSD: syms.c,v 1.3 2009/10/23 21:28:03 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -45,6 +45,9 @@ SPLAY_PROTOTYPE(symtree, symlist, sl_node, symcmp);
 
 SPLAY_GENERATE(symtree, symlist, sl_node, symcmp);
 
+/* TODO we have to deal with duplicate global names as in global statics
+   perhaps by the means of using objlist* as an additional key */
+
 struct symlist *
 sym_undef(const char *name)
 {
@@ -70,18 +73,30 @@ sym_isundef(const char *name)
 }
 
 struct symlist *
-sym_define(struct symlist *sym, struct objlist *ol, void *esym)
+sym_define(struct symlist *sym, struct section *os, void *esym)
 {
 	SPLAY_REMOVE(symtree, &undsyms, sym);
-	sym->sl_obj = ol;
+	sym->sl_sect = os;
 	memcpy(&sym->sl_elfsym, esym, sizeof sym->sl_elfsym);
 	SPLAY_INSERT(symtree, &defsyms, sym);
-	TAILQ_INSERT_TAIL(&ol->ol_syms, sym, sl_entry);
+	/* ABS symbols have no section */
+	if (os)
+		TAILQ_INSERT_TAIL(&os->os_syms, sym, sl_entry);
 	return sym;
 }
 
 struct symlist *
-sym_add(const char *name, struct objlist *ol, void *esym)
+sym_redef(struct symlist *sym, struct section *os, void *esym)
+{
+	TAILQ_REMOVE(&sym->sl_sect->os_syms, sym, sl_entry);
+	sym->sl_sect = os;
+	memcpy(&sym->sl_elfsym, esym, sizeof sym->sl_elfsym);
+	TAILQ_INSERT_TAIL(&os->os_syms, sym, sl_entry);
+	return sym;
+}
+
+struct symlist *
+sym_add(const char *name, struct section *os, void *esym)
 {
 	struct symlist *sym;
 
@@ -91,10 +106,12 @@ sym_add(const char *name, struct objlist *ol, void *esym)
 	if (!(sym->sl_name = strdup(name)))
 		err(1, "strdup");
 
-	sym->sl_obj = ol;
+	sym->sl_sect = os;
 	memcpy(&sym->sl_elfsym, esym, sizeof sym->sl_elfsym);
 	SPLAY_INSERT(symtree, &defsyms, sym);
-	TAILQ_INSERT_TAIL(&ol->ol_syms, sym, sl_entry);
+	/* ABS symbols have no section */
+	if (os)
+		TAILQ_INSERT_TAIL(&os->os_syms, sym, sl_entry);
 	return sym;
 }
 
@@ -111,19 +128,42 @@ int
 sym_undcheck(void)
 {
 	struct symlist *sym;
+	int err = 0;
 
-	if (!SPLAY_EMPTY(&undsyms)) {
-		SPLAY_FOREACH(sym, symtree, &undsyms) {
-			if (sym->sl_obj)
-				warnx("%s: undefined, first used in %s",
-				    sym->sl_name, sym->sl_obj->ol_name);
-			else
-				warnx("%s: undefined", sym->sl_name);
-		}
-		return -1;
+	SPLAY_FOREACH(sym, symtree, &undsyms) {
+		if (sym->sl_sect)
+			warnx("%s: undefined, first used in %s",
+			    sym->sl_name,
+			    sym->sl_sect->os_obj->ol_name);
+		else
+			warnx("%s: undefined", sym->sl_name);
+		err = -1;
 	}
 
-	return 0;
+/* TODO check that all relocs got syms resolved! */
+
+	return err;
+}
+
+void
+sym_scan(const struct ldorder *order, int (*of)(const struct ldorder *, void *),
+    int (*sf)(const struct ldorder *, const struct section *, struct symlist *,
+    void *), void *v)
+{
+	for(; order != TAILQ_END(NULL); order = TAILQ_NEXT(order, ldo_entry)) {
+		struct section *os;
+
+		if (of && (*of)(order, v))
+			return;
+
+		TAILQ_FOREACH(os, &order->ldo_seclst, os_entry) {
+			struct symlist *sym;
+
+			TAILQ_FOREACH(sym, &os->os_syms, sl_entry)
+				if (sf && (*sf)(order, os, sym, v))
+					return;
+		}
+	}
 }
 
 /*
@@ -157,8 +197,8 @@ rel_fixsyms(struct objlist *ol, struct symlist *sym, int is)
 					break;
 
 			for (r0++, er = s->os_rels + s->os_nrls; r0 < er; r0++)
-				if (r->rl_symidx == is)
-					r->rl_sym = sym;
+				if (r0->rl_symidx == is)
+					r0->rl_sym = sym;
 				else
 					break;
 
@@ -208,9 +248,31 @@ order_clone(const struct ldarch *lda, const struct ldorder *order)
 		err(1, "calloc");
 
 	TAILQ_INIT(&neworder->ldo_seclst);
-	neworder->ldo_type = order->ldo_type;
+	neworder->ldo_order = order->ldo_order;
 	neworder->ldo_name = order->ldo_name;
+	neworder->ldo_type = order->ldo_type;
+	neworder->ldo_flags = order->ldo_flags;
+	neworder->ldo_shflags = order->ldo_shflags;
 	neworder->ldo_arch = lda;
 
 	return neworder;
+}
+
+int
+order_printmap(const struct ldorder *order, void *v)
+{
+	switch (order->ldo_order) {
+	case ldo_expr:
+		break;
+
+	case ldo_symbol:
+		printf("%-16s0x%08llx\n", order->ldo_name, order->ldo_start);
+		break;
+
+	default:
+		printf("%-16s0x%08llx\t0x%llx\n", order->ldo_name,
+		    order->ldo_start, order->ldo_addr - order->ldo_start);
+	}
+
+	return 0;
 }

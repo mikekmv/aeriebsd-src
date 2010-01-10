@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Michael Shalayeff
+ * Copyright (c) 2009,2010 Michael Shalayeff
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.3 2009/10/23 21:28:03 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.4 2009/12/31 16:51:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -58,16 +58,17 @@ int check_sections = 1;
 int cref;
 int nostdlib;
 int pie;
-int warncom;
+int warncomm;
 int trace;	/* trace objects being loaded */
 int relocatable;/* produce relocatable output */
-int strip;	/* 0 - do not, 1 - strip debug, 2 - strip all */
+int strip;
 int errors;	/* non-fatal errors accumulated */
 int printmap;	/* print edit map to stdout */
 const char *entry_name;
 struct symlist *sentry;
+struct ldorder *bsorder;
 
-#define OPTSTRING       "+c:C:dD:e:Ef:F:h:il:L:m:MnNo:OqrR:sStT:u:vVxXy:Y:z:Z"
+#define OPTSTRING       "+c:C:dD:e:Ef:F:gh:il:L:m:MnNo:OqrR:sStT:u:vVxXy:Y:z:Z"
 const struct option longopts[] = {
 	{ "as-needed",		no_argument,	&as_needed, 1 },
 	{ "no-as-needed",	no_argument,	&as_needed, 0 },
@@ -83,7 +84,7 @@ const struct option longopts[] = {
 	{ "Ttext",		required_argument,	0, 0 },
 	{ "Tdata",		required_argument,	0, 0 },
 	{ "Tbss",		required_argument,	0, 0 },
-	{ "warn-common",	no_argument,	&warncom, 1 },
+	{ "warn-common",	no_argument,	&warncomm, 1 },
 	{ "Bshared",		no_argument,	&Bflag, 2 },
 	{ "shared",		no_argument,	&Bflag, 2 },
 	{ "Bstatic",		no_argument,	&Bflag, 0 },
@@ -150,6 +151,7 @@ int lib_add(const char *);
 int lib_namtab(const char *, FILE *, u_long, off_t, u_long);
 int lib_symdef(const char *, FILE *, u_long);
 int mmbr_name(struct ar_hdr *, char **, int, int *, FILE *);
+struct headorder ldorder(const struct ldarch *);
 
 int
 usage(void)
@@ -204,6 +206,9 @@ main(int argc, char *argv[])
 		case 'h':	/* set the DT_SONAME field */
 			break;
 
+		case 'g':	/* compat: used to be to include debug info */
+			break;
+
 		case 'i':	/* perform incremental linking */
 		case 'r':
 			relocatable++;
@@ -243,11 +248,11 @@ main(int argc, char *argv[])
 			break;
 
 		case 'S':	/* strip only debugging info from the output */
-			strip = 1;
+			strip |= LD_DEBUG;
 			break;
 
 		case 's':	/* strip all symbol info from the otput */
-			strip = 2;
+			strip |= LD_SYMTAB | LD_DEBUG;
 			break;
 
 		case 't':	/* trace files processed */
@@ -291,22 +296,9 @@ main(int argc, char *argv[])
 	if (argc < 1)
 		errx(1, "no input files");
 
-	/* make a "system" object for our self-defined syms */
+	/* make a "system" object for our self-defined sections & syms */
 	sysobj.ol_path = output;
-	TAILQ_INIT(&sysobj.ol_syms);
-	/* allocate sections (.got .plt etc) */
-	if (Bflag || pie) {
-		sysobj.ol_nsect = 2;
-		if (!(sysobj.ol_sections = calloc(sysobj.ol_nsect,
-		    sizeof *sysobj.ol_sections)))
-			err(1, "calloc");
-		if (!(sysobj.ol_sects = calloc(sysobj.ol_nsect,
-		    MAX(sizeof(Elf32_Shdr), sizeof(Elf64_Shdr)))))
-			err(1, "calloc");
-		/* os_sect is set in ldmap() */
-		sysobj.ol_sections[0].os_obj = &sysobj;
-		sysobj.ol_sections[1].os_obj = &sysobj;
-	}
+	sysobj.ol_nsect = 1;	/* .bss */
 	TAILQ_INSERT_TAIL(&objlist, &sysobj, ol_entry);
 
 	for (; argc--; argv++) {
@@ -341,9 +333,9 @@ main(int argc, char *argv[])
 
 	/* and now do the jobs */
 	if (elfclass == ELFCLASS32)
-		return ldload32(output, ldmap32(ldarch));
+		return ldload32(output, ldmap32(ldorder(ldarch)));
 	else
-		return ldload64(output, ldmap64(ldarch));
+		return ldload64(output, ldmap64(ldorder(ldarch)));
 }
 
 /*
@@ -371,6 +363,22 @@ ldinit(void)
 		/* XXX we have to check ldo_flags as in ldmap() */
 
 		switch (order->ldo_order) {
+		/* these we do not care until later */
+		case ldo_section:
+		case ldo_interp:
+		case ldo_note:
+		case ldo_shstr:
+		case ldo_symtab:
+		case ldo_strtab:
+			sysobj.ol_nsect++;
+		case ldo_expr:
+		case ldo_kaput:
+			break;
+
+		case ldo_option:
+			/* TODO parse options */
+			break;
+
 		case ldo_symbol:
 			if (order->ldo_flags & LD_ENTRY) {
 				if (!entry_name)
@@ -380,6 +388,18 @@ ldinit(void)
 			}
 			break;
 		}
+	}
+
+	if (!(sysobj.ol_sections = calloc(sysobj.ol_nsect,
+	    sizeof *sysobj.ol_sections)))
+		err(1, "calloc");
+	if (!(sysobj.ol_sects = calloc(sysobj.ol_nsect,
+	    MAX(sizeof(Elf32_Shdr), sizeof(Elf64_Shdr)))))
+		err(1, "calloc");
+	/* os_sect is set in ldmap() */
+	for (i = 0; i < sysobj.ol_nsect; i++) {
+		sysobj.ol_sections[i].os_obj = &sysobj;
+		TAILQ_INIT(&sysobj.ol_sections[i].os_syms);
 	}
 
 	return lda;
@@ -742,14 +762,14 @@ obj_add(const char *path, const char *name, FILE *fp, off_t foff)
 		err(1, "strdup");
 
 	ofoff = 0;
+	ol->ol_off = foff;
 	if (foff) {
 		ofoff = ftello(fp);
-		ol->ol_off = foff;
 		if (fseeko(fp, foff, SEEK_SET) < 0)
 			err(1, "fseeko: %s", path);
 	}
 
-	/* gotta be ar member */
+	/* gotta be an ar member */
 	if (name) {
 		char b[MAXPATHLEN];
 		snprintf(b, sizeof b, "%s(%s)", path, name);
@@ -761,7 +781,6 @@ obj_add(const char *path, const char *name, FILE *fp, off_t foff)
 	if (fread(&ol->ol_hdr, sizeof ol->ol_hdr, 1, fp) != 1)
 		err(1, "fread header: %s", ol->ol_name);
 
-	TAILQ_INIT(&ol->ol_syms);
 	if (IS_ELF(ol->ol_hdr.elf32) &&
 	    ol->ol_hdr.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
 	    ol->ol_hdr.elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
@@ -785,4 +804,127 @@ obj_add(const char *path, const char *name, FILE *fp, off_t foff)
 	TAILQ_INSERT_TAIL(&objlist, ol, ol_entry);
 	fseeko(fp, ofoff, SEEK_SET);
 	return 0;
+}
+
+struct headorder
+ldorder(const struct ldarch *lda)
+{
+	struct headorder headorder;
+	const struct ldorder *order;
+	struct ldorder *neworder, *ssorder;
+	struct symlist *sym;
+	size_t n;
+	int i;
+
+	ssorder = 0;
+	TAILQ_INIT(&headorder);
+	for (i = 0, order = lda->la_order;
+	    order->ldo_order != ldo_kaput; order++, i++) {
+
+		if (!(Bflag || pie) && (order->ldo_flags & LD_DYNAMIC))
+			continue;
+
+		if (strip & order->ldo_flags)
+			continue;
+		if (strip == 2 && (order->ldo_order == ldo_symtab ||
+		    order->ldo_order == ldo_strtab))
+			continue;
+
+		if (magic == OMAGIC && (order->ldo_flags & LD_NOOMAGIC))
+			continue;
+		if (magic == NMAGIC && (order->ldo_flags & LD_NONMAGIC))
+			continue;
+		if (magic == ZMAGIC && (order->ldo_flags & LD_NOZMAGIC))
+			continue;
+
+		switch (order->ldo_order) {
+		/* these are handled in ldinit */
+		case ldo_option:
+			break;
+
+		case ldo_expr:
+			/* TODO clone the node w/ expression for ldmap */
+			break;
+
+		case ldo_section:
+			neworder = order_clone(lda, order);
+			if (obj_foreach(elfclass == ELFCLASS32?
+			    ld32order_obj : ld64order_obj, neworder)) {
+				free(neworder);
+				break;
+			}
+			TAILQ_INSERT_TAIL(&headorder, neworder, ldo_entry);
+			/*
+			 * we ignore .sbss special handling and just
+			 * dump everything into .bss
+			 */
+			if (neworder->ldo_type == SHT_NOBITS &&
+			    strcmp(neworder->ldo_name, ELF_BSS)) {
+				if (bsorder) {
+					warnx("dup order %s and %s",
+					    bsorder->ldo_name,
+					    neworder->ldo_name);
+					errors++;
+				}
+				bsorder = neworder;
+			}
+			break;
+
+		case ldo_symbol:
+			/* entry has been already handled in ldinit() */
+			if (order->ldo_flags & LD_ENTRY)
+				break;
+			if ((sym = sym_isdefined(order->ldo_name))) {
+				warnx("%s: already defined in %s",
+				    order->ldo_name,
+				    sym->sl_sect->os_obj->ol_name);
+				errors++;
+				break;
+			}
+			neworder = order_clone(lda, order);
+			neworder->ldo_wurst = elfclass == ELFCLASS32?
+			    elf32_absadd(neworder->ldo_name) :
+			    elf64_absadd(neworder->ldo_name);
+			TAILQ_INSERT_TAIL(&headorder, neworder, ldo_entry);
+			break;
+
+		case ldo_interp:
+			neworder = order_clone(lda, order);
+			neworder->ldo_wurst = strdup(LD_INTERP);
+			neworder->ldo_wsize = ALIGN(sizeof LD_INTERP);
+			TAILQ_INSERT_TAIL(&headorder, neworder, ldo_entry);
+			break;
+
+		case ldo_note:
+			neworder = order_clone(lda, order);
+			if (elfclass == ELFCLASS32)
+				elf32_note(neworder);
+			else
+				elf64_note(neworder);
+			TAILQ_INSERT_TAIL(&headorder, neworder, ldo_entry);
+			break;
+
+		case ldo_symtab:
+		case ldo_strtab:
+		case ldo_shstr:
+			neworder = order_clone(lda, order);
+			if (order->ldo_order == ldo_shstr)
+				ssorder = neworder;
+			TAILQ_INSERT_TAIL(&headorder, neworder, ldo_entry);
+			break;
+
+		case ldo_kaput:
+			break;
+		}
+	}
+
+	n = 1;
+	TAILQ_FOREACH(order, &headorder, ldo_entry)
+		n += strlen(order->ldo_name) + 1;
+	ssorder->ldo_wsize = ALIGN(n);
+	if (!(ssorder->ldo_wurst = malloc(ssorder->ldo_wsize)))
+		err(1, "malloc");
+	sysobj.ol_snames = ssorder->ldo_wurst;
+
+	return headorder;
 }
