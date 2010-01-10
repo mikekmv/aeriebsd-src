@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.7 2010/01/10 04:20:31 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.8 2010/01/10 04:49:06 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -266,13 +266,13 @@ ldmap(struct headorder headorder)
 				if (shdr->sh_type != SHT_NOBITS)
 					shdr->sh_offset = off +
 					    ord->ldo_addr - ord->ldo_start;
-				ord->ldo_addr += shdr->sh_size;
 
 				/* assign addrs to all syms in this section */
 				TAILQ_FOREACH(sym, &os->os_syms, sl_entry) {
 					esym = &ELF_SYM(sym->sl_elfsym);
 					esym->st_value += shdr->sh_addr;
 				}
+				ord->ldo_addr += shdr->sh_size;
 			}
 			point = ord->ldo_addr;
 			if (shdr->sh_type != SHT_NOBITS)
@@ -781,12 +781,23 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 	Elf_Sym *dsym, *esym = vs;
 	struct symlist *isdef, *sym;
 
+	if (ELF_ST_TYPE(esym->st_info) == STT_SECTION) {
+		if (!(sym = calloc(1, sizeof *sym)))
+			err(1, "calloc");
+
+		if (esym->st_shndx >= ol->ol_nsect)
+			errx(1, "corrupt symbol table");
+		sym->sl_sect = ol->ol_sections + esym->st_shndx;
+		sym->sl_name = NULL;
+		return rel_fixsyms(ol, sym, is);
+	}
+
 	bzero(&nl, sizeof nl);
 	elf2nlist(esym, es->ehdr, es->shdr, es->shstr, &nl);
-	if (!nl.n_un.n_strx)
-		return 0;
 
 	nl.n_un.n_name = es->stab + nl.n_un.n_strx;
+	if (*nl.n_un.n_name == '\0')
+		return 0;
 	if ((nl.n_type & N_TYPE) == N_FN || (nl.n_type & N_TYPE) == N_SIZE)
 		return 0;
 
@@ -926,10 +937,14 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 	ol->ol_snames = es.shstr;
 
 	/* (re)sort the relocs by the address for the loader's pleasure */
-	for (os = ol->ol_sections, se = os + n; os < se; os++)
-		if (os->os_nrls)
+	for (os = ol->ol_sections, se = os + n; os < se; os++) {
+
+struct relist *r, *er;
+for (r = os->os_rels, er = r + os->os_nrls; r < er; r++) if (!r->rl_sym) fprintf(stderr, "r %s: %d %d\n", ol->ol_name, r->rl_type, r->rl_symidx);
+		if (os->os_nrls > ELF_RELSORT)
 			qsort(os->os_rels, os->os_nrls, sizeof *os->os_rels,
 			    rel_addrcmp);
+	}
 
 	return 0;
 }

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syms.c,v 1.3 2009/10/23 21:28:03 mickey Exp $";
+static const char rcsid[] = "$ABSD: syms.c,v 1.4 2010/01/10 03:48:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -173,37 +173,38 @@ sym_scan(const struct ldorder *order, int (*of)(const struct ldorder *, void *),
 int
 rel_fixsyms(struct objlist *ol, struct symlist *sym, int is)
 {
-	struct section *s;
+	struct section *os;
 	int i;
 
-	for (i = 0, s = ol->ol_sections; i < ol->ol_nsect; s++, i++) {
+	for (i = 0, os = ol->ol_sections; i < ol->ol_nsect; os++, i++) {
 		struct relist *r, *er;
 
-		if (!s->os_nrls)
+		if (!os->os_nrls)
 			continue;
 
-		if (s->os_nrls > ELF_RELSORT) {
+		if (os->os_nrls > ELF_RELSORT) {
 			struct relist rk, *r0;
 
 			rk.rl_symidx = is;
-			if (!(r0 = bsearch(&rk, s->os_rels, s->os_nrls,
+			if (!(r0 = bsearch(&rk, os->os_rels, os->os_nrls,
 			    sizeof rk, rel_symcmp)))
 				continue;
 
-			for (r = r0, er = s->os_rels; er <= r; r--)
+			for (r = r0, er = os->os_rels; er <= r; r--)
 				if (r->rl_symidx == is)
 					r->rl_sym = sym;
 				else
 					break;
 
-			for (r0++, er = s->os_rels + s->os_nrls; r0 < er; r0++)
+			r0++;
+			for (er = os->os_rels + os->os_nrls; r0 < er; r0++)
 				if (r0->rl_symidx == is)
 					r0->rl_sym = sym;
 				else
 					break;
 
 		} else
-			for (r = s->os_rels, er = r + s->os_nrls; r < er; r++)
+			for (r = os->os_rels, er = r + os->os_nrls; r < er; r++)
 				if (r->rl_symidx == is)
 					r->rl_sym = sym;
 	}

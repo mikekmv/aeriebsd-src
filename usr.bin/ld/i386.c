@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: i386.c,v 1.2 2009/10/23 21:28:03 mickey Exp $";
+static const char rcsid[] = "$ABSD: i386.c,v 1.3 2010/01/10 03:48:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -101,7 +101,7 @@ i386_fix(off_t off, struct section *os, char *sbuf, int len)
 	struct relist *rp = os->os_rels, *erp = rp + os->os_nrls;
 	Elf32_Shdr *shdr = os->os_sect;
 	char *p, *ep;
-	uint32_t v32;
+	uint32_t v32, a32;
 	int reoff;
 
 /* this evil little loop has to be optimised; for example store last rp on os */
@@ -111,8 +111,6 @@ i386_fix(off_t off, struct section *os, char *sbuf, int len)
 
 	if (rp == erp)
 		return 0;
-
-fprintf(stderr, "%llx %llx\n", off, rp->rl_addr);
 
 	for (p = sbuf + rp->rl_addr - off, ep = sbuf + len;
 	    p < ep; p += reoff, rp++) {
@@ -127,26 +125,19 @@ fprintf(stderr, "%llx %llx\n", off, rp->rl_addr);
 
 		switch (rp->rl_type) {
 		case RELOC_32:
-			if (ep - p < 4)
-				return ep - p;
-if (!rp->rl_sym) continue;
-			/* it may be unaligned so copy out */
-			memcpy(&v32, p, sizeof v32);
-			v32 += rp->rl_sym->sl_elfsym.sym32.st_value +
-			    rp->rl_addend;
-fprintf(stderr, "a %s %x\n", rp->rl_sym->sl_name, rp->rl_sym->sl_elfsym.sym32.st_value);
-			memcpy(p, &v32, sizeof v32);
-			break;
-
 		case RELOC_PC32:
 			if (ep - p < 4)
 				return ep - p;
-if (!rp->rl_sym) continue;
+			if (rp->rl_sym->sl_name)
+				a32 = rp->rl_sym->sl_elfsym.sym32.st_value;
+			else
+				a32 = ((Elf32_Shdr *)
+				    rp->rl_sym->sl_sect->os_sect)->sh_addr;
+			if (rp->rl_type == RELOC_PC32)
+				a32 -= shdr->sh_addr + rp->rl_addr;
 			/* it may be unaligned so copy out */
 			memcpy(&v32, p, sizeof v32);
-			v32 += rp->rl_sym->sl_elfsym.sym32.st_value -
-			    (shdr->sh_addr + rp->rl_addr) + rp->rl_addend;
-fprintf(stderr, "i %s %x %llx\n", rp->rl_sym->sl_name, rp->rl_sym->sl_elfsym.sym32.st_value, shdr->sh_addr + rp->rl_addr);
+			v32 += a32 + rp->rl_addend;
 			memcpy(p, &v32, sizeof v32);
 			break;
 
