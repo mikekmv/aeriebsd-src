@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.4 2009/12/31 16:51:53 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.5 2010/01/10 03:48:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -843,7 +843,8 @@ ldorder(const struct ldarch *lda)
 			break;
 
 		case ldo_expr:
-			/* TODO clone the node w/ expression for ldmap */
+			neworder = order_clone(lda, order);
+			TAILQ_INSERT_TAIL(&headorder, neworder, ldo_entry);
 			break;
 
 		case ldo_section:

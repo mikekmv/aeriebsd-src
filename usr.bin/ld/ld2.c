@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.9 2010/01/10 05:56:01 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.10 2010/01/10 06:57:15 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -114,7 +114,7 @@ struct {
 	char name[16];
 	int desc;
 } ldnote = {
-	{ 16, 4, 1 },
+	{ sizeof ldnote.name, sizeof ldnote.desc, 1 },
 	LD_NOTE,
 	0
 };
@@ -187,7 +187,8 @@ ldmap(struct headorder headorder)
 				err(1, "malloc");
 			*(char *)ord->ldo_wurst = '\0';
 			sym_scan(TAILQ_FIRST(&headorder), NULL, elf_names, ord);
-		}
+		} else if (ord->ldo_order == ldo_expr)
+			continue;
 
 		/* skip empty sections */
 		if (TAILQ_EMPTY(&ord->ldo_seclst) &&
@@ -208,10 +209,13 @@ ldmap(struct headorder headorder)
 			shdr->sh_link = nsect;
 			shdr->sh_entsize = sizeof *esym;
 		}
-		shdr++;
 
-		/* XXX for now */
-		nphdr++;
+		if (shdr->sh_flags & SHF_ALLOC &&
+		    (shdr->sh_type != shdr[-1].sh_type ||
+		     shdr->sh_flags != shdr[-1].sh_flags))
+			nphdr++;
+
+		shdr++;
 	}
 
 	if (nsect == 1 || !nphdr)
@@ -233,13 +237,16 @@ ldmap(struct headorder headorder)
 	off = sizeof *eh + nphdr * sizeof *phdr;
 	point = __LDPGSZ + off;
 	TAILQ_FOREACH(ord, &headorder, ldo_entry) {
+
+		shdr = NULL;
 		switch (ord->ldo_order) {
 		/* these already been handled in ldinit and/or ldorder */
 		case ldo_option:
 			break;
 
 		case ldo_expr:
-			/* TODO calculate new expression */
+			/* mind the gap! */
+			point += __LDPGSZ;
 			break;
 
 		case ldo_section:
@@ -275,6 +282,7 @@ ldmap(struct headorder headorder)
 				ord->ldo_addr += shdr->sh_size;
 			}
 			point = ord->ldo_addr;
+			shdr = ord->ldo_sect->os_sect;
 			if (shdr->sh_type != SHT_NOBITS)
 				off += ord->ldo_addr - ord->ldo_start;
 			break;
@@ -332,11 +340,42 @@ ldmap(struct headorder headorder)
 				n = sord->ldo_wsize - (p - q);
 				p += strlcpy(p, sord->ldo_name, n) + 1;
 			}
+			shdr = ord->ldo_sect->os_sect;
 			break;
 		}
 
 		case ldo_kaput:
 			err(1, "kaputziener");
+		}
+
+		if (shdr && (shdr->sh_flags & SHF_ALLOC)) {
+			if (shdr->sh_type != shdr[-1].sh_type ||
+			    shdr->sh_flags != shdr[-1].sh_flags) {
+				if (shdr[-1].sh_type != SHT_NULL) {
+					if (shdr[-1].sh_type != SHT_NOBITS)
+						phdr->p_filesz = phdr->p_memsz;
+					phdr++;
+				}
+				switch (shdr->sh_type) {
+				case SHT_NOTE:     phdr->p_type = PT_NOTE; break;
+				case SHT_DYNAMIC:  phdr->p_type = PT_DYNAMIC; break;
+				case SHT_PROGBITS: phdr->p_type = PT_LOAD; break;
+				case SHT_NOBITS:   phdr->p_type = PT_LOAD; break;
+				}
+				phdr->p_flags = PF_R;
+				if (shdr->sh_flags & SHF_WRITE)
+					phdr->p_flags |= PF_W;
+				if (shdr->sh_flags & SHF_EXECINSTR)
+					phdr->p_flags |= PF_X;
+				phdr->p_offset = shdr->sh_offset;
+				phdr->p_vaddr = ord->ldo_start;
+				phdr->p_paddr = ord->ldo_start;
+				phdr->p_memsz = ord->ldo_addr - ord->ldo_start;
+				if (shdr->sh_type != SHT_NOBITS)
+					phdr->p_filesz = phdr->p_memsz;
+				phdr->p_align = phdr->p_type == PT_LOAD? __LDPGSZ : 4;
+			} else
+				phdr->p_memsz = ord->ldo_addr - phdr->p_vaddr;
 		}
 	}
 
@@ -673,15 +712,17 @@ ldloadasect(FILE *fp, FILE *ofp, const char *name, const struct ldorder *ord,
 	if (fseeko(fp, os->os_off, SEEK_SET) < 0)
 		err(1, "fseeko: %s", os->os_obj->ol_name);
 
-	for (sl = shdr->sh_size, off = 0, bof = len = 0;
-	    off < sl; off += len) {
-		len = MIN(sl - off, sizeof sbuf - bof);
+	for (sl = shdr->sh_size, off = 0, bof = 0; off < sl; off += len) {
+		len = sizeof sbuf - bof;
+		if (len > sl - off)
+			len = sl - off;
 		if (fread(sbuf + bof, len, 1, fp) != 1) {
 			if (feof(fp))
 				errx(1, "fread: %s: EOF", os->os_obj->ol_name);
 			else
 				err(1, "fread: %s", os->os_obj->ol_name);
 		}
+		len += bof;
 		bof = ord->ldo_arch->la_fix(off, os, sbuf, len);
 		if (bof < 0)
 			return -1;
