@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997, 1999, 2000 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -353,6 +352,15 @@ pool_alloc_item_header(struct pool *pp, caddr_t storage, int flags)
 	if ((pp->pr_roflags & PR_PHINPAGE) != 0)
 		ph = (struct pool_item_header *)(storage + pp->pr_phoffset);
 	else {
+		/*
+		 * all callers use PR_NOWAIT except for one
+		 * that comes directly from pool_get and carries
+		 * potentiall PR_WAITOK given from the pool user.
+		 * keep the intention and do not sleep on allocating
+		 * the pool item headers instead the upper layer
+		 * will sleep if necessary waiting for more memory.
+		 */
+		flags = (flags & ~PR_WAITOK) & PR_NOWAIT;
 		ph = pool_get(&phpool, flags);
 	}
 
