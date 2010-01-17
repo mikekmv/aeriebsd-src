@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.10 2010/01/10 06:57:15 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.11 2010/01/12 03:18:34 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -379,10 +379,11 @@ ldmap(struct headorder headorder)
 		}
 	}
 
-	if (printmap)
+	if (printmap) {
 		sym_scan(TAILQ_FIRST(&headorder), order_printmap,
 		    elf_symprintmap, NULL);
-fflush(stdout);
+		fflush(stdout);
+	}
 
 	if (sym_undcheck())
 		return NULL;
@@ -982,14 +983,10 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 	ol->ol_snames = es.shstr;
 
 	/* (re)sort the relocs by the address for the loader's pleasure */
-	for (os = ol->ol_sections, se = os + n; os < se; os++) {
-
-struct relist *r, *er;
-for (r = os->os_rels, er = r + os->os_nrls; r < er; r++) if (!r->rl_sym) fprintf(stderr, "r %s: %d %d\n", ol->ol_name, r->rl_type, r->rl_symidx);
+	for (os = ol->ol_sections, se = os + n; os < se; os++)
 		if (os->os_nrls > ELF_RELSORT)
 			qsort(os->os_rels, os->os_nrls, sizeof *os->os_rels,
 			    rel_addrcmp);
-	}
 
 	return 0;
 }
