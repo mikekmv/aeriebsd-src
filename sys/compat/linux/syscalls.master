@@ -1,4 +1,4 @@
-;	$ABSD$
+;	$ABSD: syscalls.master,v 1.2 2009/12/24 14:39:59 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -106,11 +106,7 @@
 			    linux_handler_t handler); }
 49	NOARGS		linux_geteuid16 { uid_t sys_geteuid(void); }
 50	NOARGS		linux_getegid16 { gid_t sys_getegid(void); }
-#ifdef ACCOUNTING
-51	NOARGS		{ int sys_acct(char *path); }
-#else
 51	UNIMPL		acct
-#endif
 52	STD		{ int linux_sys_phys(void); }
 53	STD		{ int linux_sys_lock(void); }
 54	STD		{ int linux_sys_ioctl(int fd, u_long com, \

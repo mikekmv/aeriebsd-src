@@ -1,4 +1,4 @@
-;	$ABSD$
+;	$ABSD: syscalls.master,v 1.2 2009/12/24 14:39:59 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -95,11 +95,7 @@
 48	UNIMPL		ssig
 49	UNIMPL		reserved for USG
 50	UNIMPL		reserved for USG
-#ifdef ACCOUNTING
-51	NOARGS		{ int sys_acct(char *path); }
-#else
 51	UNIMPL		acct
-#endif
 52	UNIMPL
 53	UNIMPL		syslock
 54	STD		{ int ultrix_sys_ioctl(int fd, u_long com, caddr_t data); }

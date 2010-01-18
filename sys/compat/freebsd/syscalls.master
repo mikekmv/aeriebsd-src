@@ -1,4 +1,4 @@
-;	$ABSD$
+;	$ABSD: syscalls.master,v 1.2 2009/12/24 14:39:58 mickey Exp $
 
 ;	from: @(#)syscalls.master	8.2 (Berkeley) 1/13/94
 
@@ -112,23 +112,14 @@
 43	NOARGS		{ gid_t sys_getegid(void); }
 44	NOARGS		{ int sys_profil(caddr_t samples, u_int size, \
 			    u_int offset, u_int scale); }
-#ifdef KTRACE
-45	NOARGS		{ int sys_ktrace(char *fname, int ops, int facs, \
-			    int pid); }
-#else
 45	UNIMPL		ktrace
-#endif
 46	NOARGS		{ int sys_sigaction(int signum, struct sigaction *nsa, \
 			    struct sigaction *osa); }
 47	NOARGS		{ gid_t sys_getgid(void); }
 48	NOARGS		{ int sys_sigprocmask(int how, sigset_t mask); }
 49	NOARGS		{ int sys_getlogin(char *namebuf, u_int namelen); }
 50	NOARGS		{ int sys_setlogin(char *namebuf); }
-#ifdef ACCOUNTING
-51	NOARGS		{ int sys_acct(char *path); }
-#else
 51	UNIMPL		acct
-#endif
 52	NOARGS		{ int sys_sigpending(void); }
 53	NOARGS		{ int sys_sigaltstack(struct sigaltstack *nss, \
 			    struct sigaltstack *oss); }
