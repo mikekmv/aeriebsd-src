@@ -1,6 +1,6 @@
-;	$ABSD: syscalls.master,v 1.2 2009/12/24 14:39:58 mickey Exp $
+;	$ABSD: syscalls.master,v 1.3 2010/01/18 17:30:44 mickey Exp $
 
-; OpenBSD COMPAT_BSDOS system call name/number "master" file.
+; AerieBSD COMPAT_BSDOS system call name/number "master" file.
 ; (See syscalls.conf to see what it is processed into.)
 ;
 ; Fields: number type [type-dependent ...]
@@ -14,6 +14,8 @@
 ;	UNIMPL	unimplemented, not included in system
 ;	NODEF	included, but don't define the syscall number
 ;	NOARGS	included, but don't define the syscall args structure
+;	NOLOCK	combined with the above to specify that the call
+;		does not need the MP big lock operated
 ;
 ; The compat options are defined in the syscalls.conf file, and the
 ; compat option name is prefixed to the syscall name.  Other than

@@ -1,8 +1,8 @@
-;	$ABSD: syscalls.master,v 1.1 2010/01/18 17:24:23 mickey Exp $
+;	$ABSD: syscalls.master,v 1.2 2010/01/18 17:30:45 mickey Exp $
 
 ;	@(#)syscalls.master	8.2 (Berkeley) 1/13/94
 
-; OpenBSD system call name/number "master" file.
+; AerieBSD COMPAT_OPENBSD system call name/number "master" file.
 ; (See syscalls.conf to see what it is processed into.)
 ;
 ; Fields: number type [type-dependent ...]
