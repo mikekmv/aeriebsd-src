@@ -34,32 +34,34 @@
 #include <sys/malloc.h>
 #include <sys/vnode.h>
 #include <sys/exec.h>
-#include <sys/resourcevar.h>
+#include <sys/signalvar.h>
 #include <uvm/uvm_extern.h>
 #include <sys/exec_elf.h>
 
-#include <machine/freebsd_machdep.h>
+#include <compat/common/compat_util.h>
 
-#include <compat/freebsd/freebsd_syscall.h>
-#include <compat/freebsd/freebsd_exec.h>
-#include <compat/freebsd/freebsd_util.h>
+#include <compat/openbsd/openbsd_syscall.h>
+#include <compat/openbsd/openbsd_exec.h>
+#include <machine/openbsd_machdep.h>
 
-extern const struct sysent freebsd_sysent[];
+extern const struct sysent openbsd_sysent[];
 #ifdef SYSCALL_DEBUG
-extern const char *const freebsd_syscallnames[];
+extern const char *const openbsd_syscallnames[];
 #endif
+extern char sigcode[], esigcode[];
 
-extern const char freebsd_emul_path[];
+const char openbsd_emul_path[] = "/emul/openbsd";
 
-struct emul emul_freebsd_aout = {
-	"freebsd",
+#ifdef _KERN_DO_AOUT
+struct emul emul_openbsd_aout = {
+	"openbsd",
 	NULL,
-	freebsd_sendsig,
-	FREEBSD_SYS_syscall,
-	FREEBSD_SYS_MAXSYSCALL,
-	freebsd_sysent,
+	sendsig,
+	OPENBSD_SYS_syscall,
+	OPENBSD_SYS_MAXSYSCALL,
+	openbsd_sysent,
 #ifdef SYSCALL_DEBUG
-	freebsd_syscallnames,
+	openbsd_syscallnames,
 #else
 	NULL,
 #endif
@@ -67,29 +69,57 @@ struct emul emul_freebsd_aout = {
 	copyargs,
 	setregs,
 	NULL,
-	freebsd_sigcode,
-	freebsd_esigcode,
+	openbsd_sigcode,
+	openbsd_esigcode,
+	EMUL_ENABLED	/* XXX for now always enabled */
 };
+#endif
 
-struct emul emul_freebsd_elf = {
-	"freebsd",
+#ifdef _KERN_DO_ELF
+struct emul emul_openbsd_elf32 = {
+	"openbsd",
 	NULL,
-	freebsd_sendsig,
-	FREEBSD_SYS_syscall,
-	FREEBSD_SYS_MAXSYSCALL,
-	freebsd_sysent,
+	sendsig,
+	OPENBSD_SYS_syscall,
+	OPENBSD_SYS_MAXSYSCALL,
+	openbsd_sysent,
 #ifdef SYSCALL_DEBUG
-	freebsd_syscallnames,
+	openbsd_syscallnames,
 #else
 	NULL,
 #endif
-	FREEBSD_ELF_AUX_ARGSIZ,
+	sizeof (AuxInfo) * ELF_AUX_ENTRIES,
 	elf32_copyargs,
 	setregs,
 	exec_elf32_fixup,
-	freebsd_sigcode,
-	freebsd_esigcode,
+	openbsd_sigcode,
+	openbsd_esigcode,
+	EMUL_ENABLED	/* XXX for now always enabled */
 };
+#endif
+
+#ifdef _KERN_DO_ELF64
+struct emul emul_openbsd_elf64 = {
+	"openbsd",
+	NULL,
+	sendsig,
+	OPENBSD_SYS_syscall,
+	OPENBSD_SYS_MAXSYSCALL,
+	openbsd_sysent,
+#ifdef SYSCALL_DEBUG
+	openbsd_syscallnames,
+#else
+	NULL,
+#endif
+	sizeof (AuxInfo) * ELF_AUX_ENTRIES,
+	elf64_copyargs,
+	setregs,
+	exec_elf64_fixup,
+	openbsd_sigcode,
+	openbsd_esigcode,
+	EMUL_ENABLED	/* XXX for now always enabled */
+};
+#endif
 
 /*
  * exec_aout_makecmds(): Check if it's an a.out-format executable.
@@ -104,7 +134,7 @@ struct emul emul_freebsd_elf = {
  */
 
 int
-exec_freebsd_aout_makecmds(p, epp)
+exec_openbsd_aout_makecmds(p, epp)
 	struct proc *p;
 	struct exec_package *epp;
 {
@@ -115,7 +145,7 @@ exec_freebsd_aout_makecmds(p, epp)
 	if (epp->ep_hdrvalid < sizeof(struct exec))
 		return ENOEXEC;
 
-	midmag = FREEBSD_N_GETMID(*execp) << 16 | FREEBSD_N_GETMAGIC(*execp);
+	midmag = OPENBSD_N_GETMID(*execp) << 16 | OPENBSD_N_GETMAGIC(*execp);
 
 	/* assume FreeBSD's MID_MACHINE and [ZQNO]MAGIC is same as NetBSD's */
 	switch (midmag) {
@@ -133,7 +163,7 @@ exec_freebsd_aout_makecmds(p, epp)
 		break;
 	}
 	if (error == 0)
-		epp->ep_emul = &emul_freebsd_aout;
+		epp->ep_emul = &emul_openbsd_aout;
 	else
 		kill_vmcmds(&epp->ep_vmcmds);
 
@@ -141,46 +171,35 @@ exec_freebsd_aout_makecmds(p, epp)
 }
 
 int
-exec_freebsd_elf32_makecmds(struct proc *p, struct exec_package *epp)
+openbsd_elf32_makecmds(struct proc *p, struct exec_package *epp)
 {
-	if (!(emul_freebsd_elf.e_flags & EMUL_ENABLED))
+	if (!(emul_openbsd_elf32.e_flags & EMUL_ENABLED))
 		return (ENOEXEC);
 	return exec_elf32_makecmds(p, epp);
-
 }
 
 int
-freebsd_elf_probe(p, epp, itp, pos, os)
-	struct proc *p;
-	struct exec_package *epp;
-	char *itp;
-	u_long *pos;
-	u_int8_t *os;
+openbsd_elf32_probe(struct proc *p, struct exec_package *epp, char *itp,
+    u_long *pos, u_int8_t *os)
 {
-	Elf32_Ehdr *eh = epp->ep_hdr;
-	char *bp, *brand;
-	int error;
+	char *bp;
 	size_t len;
+	int error;
 
-	if (!(emul_freebsd_elf.e_flags & EMUL_ENABLED))
+	if (!(emul_openbsd_elf32.e_flags & EMUL_ENABLED))
 		return (ENOEXEC);
 
-	/*
-	 * Older FreeBSD ELF binaries use a brand; newer ones use EI_OSABI
-	 */
-	if (eh->e_ident[EI_OSABI] != ELFOSABI_FREEBSD) {
-		brand = elf32_check_brand(eh);
-		if (brand == NULL || strcmp(brand, "FreeBSD") != 0)
-			return (EINVAL);
-	}
+	if (elf32_os_pt_note(p, epp, epp->ep_hdr, "OpenBSD", 8, 4))
+		return (EINVAL);
+
 	if (itp) {
-		if ((error = emul_find(p, NULL, freebsd_emul_path, itp, &bp, 0)))
+		if ((error = emul_find(p, NULL, openbsd_emul_path, itp, &bp, 0)))
 			return (error);
 		if ((error = copystr(bp, itp, MAXPATHLEN, &len)))
 			return (error);
 		free(bp, M_TEMP);
 	}
-	epp->ep_emul = &emul_freebsd_elf;
+	epp->ep_emul = &emul_openbsd_elf32;
 	*pos = ELF32_NO_ADDR;
 	return (0);
 }

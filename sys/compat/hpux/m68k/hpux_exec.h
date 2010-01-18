@@ -114,4 +114,6 @@ struct hpux_exec {
 
 int	exec_hpux_makecmds(struct proc *, struct exec_package *);
 
+extern struct emul emul_hpux;
+
 #endif /* _HPUX_EXEC_H_ */

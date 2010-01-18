@@ -34,7 +34,6 @@
 #include <sys/vnode.h>
 #include <sys/exec.h>
 #include <sys/exec_elf.h>
-#include <sys/exec_olf.h>
 
 #include <sys/mman.h>
 #include <uvm/uvm_extern.h>
@@ -135,7 +134,5 @@ svr4_elf_probe(p, epp, itp, pos, os)
 	}
 	epp->ep_emul = &emul_svr4;
 	*pos = SVR4_INTERP_ADDR;
-	if (*os == OOS_NULL)
-		*os = OOS_SVR4;
 	return (0);
 }

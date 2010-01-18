@@ -63,4 +63,6 @@
 int svr4_elf_probe(struct proc *, struct exec_package *, char *, u_long *,
     u_int8_t *);
 
+extern struct emul emul_svr4;
+
 #endif /* !_SVR4_EXEC_H_ */

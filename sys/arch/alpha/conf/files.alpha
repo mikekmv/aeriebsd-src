@@ -32,7 +32,7 @@ major	{vnd = 9}
 #
 # Media Independent Interface (mii)
 #
-include	"../../../dev/mii/files.mii"
+include	"dev/mii/files.mii"
 
 #
 # Machine-independent SCSI drivers
@@ -263,7 +263,7 @@ file	dev/pci/if_hme_pci.c		hme_pci
 # ISA PnP
 #
 
-include	"../../../dev/isa/files.isapnp"
+include	"dev/isa/files.isapnp"
 file	arch/alpha/isa/isapnp_machdep.c		isapnp
 
 #
@@ -331,6 +331,9 @@ file	arch/alpha/alpha/api_up1000.c		api_up1000	needs-flag
 # OSF/1 Binary Compatibility (COMPAT_OSF1)
 include	"compat/osf1/files.osf1"
 file	arch/alpha/alpha/osf1_locore.s		compat_osf1
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"
 
 #
 # Machine-independent I2C drivers

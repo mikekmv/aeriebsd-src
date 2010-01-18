@@ -390,6 +390,7 @@ device	asc: scsi, ncr53c9x
 attach	asc at vsbus with asc_vsbus
 file	arch/vax/vsa/asc_vsbus.c		asc needs-flag
 
+include "compat/openbsd/files.openbsd"
 include	"compat/ultrix/files.ultrix"
 include	"compat/vax1k/files.vax1k"
 

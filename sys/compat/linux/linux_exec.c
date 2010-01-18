@@ -38,7 +38,6 @@
 #include <sys/mount.h>
 #include <sys/exec.h>
 #include <sys/exec_elf.h>
-#include <sys/exec_olf.h>
 
 #include <sys/mman.h>
 #include <sys/syscallargs.h>
@@ -506,8 +505,6 @@ recognized:
 	}
 	epp->ep_emul = &emul_linux_elf;
 	*pos = ELF32_NO_ADDR;
-	if (*os == OOS_NULL)
-		*os = OOS_LINUX;
 	return (0);
 }
 

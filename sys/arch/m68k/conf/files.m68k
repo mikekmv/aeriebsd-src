@@ -21,11 +21,12 @@ file	arch/m68k/m68k/sig_machdep.c
 #
 include	"compat/m68k4k/files.m68k4k"
 
-#
 # SunOS binary compatibility
-#
 include	"compat/sunos/files.sunos"
 file	arch/m68k/m68k/sunos_machdep.c		compat_sunos
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"
 
 # quad support is necessary for 32 bit architectures
 file	lib/libkern/adddi3.c

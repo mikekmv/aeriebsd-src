@@ -215,8 +215,9 @@ file	arch/hp300/hp300/trap.c
 file	arch/hp300/hp300/vm_machdep.c
 file	arch/hp300/dev/dma.c
 
-#
 # HP-UX binary compatibility
-#
 include "compat/hpux/m68k/files.hpux"
 file	arch/hp300/hp300/hpux_machdep.c		compat_hpux
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"

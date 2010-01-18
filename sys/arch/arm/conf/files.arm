@@ -106,6 +106,9 @@ file	arch/arm/arm/bcopy_page.S
 #file	arch/arm/arm/linux_syscall.c		compat_linux
 #file	arch/arm/arm/linux_trap.c		compat_linux
 
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"
+
 # machine-dependent libkern components
 file	lib/libkern/arch/arm/divsi3.S
 file	lib/libkern/arch/arm/memcpy.S

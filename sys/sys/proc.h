@@ -163,7 +163,6 @@ struct proc {
 
 	int	p_exitsig;		/* Signal to send to parent on exit. */
 	u_int	p_flag;			/* P_* flags. */
-	u_char	p_os;			/* OS tag */
 	char	p_stat;			/* S* process status. */
 	char	p_pad1[1];
 	u_char	p_descfd;		/* if not 255, fdesc permits this fd */

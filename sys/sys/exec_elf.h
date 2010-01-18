@@ -530,7 +530,6 @@ struct elf_args {
 	u_long	arg_phaddr;		/* program header address */
 	u_long	arg_phentsize;		/* Size of program header */
 	u_long	arg_phnum;		/* Number of program headers */
-	u_long	arg_os;			/* OS tag */
 };
 
 #endif

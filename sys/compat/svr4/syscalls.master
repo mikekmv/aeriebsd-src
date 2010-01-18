@@ -1,4 +1,4 @@
-;	$ABSD$
+;	$ABSD: syscalls.master,v 1.2 2009/12/24 14:39:59 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -141,7 +141,7 @@
 73	OBSOL		rumount
 74	OBSOL		rfstart
 75	OBSOL		sigret
-76	STD		{ int svr4_sys_rdebug(void); }
+76	OBSOL		rdebug
 77	OBSOL		rfstop
 78	UNIMPL		rfsys
 79	NOARGS		{ int sys_rmdir(char *path); }

@@ -23,7 +23,7 @@ file	arch/macppc/macppc/db_interface.c		ddb
 #
 # Media Independent Interface (mii)
 #
-include "../../../dev/mii/files.mii"
+include "dev/mii/files.mii"
 
 #
 # MAC generic
@@ -53,12 +53,12 @@ major	{wd = 0}
 major	{sd = 2}
 major	{cd = 3}
 
-include "../../../scsi/files.scsi"
+include "scsi/files.scsi"
 
 #
 # I2O
 #
-include "../../../dev/i2o/files.i2o"
+include "dev/i2o/files.i2o"
 
 include "dev/pci/files.pci"
 file	arch/macppc/pci/pciide_machdep.c		pciide
@@ -100,8 +100,8 @@ file	arch/macppc/pci/pchb.c				pchb
 # Machine-independent ATAPI drivers
 #
 
-include "../../../dev/atapiscsi/files.atapiscsi"
-include "../../../dev/ata/files.ata"
+include "dev/atapiscsi/files.atapiscsi"
+include "dev/ata/files.ata"
 
 # MAC periph
 
@@ -304,3 +304,6 @@ file	arch/macppc/dev/tpms.c				tpms
 device	asms
 attach	asms at i2c
 file	arch/macppc/dev/asms.c			asms
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"

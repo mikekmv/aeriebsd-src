@@ -77,7 +77,7 @@ attach	sbus at mainbus, iommu, sbus, xbox
 file	arch/sparc/dev/sbus.c			sbus
 
 # Sun specific files
-include	"../../../dev/sun/files.sun"
+include	"dev/sun/files.sun"
 
 #
 # Console (zs) related stuff
@@ -95,12 +95,12 @@ file	arch/sparc/dev/z8530kbd.c		zskbd needs-flag
 #
 # Media Independent Interface (mii)
 #
-include	"../../../dev/mii/files.mii"
+include	"dev/mii/files.mii"
 
 #
 # Machine-independent SCSI drivers
 #
-include	"../../../scsi/files.scsi"
+include	"scsi/files.scsi"
 
 major	{sd = 7}
 major	{vnd = 8}
@@ -308,12 +308,15 @@ file	arch/sparc/sparc/db_disasm.c	ddb
 #
 
 # SVR4 Binary Compatibility (COMPAT_SVR4)
-include	"../../../compat/svr4/files.svr4"
+include	"compat/svr4/files.svr4"
 file	arch/sparc/sparc/svr4_machdep.c	compat_svr4
 file	arch/sparc/sparc/sunos_machdep.c compat_sunos
 
 # SunOS Binary Compatibility (COMPAT_SUNOS)
-include	"../../../compat/sunos/files.sunos"
+include	"compat/sunos/files.sunos"
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"
 
 # Magma Serial/Parallel boards
 device	magma {}

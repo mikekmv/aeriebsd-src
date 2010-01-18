@@ -75,7 +75,7 @@ include	"dev/pckbc/files.pckbc"
 include	"dev/pcmcia/files.pcmcia"
 
 # Sun specific files
-include	"../../../dev/sun/files.sun"
+include	"dev/sun/files.sun"
 
 attach	sbus at mainbus with sbus_mb
 attach	sbus at xbox with sbus_xbox
@@ -304,7 +304,7 @@ file	arch/sparc64/dev/md_root.c	memory_disk_hooks
 #
 # Machine-independent SCSI drivers
 #
-include	"../../../scsi/files.scsi"
+include	"scsi/files.scsi"
 major	{sd = 7}
 major	{vnd = 8}
 major	{cd = 18}
@@ -374,3 +374,6 @@ file	arch/sparc64/dev/vrtc.c			vrtc
 device	mgiic: i2cbus
 attach	mgiic at mainbus
 file	arch/sparc64/dev/mgiic.c		mgiic
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"

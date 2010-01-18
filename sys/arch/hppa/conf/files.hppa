@@ -273,6 +273,7 @@ file	arch/hppa/hppa/osf1_machdep.c		compat_osf1
 include	"compat/linux/files.linux"
 include "compat/ossaudio/files.ossaudio"
 file	arch/hppa/hppa/linux_machdep.c		compat_linux
+include "compat/openbsd/files.openbsd"
 
 #
 # Non-device files

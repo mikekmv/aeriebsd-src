@@ -97,4 +97,6 @@ int freebsd_elf_probe(struct proc *, struct exec_package *, char *,
 
 extern char freebsd_sigcode[], freebsd_esigcode[];
 
+extern struct emul emul_freebsd_aout, emul_freebsd_elf;
+
 #endif /* !_FREEBSD_EXEC_H */

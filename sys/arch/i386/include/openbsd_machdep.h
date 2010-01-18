@@ -1,6 +1,9 @@
-/*-
- * Copyright (c) 1992, 1993
+/*
+ * Copyright (c) 1986, 1989, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,18 +29,60 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)exec.h	8.1 (Berkeley) 6/11/93
+ *	from: @(#)signal.h	8.1 (Berkeley) 6/11/93
+ *	from: Id: signal.h,v 1.4 1994/08/21 04:55:30 paul Exp 
+ *
+ *	from: @(#)frame.h	5.2 (Berkeley) 1/18/91
+ *	from: Id: frame.h,v 1.10 1995/03/16 18:11:42 bde Exp 
+ */
+#ifndef _OPENBSD_MACHDEP_H
+#define _OPENBSD_MACHDEP_H
+
+/* sys/i386/include/exec.h */
+#define OPENBSD___LDPGSZ	4096
+
+/*
+ * signal support
  */
 
-#ifndef	_BSDOS_EXEC_H
-#define	_BSDOS_EXEC_H
+struct openbsd_sigframe {
+	int	sf_signum;
+	siginfo_t *sf_sip;
+	struct	sigcontext *sf_scp;
+	sig_t	sf_handler;
+	struct	sigcontext sf_sc;
+	siginfo_t sf_si;
+	void	*sf_fpstate;
+};
 
-#define MID_BSDOS		MID_ZERO
+struct	openbsd_sigcontext {
+	int	sc_gs;
+	int	sc_fs;
+	int	sc_es;
+	int	sc_ds;
+	int	sc_edi;
+	int	sc_esi;
+	int	sc_ebp;
+	int	sc_ebx;
+	int	sc_edx;
+	int	sc_ecx;
+	int	sc_eax;
+	/* XXX */
+	int	sc_eip;
+	int	sc_cs;
+	int	sc_eflags;
+	int	sc_esp;
+	int	sc_ss;
 
-#define	BSDOS_AOUT_HDR_SIZE	sizeof(struct exec)
+	int	sc_onstack;		/* sigstack state to restore */
+	int	sc_mask;		/* signal mask to restore */
 
-int exec_bsdos_aout_makecmds(struct proc *, struct exec_package *);
+	int	sc_trapno;		/* XXX should be above */
+	int	sc_err;
+};
 
-extern struct emul emul_bsdos;
+#ifdef _KERNEL
+void openbsd_sendsig(sig_t, int, int, u_long, int, union sigval);
+#endif
 
-#endif /* !_BSDOS_EXEC_H */
+#endif /* _OPENBSD_MACHDEP_H */

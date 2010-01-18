@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994 Christos Zoulas
  * All rights reserved.
@@ -36,7 +35,6 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/exec.h>
-#include <sys/exec_olf.h>
 #include <sys/namei.h>
 #include <sys/dirent.h>
 #include <sys/proc.h>
@@ -1442,7 +1440,6 @@ svr4_sys_setegid(p, v, retval)
 		extern struct emul emul_linux_elf;
 
 		p->p_emul = &emul_linux_elf;
-		p->p_os = OOS_LINUX;
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_EMUL))
 			ktremul(p, p->p_emul->e_name);
@@ -1453,17 +1450,4 @@ svr4_sys_setegid(p, v, retval)
 	(void)uap;
 #endif
         return (sys_setegid(p, v, retval));
-}
-
-int
-svr4_sys_rdebug(p, v, retval)
-	struct proc *p;
-	void *v;
-	register_t *retval;
-{
-#ifdef COMPAT_SVR4_NCR
-	return (ENXIO);
-#else
-	return (p->p_os == OOS_NCR ? ENXIO : sys_nosys(p, v, retval));
-#endif
 }

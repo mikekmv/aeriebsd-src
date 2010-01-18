@@ -201,7 +201,7 @@ include "dev/i2c/files.i2c"
 #
 # ACPI
 #
-include "../../../dev/acpi/files.acpi"
+include "dev/acpi/files.acpi"
 file	arch/amd64/amd64/acpi_machdep.c		acpi
 
 #
@@ -230,3 +230,6 @@ major	{cd = 6}
 major	{rd = 17}
 major	{wd = 0}
 major	{fd = 2}
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"

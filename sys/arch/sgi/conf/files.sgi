@@ -172,3 +172,6 @@ major	{rd = 8}
 #
 
 file	dev/cninit.c
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"

@@ -1,0 +1,11 @@
+#
+# Config.new file description for machine-independent OpenBSD compat code.
+# Included by ports that need it.
+
+# ports should define any machine-specific files they need in their
+# own file lists.
+
+file	compat/openbsd/openbsd_exec.c		compat_openbsd
+file	compat/openbsd/openbsd_file.c		compat_openbsd
+file	compat/openbsd/openbsd_sysent.c		compat_openbsd
+file	compat/openbsd/openbsd_syscalls.c	compat_openbsd & syscall_debug

@@ -69,4 +69,6 @@ int exec_linux_elf32_makecmds(struct proc *, struct exec_package *);
 int linux_elf_probe(struct proc *, struct exec_package *, char *,
     u_long *, u_int8_t *);
 
+extern struct emul emul_linux_elf, emul_linux_aout;
+
 #endif /* !_LINUX_EXEC_H */

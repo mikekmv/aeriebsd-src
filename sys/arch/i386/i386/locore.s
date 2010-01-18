@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1993, 1994, 1995 Charles M. Hannum.  All rights reserved.
  * Copyright (c) 1990 The Regents of the University of California.
@@ -55,6 +54,9 @@
 #ifdef COMPAT_FREEBSD
 #include <compat/freebsd/freebsd_syscall.h>
 #endif
+#ifdef COMPAT_OPENBSD
+#include <compat/openbsd/openbsd_syscall.h>
+#endif
 
 #include <machine/cputypes.h>
 #include <machine/param.h>
@@ -88,7 +90,7 @@
 	movl	reg, CPUVAR(CURPCB)
 
 #define	CHECK_ASTPENDING(treg)				\
-	movl 	CPUVAR(CURPROC),treg		;	\
+	movl	CPUVAR(CURPROC),treg		;	\
 	cmpl	$0, treg			;	\
 	je	1f				;	\
 	cmpl	$0,P_MD_ASTPENDING(treg)	;	\
@@ -721,6 +723,45 @@ _C_LABEL(esigcode):
 
 /*****************************************************************************/
 
+/*
+ * Signal trampoline; copied to top of user stack.
+ */
+NENTRY(openbsd_sigcode)
+	movl	OPENBSD_SIGF_FPSTATE(%esp),%esi	# FPU state area if need saving
+	testl	%esi,%esi
+	jz	1f
+	fnsave	(%esi)
+1:	call	*OPENBSD_SIGF_HANDLER(%esp)
+	testl	%esi,%esi
+	jz	2f
+	frstor	(%esi)
+	jmp	2f
+
+	.globl  _C_LABEL(openbsd_sigcode_xmm)
+_C_LABEL(openbsd_sigcode_xmm):
+	movl	OPENBSD_SIGF_FPSTATE(%esp),%esi	# FPU state area if need saving
+	testl	%esi,%esi
+	jz	1f
+	fxsave	(%esi)
+	fninit
+1:	call	*OPENBSD_SIGF_HANDLER(%esp)
+	testl	%esi,%esi
+	jz	2f
+	fxrstor	(%esi)
+
+2:	leal	OPENBSD_SIGF_SC(%esp),%eax	# scp (the call may have clobbered the
+					# copy at SIGF_SCP(%esp))
+	pushl	%eax
+	pushl	%eax			# junk to fake return address
+	movl	$OPENBSD_SYS_sigreturn,%eax
+	int	$0x80			# enter kernel with args on stack
+	movl	$OPENBSD_SYS_exit,%eax
+	int	$0x80			# exit if sigreturn fails
+	.globl	_C_LABEL(openbsd_esigcode)
+_C_LABEL(openbsd_esigcode):
+
+/*****************************************************************************/
+
 #ifdef COMPAT_SVR4
 NENTRY(svr4_sigcode)
 	call	*SVR4_SIGF_HANDLER(%esp)
@@ -856,7 +897,7 @@ ENTRY(kcopy)
 	leave
 #endif
 	ret
-	
+
 /*
  * bcopy(caddr_t from, caddr_t to, size_t len);
  * Copy len bytes.
@@ -931,8 +972,8 @@ ENTRY(copyout)
 #endif
 	pushl	%esi
 	pushl	%edi
-	pushl	$0	
-	
+	pushl	$0
+
 	movl	16+FPADD(%esp),%esi
 	movl	20+FPADD(%esp),%edi
 	movl	24+FPADD(%esp),%eax
@@ -987,7 +1028,7 @@ ENTRY(copyin)
 	GET_CURPCB(%eax)
 	pushl	$0
 	movl	$_C_LABEL(copy_fault),PCB_ONFAULT(%eax)
-	
+
 	movl	16+FPADD(%esp),%esi
 	movl	20+FPADD(%esp),%edi
 	movl	24+FPADD(%esp),%eax
@@ -1273,7 +1314,7 @@ ENTRY(longjmp)
 	ret
 
 /*****************************************************************************/
-		
+
 #ifdef DIAGNOSTIC
 NENTRY(switch_error1)
 	pushl	%edi
@@ -1367,7 +1408,7 @@ switch_exited:
 	pushl	%edi
 	call	_C_LABEL(pmap_activate)
 	addl	$4,%esp
-	
+
 	/* Load TSS info. */
 	movl	CPUVAR(GDT),%eax
 	movl	P_MD_TSS_SEL(%edi),%edx
@@ -1399,8 +1440,8 @@ switch_exited:
 	cmpl	PCB_FPCPU(%esi),%ebx
 	jz	1f
 	orl	$CR0_TS,%ecx
-1:	
-#endif	
+1:
+#endif
 	movl	%ecx,%cr0
 
 	/* Record new pcb. */

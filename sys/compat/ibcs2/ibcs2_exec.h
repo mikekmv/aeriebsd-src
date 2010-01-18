@@ -280,4 +280,6 @@ struct xiter {
 
 int     exec_ibcs2_xout_makecmds(struct proc *, struct exec_package *);
 
+extern struct emul emul_ibcs2;
+
 #endif /* !_IBCS2_EXEC_H_ */

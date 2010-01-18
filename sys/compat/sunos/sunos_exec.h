@@ -42,4 +42,6 @@ struct sunos_exec {
 #define SUNOS_M_NATIVE	SUNOS_M_68020
 #endif
 
+extern struct emul emul_sunos;
+
 #endif /* !_SUNOS_EXEC_H_ */

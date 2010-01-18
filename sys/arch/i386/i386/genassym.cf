@@ -62,6 +62,10 @@ if COMPAT_FREEBSD > 0
 include <machine/freebsd_machdep.h>
 endif
 
+if COMPAT_OPENBSD > 0
+include <machine/openbsd_machdep.h>
+endif
+
 if MULTIPROCESSOR
 include <machine/cpu.h>
 endif
@@ -166,6 +170,15 @@ ifdef COMPAT_FREEBSD
 struct	freebsd_sigframe	FREEBSD_SIGF_
 member	HANDLER			sf_handler
 member	SC			sf_sc
+endif
+
+# OpenBSD signal handling
+ifdef COMPAT_OPENBSD
+struct	openbsd_sigframe	OPENBSD_SIGF_
+member	HANDLER			sf_handler
+member	SC			sf_sc
+member	FPSTATE			sf_fpstate
+struct	openbsd_sigcontext
 endif
 
 # Interrupt metering

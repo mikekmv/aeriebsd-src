@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1993, 1994 Christopher G. Demetriou
  * All rights reserved.
@@ -61,6 +60,10 @@
 #include <compat/freebsd/freebsd_exec.h>
 #endif
 
+#ifdef COMPAT_OPENBSD
+#include <compat/openbsd/openbsd_exec.h>
+#endif
+
 #ifdef COMPAT_HPUX
 #include <compat/hpux/hpux_exec.h>
 #endif
@@ -74,9 +77,7 @@
 #endif
 
 extern struct emul emul_native, emul_elf32, emul_elf64, emul_aout,
-	emul_bsdos, emul_freebsd_aout, emul_freebsd_elf, emul_hpux,
-	emul_ibcs2, emul_linux_elf, emul_linux_aout, emul_netbsd_elf64,
-	emul_osf1, emul_sunos, emul_svr4, emul_ultrix;
+	emul_osf1, emul_ultrix;
 
 struct execsw execsw[] = {
 	{ MAXINTERP, exec_script_makecmds, &emul_native, },	/* shell scripts */
@@ -114,6 +115,14 @@ struct execsw execsw[] = {
 	{ FREEBSD_AOUT_HDR_SIZE, exec_freebsd_aout_makecmds, &emul_freebsd_aout },	/* freebsd */
 	{ sizeof(Elf32_Ehdr), exec_freebsd_elf32_makecmds, &emul_freebsd_elf },
 #endif
+#ifdef COMPAT_OPENBSD
+	{ OPENBSD_AOUT_HDR_SIZE, exec_freebsd_aout_makecmds, &emul_freebsd_aout },	/* freebsd */
+#ifdef _KERN_DO_ELF64
+	{ sizeof(Elf64_Ehdr), openbsd_elf64_makecmds, &emul_openbsd_elf64 },	/* openbsd */
+#else
+	{ sizeof(Elf32_Ehdr), openbsd_elf32_makecmds, &emul_openbsd_elf32 },	/* openbsd */
+#endif
+#endif
 #ifdef COMPAT_HPUX
 	{ HPUX_EXEC_HDR_SIZE, exec_hpux_makecmds, &emul_hpux },	/* HP-UX a.out */
 #endif
@@ -134,7 +143,6 @@ struct execsw execsw[] = {
 #endif
 #ifdef LKM
 	{ 0, NULL, NULL },				/* entries for LKMs */
-	{ 0, NULL, NULL },
 	{ 0, NULL, NULL },
 	{ 0, NULL, NULL },
 	{ 0, NULL, NULL },

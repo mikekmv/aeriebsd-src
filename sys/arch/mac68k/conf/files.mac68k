@@ -123,3 +123,6 @@ major	{st = 5}
 major	{cd = 6}
 major	{vnd = 8}
 major	{rd = 13}
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"

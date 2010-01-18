@@ -111,3 +111,6 @@ file	arch/landisk/dev/power.c	power needs-flag
 #device	led
 #attach	led at obio
 #file	arch/landisk/dev/led_obio.c	led needs-flag
+
+# OpenBSD binary compatibility (COMPAT_OPENBSD)
+include "compat/openbsd/files.openbsd"
