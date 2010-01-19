@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -60,7 +59,7 @@ struct stat43 {
 	u_int32_t st_gen;		/* file generation number */
 };
 
-struct stat35 {
+struct stat44 {
 	dev_t	  st_dev;		/* inode's device */
 	ino_t	  st_ino;		/* inode's number */
 	u_int16_t  st_mode;		/* inode protection mode */

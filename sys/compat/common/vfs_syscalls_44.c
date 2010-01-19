@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -46,6 +45,8 @@
 #include <sys/proc.h>
 #include <sys/uio.h>
 #include <sys/dirent.h>
+#include <sys/mount.h>
+#include <sys/stat.h>
 
 #include <sys/syscallargs.h>
 
@@ -92,12 +93,12 @@ statfs_to_ostatfs(p, mp, sp, osp)
  */
 /* ARGSUSED */
 int
-compat_25_sys_statfs(p, v, retval)
+compat_44_sys_statfs(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	register struct compat_25_sys_statfs_args /* {
+	register struct compat_44_sys_statfs_args /* {
 		syscallarg(char *) path;
 		syscallarg(struct ostatfs *) buf;
 	} */ *uap = v;
@@ -125,12 +126,12 @@ compat_25_sys_statfs(p, v, retval)
  */
 /* ARGSUSED */
 int
-compat_25_sys_fstatfs(p, v, retval)
+compat_44_sys_fstatfs(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	struct compat_25_sys_fstatfs_args /* {
+	struct compat_44_sys_fstatfs_args /* {
 		syscallarg(int) fd;
 		syscallarg(struct ostatfs *) buf;
 	} */ *uap = v;
@@ -157,12 +158,12 @@ compat_25_sys_fstatfs(p, v, retval)
  * Get statistics on all filesystems.
  */
 int
-compat_25_sys_getfsstat(p, v, retval)
+compat_44_sys_getfsstat(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	register struct compat_25_sys_getfsstat_args /* {
+	register struct compat_44_sys_getfsstat_args /* {
 		syscallarg(struct ostatfs *) buf;
 		syscallarg(long) bufsize;
 		syscallarg(int) flags;
@@ -217,4 +218,165 @@ compat_25_sys_getfsstat(p, v, retval)
 		*retval = count;
 
 	return (0);
+}
+
+static void cvtstat(struct stat *, struct stat44 *);
+
+/*
+ * Convert from a new to an old stat structure.
+ */
+static void
+cvtstat(struct stat *st, struct stat44 *ost)
+{
+
+	ost->st_dev = st->st_dev;
+	ost->st_ino = st->st_ino;
+	ost->st_mode = st->st_mode & 0xffff;
+	ost->st_nlink = st->st_nlink & 0xffff;
+	ost->st_uid = st->st_uid;
+	ost->st_gid = st->st_gid;
+	ost->st_rdev = st->st_rdev;
+	ost->st_atimespec = st->st_atimespec;
+	ost->st_mtimespec = st->st_mtimespec;
+	ost->st_ctimespec = st->st_ctimespec;
+	ost->st_size = st->st_size;
+	ost->st_blocks = st->st_blocks;
+	ost->st_blksize = st->st_blksize;
+	ost->st_flags = st->st_flags;
+	ost->st_gen = st->st_gen;
+}
+
+/*
+ * Get file status; this version follows links.
+ */
+/* ARGSUSED */
+int
+compat_44_sys_stat(struct proc *p, void *v, register_t *retval)
+{
+	struct compat_44_sys_stat_args /* {
+		syscallarg(char *) path;
+		syscallarg(struct stat44 *) ub;
+	} */ *uap = v;
+	struct stat sb;
+	struct stat44 osb;
+	int error;
+	struct nameidata nd;
+
+	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE,
+	    SCARG(uap, path), p);
+	if ((error = namei(&nd)) != 0)
+		return (error);
+	error = vn_stat(nd.ni_vp, &sb, p);
+	vput(nd.ni_vp);
+	if (error)
+		return (error);
+	/* Don't let non-root see generation numbers (for NFS security) */
+	if (suser(p, 0))
+		sb.st_gen = 0;
+	cvtstat(&sb, &osb);
+	error = copyout(&osb, SCARG(uap, ub), sizeof(osb));
+	return (error);
+}
+
+/*
+ * Get file status; this version does not follow links.
+ */
+/* ARGSUSED */
+int
+compat_44_sys_lstat(struct proc *p, void *v, register_t *retval)
+{
+	struct compat_44_sys_lstat_args /* {
+		syscallarg(char *) path;
+		syscallarg(struct stat44 *) ub;
+	} */ *uap = v;
+	struct stat sb;
+	struct stat44 osb;
+	int error;
+	struct nameidata nd;
+
+	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE,
+	    SCARG(uap, path), p);
+	if ((error = namei(&nd)) != 0)
+		return (error);
+	error = vn_stat(nd.ni_vp, &sb, p);
+	vput(nd.ni_vp);
+	if (error)
+		return (error);
+	/* Don't let non-root see generation numbers (for NFS security) */
+	if (suser(p, 0))
+		sb.st_gen = 0;
+	cvtstat(&sb, &osb);
+	error = copyout(&osb, SCARG(uap, ub), sizeof(osb));
+	return (error);
+}
+
+/*
+ * Return status information about a file descriptor.
+ */
+/* ARGSUSED */
+int
+compat_44_sys_fstat(struct proc *p, void *v, register_t *retval)
+{
+	struct compat_44_sys_fstat_args /* {
+		syscallarg(int) fd;
+		syscallarg(struct stat44 *) sb;
+	} */ *uap = v;
+	int fd = SCARG(uap, fd);
+	struct filedesc *fdp = p->p_fd;
+	struct file *fp;
+	struct stat ub;
+	struct stat44 oub;
+	int error;
+
+	if ((fp = fd_getfile(fdp, fd)) == NULL)
+		return (EBADF);
+	FREF(fp);
+	error = (*fp->f_ops->fo_stat)(fp, &ub, p);
+	FRELE(fp);
+	if (error == 0) {
+		/* Don't let non-root see generation numbers
+		   (for NFS security) */
+		if (suser(p, 0))
+			ub.st_gen = 0;
+		cvtstat(&ub, &oub);
+		error = copyout(&oub, SCARG(uap, sb), sizeof(oub));
+	}
+	return (error);
+}
+
+/* ARGSUSED */
+int
+compat_44_sys_fhstat(struct proc *p, void *v, register_t *retval)
+{
+	struct sys_fhstat_args /* {
+		syscallarg(const fhandle_t *) fhp;
+		syscallarg(struct stat44 *) sb;
+	} */ *uap = v;
+	struct stat ub;
+	struct stat44 oub;
+	int error;
+	fhandle_t fh;
+	struct mount *mp;
+	struct vnode *vp;
+
+	/*
+	 * Must be super user
+	 */
+	if ((error = suser(p, 0)))
+		return (error);
+
+	if ((error = copyin(SCARG(uap, fhp), &fh, sizeof(fhandle_t))) != 0)
+		return (error);
+
+	if ((mp = vfs_getvfs(&fh.fh_fsid)) == NULL)
+		return (ESTALE);
+	if ((error = VFS_FHTOVP(mp, &fh.fh_fid, &vp)))
+		return (error);
+	error = vn_stat(vp, &ub, p);
+	vput(vp);
+	if (error)
+		return (error);
+	cvtstat(&ub, &oub);
+	error = copyout(&oub, SCARG(uap, sb), sizeof(oub));
+	return (error);
 }

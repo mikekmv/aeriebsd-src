@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1982, 1986, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -50,12 +49,12 @@
 
 /* ARGSUSED */
 int
-compat_09_sys_getdomainname(p, v, retval)
+compat_44_sys_getdomainname(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	struct compat_09_sys_getdomainname_args /* {
+	struct compat_44_sys_getdomainname_args /* {
 		syscallarg(char *) domainname;
 		syscallarg(int) len;
 	} */ *uap = v;
@@ -70,12 +69,12 @@ compat_09_sys_getdomainname(p, v, retval)
 
 /* ARGSUSED */
 int
-compat_09_sys_setdomainname(p, v, retval)
+compat_44_sys_setdomainname(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	struct compat_09_sys_setdomainname_args /* {
+	struct compat_44_sys_setdomainname_args /* {
 		syscallarg(char *) domainname;
 		syscallarg(int) len;
 	} */ *uap = v;

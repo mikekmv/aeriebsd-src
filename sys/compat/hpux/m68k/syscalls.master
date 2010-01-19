@@ -1,4 +1,4 @@
-;	$ABSD$
+;	$ABSD: syscalls.master,v 1.2 2009/12/24 14:39:59 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -334,12 +334,12 @@
 230	UNIMPL		nfs_fcntl
 231	NOARGS		{ int compat_43_sys_getdirentries(int fd, char *buf, \
 			    u_int count, long *basep); }
-232	NOARGS		{ int compat_09_sys_getdomainname(char *domainname, \
+232	NOARGS		{ int compat_44_sys_getdomainname(char *domainname, \
 			    int len); }
 233	UNIMPL		nfs_getfh
 234	UNIMPL		vfsmount
 235	UNIMPL		nfs_svc
-236	NOARGS		{ int compat_09_sys_setdomainname(char *domainname, \
+236	NOARGS		{ int compat_44_sys_setdomainname(char *domainname, \
 			    int len); }
 237	UNIMPL		statfs
 238	UNIMPL		fstatfs

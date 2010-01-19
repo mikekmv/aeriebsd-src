@@ -236,7 +236,7 @@ $1 ~ /^#/ {
 	print > sysnames
 	next
 }
-syscall != $1 {
+$1 != -1 && syscall != $1 {
 	printf "%s: line %d: syscall number out of sync at %d\n", \
 	   infile, NR, syscall
 	printf "line is:\n"
@@ -373,6 +373,8 @@ function putent(nodefs, compatwrap) {
 	if (nodefs == "INDIR") {
 		printf("\t{ 0, 0, %s,\n\t    sys_nosys },\t\t\t/* %d = %s (indir) */\n", \
 		    sycall_flags, syscall, funcalias) > sysent
+	} else if ($1 == -1) {
+		# no entry in sysent
 	} else {
 #		printf("\t{ { %d", argc) > sysent
 #		for (i = 1; i <= argc; i++) {
@@ -405,12 +407,15 @@ function putent(nodefs, compatwrap) {
 	}
 
 	# output syscall name for names table
-	if (compatwrap == "")
-		printf("\t\"%s\",\t\t\t/* %d = %s */\n", funcalias, syscall,
-		    funcalias) > sysnames
-	else
-		printf("\t\"%s_%s\",\t/* %d = %s %s */\n", compatwrap,
-		    funcalias, syscall, compatwrap, funcalias) > sysnames
+	if ($1 != -1) {
+		if (compatwrap == "")
+			printf("\t\"%s\",\t\t\t/* %d = %s */\n",
+			    funcalias, syscall, funcalias) > sysnames
+		else
+			printf("\t\"%s_%s\",\t/* %d = %s %s */\n",
+			    compatwrap, funcalias, syscall, compatwrap,
+			    funcalias) > sysnames
+	}
 
 	# output syscall number of header, if appropriate
 	if (nodefs == "" || nodefs == "NOARGS" || nodefs == "INDIR") {
@@ -444,18 +449,30 @@ function putent(nodefs, compatwrap) {
 	}
 }
 $2 == "STD" {
+	if ($1 == -1) {
+		printf "%s: line %d: syscall number out of sync\n", infile, NR
+		next
+	}
 	parseline()
 	putent("", "");
 	syscall++
 	next
 }
 $2 == "NODEF" || $2 == "NOARGS" || $2 == "INDIR" {
+	if ($1 == -1) {
+		printf "%s: line %d: syscall number out of sync\n", infile, NR
+		next
+	}
 	parseline()
 	putent($2, "")
 	syscall++
 	next
 }
 $2 == "OBSOL" || $2 == "UNIMPL" {
+	if ($1 == -1) {
+		printf "%s: line %d: syscall number out of sync\n", infile, NR
+		next
+	}
 	if ($2 == "OBSOL")
 		comment="obsolete"
 	else
@@ -477,7 +494,8 @@ $2 == "OBSOL" || $2 == "UNIMPL" {
 		if ($2 == compat_upper[i]) {
 			parseline();
 			putent("COMMENT", compat[i])
-			syscall++
+			if ($1 != -1)
+				syscall++
 			next
 		}
 	}

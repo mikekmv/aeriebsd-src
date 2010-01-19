@@ -658,7 +658,8 @@ syscall(struct trapframe frame)
 #endif
 		    )
 			break;
-		copyin(params + _QUAD_LOWWORD * sizeof(int), &code, sizeof(int));
+		copyin(params + _QUAD_LOWWORD * sizeof(int), &code,
+		    sizeof(int));
 		params += sizeof(quad_t);
 		break;
 	default:

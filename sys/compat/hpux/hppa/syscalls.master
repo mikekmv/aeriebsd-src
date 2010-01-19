@@ -1,4 +1,4 @@
-;	$ABSD$
+;	$ABSD: syscalls.master,v 1.2 2009/12/24 14:39:59 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -294,9 +294,9 @@
 189	UNIMPL		lw_get_thread_times
 190	UNIMPL		nfssvc
 191	UNIMPL		getfh
-192	NOARGS		{ int compat_09_sys_getdomainname(char *domainname, \
+192	NOARGS		{ int compat_44_sys_getdomainname(char *domainname, \
 			    int len); }
-193	NOARGS		{ int compat_09_sys_setdomainname(char *domainname, \
+193	NOARGS		{ int compat_44_sys_setdomainname(char *domainname, \
 			    int len); }
 194	UNIMPL		async_daemon
 195	NOARGS		{ int compat_43_sys_getdirentries(int fd, char *buf, \

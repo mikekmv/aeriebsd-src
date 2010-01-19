@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995 Frank van der Linden
  * All rights reserved.
@@ -724,12 +723,12 @@ freebsd_sys_stat(p, v, retval)
 {
 	struct freebsd_sys_stat_args /* {
 		syscallarg(char *) path;
-		syscallarg(struct stat35 *) ub;
+		syscallarg(struct stat44 *) ub;
 	} */ *uap = v;
 	caddr_t sg = stackgap_init(p->p_emul);
 
 	FREEBSD_CHECK_ALT_EXIST(p, &sg, SCARG(uap, path));
-	return compat_35_sys_stat(p, uap, retval);
+	return compat_44_sys_stat(p, uap, retval);
 }
 
 int
@@ -740,12 +739,12 @@ freebsd_sys_lstat(p, v, retval)
 {
 	struct freebsd_sys_lstat_args /* {
 		syscallarg(char *) path;
-		syscallarg(struct stat35 *) ub;
+		syscallarg(struct stat44 *) ub;
 	} */ *uap = v;
 	caddr_t sg = stackgap_init(p->p_emul);
 
 	FREEBSD_CHECK_ALT_EXIST(p, &sg, SCARG(uap, path));
-	return compat_35_sys_lstat(p, uap, retval);
+	return compat_44_sys_lstat(p, uap, retval);
 }
 
 int

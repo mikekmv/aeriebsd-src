@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995 Scott Bartram
  * All rights reserved.
@@ -143,10 +142,10 @@ ibcs2_sys_msgsys(p, v, retval)
 	switch (SCARG(uap, which)) {
 	case 0:				/* msgget */
 		SCARG(uap, which) = 1;
-		return compat_10_sys_msgsys(p, uap, retval);
+		return compat_44_sys_msgsys(p, uap, retval);
 	case 1: {			/* msgctl */
 		int error;
-		struct compat_10_sys_msgsys_args margs;
+		struct compat_44_sys_msgsys_args margs;
 		caddr_t sg = stackgap_init(p->p_emul);
 
 		SCARG(&margs, which) = 0;
@@ -156,7 +155,7 @@ ibcs2_sys_msgsys(p, v, retval)
 		SCARG(&margs, a3) = SCARG(uap, a3);
 		switch (SCARG(&margs, a3)) {
 		case IBCS2_IPC_STAT:
-			error = compat_10_sys_msgsys(p, &margs, retval);
+			error = compat_44_sys_msgsys(p, &margs, retval);
 			if (!error)
 				cvt_msqid2imsqid((struct msqid_ds *)
 				    SCARG(&margs, a4),
@@ -166,18 +165,18 @@ ibcs2_sys_msgsys(p, v, retval)
 			cvt_imsqid2msqid((struct ibcs2_msqid_ds *)SCARG(uap,
 									a4),
 					 (struct msqid_ds *) SCARG(&margs, a4));
-			return compat_10_sys_msgsys(p, &margs, retval);
+			return compat_44_sys_msgsys(p, &margs, retval);
 		case IBCS2_IPC_RMID:
-			return compat_10_sys_msgsys(p, &margs, retval);
+			return compat_44_sys_msgsys(p, &margs, retval);
 		}
 		return EINVAL;
 	}
 	case 2:				/* msgrcv */
 		SCARG(uap, which) = 3;
-		return compat_10_sys_msgsys(p, uap, retval);
+		return compat_44_sys_msgsys(p, uap, retval);
 	case 3:				/* msgsnd */
 		SCARG(uap, which) = 2;
-		return compat_10_sys_msgsys(p, uap, retval);
+		return compat_44_sys_msgsys(p, uap, retval);
 	default:
 		return EINVAL;
 	}
@@ -290,7 +289,7 @@ ibcs2_sys_semsys(p, v, retval)
 			isp = (struct ibcs2_semid_ds *)SCARG(uap, a5);
 			sp = stackgap_alloc(&sg, sizeof(struct semid_ds));
 			SCARG(uap, a5) = (int)sp;
-			error = compat_10_sys_semsys(p, uap, retval);
+			error = compat_44_sys_semsys(p, uap, retval);
 			if (!error) {
 				SCARG(uap, a5) = (int)isp;
 				isp = stackgap_alloc(&sg, sizeof(*isp));
@@ -315,16 +314,16 @@ ibcs2_sys_semsys(p, v, retval)
 				return error;
 			cvt_isemid2semid(isp, sp);
 			SCARG(uap, a5) = (int)sp;
-			return compat_10_sys_semsys(p, uap, retval);
+			return compat_44_sys_semsys(p, uap, retval);
 		    }
 		}
-		return compat_10_sys_semsys(p, uap, retval);
+		return compat_44_sys_semsys(p, uap, retval);
 
 	case 1:				/* semget */
-		return compat_10_sys_semsys(p, uap, retval);
+		return compat_44_sys_semsys(p, uap, retval);
 
 	case 2:				/* semop */
-		return compat_10_sys_semsys(p, uap, retval);
+		return compat_44_sys_semsys(p, uap, retval);
 	}
 	return EINVAL;
 }
@@ -403,7 +402,7 @@ ibcs2_sys_shmsys(p, v, retval)
 
 	switch (SCARG(uap, which)) {
 	case 0:						/* shmat */
-		return compat_10_sys_shmsys(p, uap, retval);
+		return compat_44_sys_shmsys(p, uap, retval);
 
 	case 1:						/* shmctl */
 		switch(SCARG(uap, a3)) {
@@ -416,7 +415,7 @@ ibcs2_sys_shmsys(p, v, retval)
 			isp = (struct ibcs2_shmid_ds *)SCARG(uap, a4);
 			sp = stackgap_alloc(&sg, sizeof(*sp));
 			SCARG(uap, a4) = (int)sp;
-			error = compat_10_sys_shmsys(p, uap, retval);
+			error = compat_44_sys_shmsys(p, uap, retval);
 			if (!error) {
 				SCARG(uap, a4) = (int)isp;
 				isp = stackgap_alloc(&sg, sizeof(*isp));
@@ -441,16 +440,16 @@ ibcs2_sys_shmsys(p, v, retval)
 				return error;
 			cvt_ishmid2shmid(isp, sp);
 			SCARG(uap, a4) = (int)sp;
-			return compat_10_sys_shmsys(p, uap, retval);
+			return compat_44_sys_shmsys(p, uap, retval);
 		    }
 		}
-		return compat_10_sys_shmsys(p, uap, retval);
+		return compat_44_sys_shmsys(p, uap, retval);
 
 	case 2:						/* shmdt */
-		return compat_10_sys_shmsys(p, uap, retval);
+		return compat_44_sys_shmsys(p, uap, retval);
 
 	case 3:						/* shmget */
-		return compat_10_sys_shmsys(p, uap, retval);
+		return compat_44_sys_shmsys(p, uap, retval);
 	}
 	return EINVAL;
 }

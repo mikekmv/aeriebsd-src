@@ -1,8 +1,8 @@
-
 /*
- * Copyright (c) 1988 University of Utah.
+ * Copyright (c) 1997 Matthew R. Green
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1988 University of Utah.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -51,6 +51,7 @@
 #include <sys/mman.h>
 #include <sys/conf.h>
 
+#include <sys/swap.h>
 #include <sys/mount.h>
 #include <sys/syscallargs.h>
 
@@ -128,4 +129,18 @@ compat_43_sys_mmap(p, v, retval)
 	SCARG(&nargs, fd) = SCARG(uap, fd);
 	SCARG(&nargs, pos) = SCARG(uap, pos);
 	return (sys_mmap(p, &nargs, retval));
+}
+
+int
+compat_43_sys_swapon(struct proc *p, void *v, register_t *retval)
+{
+	struct sys_swapctl_args ua;
+	struct compat_43_sys_swapon_args /* {
+		syscallarg(const char *) name;
+	} */ *uap = v;
+
+	SCARG(&ua, cmd) = SWAP_ON;
+	SCARG(&ua, arg) = (void *)SCARG(uap, name);
+	SCARG(&ua, misc) = 0;	/* priority */
+	return (sys_swapctl(p, &ua, retval));
 }

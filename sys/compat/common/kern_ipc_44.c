@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994 Adam Glass and Charles Hannum.  All rights reserved.
  *
@@ -41,19 +40,14 @@
 
 #include <uvm/uvm_extern.h>
 
-/*
- * Note that while we no longer have a COMPAT_10 kernel option,
- * there are other COMPAT_* options that need these old functions.
- */
-
 #if defined(SYSVSEM) && !defined(__LP64__)
 int
-compat_10_sys_semsys(p, v, retval)
+compat_44_sys_semsys(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	struct compat_10_sys_semsys_args /* {
+	struct compat_44_sys_semsys_args /* {
 		syscallarg(int) which;
 		syscallarg(int) a2;
 		syscallarg(int) a3;
@@ -103,12 +97,12 @@ compat_10_sys_semsys(p, v, retval)
 }
 
 int
-compat_10_sys_shmsys(p, v, retval)
+compat_44_sys_shmsys(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	struct compat_10_sys_shmsys_args /* {
+	struct compat_44_sys_shmsys_args /* {
 		syscallarg(int) which;
 		syscallarg(int) a2;
 		syscallarg(int) a3;
@@ -162,12 +156,12 @@ compat_10_sys_shmsys(p, v, retval)
 }
 
 int
-compat_10_sys_msgsys(p, v, retval)
+compat_44_sys_msgsys(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	struct compat_10_sys_msgsys_args /* {
+	struct compat_44_sys_msgsys_args /* {
 		syscallarg(int) which;
 		syscallarg(int) a2;
 		syscallarg(int) a3;

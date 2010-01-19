@@ -107,9 +107,9 @@ ibcs2_socksys(p, v, retval)
 	case SOCKSYS_SELECT:
 		return sys_select(p, realargs + 1, retval);
 	case SOCKSYS_GETIPDOMAIN:
-		return compat_09_sys_getdomainname(p, realargs + 1, retval);
+		return compat_44_sys_getdomainname(p, realargs + 1, retval);
 	case SOCKSYS_SETIPDOMAIN:
-		return compat_09_sys_setdomainname(p, realargs + 1, retval);
+		return compat_44_sys_setdomainname(p, realargs + 1, retval);
 	case SOCKSYS_ADJTIME:
 		return sys_adjtime(p, realargs + 1, retval);
 	case SOCKSYS_SETREUID:
