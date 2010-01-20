@@ -62,41 +62,6 @@ SVCXPRT *amqp, *lamqp;
 extern int fwd_sock;
 int max_fds = -1;
 
-#ifdef DEBUG
-/*
- * Check that we are not burning resources
- */
-static void
-checkup(void)
-{
-	static int max_fd = 0;
-	static char *max_mem = 0;
-
-	int next_fd = dup(0);
-	extern caddr_t sbrk(int);
-	caddr_t next_mem = sbrk(0);
-	close(next_fd);
-
-	/*if (max_fd < 0) {
-		max_fd = next_fd;
-	} else*/ if (max_fd < next_fd) {
-		dlog("%d new fds allocated; total is %d",
-			next_fd - max_fd, next_fd);
-		max_fd = next_fd;
-	}
-
-	/*if (max_mem == 0) {
-		max_mem = next_mem;
-	} else*/ if (max_mem < next_mem) {
-		dlog("%#lx bytes of memory allocated; total is %#lx (%ld pages)",
-			(unsigned long)(next_mem - max_mem),
-			(unsigned long)next_mem,
-			((unsigned long)next_mem+getpagesize()-1)/getpagesize());
-		max_mem = next_mem;
-	}
-}
-#endif /* DEBUG */
-
 static int
 do_select(sigset_t *mask, sigset_t *omask, int fds, fd_set *fdp,
     struct timeval *tvp)
@@ -235,10 +200,6 @@ run_rpc(void)
 		readfds.fds_bits[0] = svc_fds;
 		FD_SET(fwd_sock, &readfds);
 #endif /* RPC_4 */
-
-#ifdef DEBUG
-		checkup();
-#endif /* DEBUG */
 
 		/*
 		 * If the full timeout code is not called,
