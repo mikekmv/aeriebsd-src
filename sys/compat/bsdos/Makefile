@@ -6,3 +6,5 @@ OBJS=	bsdos_sysent.c bsdos_syscalls.c \
 
 ${OBJS}: ${DEP}
 	sh ${SYS}/kern/makesyscalls.sh syscalls.conf syscalls.master
+
+all: ${OBJS}
