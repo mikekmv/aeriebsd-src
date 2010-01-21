@@ -723,9 +723,7 @@ _C_LABEL(esigcode):
 
 /*****************************************************************************/
 
-/*
- * Signal trampoline; copied to top of user stack.
- */
+#ifdef COMPAT_OPENBSD
 NENTRY(openbsd_sigcode)
 	movl	OPENBSD_SIGF_FPSTATE(%esp),%esi	# FPU state area if need saving
 	testl	%esi,%esi
@@ -759,6 +757,7 @@ _C_LABEL(openbsd_sigcode_xmm):
 	int	$0x80			# exit if sigreturn fails
 	.globl	_C_LABEL(openbsd_esigcode)
 _C_LABEL(openbsd_esigcode):
+#endif
 
 /*****************************************************************************/
 
