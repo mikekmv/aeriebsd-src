@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -210,7 +209,7 @@ namei(struct nameidata *ndp)
 		auio.uio_segflg = UIO_SYSSPACE;
 		auio.uio_procp = cnp->cn_proc;
 		auio.uio_resid = MAXPATHLEN;
-		error = VOP_READLINK(ndp->ni_vp, &auio, cnp->cn_cred);
+		error = VOP_READ(ndp->ni_vp, &auio, 0, cnp->cn_cred);
 		if (error) {
 badlink:
 			if (ndp->ni_pathlen > 1)

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -86,7 +85,6 @@ struct vnodeopv_entry_desc ffs_vnodeop_entries[] = {
 	{ &vop_rmdir_desc, ufs_rmdir },			/* rmdir */
 	{ &vop_symlink_desc, ufs_symlink },		/* symlink */
 	{ &vop_readdir_desc, ufs_readdir },		/* readdir */
-	{ &vop_readlink_desc, ufs_readlink },		/* readlink */
 	{ &vop_abortop_desc, vop_generic_abortop },	/* abortop */
 	{ &vop_inactive_desc, ufs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, ffs_reclaim },		/* reclaim */
@@ -187,14 +185,21 @@ ffs_read(void *v)
 	if (uio->uio_rw != UIO_READ)
 		panic("ffs_read: mode");
 
-	if (vp->v_type == VLNK) {
-		if ((int)DIP(ip, size) < vp->v_mount->mnt_maxsymlinklen ||
-		    (vp->v_mount->mnt_maxsymlinklen == 0 &&
-		     DIP(ip, blocks) == 0))
-			panic("ffs_read: short symlink");
-	} else if (vp->v_type != VREG && vp->v_type != VDIR)
+	if (vp->v_type != VREG && vp->v_type != VDIR && vp->v_type != VLNK)
 		panic("ffs_read: type %d", vp->v_type);
 #endif
+
+	/* deal with short symlinks first */
+	if (vp->v_type == VLNK) {
+		size = DIP(ip, size);
+		if (size < vp->v_mount->mnt_maxsymlinklen ||
+		    (vp->v_mount->mnt_maxsymlinklen == 0 &&
+		     DIP(ip, blocks) == 0)) {
+			uiomove((char *)SHORTLINK(ip), size, ap->a_uio);
+			return (0);
+		}
+	}
+
 	fs = ip->i_fs;
 	if ((u_int64_t)uio->uio_offset > fs->fs_maxfilesize)
 		return (EFBIG);

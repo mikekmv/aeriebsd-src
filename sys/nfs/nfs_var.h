@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996 Christos Zoulas.  All rights reserved.
  *
@@ -71,7 +70,6 @@ int nfs_setattrrpc(struct vnode *, struct vattr *, struct ucred *,
 			struct proc *);
 int nfs_lookup(void *);
 int nfs_read(void *);
-int nfs_readlink(void *);
 int nfs_readlinkrpc(struct vnode *, struct uio *, struct ucred *);
 int nfs_readrpc(struct vnode *, struct uio *);
 int nfs_writerpc(struct vnode *, struct uio *, int *, int *);

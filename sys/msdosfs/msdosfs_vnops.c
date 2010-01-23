@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (C) 2005 Thomas Wang.
  * Copyright (C) 1994, 1995, 1997 Wolfgang Solfrank.
@@ -1636,24 +1635,6 @@ out:
 	return (error);
 }
 
-/*
- * DOS filesystems don't know what symlinks are.
- */
-int
-msdosfs_readlink(v)
-	void *v;
-{
-#if 0
-	struct vop_readlink_args /* {
-		struct vnode *a_vp;
-		struct uio *a_uio;
-		struct ucred *a_cred;
-	} */ *ap;
-#endif
-
-	return (EINVAL);
-}
-
 int
 msdosfs_lock(v)
 	void *v;
@@ -1863,7 +1844,6 @@ struct vnodeopv_entry_desc msdosfs_vnodeop_entries[] = {
 	{ &vop_rmdir_desc, msdosfs_rmdir },		/* rmdir */
 	{ &vop_symlink_desc, msdosfs_symlink },		/* symlink */
 	{ &vop_readdir_desc, msdosfs_readdir },		/* readdir */
-	{ &vop_readlink_desc, msdosfs_readlink },	/* readlink */
 	{ &vop_abortop_desc, vop_generic_abortop },	/* abortop */
 	{ &vop_inactive_desc, msdosfs_inactive },	/* inactive */
 	{ &vop_reclaim_desc, msdosfs_reclaim },		/* reclaim */

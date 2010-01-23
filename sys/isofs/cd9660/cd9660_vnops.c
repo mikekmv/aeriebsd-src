@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -82,6 +81,7 @@ struct isoreaddir {
 
 int	iso_uiodir(struct isoreaddir *, struct dirent *, off_t);
 int	iso_shipdir(struct isoreaddir *);
+int	cd9660_readlink(struct vnode *, struct  uio *);
 
 #if 0
 /*
@@ -240,7 +240,6 @@ cd9660_getattr(v)
 
 	vap->va_size	= (u_quad_t) ip->i_size;
 	if (ip->i_size == 0 && vp->v_type  == VLNK) {
-		struct vop_readlink_args rdlnk;
 		struct iovec aiov;
 		struct uio auio;
 		char *cp;
@@ -255,10 +254,7 @@ cd9660_getattr(v)
 		auio.uio_segflg = UIO_SYSSPACE;
 		auio.uio_procp = ap->a_p;
 		auio.uio_resid = MAXPATHLEN;
-		rdlnk.a_uio = &auio;
-		rdlnk.a_vp = ap->a_vp;
-		rdlnk.a_cred = ap->a_cred;
-		if (cd9660_readlink(&rdlnk) == 0)
+		if (cd9660_readlink(vp, &auio) == 0)
 			vap->va_size = MAXPATHLEN - auio.uio_resid;
 		free(cp, M_TEMP);
 	}
@@ -292,6 +288,8 @@ cd9660_read(v)
 		return (0);
 	if (uio->uio_offset < 0)
 		return (EINVAL);
+	if (vp->v_type == VLNK)
+		return cd9660_readlink(vp, uio);
 	ip->i_flag |= IN_ACCESS;
 	imp = ip->i_mnt;
 	do {
@@ -671,22 +669,18 @@ typedef struct iso_directory_record ISODIR;
 typedef struct iso_node             ISONODE;
 typedef struct iso_mnt              ISOMNT;
 int
-cd9660_readlink(v)
-	void *v;
+cd9660_readlink(struct vnode *vp, struct  uio *uio)
 {
-	struct vop_readlink_args *ap = v;
 	ISONODE	*ip;
 	ISODIR	*dirp;
 	ISOMNT	*imp;
 	struct	buf *bp;
-	struct	uio *uio;
 	u_short	symlen;
 	int	error;
 	char	*symname;
 
-	ip  = VTOI(ap->a_vp);
+	ip  = VTOI(vp);
 	imp = ip->i_mnt;
-	uio = ap->a_uio;
 
 	if (imp->iso_ftype != ISO_FTYPE_RRIP)
 		return (EINVAL);
@@ -955,7 +949,6 @@ struct vnodeopv_entry_desc cd9660_vnodeop_entries[] = {
 	{ &vop_rmdir_desc, cd9660_rmdir },	/* rmdir */
 	{ &vop_symlink_desc, cd9660_symlink },	/* symlink */
 	{ &vop_readdir_desc, cd9660_readdir },	/* readdir */
-	{ &vop_readlink_desc, cd9660_readlink },/* readlink */
 	{ &vop_abortop_desc, vop_generic_abortop },	/* abortop */
 	{ &vop_inactive_desc, cd9660_inactive },/* inactive */
 	{ &vop_reclaim_desc, cd9660_reclaim },	/* reclaim */

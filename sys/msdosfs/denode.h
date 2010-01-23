@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (C) 1994, 1995, 1997 Wolfgang Solfrank.
  * Copyright (C) 1994, 1995, 1997 TooLs GmbH.
@@ -276,7 +275,6 @@ int	msdosfs_mkdir(void *);
 int	msdosfs_rmdir(void *);
 int	msdosfs_symlink(void *);
 int	msdosfs_readdir(void *);
-int	msdosfs_readlink(void *);
 int	msdosfs_inactive(void *);
 int	msdosfs_reclaim(void *);
 int	msdosfs_lock(void *);

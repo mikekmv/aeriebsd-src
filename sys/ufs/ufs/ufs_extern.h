@@ -71,7 +71,6 @@ int	 ufs_open(void *);
 int	 ufs_pathconf(void *);
 int	 ufs_print(void *);
 int	 ufs_readdir(void *);
-int	 ufs_readlink(void *);
 int	 ufs_remove(void *);
 int	 ufs_rename(void *);
 #define  ufs_revoke  vop_generic_revoke

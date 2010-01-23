@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -84,7 +83,6 @@ struct vnodeopv_entry_desc fifo_vnodeop_entries[] = {
 	{ &vop_rmdir_desc, fifo_badop },		/* rmdir */
 	{ &vop_symlink_desc, fifo_badop },		/* symlink */
 	{ &vop_readdir_desc, fifo_badop },		/* readdir */
-	{ &vop_readlink_desc, fifo_badop },		/* readlink */
 	{ &vop_abortop_desc, fifo_badop },		/* abortop */
 	{ &vop_inactive_desc, fifo_inactive },		/* inactive */
 	{ &vop_reclaim_desc, fifo_reclaim },		/* reclaim */

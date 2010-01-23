@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -1478,26 +1477,6 @@ ufs_readdir(void *v)
 	*ap->a_eofflag = DIP(VTOI(ap->a_vp), size) <= uio->uio_offset;
 
 	return (error);
-}
-
-/*
- * Return target name of a symbolic link
- */
-int
-ufs_readlink(void *v)
-{
-	struct vop_readlink_args *ap = v;
-	struct vnode *vp = ap->a_vp;
-	struct inode *ip = VTOI(vp);
-	int isize;
-
-	isize = DIP(ip, size);
-	if (isize < vp->v_mount->mnt_maxsymlinklen ||
-	    (vp->v_mount->mnt_maxsymlinklen == 0 && DIP(ip, blocks) == 0)) {
-		uiomove((char *)SHORTLINK(ip), isize, ap->a_uio);
-		return (0);
-	}
-	return (VOP_READ(vp, ap->a_uio, 0, ap->a_cred));
 }
 
 /*

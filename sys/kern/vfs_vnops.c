@@ -126,12 +126,12 @@ vn_open(struct nameidata *ndp, int fmode, int cmode)
 		error = EOPNOTSUPP;
 		goto bad;
 	}
-	if (vp->v_type == VLNK) {
-		error = EMLINK;
+	if (vp->v_type == VLNK && (fmode & (O_APPEND|O_SHLOCK|O_EXLOCK))) {
+		error = EINVAL;
 		goto bad;
 	}
 	if ((fmode & O_CREAT) == 0) {
-		if (fmode & FREAD) {
+		if (vp->v_type != VLNK && (fmode & FREAD)) {
 			if ((error = VOP_ACCESS(vp, VREAD, cred, p)) != 0)
 				goto bad;
 		}

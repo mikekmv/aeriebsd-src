@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -104,7 +103,6 @@ struct vnodeopv_entry_desc portal_vnodeop_entries[] = {
 	{ &vop_rmdir_desc, eopnotsupp },		/* rmdir */
 	{ &vop_symlink_desc, portal_symlink },		/* symlink */
 	{ &vop_readdir_desc, portal_readdir },		/* readdir */
-	{ &vop_readlink_desc, eopnotsupp },		/* readlink */
 	{ &vop_abortop_desc, vop_generic_abortop },	/* abortop */
 	{ &vop_inactive_desc, portal_inactive },	/* inactive */
 	{ &vop_reclaim_desc, portal_reclaim },		/* reclaim */

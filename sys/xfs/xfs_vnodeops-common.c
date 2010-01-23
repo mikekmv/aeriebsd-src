@@ -339,6 +339,10 @@ xfs_read_common(struct vnode *vp, struct uio *uio, int ioflag,
     if (error == 0) {
 	struct vnode *t = DATA_FROM_VNODE(vp);
 
+#ifdef __AerieBSD__
+	if (vp->v_type == VLNK)
+		ioflag = 0;
+#endif
 #ifdef HAVE_FREEBSD_THREAD
 	xfs_vfs_readlock(t, xfs_uio_to_thread(uio));
 	xfs_vop_read(t, uio, ioflag, cred, error);

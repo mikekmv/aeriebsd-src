@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997 Manuel Bouyer.
  * Copyright (c) 1991, 1993, 1994
@@ -137,7 +136,6 @@ int ext2fs_rename(void *);
 int ext2fs_mkdir(void *);
 int ext2fs_rmdir(void *);
 int ext2fs_symlink(void *);
-int ext2fs_readlink(void *);
 int ext2fs_advlock(void *);
 int ext2fs_makeinode(int, struct vnode *, struct vnode **,
                      struct componentname *cnp);

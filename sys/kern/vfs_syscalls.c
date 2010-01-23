@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -1604,7 +1603,7 @@ sys_readlink(struct proc *p, void *v, register_t *retval)
 		auio.uio_segflg = UIO_USERSPACE;
 		auio.uio_procp = p;
 		auio.uio_resid = SCARG(uap, count);
-		error = VOP_READLINK(vp, &auio, p->p_ucred);
+		error = VOP_READ(vp, &auio, 0, p->p_ucred);
 	}
 	vput(vp);
 	*retval = SCARG(uap, count) - auio.uio_resid;

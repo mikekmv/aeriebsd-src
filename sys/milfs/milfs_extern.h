@@ -72,7 +72,6 @@ int	milfs_mkdir(void *);
 int	milfs_rmdir(void *);
 int	milfs_symlink(void *);
 int	milfs_readdir(void *);
-int	milfs_readlink(void *);
 int	milfs_abortop(void *);
 int	milfs_inactive(void *);
 int	milfs_reclaim(void *);

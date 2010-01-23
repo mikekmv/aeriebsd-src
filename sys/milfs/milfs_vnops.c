@@ -51,7 +51,6 @@ struct vnodeopv_entry_desc milfs_vnodeop_entries[] = {
 	{ &vop_rmdir_desc, milfs_rmdir },		/* rmdir */
 	{ &vop_symlink_desc, milfs_symlink },		/* symlink */
 	{ &vop_readdir_desc, milfs_readdir },		/* readdir */
-	{ &vop_readlink_desc, milfs_readlink },		/* readlink */
 	{ &vop_abortop_desc, milfs_abortop },		/* abortop */
 	{ &vop_inactive_desc, milfs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, milfs_reclaim },		/* reclaim */
@@ -279,11 +278,6 @@ int milfs_symlink(void *v) {
 
 int milfs_readdir(void *v) {
   printf("milfs_readdir called!\n");
-  return (EINVAL);
-}
-
-int milfs_readlink(void *v) {
-  printf("milfs_readlink called!\n");
   return (EINVAL);
 }
 

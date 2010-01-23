@@ -1,4 +1,3 @@
-
 /*
  * Written by Pedro Martelletto <pedro@ambientworks.net> in February 2005.
  * Public domain.
@@ -39,7 +38,6 @@ int udf_close(void *v);
 int udf_ioctl(void *v);
 int udf_read(void *v);
 int udf_readdir(void *v);
-int udf_readlink(void *v);
 int udf_strategy(void *v);
 int udf_bmap(void *v);
 int udf_lookup(void *v);

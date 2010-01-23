@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1993 Jan-Simon Pendry
  * Copyright (c) 1993
@@ -125,7 +124,6 @@ int	procfs_ioctl(void *);
 int	procfs_link(void *);
 int	procfs_symlink(void *);
 int	procfs_readdir(void *);
-int	procfs_readlink(void *);
 int	procfs_inactive(void *);
 int	procfs_reclaim(void *);
 int	procfs_bmap(void *);
@@ -160,7 +158,6 @@ struct vnodeopv_entry_desc procfs_vnodeop_entries[] = {
 	{ &vop_rmdir_desc, procfs_badop },		/* rmdir */
 	{ &vop_symlink_desc, procfs_symlink },		/* symlink */
 	{ &vop_readdir_desc, procfs_readdir },		/* readdir */
-	{ &vop_readlink_desc, procfs_readlink },	/* readlink */
 	{ &vop_abortop_desc, vop_generic_abortop },	/* abortop */
 	{ &vop_inactive_desc, procfs_inactive },	/* inactive */
 	{ &vop_reclaim_desc, procfs_reclaim },		/* reclaim */
@@ -987,28 +984,6 @@ procfs_readdir(void *v)
 
 	uio->uio_offset = i;
 	return (error);
-}
-
-/*
- * readlink reads the link of `curproc'
- */
-int
-procfs_readlink(void *v)
-{
-	struct vop_readlink_args *ap = v;
-	char buf[16];		/* should be enough */
-	int len;
-
-	if (VTOPFS(ap->a_vp)->pfs_fileno == PROCFS_FILENO(0, Pcurproc))
-		len = snprintf(buf, sizeof buf, "%ld", (long)curproc->p_pid);
-	else if (VTOPFS(ap->a_vp)->pfs_fileno == PROCFS_FILENO(0, Pself))
-		len = strlcpy(buf, "curproc", sizeof buf);
-	else
-		return (EINVAL);
-	if (len == -1 || len >= sizeof buf)
-		return (EINVAL);
-
-	return (uiomove(buf, len, ap->a_uio));
 }
 
 /*

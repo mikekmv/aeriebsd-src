@@ -44,8 +44,6 @@ NNPFS_VOP_DEF(rmdir);
 NNPFS_VOP_DEF(symlink);
 #define HAVE_VOP_READDIR 1
 NNPFS_VOP_DEF(readdir);
-#define HAVE_VOP_READLINK 1
-NNPFS_VOP_DEF(readlink);
 #define HAVE_VOP_ABORTOP 1
 NNPFS_VOP_DEF(abortop);
 #define HAVE_VOP_INACTIVE 1

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2001, 2002 Scott Long <scottl@freebsd.org>
  * All rights reserved.
@@ -67,7 +66,6 @@ struct vnodeopv_entry_desc udf_vnodeop_entries[] = {
 	{ &vop_ioctl_desc, udf_ioctl },			/* ioctl */
 	{ &vop_read_desc, udf_read },			/* read */
 	{ &vop_readdir_desc, udf_readdir },		/* readdir */
-	{ &vop_readlink_desc, udf_readlink },		/* readlink */
 	{ &vop_inactive_desc, udf_inactive },		/* inactive */
 	{ &vop_reclaim_desc, udf_reclaim },		/* reclaim */
 	{ &vop_strategy_desc, udf_strategy },		/* strategy */
@@ -811,13 +809,6 @@ udf_readdir(void *v)
 	}
 
 	return (error);
-}
-
-/* Are there any implementations out there that do soft-links? */
-int
-udf_readlink(void *v)
-{
-	return (EOPNOTSUPP);
 }
 
 int

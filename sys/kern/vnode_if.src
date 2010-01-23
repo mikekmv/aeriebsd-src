@@ -323,15 +323,6 @@ vop_readdir {
 };
 
 #
-#% readlink	vp	L L L
-#
-vop_readlink {
-	IN SHOULDBELOCKED struct vnode *vp;
-	INOUT struct uio *uio;
-	IN struct ucred *cred;
-};
-
-#
 #% abortop	dvp	= = =
 #
 vop_abortop {

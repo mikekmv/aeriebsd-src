@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -469,7 +468,7 @@ nfsrv_readlink(nfsd, slp, procp, mrq)
 			error = ENXIO;
 		goto out;
 	}
-	error = VOP_READLINK(vp, uiop, cred);
+	error = VOP_READ(vp, uiop, 0, cred);
 out:
 	getret = VOP_GETATTR(vp, &attr, cred, procp);
 	vput(vp);

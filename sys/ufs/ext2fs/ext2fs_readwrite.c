@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1997 Manuel Bouyer.
  * Copyright (c) 1993
@@ -79,16 +78,22 @@ ext2fs_read(void *v)
 
 #ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_READ)
-		panic("%s: mode", "ext2fs_read");
+		panic("ext2fs_read: mode");
 
-	if (vp->v_type == VLNK) {
-		if ((int)ext2fs_size(ip) < vp->v_mount->mnt_maxsymlinklen ||
-			(vp->v_mount->mnt_maxsymlinklen == 0 &&
-			 ip->i_e2fs_nblock == 0))
-			panic("%s: short symlink", "ext2fs_read");
-	} else if (vp->v_type != VREG && vp->v_type != VDIR)
-		panic("%s: type %d", "ext2fs_read", vp->v_type);
+	if (vp->v_type != VREG && vp->v_type != VDIR && vp->v_type != VLNK)
+		panic("ext2fs_read: type %d", vp->v_type);
 #endif
+	if (vp->v_type == VLNK) {
+		size = ext2fs_size(ip);
+		if (size < vp->v_mount->mnt_maxsymlinklen ||
+		    (vp->v_mount->mnt_maxsymlinklen == 0 &&
+		     ip->i_e2fs_nblock == 0)) {
+			uiomove((char *)ip->i_e2din->e2di_shortlink, size,
+			    ap->a_uio);
+			return (0);
+		}
+	}
+
 	fs = ip->i_e2fs;
 	if ((u_int64_t)uio->uio_offset >
 		((u_int64_t)0x80000000 * fs->e2fs_bsize - 1))

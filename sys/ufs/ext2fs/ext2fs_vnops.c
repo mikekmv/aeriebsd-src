@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997 Manuel Bouyer.
  * Copyright (c) 1982, 1986, 1989, 1993
@@ -1100,26 +1099,6 @@ bad:
 }
 
 /*
- * Return target name of a symbolic link
- */
-int
-ext2fs_readlink(void *v)
-{
-	struct vop_readlink_args *ap = v;
-	struct vnode *vp = ap->a_vp;
-	struct inode *ip = VTOI(vp);
-	int isize;
-
-	isize = ext2fs_size(ip);
-	if (isize < vp->v_mount->mnt_maxsymlinklen ||
-	    (vp->v_mount->mnt_maxsymlinklen == 0 && ip->i_e2fs_nblock == 0)) {
-		uiomove((char *)ip->i_e2din->e2di_shortlink, isize, ap->a_uio);
-		return (0);
-	}
-	return (VOP_READ(vp, ap->a_uio, 0, ap->a_cred));
-}
-
-/*
  * Advisory record locking support
  */
 int
@@ -1277,7 +1256,6 @@ struct vnodeopv_entry_desc ext2fs_vnodeop_entries[] = {
 	{ &vop_rmdir_desc, ext2fs_rmdir },		/* rmdir */
 	{ &vop_symlink_desc, ext2fs_symlink },	/* symlink */
 	{ &vop_readdir_desc, ext2fs_readdir },	/* readdir */
-	{ &vop_readlink_desc, ext2fs_readlink },/* readlink */
 	{ &vop_abortop_desc, vop_generic_abortop },		/* abortop */
 	{ &vop_inactive_desc, ext2fs_inactive },/* inactive */
 	{ &vop_reclaim_desc, ext2fs_reclaim },	/* reclaim */

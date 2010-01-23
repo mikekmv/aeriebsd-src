@@ -111,7 +111,6 @@ struct vnodeopv_entry_desc nfsv2_vnodeop_entries[] = {
 	{ &vop_rmdir_desc, nfs_rmdir },		/* rmdir */
 	{ &vop_symlink_desc, nfs_symlink },	/* symlink */
 	{ &vop_readdir_desc, nfs_readdir },	/* readdir */
-	{ &vop_readlink_desc, nfs_readlink },	/* readlink */
 	{ &vop_abortop_desc, vop_generic_abortop },	/* abortop */
 	{ &vop_inactive_desc, nfs_inactive },	/* inactive */
 	{ &vop_reclaim_desc, nfs_reclaim },	/* reclaim */
@@ -913,24 +912,12 @@ nfs_read(v)
 	struct vop_read_args *ap = v;
 	struct vnode *vp = ap->a_vp;
 
+	if (vp->v_type == VLNK)
+		return (nfs_bioread(vp, ap->a_uio, 0, ap->a_cred));
+
 	if (vp->v_type != VREG)
 		return (EPERM);
 	return (nfs_bioread(vp, ap->a_uio, ap->a_ioflag, ap->a_cred));
-}
-
-/*
- * nfs readlink call
- */
-int
-nfs_readlink(v)
-	void *v;
-{
-	struct vop_readlink_args *ap = v;
-	struct vnode *vp = ap->a_vp;
-
-	if (vp->v_type != VLNK)
-		return (EPERM);
-	return (nfs_bioread(vp, ap->a_uio, 0, ap->a_cred));
 }
 
 /*

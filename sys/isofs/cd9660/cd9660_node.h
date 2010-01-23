@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -114,7 +113,6 @@ int	cd9660_poll(void *);
 int	cd9660_mmap(void *);
 int	cd9660_seek(void *);
 int	cd9660_readdir(void *);
-int	cd9660_readlink(void *);
 int	cd9660_abortop(void *);
 int	cd9660_inactive(void *);
 int	cd9660_reclaim(void *);

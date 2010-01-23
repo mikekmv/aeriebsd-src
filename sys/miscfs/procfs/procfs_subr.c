@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1993 Jan-Simon Pendry
  * Copyright (c) 1993
@@ -198,6 +197,8 @@ procfs_rw(void *v)
 	struct proc *curp = uio->uio_procp;
 	struct pfsnode *pfs = VTOPFS(vp);
 	struct proc *p;
+	char buf[16];
+	int len;
 
 	p = pfind(pfs->pfs_pid);
 	if (p == 0)
@@ -209,6 +210,15 @@ procfs_rw(void *v)
 		return (EINVAL);
 
 	switch (pfs->pfs_type) {
+	case Pcurproc:
+		len = snprintf(buf, sizeof buf, "%ld", (long)curproc->p_pid);
+		return (uiomove(buf, len, ap->a_uio));
+		break;
+
+	case Pself:
+		len = strlcpy(buf, "curproc", sizeof buf);
+		return (uiomove(buf, len, ap->a_uio));
+
 	case Pnote:
 	case Pnotepg:
 		return (procfs_donote(curp, p, pfs, uio));
