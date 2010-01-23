@@ -3,9 +3,9 @@
  * (Modifications made here may easily be lost!)
  *
  * Created from the file:
- *	OpenBSD: vnode_if.src,v 1.32 2007/01/16 17:52:18 thib Exp 
+ *	#
  * by the script:
- *	OpenBSD: vnode_if.sh,v 1.16 2007/12/12 16:24:49 thib Exp 
+ *	ABSD: vnode_if.sh,v 1.1.1.1 2008/08/26 14:42:20 root Exp 
  */
 
 /*
@@ -272,15 +272,6 @@ struct vop_readdir_args {
 extern struct vnodeop_desc vop_readdir_desc;
 int VOP_READDIR(struct vnode *, struct uio *, struct ucred *, int *, int *, 
     u_long **);
-
-struct vop_readlink_args {
-	struct vnodeop_desc *a_desc;
-	struct vnode *a_vp;
-	struct uio *a_uio;
-	struct ucred *a_cred;
-};
-extern struct vnodeop_desc vop_readlink_desc;
-int VOP_READLINK(struct vnode *, struct uio *, struct ucred *);
 
 struct vop_abortop_args {
 	struct vnodeop_desc *a_desc;

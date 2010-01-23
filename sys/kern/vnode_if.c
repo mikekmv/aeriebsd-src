@@ -3,9 +3,9 @@
  * (Modifications made here may easily be lost!)
  *
  * Created from the file:
- *	OpenBSD: vnode_if.src,v 1.32 2007/01/16 17:52:18 thib Exp 
+ *	#
  * by the script:
- *	OpenBSD: vnode_if.sh,v 1.16 2007/12/12 16:24:49 thib Exp 
+ *	ABSD: vnode_if.sh,v 1.1.1.1 2008/08/26 14:42:20 root Exp 
  */
 
 /*
@@ -491,25 +491,6 @@ int VOP_READDIR(struct vnode *vp, struct uio *uio, struct ucred *cred,
 	a.a_cookies = cookies;
 	return (VCALL(vp, VOFFSET(vop_readdir), &a));
 }
-struct vnodeop_desc vop_readlink_desc = {
-	0,
-	"vop_readlink",
-	0,
-};
-
-int VOP_READLINK(struct vnode *vp, struct uio *uio, struct ucred *cred)
-{
-	struct vop_readlink_args a;
-	a.a_desc = VDESC(vop_readlink);
-	a.a_vp = vp;
-#ifdef VFSDEBUG
-	if ((vp->v_flag & VLOCKSWORK) && !VOP_ISLOCKED(vp))
-		panic("vop_readlink: vp");
-#endif
-	a.a_uio = uio;
-	a.a_cred = cred;
-	return (VCALL(vp, VOFFSET(vop_readlink), &a));
-}
 struct vnodeop_desc vop_abortop_desc = {
 	0,
 	"vop_abortop",
@@ -734,7 +715,6 @@ struct vnodeop_desc *vfs_op_descs[] = {
 	&vop_rmdir_desc,
 	&vop_symlink_desc,
 	&vop_readdir_desc,
-	&vop_readlink_desc,
 	&vop_abortop_desc,
 	&vop_inactive_desc,
 	&vop_reclaim_desc,
