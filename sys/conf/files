@@ -923,26 +923,38 @@ file net/pfkeyv2_parsemessage.c		key | ipsec | tcp_signature
 file net/pfkeyv2_convert.c		key | ipsec | tcp_signature
 
 # COMPAT_* support code (base and other shared code)
-file compat/common/compat_exec.c	!small_kernel
 file compat/common/compat_util.c	!small_kernel
-file compat/common/compat_dir.c		!small_kernel
+file compat/common/compat_exec.c	!small_kernel &
+	(compat_aout | compat_bsdos | compat_freebsd | compat_openbsd)
+file compat/common/compat_dir.c		!small_kernel &
+	(compat_freebsd | compat_ibcs2 | compat_svr4 | compat_sunos)
 file compat/common/kern_info_09.c	!small_kernel &
 	(compat_openbsd | compat_freebsd | compat_ibcs2 | compat_sunos |
 	compat_hpux | compat_osf1 | compat_linux)
 file compat/common/kern_ipc_44.c	!small_kernel &
 	(compat_bsdos | compat_freebsd | compat_ibcs2 | compat_sunos)
-file compat/common/kern_exit_43.c	!small_kernel
-file compat/common/kern_info_43.c	!small_kernel
-file compat/common/kern_resource_43.c	!small_kernel
-file compat/common/kern_sig_43.c	!small_kernel
-file compat/common/tty_43.c		!small_kernel
-file compat/common/uipc_syscalls_43.c	!small_kernel
-file compat/common/vfs_syscalls_43.c	!small_kernel
+file compat/common/kern_exit_43.c	!small_kernel &
+	(compat_bsdos | compat_freebsd | compat_ultrix)
+file compat/common/kern_info_43.c	!small_kernel &
+	(compat_bsdos | compat_freebsd)
+file compat/common/kern_resource_43.c	!small_kernel &
+	(compat_bsdos | compat_freebsd | compat_hpux | compat_linux |
+	compat_sunos | compat_svr4 | compat_ultrix)
+file compat/common/kern_sig_43.c	!small_kernel &
+	(compat_bsdos | compat_freebsd | compat_sunos | compat_ultrix)
+file compat/common/tty_43.c		!small_kernel &
+	(compat_43 | compat_sunos | compat_svr4 | compat_freebsd | compat_osf1)
+file compat/common/uipc_syscalls_43.c	!small_kernel &
+	(compat_bsdos | compat_freebsd | compat_linux | compat_osf1 |
+	compat_sunos | compat_svr4 | compat_ultrix)
+file compat/common/vfs_syscalls_43.c	!small_kernel &
+	(compat_bsdos | compat_freebsd | compat_ibcs2 | compat_sunos |
+	compat_osf1)
 file compat/common/vfs_syscalls_44.c	!small_kernel &
 	(compat_bsdos | compat_freebsd)
 file compat/common/vm_43.c		!small_kernel &
 	(compat_bsdos | compat_freebsd | compat_linux | compat_sunos |
-	compat_svr4 | compat_osf1 | compat_linux)
+	compat_svr4 | compat_osf1 | compat_ultrix)
 
 # libkern MI components
 file lib/libkern/mcount.c		gprof
