@@ -18,6 +18,7 @@
 #include <sys/systm.h>
 #include <sys/device.h>
 #include <sys/malloc.h>
+#include <sys/event.h>
 
 #include <machine/apicvar.h>
 #include <machine/cpuvar.h>
