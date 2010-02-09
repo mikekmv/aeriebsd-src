@@ -1,5 +1,5 @@
 
-SUBDIR+= libc libpthread csu libssl libskey libm libevent libutil
+SUBDIR+= libc libcompat libpthread csu libssl libskey libm libevent libutil
 
 install:
 
