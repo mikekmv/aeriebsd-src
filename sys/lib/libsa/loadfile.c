@@ -156,7 +156,7 @@ loadfile(const char *fname, u_long *marks, int flags)
 #endif
 #if defined(BOOT_ELF64) || (defined(BOOT_ELF) && ELFSIZE == 64)
 	if (memcmp(hdr.elf64.e_ident, ELFMAG, SELFMAG) == 0 &&
-	    hdr.elf32.e_ident[EI_DATA] == ELF_TARG_DATA &&
+	    hdr.elf64.e_ident[EI_DATA] == ELF_TARG_DATA &&
 	    hdr.elf64.e_ident[EI_CLASS] == ELFCLASS64) {
 		rval = elf64_exec(fd, &hdr.elf64, marks, flags);
 	} else
