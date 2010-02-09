@@ -34,7 +34,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: regerror.c,v 1.1.1.1 2008/08/26 14:38:32 root Exp $";
+static const char rcsid[] = "$ABSD: regerror.c,v 1.2 2009/11/24 19:38:22 mickey Exp $";
 #endif
 
 #include <sys/types.h>
@@ -81,7 +81,7 @@ static const struct rerr {
 size_t
 regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size)
 {
-	struct rerr *r;
+	const struct rerr *r;
 	size_t len;
 	int target = errcode &~ REG_ITOA;
 	char *s;
@@ -120,7 +120,7 @@ regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size)
 static char *
 regatoi(const regex_t *preg, char *localbuf, int localbufsize)
 {
-	struct rerr *r;
+	const struct rerr *r;
 
 	for (r = rerrs; r->code != 0; r++)
 		if (strcmp(r->name, preg->re_endp) == 0)

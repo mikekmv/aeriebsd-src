@@ -34,7 +34,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: regcomp.c,v 1.1.1.1 2008/08/26 14:38:32 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -92,7 +92,7 @@ static void freeset(struct parse *, cset *);
 static int freezeset(struct parse *, cset *);
 static int firstch(struct parse *, cset *);
 static int nch(struct parse *, cset *);
-static void mcadd(struct parse *, cset *, char *);
+static void mcadd(struct parse *, cset *, const char *);
 static void mcinvert(struct parse *, cset *);
 static void mccase(struct parse *, cset *);
 static int isinsets(struct re_guts *, int);
@@ -770,9 +770,9 @@ static void
 p_b_cclass(struct parse *p, cset *cs)
 {
 	char *sp = p->next;
-	struct cclass *cp;
+	const struct cclass *cp;
 	size_t len;
-	char *u;
+	const char *u;
 	char c;
 
 	while (MORE() && isalpha(PEEK()))
@@ -834,7 +834,7 @@ p_b_coll_elem(struct parse *p,
     int endc)			/* name ended by endc,']' */
 {
 	char *sp = p->next;
-	struct cname *cp;
+	const struct cname *cp;
 	int len;
 
 	while (MORE() && !SEETWO(endc, ']'))
@@ -1166,7 +1166,7 @@ nch(struct parse *p, cset *cs)
  - mcadd - add a collating element to a cset
  */
 static void
-mcadd( struct parse *p, cset *cs, char *cp)
+mcadd( struct parse *p, cset *cs, const char *cp)
 {
 	size_t oldend = cs->smultis;
 	void *np;
