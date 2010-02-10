@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)init.c	8.1 (Berkeley) 5/31/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: init.c,v 1.1.1.1 2008/08/26 14:36:26 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -47,7 +47,6 @@ struct biltins bfunc[] =
 {
     { "@", 		dolet, 		0, INF	},
     { "alias", 		doalias, 	0, INF	},
-    { "alloc", 		showall, 	0, 1	},
     { "bg", 		dobg, 		0, INF	},
     { "break", 		dobreak, 	0, 0	},
     { "breaksw", 	doswbrk, 	0, 0	},

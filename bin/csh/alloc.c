@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)alloc.c	8.1 (Berkeley) 5/31/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: alloc.c,v 1.1.1.1 2008/08/26 14:36:26 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -44,16 +44,11 @@ static char rcsid[] = "$ABSD$";
 #include "csh.h"
 #include "extern.h"
 
-char   *memtop = NULL;		/* PWP: top of current memory */
-char   *membot = NULL;		/* PWP: bottom of allocatable memory */
-
 ptr_t
 Malloc(size_t n)
 {
     ptr_t   ptr;
 
-    if (membot == NULL)
-	memtop = membot = sbrk(0);
     if ((ptr = malloc(n)) == (ptr_t) 0) {
 	child++;
 	stderror(ERR_NOMEM);
@@ -66,8 +61,6 @@ Realloc(ptr_t p, size_t n)
 {
     ptr_t   ptr;
 
-    if (membot == NULL)
-	memtop = membot = sbrk(0);
     if ((ptr = realloc(p, n)) == (ptr_t) 0) {
 	child++;
 	stderror(ERR_NOMEM);
@@ -80,8 +73,6 @@ Calloc(size_t s, size_t n)
 {
     ptr_t   ptr;
 
-    if (membot == NULL)
-	memtop = membot = sbrk(0);
     if ((ptr = calloc(s, n)) == (ptr_t) 0) {
 	child++;
 	stderror(ERR_NOMEM);
@@ -95,20 +86,4 @@ Free(ptr_t p)
 {
     if (p)
 	free(p);
-}
-
-/*
- * mstats - print out statistics about malloc
- *
- * Prints two lines of numbers, one showing the length of the free list
- * for each size category, the second showing the number of mallocs -
- * frees for each size category.
- */
-void
-/*ARGSUSED*/
-showall(Char **v, struct command *t)
-{
-    memtop = (char *) sbrk(0);
-    (void) fprintf(cshout, "Allocated memory from 0x%lx to 0x%lx (%d).\n",
-	    (unsigned long) membot, (unsigned long) memtop, (int)(memtop - membot));
 }

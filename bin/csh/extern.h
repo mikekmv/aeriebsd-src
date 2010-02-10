@@ -298,7 +298,6 @@ void	Free(ptr_t);
 ptr_t	Malloc(size_t);
 ptr_t	Realloc(ptr_t, size_t);
 ptr_t	Calloc(size_t, size_t);
-void	showall(Char **, struct command *);
 
 /*
  * str.c:

@@ -28,7 +28,7 @@
 .\"
 .\"	@(#)csh.1	8.2 (Berkeley) 1/21/94
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt CSH 1
 .Os
 .Sh NAME
@@ -1499,17 +1499,6 @@ is not allowed to be
 .Dq alias
 or
 .Dq unalias .
-.Pp
-.It Ic alloc
-Shows the amount of dynamic memory acquired, broken down into used and
-free memory.
-With an argument shows the number of free and used blocks in each size
-category.
-The categories start at size 8 and double at each step.
-This command's output may vary across system types, since
-systems other than the
-.Tn VAX
-may use a different memory allocator.
 .Pp
 .It Ic bg
 .It Ic bg \&% Ns Ar job ...
