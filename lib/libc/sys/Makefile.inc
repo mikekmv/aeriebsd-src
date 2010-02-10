@@ -4,18 +4,16 @@
 .PATH: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/sys ${LIBCSRCDIR}/sys
 
 # modules with non-default implementations on at least one architecture:
-SRCS+=	Ovfork.S brk.S cerror.S exect.S fork.S rfork.S \
-	sbrk.S sigpending.S sigprocmask.S sigreturn.S \
+SRCS+=	Ovfork.S cerror.S exect.S fork.S rfork.S \
+	sigpending.S sigprocmask.S sigreturn.S \
 	sigsuspend.S syscall.S
 
-LSRCS+=	Lint_Ovfork.c Lint_brk.c Lint_exect.c Lint_fork.c \
-	Lint_rfork.c Lint_sbrk.c \
+LSRCS+=	Lint_Ovfork.c Lint_exect.c Lint_fork.c Lint_rfork.c \
 	Lint_sigpending.c Lint_sigprocmask.c Lint_sigreturn.c \
 	Lint_sigsuspend.c Lint_syscall.c Lint_crt.c Lint_environ.c \
 	Lint_setjmp.c Lint_longjmp.c \
 	Lint_sigsetjmp.c Lint_siglongjmp.c
-DPSRCS+= Lint_Ovfork.c Lint_brk.c Lint_exect.c Lint_fork.c \
-	Lint_sbrk.c \
+DPSRCS+= Lint_Ovfork.c Lint_exect.c Lint_fork.c \
 	Lint_sigpending.c Lint_sigprocmask.c Lint_sigreturn.c \
 	Lint_sigsuspend.c Lint_syscall.c Lint_crt.c Lint_environ.c \
 	Lint_setjmp.c Lint_longjmp.c \
@@ -207,8 +205,7 @@ LintSysPseudoNoerr.c: ${LIBCSRCDIR}/sys/makelintstub.sh \
 	@sh ${LIBCSRCDIR}/sys/makelintstub.sh -o ${.TARGET} -p \
 	    -s ${DESTDIR}/usr/include/sys/syscall.h ${PSEUDO_NOERR}
 
-MAN+=	accept.2 access.2 acct.2 adjfreq.2 adjtime.2 bind.2 brk.2 chdir.2 \
-	chflags.2 \
+MAN+=	accept.2 access.2 acct.2 adjfreq.2 adjtime.2 bind.2 chdir.2 chflags.2 \
 	chmod.2 chown.2 chroot.2 clock_gettime.2 close.2 closefrom.2 connect.2 \
 	dup.2 execve.2 _exit.2 fcntl.2 fhopen.2 \
 	flock.2 fork.2 fsync.2 getdirentries.2 \
@@ -232,7 +229,6 @@ MAN+=	accept.2 access.2 acct.2 adjfreq.2 adjtime.2 bind.2 brk.2 chdir.2 \
 MAN+=	msgctl.2 shmctl.2 shmat.2 semop.2 semget.2 semctl.2 msgsnd.2 msgrcv.2 \
 	msgget.2 shmget.2
 
-MLINKS+=brk.2 sbrk.2
 MLINKS+=dup.2 dup2.2
 MLINKS+=chdir.2 fchdir.2
 MLINKS+=chflags.2 fchflags.2

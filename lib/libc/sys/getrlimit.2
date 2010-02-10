@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)getrlimit.2	8.1 (Berkeley) 6/4/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt GETRLIMIT 2
 .Os
 .Sh NAME
@@ -63,10 +63,7 @@ file that may be created.
 The maximum amount of CPU time (in seconds) to be used by
 each process.
 .It Li RLIMIT_DATA
-The maximum size (in bytes) of the data segment for a process;
-this defines how far a program may extend its break with the
-.Xr sbrk 2
-system call.
+The maximum size (in bytes) of the data segment for a process.
 .It Li RLIMIT_FSIZE
 The largest size (in bytes) file that may be created.
 .It Li RLIMIT_MEMLOCK
@@ -152,9 +149,7 @@ is the
 equivalent.
 .Pp
 The system refuses to extend the data or stack space when the limits
-would be exceeded in the normal way: a
-.Xr brk 2
-call fails if the data space limit is reached.
+would be exceeded in the normal way.
 When the stack limit is reached, the process receives
 a segmentation fault
 .Pq Dv SIGSEGV ;

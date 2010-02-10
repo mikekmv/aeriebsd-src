@@ -13,8 +13,13 @@ NOPIC=	nopic
 	${.CURDIR}/4.4/${MACHINE_ARCH} ${.CURDIR}/4.4 \
 	${.CURDIR}/regexp
 
+# ancient interfaces
+SRCS=	brk.c
+MAN=	brk.3
+MLINKS+=brk.3 sbrk.3
+
 # compat 4.1 sources
-SRCS=	gtty.c ftime.c stty.c
+SRCS+=	gtty.c ftime.c stty.c
 
 .if (${MACHINE} == "vax")
 # missing: (for vax) reset.s

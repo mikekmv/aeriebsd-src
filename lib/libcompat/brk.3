@@ -28,8 +28,8 @@
 .\"
 .\"     @(#)brk.2	8.2 (Berkeley) 12/11/93
 .\"
-.Dd $Mdocdate: April 24 2008 $
-.Dt BRK 2
+.Dd $Mdocdate: August 26 2008 $
+.Dt BRK 3
 .Os
 .Sh NAME
 .Nm brk ,
@@ -42,6 +42,11 @@
 .Ft void *
 .Fn sbrk "int incr"
 .Sh DESCRIPTION
+.Pp
+.Bf -symbolic
+This interface is available from the compatibility library, libcompat.
+.Ef
+.Pp
 .Bf -symbolic
 The
 .Fn brk
@@ -69,12 +74,9 @@ increased to the next page boundary.
 .Pp
 .\" The
 .\" .Nm sbrk
-.\" function
-.\" allocates chunks of
+.\" function allocates chunks of
 .\" .Fa incr
-.\" bytes
-.\" to the process's data space
-.\" and returns an address pointer.
+.\" bytes to the process's data space and returns an address pointer.
 .\" The
 .\" .Xr malloc 3
 .\" function utilizes
