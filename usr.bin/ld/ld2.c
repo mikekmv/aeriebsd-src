@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.13 2010/02/12 18:18:06 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.14 2010/02/12 19:40:03 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -725,7 +725,7 @@ ldloadasect(FILE *fp, FILE *ofp, const char *name, const struct ldorder *ord,
 		}
 		len += bof;
 		bof = ord->ldo_arch->la_fix(off, os, sbuf, len);
-		if (bof < 0)
+		if (bof < 0 || bof >= ELF_SBUFSZ)
 			return -1;
 		else {
 			if (fwrite(sbuf, len - bof, 1, ofp) != 1)
@@ -984,9 +984,8 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 
 	/* (re)sort the relocs by the address for the loader's pleasure */
 	for (os = ol->ol_sections, se = os + n; os < se; os++)
-		if (os->os_nrls > ELF_RELSORT)
-			qsort(os->os_rels, os->os_nrls, sizeof *os->os_rels,
-			    rel_addrcmp);
+		qsort(os->os_rels, os->os_nrls, sizeof *os->os_rels,
+		    rel_addrcmp);
 
 	return 0;
 }
