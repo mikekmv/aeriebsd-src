@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1982, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -197,6 +196,13 @@ struct itty {
 #define TS_TSTAMPDCDCLR	0x20000		/* update timestamp on DCD clr */
 #define TS_TSTAMPCTSSET	0x40000		/* update timestamp on CTS set */
 #define TS_TSTAMPCTSCLR	0x80000		/* update timestamp on CTS clr */
+
+#ifdef _KERNEL
+#define	TS_BITS \
+    "\020\01ASLEEP\02ASYNC\03BUSY\04CARR\05FLUSH\06ISOPEN\07TBLOCK" \
+    "\010TMO\011TTSTOP\012WOPEN\013EXCL\014BKSL\015CNTTB\016ERASE\017LNCH" \
+    "\020TYPEN\021TSDCDS\022TSDCDCL\023TSCTSS\024TSCTSCL"
+#endif
 
 /* Character type information. */
 #define	ORDINARY	0
