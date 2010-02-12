@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.12 2010/01/17 20:32:36 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.13 2010/02/12 18:18:06 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -53,6 +53,8 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.12 2010/01/17 20:32:36 mickey Exp 
 #define	elf_fix_rela	elf32_fix_rela
 #define	elf2nlist	elf32_2nlist
 #define	elf_load_shdrs	elf32_load_shdrs
+#define	elf_save_shdrs	elf32_save_shdrs
+#define	elf_save_phdrs	elf32_save_phdrs
 #define	elf_fix_shdrs	elf32_fix_shdrs
 #define	elf_symload	elf32_symload
 #define	elf_loadrelocs	elf32_loadrelocs
@@ -84,6 +86,8 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.12 2010/01/17 20:32:36 mickey Exp 
 #define	elf_fix_rela	elf64_fix_rela
 #define	elf2nlist	elf64_2nlist
 #define	elf_load_shdrs	elf64_load_shdrs
+#define	elf_save_shdrs	elf64_save_shdrs
+#define	elf_save_phdrs	elf64_save_phdrs
 #define	elf_fix_shdrs	elf64_fix_shdrs
 #define	elf_symload	elf64_symload
 #define	elf_loadrelocs	elf64_loadrelocs
@@ -248,7 +252,7 @@ ldmap(struct headorder headorder)
 
 		case ldo_expr:
 			/* mind the gap! */
-			point += __LDPGSZ;
+			point += (arc4random() & 0xfff) * __LDPGSZ;
 			break;
 
 		case ldo_section:
@@ -661,21 +665,15 @@ osp = os;
 		}
 	}
 
-	if (fseek(fp, eh->e_shoff, SEEK_SET))
-		err(1, "fseek: %s", name);
-
 	shdr = sysobj.ol_sects;
 	elf_fix_shdrs(eh, shdr);
-	if (fwrite(shdr, sizeof *shdr, sysobj.ol_nsect, fp) != sysobj.ol_nsect)
-		err(1, "fwrite: %s", name);
-
-	if (fseek(fp, sizeof *eh, SEEK_SET))
-		err(1, "fseek: %s", name);
+	if (elf_save_shdrs(name, fp, 0, eh, shdr))
+		return -1;
 
 	phdr = sysobj.ol_aux;
 	elf_fix_phdrs(eh, phdr);
-	if (fwrite(phdr, sizeof *phdr, eh->e_phnum, fp) != eh->e_phnum)
-		err(1, "fwrite: %s", name);
+	if (elf_save_phdrs(name, fp, 0, eh, phdr))
+		return -1;
 
 	rewind(fp);
 
