@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Michael Shalayeff
+ * Copyright (c) 2009-2010 Michael Shalayeff
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
