@@ -14,7 +14,7 @@
 .\" AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 .\" OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate$
+.Dd $Mdocdate: January 10 2010 $
 .Dt ELF 3
 .Os
 .Sh NAME
@@ -30,6 +30,8 @@
 .Fn elf_load_phdrs "const char *name" "FILE *fp" "off_t foff" "Elf_Ehdr *eh"
 .Ft int
 .Fn elf_fix_phdrs "const Elf_Ehdr *eh" "Elf_Phdr *phdr"
+.Ft int
+.Fn elf_save_phdrs "const char *name" "FILE *fp" "off_t foff" "Elf_Ehdr *eh" "const Elf_Shdr *phdr"
 .Ft char *
 .Fn elf_shstrload "const char *name" "FILE *fp" "off_t foff" "const Elf_Ehdr *eh" "const Elf_Shdr *shdr"
 .Ft Elf_Shdr *
@@ -76,6 +78,8 @@ Byteswp the note section header.
 Load program headers.
 .It elf_fix_phdrs
 Byteswap program headers.
+.It elf_save_phdrs
+Save program headers.
 .It elf_load_shdrs
 Load section headers.
 .It elf_save_shdrs

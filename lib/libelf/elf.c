@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.19 2010/01/09 17:49:35 mickey Exp $";
+    "$ABSD: elf.c,v 1.20 2010/01/09 17:51:27 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -47,6 +47,7 @@ static const char rcsid[] =
 #define	elf_load_shdrs	elf32_load_shdrs
 #define	elf_save_shdrs	elf32_save_shdrs
 #define	elf_load_phdrs	elf32_load_phdrs
+#define	elf_save_phdrs	elf32_save_phdrs
 #define	elf_fix_shdrs	elf32_fix_shdrs
 #define	elf_fix_phdrs	elf32_fix_phdrs
 #define	elf_fix_sym	elf32_fix_sym
@@ -80,6 +81,7 @@ static const char rcsid[] =
 #define	elf_load_shdrs	elf64_load_shdrs
 #define	elf_save_shdrs	elf64_save_shdrs
 #define	elf_load_phdrs	elf64_load_phdrs
+#define	elf_save_phdrs	elf64_save_phdrs
 #define	elf_fix_shdrs	elf64_fix_shdrs
 #define	elf_fix_phdrs	elf64_fix_phdrs
 #define	elf_fix_sym	elf64_fix_sym
@@ -229,6 +231,23 @@ elf_load_phdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 	}
 
 	return (phdr);
+}
+
+int
+elf_save_phdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
+    const Elf_Phdr *phdr)
+{
+	if (fseeko(fp, foff + eh->e_phoff, SEEK_SET)) {
+		warn("%s: fseeko", name);
+		return (1);
+	}
+
+	if (fwrite(phdr, eh->e_phentsize, eh->e_phnum, fp) != eh->e_phnum) {
+		warnx("%s: premature EOF", name);
+		return (1);
+	}
+
+	return (0);
 }
 
 int
