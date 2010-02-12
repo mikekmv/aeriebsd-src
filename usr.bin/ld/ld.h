@@ -167,7 +167,7 @@ struct ldorder {
 extern struct objlist sysobj;
 extern const char *entry_name;
 extern struct ldorder *bsorder;
-extern int Bflag, pie, errors, printmap, relocatable, strip, warncomm;
+extern int Bflag, Xflag, pie, errors, printmap, relocatable, strip, warncomm;
 extern int machine, endian, elfclass, magic;
 extern const struct ldorder
     alpha_order[], amd64_order[], arm_order[], hppa_order[],
@@ -179,15 +179,17 @@ const struct ldarch *ldinit(void);
 int obj_foreach(int (*)(struct objlist *, void *), void *);
 
 /* ld2.c */
+int uLD32(const char *, char *, int *, int);
+int uLD64(const char *, char *, int *, int);
 int elf32_note(struct ldorder *);
 int elf64_note(struct ldorder *);
 struct symlist *elf32_absadd(const char *);
 struct symlist *elf64_absadd(const char *);
 int elf32_symadd(struct elf_symtab *, int, void *, void *);
 int elf64_symadd(struct elf_symtab *, int, void *, void *);
-int elf32_loadrelocs(struct objlist *, struct section *, Elf_Shdr *,
+int elf32_loadrelocs(struct objlist *, struct section *, Elf32_Shdr *,
     FILE *, off_t);
-int elf64_loadrelocs(struct objlist *, struct section *, Elf_Shdr *,
+int elf64_loadrelocs(struct objlist *, struct section *, Elf64_Shdr *,
     FILE *, off_t);
 int elf32_objadd(struct objlist *, FILE *, off_t);
 int elf64_objadd(struct objlist *, FILE *, off_t);
@@ -201,8 +203,8 @@ int ldload32(const char *, struct ldorder *);
 int ldload64(const char *, struct ldorder *);
 int ldloadasect32(FILE *, FILE *, const char *, const struct ldorder *, struct section *);
 int ldloadasect64(FILE *, FILE *, const char *, const struct ldorder *, struct section *);
-int elf32_ld_chkhdr(const char *, Elf_Ehdr *, int, int *, int *, int *);
-int elf64_ld_chkhdr(const char *, Elf_Ehdr *, int, int *, int *, int *);
+int elf32_ld_chkhdr(const char *, Elf32_Ehdr *, int, int *, int *, int *);
+int elf64_ld_chkhdr(const char *, Elf64_Ehdr *, int, int *, int *, int *);
 
 /* syms.c */
 struct symlist *sym_undef(const char *);

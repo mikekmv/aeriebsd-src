@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.11 2010/01/12 03:18:34 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.12 2010/01/17 20:32:36 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -37,6 +37,7 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.11 2010/01/12 03:18:34 mickey Exp 
 #if ELFSIZE == 32
 #define	ELF_HDR(h)	((h).elf32)
 #define	ELF_SYM(h)	((h).sym32)
+#define	uLD		uLD32
 #define	ldnote		ldnote32
 #define	ldorder_obj	ld32order_obj
 #define	ldmap		ldmap32
@@ -67,6 +68,7 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.11 2010/01/12 03:18:34 mickey Exp 
 #elif ELFSIZE == 64
 #define	ELF_HDR(h)	((h).elf64)
 #define	ELF_SYM(h)	((h).sym64)
+#define	uLD		uLD64
 #define	ldnote		ldnote64
 #define	ldorder_obj	ld64order_obj
 #define	ldmap		ldmap64
@@ -1019,6 +1021,199 @@ elf_ld_chkhdr(const char *path, Elf_Ehdr *eh, int type, int *mach,
 		warnx("%s: incompatible file type", path);
 		return EFTYPE;
 	}
+
+	return 0;
+}
+
+int
+uLD(const char *name, char *v, int *size, int flags)
+{
+	Elf_Ehdr *eh = (Elf_Ehdr *)v;
+	Elf_Shdr *shdr, *sh, *esh, *ssh;
+	Elf_Sym **syms;
+	char *strs, *estr, *p;
+	int i, j, k, nsyms, *nus;
+
+	shdr = (Elf_Shdr *)(v + eh->e_shoff);
+	/* find the symbol table */
+	for (sh = shdr, esh = sh + eh->e_shnum; sh < esh; sh++)
+		if (sh->sh_type == SHT_SYMTAB)
+			break;
+	if (sh >= esh)
+		errx(1, "%s: no symbol table", name);
+
+	if (sh->sh_link >= eh->e_shnum)
+		errx(1, "%s: invalid symtab link", name);
+
+	esh = shdr + sh->sh_link;
+	if (esh->sh_type != SHT_STRTAB)
+		errx(1, "%s: no strings attached", name);
+
+	if (sh->sh_offset >= *size || sh->sh_offset + sh->sh_size > *size)
+		errx(1, "%s: corrupt section header #%ld", name, sh - shdr);
+
+	if (esh->sh_offset >= *size || esh->sh_offset + esh->sh_size > *size)
+		errx(1, "%s: corrupt section header #%ld", name, esh - shdr);
+
+	if (sh->sh_size / sh->sh_entsize >= INT_MAX)
+		errx(1, "%s: symtab is too big %llu",
+		    name, (long long)sh->sh_size);
+
+	if (sh->sh_entsize < sizeof **syms)
+		errx(1, "%s: invalid symtab entry size", name);
+
+	ssh = sh;
+	nsyms = sh->sh_size / sh->sh_entsize;
+	if (!(syms = calloc(nsyms, sizeof *syms)))
+		err(1, "calloc");
+
+	if (!(nus = calloc(nsyms, sizeof *nus)))
+		err(1, "calloc");
+
+	for (i = 0; i < nsyms; i++) {
+		syms[i] = (Elf_Sym *)(v + sh->sh_offset + i * sh->sh_entsize);
+		syms[i]->st_other = 0;
+		nus[i] = i;
+	}
+	strs = v + esh->sh_offset;
+	estr = strs + esh->sh_size;
+	if (estr[-1] != '\0')
+		errx(1, "%s: unterminated strings section", name);
+
+	/* fix relocs; mark symbols to dispose */
+	for (sh = shdr, esh = sh + eh->e_shnum; sh < esh; sh++) {
+		Elf_Shdr *rsh;
+		int nrels;
+
+		if ((rsh = sh + 1) >= esh)
+			continue;
+
+		if (rsh->sh_offset >= *size ||
+		    rsh->sh_offset + rsh->sh_size > *size)
+			errx(1, "%s: corrupt section header #%ld",
+			    name, rsh - shdr);
+
+		if (rsh->sh_type != SHT_REL || rsh->sh_type != SHT_RELA)
+			continue;
+
+		if ((rsh->sh_type == SHT_REL &&
+		     rsh->sh_entsize < sizeof(Elf_Rel)) ||
+		    (rsh->sh_type == SHT_RELA &&
+		     rsh->sh_entsize < sizeof(Elf_RelA)))
+			errx(1, "%s: invalid reloc entry size", name);
+
+		if (rsh->sh_size / rsh->sh_entsize)
+			errx(1, "%s: too many relocs for section %ld",
+			    name, sh - shdr);
+
+		/* take a point of the relocs */
+		p = v + rsh->sh_offset;
+		nrels = rsh->sh_size / rsh->sh_entsize;
+		for (i = 0; i < nrels; i++) {
+			Elf_Rel *r = (Elf_Rel *)(p + i * rsh->sh_entsize);
+			Elf_RelA *ra = (Elf_RelA *)(p + i * rsh->sh_entsize);
+			Elf_Sym *sym;
+			char *snam;
+
+			if (ELF_R_SYM(r->r_info) >= nsyms)
+				errx(1, "%s: broken reloc %d for section %ld",
+				    name, i, sh - shdr);
+
+			sym = syms[ELF_R_SYM(r->r_info)];
+			snam = strs + sym->st_name;
+			if (snam >= estr)
+				errx(1, "%s: corrupt syment", name);
+			
+			/* skip externals */
+			if (sym->st_shndx == SHN_UNDEF)
+				continue;
+
+			if (sym->st_shndx >= eh->e_shnum)
+				errx(1, "%s: corrupt sym entry '%s'",
+				    name, snam);
+			/*
+			 * move over local syms's relocs to become
+			 * section-relative
+			 */
+			if (*snam == 'L' || (flags > 1 &&
+			    ELF_ST_BIND(sym->st_info) == STB_LOCAL)) {
+/* TODO fix the address in the text/data */
+				nus[ELF_R_SYM(r->r_info)] = sym->st_shndx;
+				/* mark it for recycling */
+				sym->st_other = 1;
+			}
+		}
+	}
+
+	/* run through the relocs again and map symbol refs */
+	for (sh = shdr, esh = sh + eh->e_shnum; sh < esh; sh++) {
+		Elf_Shdr *rsh;
+		int nrels;
+
+		if ((rsh = sh + 1) >= esh)
+			continue;
+
+		if (rsh->sh_type != SHT_REL || rsh->sh_type != SHT_RELA)
+			continue;
+
+		p = v + rsh->sh_offset;
+		nrels = rsh->sh_size / rsh->sh_entsize;
+		for (i = 0; i < nrels; i++) {
+			Elf_Rel *r = (Elf_Rel *)(p + i * rsh->sh_entsize);
+			int ns = ELF_R_SYM(r->r_info);
+
+			r->r_info = ELF_R_INFO(ELF_R_TYPE(r->r_info), nus[ns]);
+		}
+	}
+
+	if (!flags)
+		return 0;
+
+	/* recycle syms; minimise calls to memcpy */
+	for (i = j = k = 0; i < nsyms; i++) {
+		if (!syms[i]->st_other)
+			continue;
+
+		if (!j)
+			k = j = i;
+		else if (k + 1 == i)
+			k++;
+		else {
+			memcpy(syms[j], syms[k], (i - k) * ssh->sh_entsize);
+			nsyms -= k - j;
+			i -= k - j;
+			k = j = i;
+		}
+	}
+
+	/* adjust .symtab size */
+	j = nsyms * ssh->sh_entsize;
+	k = ssh->sh_size - j;
+	ssh->sh_size = j;
+	sh = shdr + ssh->sh_link;
+	sh->sh_offset = ssh->sh_offset + ssh->sh_size;
+	p = v + sh->sh_offset;
+	*p++ = '\0';
+	/* generate .strtab; we assume copy would not overlap (; */
+	for (i = 1; i < nsyms; i++) {
+		char *snam = strs + syms[i]->st_name;
+		if (!syms[i]->st_name)
+			continue;
+		syms[i]->st_name = p - (v + sh->sh_offset);
+		p += strlcpy(p, snam, sh->sh_size) + 1;
+	}
+	*p++ = '\0';
+	j = p - (v + sh->sh_offset);
+	k += sh->sh_size - j;
+	sh->sh_size = j;
+	/* offset all the following sections; assuming they are sorted */
+	for (ssh = sh, sh = shdr, esh = sh + eh->e_shnum; sh < esh; sh++)
+		if (sh->sh_offset > ssh->sh_offset) {
+			sh->sh_offset -= k;
+			memcpy(v + sh->sh_offset, v + sh->sh_offset + k,
+			    sh->sh_size);
+		}
+	*size -= k;
 
 	return 0;
 }

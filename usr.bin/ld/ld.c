@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.5 2010/01/10 03:48:00 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.6 2010/01/12 03:18:33 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -54,6 +54,7 @@ int machine = EM_NONE;
 int magic = ZMAGIC;
 int as_needed;
 int Bflag;	/* 0 - static, 1 - dynamic, 2 - shlib */
+int Xflag;	/* 0 - keep, 1 - sieve temps, 2 - sieve all locals */
 int check_sections = 1;
 int cref;
 int nostdlib;
@@ -130,7 +131,7 @@ const struct ldarch ldarchs[] = {
 	{ EM_386, 0, i386_order, i386_fix },
 /*	{ EM_AMD64, 0, amd64_order, amd64_fix }, */
 /*	{ EM_MIPS, 0, mips_order, mips_fix }, */
-/*	{ EM_MIPS64, 0, mips64_order, mips64_fic }, */
+/*	{ EM_MIPS64, 0, mips64_order, mips64_fix }, */
 /*	{ EM_PARISC, 0, hppa_order, hppa_fix }, */
 /*	{ EM_PARISC64, 0, hppa64_order, hppa64_fix }, */
 /*	{ EM_PPC, 0, ppc_order, ppc_fix }, */
@@ -152,6 +153,7 @@ int lib_namtab(const char *, FILE *, u_long, off_t, u_long);
 int lib_symdef(const char *, FILE *, u_long);
 int mmbr_name(struct ar_hdr *, char **, int, int *, FILE *);
 struct headorder ldorder(const struct ldarch *);
+int uLD(const char *, const char *);
 
 int
 usage(void)
@@ -235,7 +237,8 @@ main(int argc, char *argv[])
 			magic = OMAGIC;
 			break;
 
-		case 'o':	/* set output file format */
+		case 'o':	/* set output file name */
+			strlcpy(output, optarg, sizeof output);
 			break;
 
 		case 'O':	/* optimise the otput binary (slow) */
@@ -271,9 +274,11 @@ main(int argc, char *argv[])
 			break;
 
 		case 'x':	/* discard all local symbols */
+			Xflag = 2;
 			break;
 
-		case 'X':	/* discard only local symbols */
+		case 'X':	/* discard only temp local symbols (L*) */
+			Xflag = 1;
 			break;
 
 		case 'y':	/* trace all files for this symbol */
@@ -295,6 +300,10 @@ main(int argc, char *argv[])
 
 	if (argc < 1)
 		errx(1, "no input files");
+
+	/* short cut for libraries building */
+	if (relocatable && argc == 1)
+		return uLD(*argv, output);
 
 	/* make a "system" object for our self-defined sections & syms */
 	sysobj.ol_path = output;
@@ -928,4 +937,58 @@ ldorder(const struct ldarch *lda)
 	sysobj.ol_snames = ssorder->ldo_wurst;
 
 	return headorder;
+}
+
+int
+uLD(const char *name, const char *output)
+{
+	union banners {
+		struct exec aout;
+		Elf32_Ehdr elf32;
+		Elf64_Ehdr elf64;
+	} *h;
+	struct stat sb;
+	FILE *fp, *ofp;
+	char *v;
+	int rv, size;
+
+	if (!(fp = fopen(name, "r")))
+		err(1, "fopen: %s", name);
+
+	if (fstat(fileno(fp), &sb) < 0)
+		err(1, "fstat: %s", name);
+
+	if (sb.st_size > INT_MAX)
+		errx(1, "%s: file is too big", name);
+
+	if (!(v = malloc(sb.st_size)))
+		err(1, "malloc %d bytes", (int)sb.st_size);
+
+	if (fread(v, sb.st_size, 1, fp) != 1) {
+		if (feof(fp))
+			errx(1, "%s: shrinkage", name);
+		else
+			err(1, "fread: %s", name);
+	}
+
+	if (!(ofp = fopen(output, "w")))
+		err(1, "fopen: %s", output);
+
+	size = sb.st_size;
+	h = (union banners *)v;
+	if (IS_ELF(h->elf32) &&
+	    h->elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
+	    h->elf32.e_ident[EI_VERSION] == ELF_TARG_VER) 
+		rv = uLD32(name, v, &size, Xflag);
+	else if (IS_ELF(h->elf64) &&
+	    h->elf64.e_ident[EI_CLASS] == ELFCLASS64 &&
+	    h->elf64.e_ident[EI_VERSION] == ELF_TARG_VER)
+		rv = uLD64(name, v, &size, Xflag);
+	else
+		return 1;
+
+	if (!rv && fwrite(v, size, 1, ofp) != 1)
+		err(1, "fwrite: %s", name);
+
+	return 0;
 }
