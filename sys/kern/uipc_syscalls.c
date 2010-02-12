@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1982, 1986, 1989, 1990, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -892,7 +891,7 @@ sys_pipe(struct proc *p, void *v, register_t *retval)
 	int error, fds[2];
 	register_t rval[2];
 
-	if ((error = sys_opipe(p, v, rval)) != 0)
+	if ((error = compat_43_sys_opipe(p, v, rval)) != 0)
 		return (error);
 
 	fds[0] = rval[0];

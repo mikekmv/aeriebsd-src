@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997 Charles D. Cranor and Washington University.
  * Copyright (c) 1991, 1993 The Regents of the University of California.  
@@ -88,50 +87,6 @@
 			return (EINVAL);	/* wraparound */	\
 	}								\
 } while (0)
-
-/*
- * unimplemented VM system calls:
- */
-
-/*
- * sys_sbrk: sbrk system call.
- */
-
-/* ARGSUSED */
-int
-sys_sbrk(p, v, retval)
-	struct proc *p;
-	void *v;
-	register_t *retval;
-{
-#if 0
-	struct sys_sbrk_args /* {
-		syscallarg(int) incr;
-	} */ *uap = v;
-#endif
-
-	return (ENOSYS);
-}
-
-/*
- * sys_sstk: sstk system call.
- */
-
-/* ARGSUSED */
-int
-sys_sstk(p, v, retval)
-	struct proc *p;
-	void *v;
-	register_t *retval;
-{
-#if 0
-	struct sys_sstk_args /* {
-		syscallarg(int) incr;
-	} */ *uap = v;
-#endif
-
-	return (ENOSYS);
-}
 
 /*
  * sys_mquery: provide mapping hints to applications that do fixed mappings

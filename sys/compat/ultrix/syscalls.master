@@ -1,4 +1,4 @@
-;	$ABSD: syscalls.master,v 1.4 2010/01/18 17:41:31 mickey Exp $
+;	$ABSD: syscalls.master,v 1.5 2010/01/19 18:44:40 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -58,7 +58,7 @@
 14	STD		{ int ultrix_sys_mknod(char *path, int mode, int dev); }
 15	NOARGS		{ int sys_chmod(char *path, int mode); }
 16	NOARGS		{ int sys_lchown(char *path, int uid, int gid); }
-17	NOARGS		{ int sys_obreak(char *nsize); } break
+17	NOARGS		{ int compat_43_sys_obreak(char *nsize); } break
 18	OBSOL		stat
 19	NOARGS		{ long compat_43_sys_lseek(int fd, long offset, \
 			    int whence); }
@@ -87,7 +87,7 @@
 40	STD		{ int ultrix_sys_lstat(char *path, \
 			    struct stat43 *ub); } olstat
 41	NOARGS		{ int sys_dup(u_int fd); }
-42	NOARGS		{ int sys_opipe(void); }
+42	NOARGS		{ int compat_43_sys_opipe(void); }
 43	OBSOL		v7 times
 44	NOARGS		{ int sys_profil(caddr_t samples, u_int size, \
 			    u_int offset, u_int scale); }
@@ -116,8 +116,8 @@
 66	NOARGS		{ int sys_vfork(void); }
 67	OBSOL		vread
 68	OBSOL		vwrite
-69	NOARGS		{ int sys_sbrk(int incr); }
-70	NOARGS		{ int sys_sstk(int incr); }
+69	NOARGS		{ int compat_43_sys_sbrk(int incr); }
+70	NOARGS		{ int compat_43_sys_sstk(int incr); }
 71	STD		{ int ultrix_sys_mmap(caddr_t addr, size_t len, \
 			    int prot, u_int flags, int fd, long pos); }
 72	OBSOL		vadvise

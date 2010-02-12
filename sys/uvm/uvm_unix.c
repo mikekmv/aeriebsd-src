@@ -55,60 +55,7 @@
 #include <sys/vnode.h>
 #include <sys/core.h>
 
-#include <sys/mount.h>
-#include <sys/syscallargs.h>
-
 #include <uvm/uvm.h>
-
-/*
- * sys_obreak: set break
- */
-
-int
-sys_obreak(p, v, retval)
-	struct proc *p;
-	void *v;
-	register_t *retval;
-{
-	struct sys_obreak_args /* {
-		syscallarg(char *) nsize;
-	} */ *uap = v;
-	struct vmspace *vm = p->p_vmspace;
-	vaddr_t new, old;
-	int error;
-
-	old = (vaddr_t)vm->vm_daddr;
-	new = round_page((vaddr_t)SCARG(uap, nsize));
-	if ((new - old) > p->p_rlimit[RLIMIT_DATA].rlim_cur)
-		return (ENOMEM);
-
-	old = round_page(old + ptoa(vm->vm_dsize));
-
-	if (new == old)
-		return (0);
-
-	/*
-	 * grow or shrink?
-	 */
-	if (new > old) {
-		error = uvm_map(&vm->vm_map, &old, new - old, NULL,
-		    UVM_UNKNOWN_OFFSET, 0,
-		    UVM_MAPFLAG(UVM_PROT_RW, UVM_PROT_RWX, UVM_INH_COPY,
-		    UVM_ADV_NORMAL, UVM_FLAG_AMAPPAD|UVM_FLAG_FIXED|
-		    UVM_FLAG_OVERLAY|UVM_FLAG_COPYONW));
-		if (error) {
-			uprintf("sbrk: grow %ld failed, error = %d\n",
-			    new - old, error);
-			return (ENOMEM);
-		}
-		vm->vm_dsize += atop(new - old);
-	} else {
-		uvm_deallocate(&vm->vm_map, new, old - new);
-		vm->vm_dsize -= atop(old - new);
-	}
-
-	return (0);
-}
 
 /*
  * uvm_grow: enlarge the "stack segment" to include sp.
@@ -252,4 +199,3 @@ uvm_coredump(p, vp, cred, chdr)
 
 	return (error);
 }
-

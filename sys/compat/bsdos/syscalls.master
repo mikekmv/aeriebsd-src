@@ -1,4 +1,4 @@
-;	$ABSD: syscalls.master,v 1.4 2010/01/18 17:41:30 mickey Exp $
+;	$ABSD: syscalls.master,v 1.5 2010/01/19 18:44:40 mickey Exp $
 
 ; AerieBSD COMPAT_BSDOS system call name/number "master" file.
 ; (See syscalls.conf to see what it is processed into.)
@@ -64,7 +64,7 @@
 14	NOARGS		{ int sys_mknod(char *path, int mode, int dev); }
 15	NOARGS		{ int sys_chmod(char *path, int mode); }
 16	NOARGS		{ int sys_chown(char *path, int uid, int gid); }
-17	NOARGS		{ int sys_obreak(char *nsize); } break
+17	NOARGS		{ int compat_43_sys_obreak(char *nsize); } break
 18	NOARGS		{ int compat_44_sys_getfsstat(struct ostatfs *buf, \
 			    long bufsize, int flags); }
 19	NOARGS		{ long compat_43_sys_lseek(int fd, long offset, \
@@ -103,7 +103,7 @@
 40	NOARGS		{ int compat_43_sys_lstat(char *path, \
 			    struct stat43 *ub); } lstat43
 41	NOARGS		{ int sys_dup(u_int fd); }
-42	NOARGS		{ int sys_opipe(void); }
+42	NOARGS		{ int compat_43_sys_opipe(void); }
 43	NOARGS		{ gid_t sys_getegid(void); }
 44	NOARGS		{ int sys_profil(caddr_t samples, u_int size, \
 			    u_int offset, u_int scale); }
@@ -116,7 +116,8 @@
 50	NOARGS		{ int sys_setlogin(char *namebuf); }
 51	UNIMPL		acct
 52	NOARGS		{ int sys_sigpending(void); }
-53	NOARGS		{ int sys_osigaltstack(struct osigaltstack *nss, \
+53	NOARGS		{ int compat_44_sys_osigaltstack( \
+			    struct osigaltstack *nss, \
 			    struct osigaltstack *oss); }
 54	STD		{ int bsdos_sys_ioctl(int fd, u_long com, \
 			    caddr_t data); }
@@ -137,8 +138,8 @@
 66	NOARGS		{ int sys_vfork(void); }
 67	OBSOL		vread
 68	OBSOL		vwrite
-69	NOARGS		{ int sys_sbrk(int incr); }
-70	NOARGS		{ int sys_sstk(int incr); }
+69	OBSOL		sbrk
+70	OBSOL		sstk
 71	NOARGS		{ int compat_43_sys_mmap(caddr_t addr, size_t len, \
 			    int prot, int flags, int fd, long pos); } ommap
 72	OBSOL		vadvise

@@ -1,4 +1,4 @@
-;	$ABSD: syscalls.master,v 1.4 2010/01/18 17:41:31 mickey Exp $
+;	$ABSD: syscalls.master,v 1.5 2010/01/19 18:44:40 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -64,7 +64,7 @@
 15	NOARGS		{ int sys_chmod(const char *path, int mode); }
 16	NOARGS		{ int sys_chown(const char *path, int uid, \
 			    int gid); }
-17	NOARGS		{ int sys_obreak(char *nsize); }
+17	NOARGS		{ int compat_43_sys_obreak(char *nsize); }
 18	STD		{ int osf1_sys_getfsstat(struct osf1_statfs *buf, \
 			    long bufsize, int flags); }
 19	STD		{ off_t osf1_sys_lseek(int fd, off_t offset, \
@@ -131,8 +131,8 @@
 			    struct osf1_stat *ub); }
 68	STD		{ int osf1_sys_lstat(char *path, \
 			    struct osf1_stat *ub); }
-69	UNIMPL		sbrk
-70	UNIMPL		sstk
+69	OBSOL		sbrk
+70	OBSOL		sstk
 71	STD		{ caddr_t osf1_sys_mmap(caddr_t addr, size_t len, \
 			    int prot, int flags, int fd, off_t pos); }
 72	OBSOL		vadvise

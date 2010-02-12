@@ -1,4 +1,4 @@
-;	$ABSD: syscalls.master,v 1.4 2010/01/18 17:41:30 mickey Exp $
+;	$ABSD: syscalls.master,v 1.5 2010/01/19 18:44:40 mickey Exp $
 
 ;	from: @(#)syscalls.master	8.2 (Berkeley) 1/13/94
 
@@ -71,7 +71,7 @@
 			    int dev); }
 15	STD		{ int freebsd_sys_chmod(char *path, int mode); }
 16	STD		{ int freebsd_sys_chown(char *path, int uid, int gid); }
-17	NOARGS		{ int sys_obreak(char *nsize); } break
+17	NOARGS		{ int compat_43_sys_obreak(char *nsize); } break
 18	STD		{ int freebsd_sys_getfsstat(struct freebsd_statfs *buf,\
 			    long bufsize, int flags); }
 19	NOARGS		{ long compat_43_sys_lseek(int fd, long offset, \
@@ -110,7 +110,7 @@
 40	STD		{ int compat_43_freebsd_sys_lstat(char *path, \
 			    struct stat43 *ub); } lstat43
 41	NOARGS		{ int sys_dup(u_int fd); }
-42	NOARGS		{ int sys_opipe(void); }
+42	NOARGS		{ int compat_43_sys_opipe(void); }
 43	NOARGS		{ gid_t sys_getegid(void); }
 44	NOARGS		{ int sys_profil(caddr_t samples, u_int size, \
 			    u_int offset, u_int scale); }
@@ -146,8 +146,8 @@
 66	NOARGS		{ int sys_vfork(void); }
 67	OBSOL		vread
 68	OBSOL		vwrite
-69	NOARGS		{ int sys_sbrk(int incr); }
-70	NOARGS		{ int sys_sstk(int incr); }
+69	OBSOL		sbrk
+70	OBSOL		sstk
 71	NOARGS		{ int compat_43_sys_mmap(caddr_t addr, size_t len, \
 			    int prot, int flags, int fd, long pos); } ommap
 72	OBSOL		vadvise

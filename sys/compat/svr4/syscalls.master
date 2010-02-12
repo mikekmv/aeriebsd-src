@@ -1,4 +1,4 @@
-;	$ABSD: syscalls.master,v 1.3 2010/01/18 17:24:23 mickey Exp $
+;	$ABSD: syscalls.master,v 1.4 2010/01/18 17:41:31 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -91,7 +91,7 @@
 39	STD		{ int svr4_sys_pgrpsys(int cmd, int pid, int pgid); }
 40	UNIMPL		xenix
 41	NOARGS		{ int sys_dup(u_int fd); }
-42	NOARGS		{ int sys_opipe(void); }
+42	NOARGS		{ int compat_43_sys_opipe(void); }
 43	STD		{ int svr4_sys_times(struct tms *tp); }
 44	UNIMPL		profil
 45	UNIMPL		plock

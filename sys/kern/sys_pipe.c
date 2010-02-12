@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996 John S. Dyson
  * All rights reserved.
@@ -100,7 +99,7 @@ int	pipespace(struct pipe *, u_int);
 
 /* ARGSUSED */
 int
-sys_opipe(struct proc *p, void *v, register_t *retval)
+compat_43_sys_opipe(struct proc *p, void *v, register_t *retval)
 {
 	struct filedesc *fdp = p->p_fd;
 	struct file *rf, *wf;
