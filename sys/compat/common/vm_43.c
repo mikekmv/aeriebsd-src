@@ -144,3 +144,72 @@ compat_43_sys_swapon(struct proc *p, void *v, register_t *retval)
 	SCARG(&ua, misc) = 0;	/* priority */
 	return (sys_swapctl(p, &ua, retval));
 }
+
+int
+compat_43_sys_obreak(struct proc *p, void *v, register_t *retval)
+{
+	struct compat_43_sys_obreak_args /* {
+		syscallarg(char *) nsize;
+	} */ *uap = v;
+	struct vmspace *vm = p->p_vmspace;
+	vaddr_t new, old;
+	int error;
+
+	old = (vaddr_t)vm->vm_daddr;
+	new = round_page((vaddr_t)SCARG(uap, nsize));
+	if ((new - old) > p->p_rlimit[RLIMIT_DATA].rlim_cur)
+		return (ENOMEM);
+
+	old = round_page(old + ptoa(vm->vm_dsize));
+
+	if (new == old)
+		return (0);
+
+	/*
+	 * grow or shrink?
+	 */
+	if (new > old) {
+		error = uvm_map(&vm->vm_map, &old, new - old, NULL,
+		    UVM_UNKNOWN_OFFSET, 0,
+		    UVM_MAPFLAG(UVM_PROT_RW, UVM_PROT_RWX, UVM_INH_COPY,
+		    UVM_ADV_NORMAL, UVM_FLAG_AMAPPAD|UVM_FLAG_FIXED|
+		    UVM_FLAG_OVERLAY|UVM_FLAG_COPYONW));
+		if (error) {
+			uprintf("sbrk: grow %ld failed, error = %d\n",
+			    new - old, error);
+			return (ENOMEM);
+		}
+		vm->vm_dsize += atop(new - old);
+	} else {
+		uvm_deallocate(&vm->vm_map, new, old - new);
+		vm->vm_dsize -= atop(old - new);
+	}
+
+	return (0);
+}
+
+/* ARGSUSED */
+int
+compat_43_sys_sbrk(struct proc *p, void *v, register_t *retval)
+{
+#if 0
+	struct compat_43_sys_sbrk_args /* {
+		syscallarg(int) incr;
+	} */ *uap = v;
+#endif
+
+	return (ENOSYS);
+}
+
+/* ARGSUSED */
+int
+compat_43_sys_sstk(struct proc *p, void *v, register_t *retval)
+{
+#if 0
+	struct compat_43_sys_sstk_args /* {
+		syscallarg(int) incr;
+	} */ *uap = v;
+#endif
+
+	return (ENOSYS);
+}

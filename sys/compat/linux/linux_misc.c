@@ -310,13 +310,14 @@ linux_sys_brk(p, v, retval)
 		syscallarg(char *) nsize;
 	} */ *uap = v;
 	char *nbrk = SCARG(uap, nsize);
-	struct sys_obreak_args oba;
+	struct compat_43_sys_obreak_args oba;
 	struct vmspace *vm = p->p_vmspace;
 	struct linux_emuldata *ed = (struct linux_emuldata*)p->p_emuldata;
 
 	SCARG(&oba, nsize) = nbrk;
 
-	if ((caddr_t) nbrk > vm->vm_daddr && sys_obreak(p, &oba, retval) == 0)
+	if ((caddr_t) nbrk > vm->vm_daddr &&
+	    compat_43_sys_obreak(p, &oba, retval) == 0)
 		ed->p_break = (char*)nbrk;
 	else
 		nbrk = ed->p_break;
@@ -766,7 +767,7 @@ linux_sys_pipe(p, v, retval)
 	int reg_edx = retval[1];
 #endif /* __i386__ */
 
-	if ((error = sys_opipe(p, 0, retval))) {
+	if ((error = compat_43_sys_opipe(p, 0, retval))) {
 #ifdef __i386__
 		retval[1] = reg_edx;
 #endif /* __i386__ */
