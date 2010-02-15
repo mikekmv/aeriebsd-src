@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1982, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -276,7 +275,6 @@ struct ether_multistep {
 
 extern struct ifnet *myip_ifp;
 
-int arpioctl(u_long, caddr_t);
 void arprequest(struct ifnet *, u_int32_t *, u_int32_t *, u_int8_t *);
 void revarpinput(struct mbuf *);
 void in_revarpinput(struct mbuf *);

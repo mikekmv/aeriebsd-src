@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1982, 1986, 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -811,15 +810,6 @@ arplookup(addr, create, proxy)
 		return (0);
 	}
 	return ((struct llinfo_arp *)rt->rt_llinfo);
-}
-
-int
-arpioctl(cmd, data)
-	u_long cmd;
-	caddr_t data;
-{
-
-	return (EOPNOTSUPP);
 }
 
 void
