@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.7 2010/02/12 18:18:06 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.8 2010/02/17 23:01:25 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -459,11 +459,8 @@ libdir_add(const char *path)
 	struct pathlist *pl;
 	size_t len;
 
-	if (stat(path, &sb) < 0)
-		err(1, "stat: %s", path);
-
-	if (!S_ISDIR(sb.st_mode))
-		errx(1, "%s: not a directory", path);
+	if (stat(path, &sb) < 0 || !S_ISDIR(sb.st_mode))
+		return 1;
 
 	if ((pl = calloc(1, sizeof *pl)) == NULL)
 		err(1, "calloc");
