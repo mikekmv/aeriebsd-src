@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.6 2010/01/12 03:18:33 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.7 2010/02/12 18:18:06 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -65,11 +65,12 @@ int relocatable;/* produce relocatable output */
 int strip;
 int errors;	/* non-fatal errors accumulated */
 int printmap;	/* print edit map to stdout */
+u_int64_t start_text, start_data, start_bss;
 const char *entry_name;
 struct symlist *sentry;
 struct ldorder *bsorder;
 
-#define OPTSTRING       "+c:C:dD:e:Ef:F:gh:il:L:m:MnNo:OqrR:sStT:u:vVxXy:Y:z:Z"
+#define OPTSTRING "+B:c:C:dD:e:Ef:F:gh:il:L:m:MnNo:OqrR:sStT:u:vVxXy:Y:z:Z"
 const struct option longopts[] = {
 	{ "as-needed",		no_argument,	&as_needed, 1 },
 	{ "no-as-needed",	no_argument,	&as_needed, 0 },
@@ -81,16 +82,10 @@ const struct option longopts[] = {
 	{ "pie",		no_argument,	&pie, 1 },
 	{ "pic-executable",	no_argument,	&pie, 1 },
 /*	{ "rpath",		required_argument,	0, '???' }, */
-	{ "section-start",	required_argument,	0, 0 },
-	{ "Ttext",		required_argument,	0, 0 },
-	{ "Tdata",		required_argument,	0, 0 },
-	{ "Tbss",		required_argument,	0, 0 },
+	{ "section-start",	required_argument,	0, 'T' },
 	{ "warn-common",	no_argument,	&warncomm, 1 },
-	{ "Bshared",		no_argument,	&Bflag, 2 },
 	{ "shared",		no_argument,	&Bflag, 2 },
-	{ "Bstatic",		no_argument,	&Bflag, 0 },
 	{ "static",		no_argument,	&Bflag, 0 },
-	{ "Bdynamic",		no_argument,	&Bflag, 1 },
 	{ "dc",			no_argument,		0, 'd' },
 	{ "dn",			no_argument,	&Bflag, 0 },
 	{ "dp",			no_argument,		0, 'd' },
@@ -167,6 +162,7 @@ int
 main(int argc, char *argv[])
 {
 	char output[MAXPATHLEN];
+	u_int64_t *pst;
 	FILE *fp;
 	int ch, li;
 
@@ -178,6 +174,18 @@ main(int argc, char *argv[])
 		switch (ch) {
 		case 0:
 			/* check out 'li' to see what matched */
+			break;
+
+		case 'B':	/* static/shared/dynamic */
+			if (!strcmp(argv[optind-1], "-Bstatic"))
+				Bflag = 0;
+			else if (!strcmp(argv[optind-1], "-Bshared"))
+				Bflag = 2;
+			else if (!strcmp(argv[optind-1], "-Bdynamic"))
+				Bflag = 1;
+			else
+				errx(1, "invalid \"%s\" option",
+				    argv[optind-1]);
 			break;
 
 		case 'c':	/* fini symbol */
@@ -247,14 +255,11 @@ main(int argc, char *argv[])
 		case 'q':	/* leave the relocs in after full linking */
 			break;
 
-		case 'R':	/* read in only symbols from this file(s) */
-			break;
-
 		case 'S':	/* strip only debugging info from the output */
 			strip |= LD_DEBUG;
 			break;
 
-		case 's':	/* strip all symbol info from the otput */
+		case 's':	/* strip all symbol info from the output */
 			strip |= LD_SYMTAB | LD_DEBUG;
 			break;
 
@@ -262,7 +267,33 @@ main(int argc, char *argv[])
 			trace++;
 			break;
 
-		case 'T':	/* read the linking script from file */
+		case 'T':	/* linking script or section start */
+			pst = NULL;
+			if (!strcmp(argv[optind-1], "--section-start"))
+				errx(1, "--section-start not supported");
+			else if (!strcmp(argv[optind-1], "-Ttext"))
+				pst = &start_text;
+			else if (!strcmp(argv[optind-1], "-Tdata"))
+				pst = &start_data;
+			else if (!strcmp(argv[optind-1], "-Tbss"))
+				pst = &start_bss;
+			else
+				errx(1, "invalid \"%s\" option",
+				    argv[optind-1]);
+			if (pst) {
+				char *ep, *p;
+
+				errno = 0;
+				p = argv[optind];
+				*pst = (u_int64_t)strtoull(p, &ep, 0);
+				if (p[0] == '\0' || *ep != '\0')
+					errx(1, "%s: invalid address", optarg);
+				if (errno == ERANGE && *pst == ULLONG_MAX)
+					errx(1, "%s: address is out", optarg);
+				optind++;
+			} else {
+				errx(1, "scripts are not supported");
+			}
 			break;
 
 		case 'u':	/* enter an undefined symbol */
@@ -320,6 +351,9 @@ main(int argc, char *argv[])
 			case 'l':	/* load the archive */
 				lib_add(*argv);
 				continue;
+
+			case 'R':	/* only symbols from this file(s) */
+				break;
 
 			default:
 				usage();
