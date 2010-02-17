@@ -48,7 +48,7 @@
  */
 #include "config.h"
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/wait.h>
 
 #include <ctype.h>
@@ -213,7 +213,7 @@ char *startfiles_S[] = STARTFILES_S;
 char *endfiles_S[] = ENDFILES_S;
 #endif
 #ifdef MULTITARGET
-char *mach = DEFMACH;
+char *mach = MACHINE_ARCH;
 struct cppmd {
 	char *mach;
 	char *cppmdadd[MAXCPPMDARGS];
