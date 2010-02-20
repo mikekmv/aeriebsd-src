@@ -1,0 +1,52 @@
+.\"
+.\" Copyright (c) 2009 Konrad Merz
+.\"
+.\" Permission to use, copy, modify, and distribute this software for
+.\" purpose with or without fee is hereby granted, provided that the
+.\" above copyright notice and this permission notice appear in all
+.\" copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+.\" WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+.\" WARRANTIES OFi MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL
+.\" THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR
+.\" OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+.\" LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+.\" NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF 
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: October 28 2009 $
+.Dt ICB 1
+.Os
+.Sh NAME
+.Nm icb
+.Nd "Internet Citizen's Band protocol daemon"
+.Sh SYNOPSIS
+.Nm icb
+.Op Ar -46
+.Op Ar -g group
+.Op Ar -n nick
+.Op Ar server[:port] 
+.Sh DESCRIPTION
+.Nm
+is a protocol client which allows peoples to chat online.
+.Pp
+The options are as follow:
+.Bl -tag -width "-g group"
+.It Fl 4
+Use IPv4 addresses only.
+.It Fl 6
+Use IPv4 addresses only.
+.It Fl g Xo
+.Ar group
+.Xc
+Join specified group after login.
+.It Fl n Xo
+.Ar nick
+.Xc
+Join with specified nick default is username.
+.It Fl h
+print usage.
+.Pp
+.Sh SEE ALSO
+.Xr icbd 8 ,
