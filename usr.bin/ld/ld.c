@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.8 2010/02/17 23:01:25 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.9 2010/02/17 23:16:04 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -352,6 +352,9 @@ main(int argc, char *argv[])
 				lib_add(*argv);
 				continue;
 
+			case 'g':	/* compatibility */
+				continue;
+
 			case 'R':	/* only symbols from this file(s) */
 				break;
 
@@ -510,9 +513,9 @@ lib_add(const char *path)
 				printf("%s (%s)\n", path, pathbuf);
 				ltrace = 0;
 			}
-			path = pathbuf;
-			if (access(path, F_OK) < 0)
+			if (access(pathbuf, F_OK) < 0)
 				continue;
+			path = pathbuf;
 			break;
 		}
 	}

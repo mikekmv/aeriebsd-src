@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.14 2010/02/12 19:40:03 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.15 2010/02/12 20:41:36 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -890,8 +890,9 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 			}
 		} else {
 			sym = isdef;
-			warnx("%s: multiply defined, previously in %s",
-			    nl.n_un.n_name, sym->sl_sect->os_obj->ol_name);
+			warnx("%s: %s: multiply defined, previously in %s",
+			    es->name, nl.n_un.n_name,
+			    sym->sl_sect->os_obj->ol_name);
 			errors++;
 		}
 	} else {
