@@ -63,7 +63,7 @@ struct pred1_state {
 };
 
 static int
-compress(struct pred1_state *state, u_char *source, u_char *dest, int len)
+pred_comp(struct pred1_state *state, u_char *source, u_char *dest, int len)
 {
   int i, bitmask;
   unsigned char *flagdest, flags, *orgdest;
@@ -192,7 +192,7 @@ Pred1Output(void *v, struct ccp *ccp, struct link *l, int pri, u_short *proto,
   fcs = hdlc_Fcs(bufp, 2 + orglen);
   fcs = ~fcs;
 
-  len = compress(state, bufp + 2, wp, orglen);
+  len = pred_comp(state, bufp + 2, wp, orglen);
   log_Printf(LogDEBUG, "Pred1Output: orglen (%d) --> len (%d)\n", orglen, len);
   ccp->uncompout += orglen;
   if (len < orglen) {
