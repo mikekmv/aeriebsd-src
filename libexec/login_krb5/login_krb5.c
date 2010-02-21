@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2001, 2002 Hans Insulander <hin@openbsd.org>.
  * All rights reserved.
@@ -34,7 +33,7 @@ krb5_context context;
 krb5_ccache ccache;
 krb5_principal princ;
 
-char *__progname;
+extern char *__progname;
 
 static void
 krb5_syslog(krb5_context context, int level, krb5_error_code code, char *fmt, ...)
