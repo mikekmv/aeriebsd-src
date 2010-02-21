@@ -60,9 +60,10 @@ int	fd_monitor = -1;
 int	fd_slave = -1;
 int	nullfd;
 pid_t	slave_pid = -1;
-enum monitor_state	state = PREAUTH;
 
-void	send_data(int, void *, size_t);
+static enum monitor_state	state = PREAUTH;
+static void	send_data(int, void *, size_t);
+
 void	recv_data(int, void *, size_t);
 void	handle_cmds(void);
 void	set_monitor_signals(void);
@@ -74,7 +75,7 @@ void	debugmsg(char *, ...);
 /*
  * Send data over a socket and exit if something fails.
  */
-void
+static void
 send_data(int sock, void *buf, size_t len)
 {
 	ssize_t n;
