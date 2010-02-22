@@ -33,7 +33,7 @@
 static char sccsid[] = "@(#)screen.c	8.2 (Berkeley) 4/20/94";
 #else
 static const char rcsid[] =
-    "$ABSD: screen.c,v 1.2 2009/05/11 22:08:14 mickey Exp $";
+    "$ABSD: screen.c,v 1.3 2009/09/17 12:36:49 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -93,8 +93,8 @@ int so_width, se_width;		/* Printing width of standout sequences */
  * and needed by, the termcap library.
  * It may be necessary on some systems to declare them extern here.
  */
-/*extern*/ short ospeed;	/* Terminal output baud rate */
-/*extern*/ char PC;		/* Pad character */
+extern short ospeed;	/* Terminal output baud rate */
+extern char PC;		/* Pad character */
 
 /*
  * Change terminal to "raw mode", or restore to "normal" mode.

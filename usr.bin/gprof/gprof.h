@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1983, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -209,19 +208,19 @@ bool	kflag;				/* arcs to be deleted */
 bool	sflag;				/* sum multiple gmon.out files */
 bool	zflag;				/* zero time/called functions, too */
 
-    /*
-     *	structure for various string lists
-     */
+/*
+ *	structure for various string lists
+ */
 struct stringlist {
-    struct stringlist	*next;
-    char		*string;
+	struct stringlist	*next;
+	char			*string;
 };
-struct stringlist	*elist;
-struct stringlist	*Elist;
-struct stringlist	*flist;
-struct stringlist	*Flist;
-struct stringlist	*kfromlist;
-struct stringlist	*ktolist;
+extern struct stringlist *elist;
+extern struct stringlist *Elist;
+extern struct stringlist *flist;
+extern struct stringlist *Flist;
+extern struct stringlist *kfromlist;
+extern struct stringlist *ktolist;
 
     /*
      *	function declarations
