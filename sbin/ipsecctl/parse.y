@@ -61,7 +61,7 @@ int		 yyparse(void);
 int		 yylex(void);
 int		 yyerror(const char *, ...);
 int		 kw_cmp(const void *, const void *);
-int		 lookup(char *);
+static int	 lookup(char *);
 int		 lgetc(int);
 int		 lungetc(int);
 int		 findeol(void);
@@ -870,7 +870,7 @@ kw_cmp(const void *k, const void *e)
 	return (strcmp(k, ((const struct keywords *)e)->k_name));
 }
 
-int
+static int
 lookup(char *s)
 {
 	/* this has to be sorted always */
