@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -88,7 +87,7 @@ int dfspag = 0;
 int dfsfwd = 0;
 #endif
 
-int forward_flags = 0;  /* Flags get set in telnet/main.c on -f and -F */
+int forward_flags;	/* Flags get set in telnet/main.c on -f and -F */
 
 int forward(int);
 int forwardable(int);
