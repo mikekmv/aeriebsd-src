@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1980, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -62,7 +61,6 @@ int	tapefd;		/* tape file descriptor */
 int	pipeout;	/* true => output to standard output */
 ino_t	curino;		/* current inumber; used globally */
 int	newtape;	/* new tape flag */
-int	density;	/* density in 0.1" units */
 off_t	tapesize;	/* estimated tape size, blocks */
 off_t	tsize;		/* tape size in 0.1" units */
 int	unlimited;	/* if set, write to end of medium */
@@ -70,14 +68,15 @@ off_t	asize;		/* number of 0.1" units written on current tape */
 int	etapes;		/* estimated number of tapes */
 int	nonodump;	/* if set, do not honor UF_NODUMP user flags */
 
-int	notify;		/* notify operator flag */
-int	blockswritten;	/* number of blocks written on current tape */
-int	tapeno;		/* current tape number */
+extern int density;	/* density in 0.1" units */
+extern int notify;	/* notify operator flag */
+extern int blockswritten; /* number of blocks written on current tape */
+extern int tapeno;	/* current tape number */
 time_t	tstart_writing;	/* when started writing the first tape block */
 long	xferrate;	/* averaged transfer rate of all volumes */
 struct	fs *sblock;	/* the file system super block */
 char	sblock_buf[MAXBSIZE];
-long	dev_bsize;	/* block size of underlying disk device */
+extern long dev_bsize;	/* block size of underlying disk device */
 int	dev_bshift;	/* log2(dev_bsize) */
 int	tp_bshift;	/* log2(TP_BSIZE) */
 

@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)itime.c	8.1 (Berkeley) 6/5/93";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: itime.c,v 1.1.1.1 2008/08/26 14:40:21 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -52,10 +52,10 @@ static const char rcsid[] = "$ABSD$";
 
 #include "dump.h"
 
-struct	dumpdates **ddatev = 0;
-int	nddates = 0;
-int	ddates_in = 0;
-struct	dumptime *dthead = 0;
+struct	dumpdates **ddatev;
+int	nddates;
+int	ddates_in;
+struct	dumptime *dthead;
 
 static	void dumprecout(FILE *, struct dumpdates *);
 static	int getrecord(FILE *, struct dumpdates *);

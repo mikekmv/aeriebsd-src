@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2002 Networks Associates Technology, Inc.
  * All rights reserved.
@@ -235,8 +234,8 @@ u_char	*stmap;			/* ptr to inode state and type table */
 int16_t	*lncntp;		/* ptr to link count table */
 
 ino_t	lfdir;			/* lost & found directory inode number */
-char	*lfname;		/* lost & found directory name */
-int	lfmode;			/* lost & found directory creation mode */
+extern char *lfname;		/* lost & found directory name */
+extern int lfmode;		/* lost & found directory creation mode */
 
 daddr64_t	n_blks;			/* number of blocks in use */
 daddr64_t	n_files;		/* number of files in use */
@@ -267,5 +266,5 @@ struct inoinfo *getinoinfo(ino_t);
 void getblk(struct bufarea *, daddr64_t, long);
 ino_t allocino(ino_t, int);
 
-int	(*info_fn)(char *, size_t);
-char	*info_filesys;
+extern int (*info_fn)(char *, size_t);
+extern char *info_filesys;
