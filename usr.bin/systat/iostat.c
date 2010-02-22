@@ -31,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)iostat.c   8.1 (Berkeley) 6/6/93";
 #endif
-static const char rcsid[] = "$ABSD: iostat.c,v 1.2 2008/12/26 18:52:12 mickey Exp $";
+static const char rcsid[] = "$ABSD: iostat.c,v 1.3 2009/02/26 12:38:25 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,7 +52,7 @@ struct bcachestats	bclast, bccur;
 
 static double etime;
 
-void showtotal(void);
+static void showtotal(void);
 void showdrive(int);
 void print_io(void);
 int read_io(void);
@@ -178,7 +178,7 @@ initiostat(void)
 	return(1);
 }
 
-void
+static void
 showtotal(void)
 {
 	double rsum, wsum, rtsum, wtsum, mssum;

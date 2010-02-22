@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1980, 1986, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -38,7 +37,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)vmstat.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: vmstat.c,v 1.2 2009/02/26 12:25:20 mickey Exp $";
+static const char rcsid[] = "$ABSD: vmstat.c,v 1.3 2009/03/19 16:47:21 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -74,7 +73,7 @@ static const char rcsid[] = "$ABSD: vmstat.c,v 1.2 2009/02/26 12:25:20 mickey Ex
 #include <uvm/uvm_object.h>
 #include <uvm/uvm_extern.h>
 
-struct nlist namelist[] = {
+static struct nlist namelist[] = {
 #define X_UVMEXP	0		/* sysctl */
 	{ "_uvmexp" },
 #define	X_BOOTTIME	1		/* sysctl */
