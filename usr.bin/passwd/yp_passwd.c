@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1988 The Regents of the University of California.
  * All rights reserved.
@@ -29,7 +28,7 @@
  */
 #ifndef lint
 /*static const char sccsid[] = "from: @(#)yp_passwd.c	1.0 2/2/93";*/
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: yp_passwd.c,v 1.1.1.1 2008/08/26 14:43:05 root Exp $";
 #endif /* not lint */
 
 #ifdef	YP
@@ -67,7 +66,7 @@ struct passwd	*ypgetpwnam(char *, int);
 char *domain;
 
 static int
-pw_error(char *name, int err, int eval)
+ypw_error(char *name, int err, int eval)
 {
 	if (err) {
 		if (name)
@@ -208,13 +207,13 @@ ypgetnewpasswd(struct passwd *pw, login_cap_t *lc, char **old_pass)
 			if (p == NULL ||
 			    strcmp(crypt(p, pw->pw_passwd), pw->pw_passwd)) {
 				errno = EACCES;
-				pw_error(NULL, 1, 1);
+				ypw_error(NULL, 1, 1);
 			}
 		} else
 			p = "";
 		*old_pass = strdup(p);
 		if (*old_pass == NULL)
-			pw_error(NULL, 1, 1);
+			ypw_error(NULL, 1, 1);
 	}
 
 	pwd_tries = pwd_gettries(lc);
@@ -222,7 +221,7 @@ ypgetnewpasswd(struct passwd *pw, login_cap_t *lc, char **old_pass)
 	for (buf[0] = '\0', tries = 0;;) {
 		p = getpass("New password:");
 		if (p == NULL || *p == '\0')
-			pw_error(NULL, 0, p == NULL ? 1 : 0);
+			ypw_error(NULL, 0, p == NULL ? 1 : 0);
 		if (strcmp(p, "s/key") == 0) {
 			printf("That password collides with a system feature. "
 			    "Choose another.\n");
@@ -239,11 +238,11 @@ ypgetnewpasswd(struct passwd *pw, login_cap_t *lc, char **old_pass)
 	}
 	if (!pwd_gensalt(salt, _PASSWORD_LEN, lc, 'y')) {
 		(void)printf("Couldn't generate salt.\n");
-		pw_error(NULL, 0, 0);
+		ypw_error(NULL, 0, 0);
 	}
 	p = strdup(crypt(buf, salt));
 	if (p == NULL)
-		pw_error(NULL, 1, 1);
+		ypw_error(NULL, 1, 1);
 	(void)signal(SIGINT, saveint);
 	(void)signal(SIGQUIT, savequit);
 
@@ -329,7 +328,7 @@ ypgetpwnam(char *nam, int secure)
 		free(__yplin);
 	__yplin = (char *)malloc(vallen + 1);
 	if (__yplin == NULL)
-		pw_error(NULL, 1, 1);
+		ypw_error(NULL, 1, 1);
 	strlcpy(__yplin, val, vallen + 1);
 	free(val);
 
