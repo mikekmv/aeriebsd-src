@@ -5,6 +5,4 @@ CFLAGS+=-Wall -Werror
 DPADD=	${LIBPLOT} ${LIBM}
 LDADD=	-lplot -lm
 
-DEBUG=-g
-
 .include <bsd.prog.mk>
