@@ -32,7 +32,7 @@
 #if 0
 static char sccsid[] = "@(#)err.c	8.1 (Berkeley) 5/31/93";
 #else
-static char rcsid[] = "$ABSD: error.c,v 1.1.1.1 2008/08/26 14:36:26 root Exp $";
+static char rcsid[] = "$ABSD: error.c,v 1.2 2008/12/26 18:50:17 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -43,8 +43,6 @@ static char rcsid[] = "$ABSD: error.c,v 1.1.1.1 2008/08/26 14:36:26 root Exp $";
 
 #include "csh.h"
 #include "extern.h"
-
-char   *seterr = NULL;	/* Holds last error if there was one */
 
 #define ERR_FLAGS	0xf0000000
 #define ERR_NAME	0x10000000

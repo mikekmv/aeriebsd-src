@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)file.c	8.2 (Berkeley) 3/19/94";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: file.c,v 1.1.1.1 2008/08/26 14:36:26 root Exp $";
 #endif
 #endif /* not lint */
 

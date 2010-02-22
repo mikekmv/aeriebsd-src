@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)lex.c	8.1 (Berkeley) 5/31/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: lex.c,v 1.1.1.1 2008/08/26 14:36:26 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -91,19 +90,19 @@ static struct wordent
  * which it can ungetD to be before history substitutions.
  */
 static Char peekc = 0, peekd = 0;
-static Char peekread = 0;
+static Char peekread;
 
 /* (Tail of) current word from ! subst */
-static Char *exclp = NULL;
+static Char *exclp;
 
 /* The rest of the ! subst words */
-static struct wordent *exclnxt = NULL;
+static struct wordent *exclnxt;
 
 /* Count of remaining words in ! subst */
-static int exclc = 0;
+static int exclc;
 
 /* "Globp" for alias resubstitution */
-Char *alvecp = NULL;
+Char **alvec, *alvecp;
 int aret = F_SEEK;
 
 /*

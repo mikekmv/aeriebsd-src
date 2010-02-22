@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -122,7 +121,7 @@ bool    timflg;			/* Time the next waited for command */
 bool    havhash;		/* path hashing is available */
 
 #ifdef FILEC
-bool    filec;			/* doing filename expansion */
+extern bool    filec;		/* doing filename expansion */
 #endif
 
 /*
@@ -428,7 +427,7 @@ struct varent *adrof1(Char *, struct varent *);
  */
 struct wordent *alhistp;	/* Argument list (first) */
 struct wordent *alhistt;	/* Node after last in arg list */
-Char  **alvec, *alvecp;		/* The (remnants of) alias vector */
+extern Char  **alvec, *alvecp;	/* The (remnants of) alias vector */
 
 /*
  * Filename/command name expansion variables
