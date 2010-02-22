@@ -129,7 +129,7 @@ attach	gscpm at pci
 file	arch/i386/pci/gscpm.c		gscpm
 
 # AMD Geode CS5536 PCI-ISA bridge
-device	glxpcib: isabus, gpiobus
+device	glxpcib: isabus, gpiobus, i2cbus
 attach	glxpcib at pci
 file	arch/i386/pci/glxpcib.c		glxpcib   
 

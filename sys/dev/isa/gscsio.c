@@ -46,11 +46,7 @@ struct gscsio_softc {
 	bus_space_handle_t sc_ld_ioh1[GSCSIO_LDNUM];
 
 	/* ACCESS.bus */
-	struct gscsio_acb {
-		void *sc;
-		bus_space_handle_t ioh;
-		struct rwlock buslock;
-	} sc_acb[2];
+	struct gscsio_acb sc_acb[2];
 	struct i2c_controller sc_acb1_tag;
 	struct i2c_controller sc_acb2_tag;
 };
@@ -91,10 +87,10 @@ struct cfdriver gscsio_cd = {
 	NULL, "gscsio", DV_DULL
 };
 
-#define ACB_READ(reg) \
-	bus_space_read_1(sc->sc_iot, acb->ioh, (reg))
-#define ACB_WRITE(reg, val) \
-	bus_space_write_1(sc->sc_iot, acb->ioh, (reg), (val))
+#define ACB_READ(acb,reg) \
+	bus_space_read_1((acb)->iot, (acb)->ioh, (reg))
+#define ACB_WRITE(acb, reg, val) \
+	bus_space_write_1((acb)->iot, (acb)->ioh, (reg), (val))
 
 static __inline u_int8_t
 idxread(bus_space_tag_t iot, bus_space_handle_t ioh, int idx)
@@ -204,17 +200,17 @@ gscsio_attach(struct device *parent, struct device *self, void *aux)
 
 	/* Initialize ACCESS.bus 1 */
 	if (sc->sc_ld_en[GSCSIO_LDN_ACB1]) {
-		sc->sc_acb[0].sc = sc;
+		sc->sc_acb[0].dev = &sc->sc_dev;
+		sc->sc_acb[0].iot = sc->sc_iot;
 		sc->sc_acb[0].ioh = sc->sc_ld_ioh0[GSCSIO_LDN_ACB1];
-		rw_init(&sc->sc_acb[0].buslock, "iiclk");
 		gscsio_acb_init(&sc->sc_acb[0], &sc->sc_acb1_tag);
 	}
 
 	/* Initialize ACCESS.bus 2 */
 	if (sc->sc_ld_en[GSCSIO_LDN_ACB2]) {
-		sc->sc_acb[1].sc = sc;
+		sc->sc_acb[1].dev = &sc->sc_dev;
+		sc->sc_acb[1].iot = sc->sc_iot;
 		sc->sc_acb[1].ioh = sc->sc_ld_ioh0[GSCSIO_LDN_ACB2];
-		rw_init(&sc->sc_acb[1].buslock, "iiclk");
 		gscsio_acb_init(&sc->sc_acb[1], &sc->sc_acb2_tag);
 	}
 }
@@ -222,19 +218,20 @@ gscsio_attach(struct device *parent, struct device *self, void *aux)
 void
 gscsio_acb_init(struct gscsio_acb *acb, i2c_tag_t tag)
 {
-	struct gscsio_softc *sc = acb->sc;
 	struct i2cbus_attach_args iba;
 
+	rw_init(&acb->buslock, "iiclk");
+
 	/* Enable ACB and configure clock frequency */
-	ACB_WRITE(GSCSIO_ACB_CTL2, GSCSIO_ACB_CTL2_EN |
+	ACB_WRITE(acb, GSCSIO_ACB_CTL2, GSCSIO_ACB_CTL2_EN |
 	    (GSCSIO_ACB_FREQ << GSCSIO_ACB_CTL2_FREQ_SHIFT));
 
 	/* Select polling mode */
-	ACB_WRITE(GSCSIO_ACB_CTL1, ACB_READ(GSCSIO_ACB_CTL1) &
+	ACB_WRITE(acb, GSCSIO_ACB_CTL1, ACB_READ(acb, GSCSIO_ACB_CTL1) &
 	    ~GSCSIO_ACB_CTL1_INTEN);
 
 	/* Disable slave address */
-	ACB_WRITE(GSCSIO_ACB_ADDR, ACB_READ(GSCSIO_ACB_ADDR) &
+	ACB_WRITE(acb, GSCSIO_ACB_ADDR, ACB_READ(acb, GSCSIO_ACB_ADDR) &
 	    ~GSCSIO_ACB_ADDR_SAEN);
 
 	/* Attach I2C framework */
@@ -250,28 +247,27 @@ gscsio_acb_init(struct gscsio_acb *acb, i2c_tag_t tag)
 	bzero(&iba, sizeof(iba));
 	iba.iba_name = "iic";
 	iba.iba_tag = tag;
-	config_found(&sc->sc_dev, &iba, iicbus_print);
+	config_found(acb->dev, &iba, iicbus_print);
 }
 
 int
 gscsio_acb_wait(struct gscsio_acb *acb, int bits, int flags)
 {
-	struct gscsio_softc *sc = acb->sc;
 	u_int8_t st;
 	int i;
 
 	for (i = 0; i < 100; i++) {
-		st = ACB_READ(GSCSIO_ACB_ST);
+		st = ACB_READ(acb, GSCSIO_ACB_ST);
 		if (st & GSCSIO_ACB_ST_BER) {
 			printf("%s: bus error, flags=0x%x\n",
-			    sc->sc_dev.dv_xname, flags);
+			    acb->dev->dv_xname, flags);
 			gscsio_acb_reset(acb);
 			return (EIO);
 		}
 		if (st & GSCSIO_ACB_ST_NEGACK) {
 #if 0
 			printf("%s: negative ack, flags=0x%x\n",
-			    sc->sc_dev.dv_xname, flags);
+			    acb->dev->dv_xname, flags);
 #endif
 			gscsio_acb_reset(acb);
 			return (EIO);
@@ -282,7 +278,7 @@ gscsio_acb_wait(struct gscsio_acb *acb, int bits, int flags)
 	}
 	if ((st & bits) != bits) {
 		printf("%s: timeout, flags=0x%x\n",
-		    sc->sc_dev.dv_xname, flags);
+		    acb->dev->dv_xname, flags);
 		gscsio_acb_reset(acb);
 		return (ETIMEDOUT);
 	}
@@ -293,23 +289,22 @@ gscsio_acb_wait(struct gscsio_acb *acb, int bits, int flags)
 void
 gscsio_acb_reset(struct gscsio_acb *acb)
 {
-	struct gscsio_softc *sc = acb->sc;
 	u_int8_t st, ctl;
 
 	/* Clear MASTER, NEGACK and BER */
-	st = ACB_READ(GSCSIO_ACB_ST);
+	st = ACB_READ(acb, GSCSIO_ACB_ST);
 	st |= GSCSIO_ACB_ST_MASTER | GSCSIO_ACB_ST_NEGACK | GSCSIO_ACB_ST_BER;
-	ACB_WRITE(GSCSIO_ACB_ST, st);
+	ACB_WRITE(acb, GSCSIO_ACB_ST, st);
 
 	/* Disable and re-enable ACB */
-	ACB_WRITE(GSCSIO_ACB_CTL2, 0);
-	ACB_WRITE(GSCSIO_ACB_CTL2, GSCSIO_ACB_CTL2_EN |
+	ACB_WRITE(acb, GSCSIO_ACB_CTL2, 0);
+	ACB_WRITE(acb, GSCSIO_ACB_CTL2, GSCSIO_ACB_CTL2_EN |
 	    (GSCSIO_ACB_FREQ << GSCSIO_ACB_CTL2_FREQ_SHIFT));
 
 	/* Send stop */
-	ctl = ACB_READ(GSCSIO_ACB_CTL1);
+	ctl = ACB_READ(acb, GSCSIO_ACB_CTL1);
 	ctl |= GSCSIO_ACB_CTL1_STOP;
-	ACB_WRITE(GSCSIO_ACB_CTL1, ctl);
+	ACB_WRITE(acb, GSCSIO_ACB_CTL1, ctl);
 }
 
 int
@@ -338,12 +333,11 @@ int
 gscsio_acb_send_start(void *cookie, int flags)
 {
 	struct gscsio_acb *acb = cookie;
-	struct gscsio_softc *sc = acb->sc;
 	u_int8_t ctl;
 
-	ctl = ACB_READ(GSCSIO_ACB_CTL1);
+	ctl = ACB_READ(acb, GSCSIO_ACB_CTL1);
 	ctl |= GSCSIO_ACB_CTL1_START;
-	ACB_WRITE(GSCSIO_ACB_CTL1, ctl);
+	ACB_WRITE(acb, GSCSIO_ACB_CTL1, ctl);
 
 	return (0);
 }
@@ -352,12 +346,11 @@ int
 gscsio_acb_send_stop(void *cookie, int flags)
 {
 	struct gscsio_acb *acb = cookie;
-	struct gscsio_softc *sc = acb->sc;
 	u_int8_t ctl;
 
-	ctl = ACB_READ(GSCSIO_ACB_CTL1);
+	ctl = ACB_READ(acb, GSCSIO_ACB_CTL1);
 	ctl |= GSCSIO_ACB_CTL1_STOP;
-	ACB_WRITE(GSCSIO_ACB_CTL1, ctl);
+	ACB_WRITE(acb, GSCSIO_ACB_CTL1, ctl);
 
 	return (0);
 }
@@ -366,15 +359,14 @@ int
 gscsio_acb_initiate_xfer(void *cookie, uint16_t addr, int flags)
 {
 	struct gscsio_acb *acb = cookie;
-	struct gscsio_softc *sc = acb->sc;
 	u_int8_t ctl;
 	int dir;
 	int error;
 
 	/* Issue start condition */
-	ctl = ACB_READ(GSCSIO_ACB_CTL1);
+	ctl = ACB_READ(acb, GSCSIO_ACB_CTL1);
 	ctl |= GSCSIO_ACB_CTL1_START;
-	ACB_WRITE(GSCSIO_ACB_CTL1, ctl);
+	ACB_WRITE(acb, GSCSIO_ACB_CTL1, ctl);
 
 	/* Wait for bus mastership */
 	if ((error = gscsio_acb_wait(acb,
@@ -383,7 +375,7 @@ gscsio_acb_initiate_xfer(void *cookie, uint16_t addr, int flags)
 
 	/* Send address byte */
 	dir = (flags & I2C_F_READ ? 1 : 0);
-	ACB_WRITE(GSCSIO_ACB_SDA, (addr << 1) | dir);
+	ACB_WRITE(acb, GSCSIO_ACB_SDA, (addr << 1) | dir);
 
 	return (0);
 }
@@ -392,7 +384,6 @@ int
 gscsio_acb_read_byte(void *cookie, uint8_t *bytep, int flags)
 {
 	struct gscsio_acb *acb = cookie;
-	struct gscsio_softc *sc = acb->sc;
 	u_int8_t ctl;
 	int error;
 
@@ -402,13 +393,13 @@ gscsio_acb_read_byte(void *cookie, uint8_t *bytep, int flags)
 
 	/* Acknowledge the last byte */
 	if (flags & I2C_F_LAST) {
-		ctl = ACB_READ(GSCSIO_ACB_CTL1);
+		ctl = ACB_READ(acb, GSCSIO_ACB_CTL1);
 		ctl |= GSCSIO_ACB_CTL1_ACK;
-		ACB_WRITE(GSCSIO_ACB_CTL1, ctl);
+		ACB_WRITE(acb, GSCSIO_ACB_CTL1, ctl);
 	}
 
 	/* Read data byte */
-	*bytep = ACB_READ(GSCSIO_ACB_SDA);
+	*bytep = ACB_READ(acb, GSCSIO_ACB_SDA);
 
 	return (0);
 }
@@ -417,7 +408,6 @@ int
 gscsio_acb_write_byte(void *cookie, uint8_t byte, int flags)
 {
 	struct gscsio_acb *acb = cookie;
-	struct gscsio_softc *sc = acb->sc;
 	u_int8_t ctl;
 	int error;
 
@@ -427,13 +417,13 @@ gscsio_acb_write_byte(void *cookie, uint8_t byte, int flags)
 
 	/* Send stop after the last byte */
 	if (flags & I2C_F_STOP) {
-		ctl = ACB_READ(GSCSIO_ACB_CTL1);
+		ctl = ACB_READ(acb, GSCSIO_ACB_CTL1);
 		ctl |= GSCSIO_ACB_CTL1_STOP;
-		ACB_WRITE(GSCSIO_ACB_CTL1, ctl);
+		ACB_WRITE(acb, GSCSIO_ACB_CTL1, ctl);
 	}
 
 	/* Write data byte */
-	ACB_WRITE(GSCSIO_ACB_SDA, byte);
+	ACB_WRITE(acb, GSCSIO_ACB_SDA, byte);
 
 	return (0);
 }

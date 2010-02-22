@@ -1,7 +1,6 @@
-
 /*
+ * Copyright (c) 2007,2010 Michael Shalayeff
  * Copyright (c) 2007 Marc Balmer <marc@msys.ch>
- * Copyright (c) 2007 Michael Shalayeff
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -18,7 +17,8 @@
  */
 
 /*
- * AMD CS5536 series LPC bridge also containing timer, watchdog, and GPIO.
+ * AMD CS5536 series LPC bridge also containing
+ * timer, watchdog, SMBus and GPIO.
  */
 
 #include <sys/param.h>
@@ -32,6 +32,8 @@
 #include <machine/cpufunc.h>
 
 #include <dev/gpio/gpiovar.h>
+#include <dev/i2c/i2cvar.h>
+#include <dev/isa/gscsioreg.h>
 #include <dev/pci/pcireg.h>
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcidevs.h>
@@ -119,6 +121,40 @@
 #define AMD5536_GPIO_IN_INVRT_EN 0x24	/* invert input */
 #define	AMD5536_GPIO_READ_BACK	0x30	/* read back value */
 
+/* i2c */
+#define	MSR_LBAR_SMB		0x5140000b
+#define	AMD5536_SMBSDA		0x00
+#define	AMD5536_SMBST		0x01
+#define	AMD5536_SMBST_XMIT	0x01
+#define	AMD5536_SMBST_MASTER	0x02
+#define	AMD5536_SMBST_NMATCH	0x04
+#define	AMD5536_SMBST_STASTR	0x08
+#define	AMD5536_SMBST_NEGACK	0x10
+#define	AMD5536_SMBST_BER	0x20
+#define	AMD5536_SMBST_SDAST	0x40
+#define	AMD5536_SMBST_SLVSTP	0x80
+#define	AMD5536_SMBCST		0x02
+#define	AMD5536_SMBCST_BUSY	0x01
+#define	AMD5536_SMBCST_BB	0x02
+#define	AMD5536_SMBCST_MATCH	0x04
+#define	AMD5536_SMBCST_GCMTCH	0x08
+#define	AMD5536_SMBCST_TSDA	0x10
+#define	AMD5536_SMBCST_TGSCL	0x20
+#define	AMD5536_SMBCTL1		0x03
+#define	AMD5536_SMBCTL1_START	0x01
+#define	AMD5536_SMBCTL1_STOP	0x02
+#define	AMD5536_SMBCTL1_INTEN	0x04
+#define	AMD5536_SMBCTL1_ACK	0x10
+#define	AMD5536_SMBCTL1_GCMEN	0x20
+#define	AMD5536_SMBCTL1_NMINTE	0x40
+#define	AMD5536_SMBCTL1_STASTRE	0x80
+#define	AMD5536_SMBADDR		0x04
+#define	AMD5536_SMBADDR_SAEN	0x80
+#define	AMD5536_SMBCTL2		0x05
+#define	AMD5536_SMBCTL2_SCLFRQ	0x80
+#define	AMD5536_SMBCTL3		0x06
+#define	AMD5536_SMBCTL3_SCLFRQ	0x80
+
 struct glxpcib_softc {
 	struct device		sc_dev;
 
@@ -128,10 +164,13 @@ struct glxpcib_softc {
 
 #ifndef SMALL_KERNEL
 	/* GPIO interface */
-	bus_space_tag_t		sc_gpio_iot;
 	bus_space_handle_t	sc_gpio_ioh;
 	struct gpio_chipset_tag	sc_gpio_gc;
 	gpio_pin_t		sc_gpio_pins[AMD5536_GPIO_NPINS];
+
+	/* I2C interface, same as ACCESS.bus on SC1100 */
+	struct gscsio_acb sc_acb;
+	struct i2c_controller sc_acb_tag;
 #endif
 };
 
@@ -156,6 +195,11 @@ int     glxpcib_wdogctl_cb(void *, int);
 int	glxpcib_gpio_pin_read(void *, int);
 void	glxpcib_gpio_pin_write(void *, int, int);
 void	glxpcib_gpio_pin_ctl(void *, int, int);
+
+int	glxpcib_i2c_acquire_bus(void *, int);
+void	glxpcib_i2c_release_bus(void *, int);
+int	glxpcib_i2c_exec(void *, i2c_op_t, i2c_addr_t, const void *, size_t,
+	    void *, size_t, int);
 #endif
 
 const struct pci_matchid glxpcib_devices[] = {
@@ -164,7 +208,7 @@ const struct pci_matchid glxpcib_devices[] = {
 
 int
 glxpcib_match(struct device *parent, void *match, void *aux)
-{ 
+{
 	if (pci_matchbyid((struct pci_attach_args *)aux, glxpcib_devices,
 	    sizeof(glxpcib_devices) / sizeof(glxpcib_devices[0])))
 		return 2;
@@ -180,8 +224,11 @@ glxpcib_attach(struct device *parent, struct device *self, void *aux)
 #ifndef SMALL_KERNEL
 	struct pci_attach_args *pa = aux;
 	u_int64_t wa, ga;
+#if 0
+	struct i2cbus_attach_args iba;
+#endif
 	struct gpiobus_attach_args gba;
-	int i, gpio = 0;
+	int i;
 #endif
 
 	tc->tc_get_timecount = glxpcib_get_timecount;
@@ -200,8 +247,8 @@ glxpcib_attach(struct device *parent, struct device *self, void *aux)
 	/* Attach the watchdog timer */
 	sc->sc_iot = pa->pa_iot;
 	wa = rdmsr(MSR_LBAR_MFGPT);
-	if (wa & 0x100000000ULL &&
-	    !bus_space_map(sc->sc_iot, wa & 0xffff, 64, 0, &sc->sc_ioh)) {
+	if ((wa & 0x100000000ULL) &&
+	    !bus_space_map(sc->sc_iot, wa & 0xffc0, 64, 0, &sc->sc_ioh)) {
 
 		/* count in seconds (as upper level desires) */
 		bus_space_write_2(sc->sc_iot, sc->sc_ioh, AMD5536_MFGPT0_SETUP,
@@ -212,10 +259,9 @@ glxpcib_attach(struct device *parent, struct device *self, void *aux)
 	}
 
 	/* map GPIO I/O space */
-	sc->sc_gpio_iot = pa->pa_iot;
 	ga = rdmsr(MSR_LBAR_GPIO);
-	if (ga & 0x100000000ULL &&
-	    !bus_space_map(sc->sc_gpio_iot, ga & 0xffff, 0xff, 0,
+	if ((ga & 0x100000000ULL) &&
+	    !bus_space_map(sc->sc_iot, ga & 0xff00, 0xff, 0,
 	    &sc->sc_gpio_ioh)) {
 		printf(", gpio");
 
@@ -242,14 +288,21 @@ glxpcib_attach(struct device *parent, struct device *self, void *aux)
 		gba.gba_gc = &sc->sc_gpio_gc;
 		gba.gba_pins = sc->sc_gpio_pins;
 		gba.gba_npins = AMD5536_GPIO_NPINS;
-		gpio = 1;
-
 	}
 #endif
 	pcibattach(parent, self, aux);
 #ifndef SMALL_KERNEL
-	if (gpio)
+	if (sc->sc_gpio_gc.gp_cookie)
 		config_found(&sc->sc_dev, &gba, gpiobus_print);
+
+	/* attach i2c */
+	sc->sc_acb.iot = sc->sc_iot;
+	ga = rdmsr(MSR_LBAR_SMB);
+	if ((ga & 0x100000000ULL) &&
+	    !bus_space_map(sc->sc_iot, ga & 0xfff8, 8, 0, &sc->sc_acb.ioh)) {
+		sc->sc_acb.dev = &sc->sc_dev;
+		gscsio_acb_init(&sc->sc_acb, &sc->sc_acb_tag);
+	}
 #endif
 }
 
@@ -296,14 +349,14 @@ glxpcib_gpio_pin_read(void *arg, int pin)
 		off = AMD5536_GPIOH_OFFSET;
 	}
 	reg += off;
-	data = bus_space_read_4(sc->sc_gpio_iot, sc->sc_gpio_ioh, reg);
+	data = bus_space_read_4(sc->sc_iot, sc->sc_gpio_ioh, reg);
 
 	if (data & (1 << pin))
 		reg = AMD5536_GPIO_READ_BACK + off;
 	else
 		reg = AMD5536_GPIO_OUT_VAL + off;
 
-	data = bus_space_read_4(sc->sc_gpio_iot, sc->sc_gpio_ioh, reg);
+	data = bus_space_read_4(sc->sc_iot, sc->sc_gpio_ioh, reg);
 
 	return data & 1 << pin ? GPIO_PIN_HIGH : GPIO_PIN_LOW;
 }
@@ -325,7 +378,7 @@ glxpcib_gpio_pin_write(void *arg, int pin, int value)
 	else
 		data = 1 << (pin + 16);
 
-	bus_space_write_4(sc->sc_gpio_iot, sc->sc_gpio_ioh, reg, data);
+	bus_space_write_4(sc->sc_iot, sc->sc_gpio_ioh, reg, data);
 }
 
 void
@@ -383,8 +436,40 @@ glxpcib_gpio_pin_ctl(void *arg, int pin, int flags)
 
 	/* set flags */
 	for (n = 0; n < nreg; n++)
-		bus_space_write_4(sc->sc_gpio_iot, sc->sc_gpio_ioh, reg[n],
+		bus_space_write_4(sc->sc_iot, sc->sc_gpio_ioh, reg[n],
 		    val[n]);
-} 
+}
 
+#if 0
+int
+glxpcib_i2c_acquire_bus(void *v, int flags)
+{
+	struct glxpcib_softc *sc = v;
+
+	if (cold || (flags & I2C_F_POLL))
+		return (0);
+
+	return (rw_enter(&sc->sc_i2c_lock, RW_WRITE | RW_INTR));
+}
+
+void
+glxpcib_i2c_release_bus(void *v, int flags)
+{
+	struct glxpcib_softc *sc = v;
+
+	if (cold || (flags & I2C_F_POLL))
+		return (0);
+
+	rw_exit(&sc->sc_i2c_lock);
+}
+
+int
+glxpcib_i2c_exec(void *v, i2c_op_t op, i2c_addr_t addr, const void *cmdbuf,
+    size_t cmdlen, void *buf, size_t len, int flags)
+{
+	struct glxpcib_softc *sc = v;
+
+	return 0;
+}
+#endif
 #endif

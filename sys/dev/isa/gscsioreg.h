@@ -18,6 +18,14 @@
  * National Semiconductor Geode SC1100 Super I/O register definitions.
  */
 
+struct gscsio_acb {
+	struct device *dev;
+	bus_space_tag_t iot;
+	bus_space_handle_t ioh;
+	struct rwlock buslock;
+};
+void gscsio_acb_init(struct gscsio_acb *, i2c_tag_t);
+
 #define GSCSIO_IOSIZE	2	/* I/O space size */
 
 /* Index-data register pair */
