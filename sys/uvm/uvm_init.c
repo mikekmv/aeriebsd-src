@@ -1,4 +1,3 @@
-
 /*
  *
  * Copyright (c) 1997 Charles D. Cranor and Washington University.
@@ -44,6 +43,7 @@
 #include <sys/resourcevar.h>
 #include <sys/mman.h>
 #include <sys/proc.h>
+#include <sys/kthread.h>
 #include <sys/malloc.h>
 #include <sys/vnode.h>
 
@@ -123,7 +123,11 @@ uvm_init()
 	 * kernel memory allocator (malloc) can be used.
 	 */
 
+	uvm_km_page_init();
 	kmeminit();
+#if !defined(__HAVE_PMAP_DIRECT)
+	kthread_create_deferred(uvm_km_createthread, NULL);
+#endif
 
 	/*
 	 * step 7: init all pagers and the pager_map.
@@ -146,8 +150,6 @@ uvm_init()
 	uvm_page_rehash();
 	uao_create(VM_MAX_KERNEL_ADDRESS - VM_MIN_KERNEL_ADDRESS,
 	    UAO_FLAG_KERNSWAP);
-
-	uvm_km_page_init();
 
 	/*
 	 * reserve some unmapped space for malloc/pool use after free usage

@@ -1,4 +1,3 @@
-
 /* 
  * Copyright (c) 1997 Charles D. Cranor and Washington University.
  * Copyright (c) 1991, 1993, The Regents of the University of California.  
@@ -815,7 +814,8 @@ uvm_km_page_init(void)
 	}
 
 	for (i = 0; i < uvm_km_pages_lowat * 4; i++) {
-		page = (void *)uvm_km_alloc(kernel_map, PAGE_SIZE);
+		page = (struct km_page *)uvm_km_kmemalloc(kernel_map,
+		    NULL, PAGE_SIZE, 0);
 		page->next = uvm_km_pages_head;
 		uvm_km_pages_head = page;
 	}
@@ -824,8 +824,6 @@ uvm_km_page_init(void)
 	/* tone down if really high */
 	if (uvm_km_pages_lowat > 512)
 		uvm_km_pages_lowat = 512;
-
-	kthread_create_deferred(uvm_km_createthread, NULL);
 }
 
 void
@@ -850,7 +848,8 @@ uvm_km_thread(void *arg)
 		if (i < want || uvm_km_pages_free >= uvm_km_pages_lowat)
 			tsleep(&uvm_km_pages_head, PVM, "kmalloc", 0);
 		for (i = 0; i < want; i++) {
-			page = (void *)uvm_km_alloc(kernel_map, PAGE_SIZE);
+			page = (struct km_page *)uvm_km_kmemalloc(kernel_map,
+			    NULL, PAGE_SIZE, 0);
 			if (i == 0)
 				head = tail = page;
 			if (page == NULL)

@@ -299,36 +299,6 @@ struct pv_entry {			/* locked by its list's pvh_lock */
 #define	PG_PMAP_REF	PG_PMAP1
 
 /*
- * pv_entrys are dynamically allocated in chunks from a single page.
- * we keep track of how many pv_entrys are in use for each page and
- * we can free pv_entry pages if needed.  There is one lock for the
- * entire allocation system.
- */
-
-struct pv_page_info {
-	TAILQ_ENTRY(pv_page) pvpi_list;
-	struct pv_entry *pvpi_pvfree;
-	int pvpi_nfree;
-};
-
-/*
- * number of pv_entries in a pv_page
- * (note: won't work on systems where NPBG isn't a constant)
- */
-
-#define PVE_PER_PVPAGE ((NBPG - sizeof(struct pv_page_info)) / \
-			sizeof(struct pv_entry))
-
-/*
- * a pv_page: where pv_entrys are allocated from
- */
-
-struct pv_page {
-	struct pv_page_info pvinfo;
-	struct pv_entry pvents[PVE_PER_PVPAGE];
-};
-
-/*
  * global kernel variables
  */
 

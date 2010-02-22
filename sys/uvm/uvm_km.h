@@ -1,4 +1,3 @@
-
 /*
  *
  * Copyright (c) 1997 Charles D. Cranor and Washington University.
@@ -47,6 +46,8 @@
  */
 
 void uvm_km_init(vaddr_t, vaddr_t);
+void uvm_km_thread(void *);
+void uvm_km_createthread(void *);
 void uvm_km_page_init(void);
 void uvm_km_pgremove(struct uvm_object *, vaddr_t, vaddr_t);
 void uvm_km_pgremove_intrsafe(vaddr_t, vaddr_t);
