@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
@@ -35,13 +34,13 @@ static char RCSid[] __attribute__((__unused__)) =
 "$From: expand.c,v 1.4 1999/08/04 15:57:33 christos Exp $";
 #else
 static char RCSid[] __attribute__((__unused__)) = 
-"$ABSD$";
+"$ABSD: expand.c,v 1.1.1.1 2008/08/26 14:43:09 root Exp $";
 #endif
 
 static char sccsid[] __attribute__((__unused__)) =
 "@(#)expand.c	5.2 (Berkeley) 3/28/86";
 
-char copyright[] __attribute__((__unused__)) =
+static char copyright[] __attribute__((__unused__)) =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
