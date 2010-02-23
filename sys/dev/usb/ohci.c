@@ -2727,10 +2727,6 @@ ohci_root_intr_abort(usbd_xfer_handle xfer)
 {
 	int s;
 
-	if (xfer->pipe->intrxfer == xfer) {
-		DPRINTF(("ohci_root_intr_abort: remove\n"));
-		xfer->pipe->intrxfer = NULL;
-	}
 	xfer->status = USBD_CANCELLED;
 	s = splusb();
 	usb_transfer_complete(xfer);
@@ -3064,10 +3060,6 @@ ohci_device_intr_start(usbd_xfer_handle xfer)
 void
 ohci_device_intr_abort(usbd_xfer_handle xfer)
 {
-	if (xfer->pipe->intrxfer == xfer) {
-		DPRINTF(("ohci_device_intr_abort: remove\n"));
-		xfer->pipe->intrxfer = NULL;
-	}
 	ohci_abort_xfer(xfer, USBD_CANCELLED);
 }
 

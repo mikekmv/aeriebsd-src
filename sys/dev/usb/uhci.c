@@ -2104,10 +2104,6 @@ void
 uhci_device_intr_abort(usbd_xfer_handle xfer)
 {
 	DPRINTFN(1,("uhci_device_intr_abort: xfer=%p\n", xfer));
-	if (xfer->pipe->intrxfer == xfer) {
-		DPRINTFN(1,("uhci_device_intr_abort: remove\n"));
-		xfer->pipe->intrxfer = NULL;
-	}
 	uhci_abort_xfer(xfer, USBD_CANCELLED);
 }
 
@@ -3430,10 +3426,6 @@ uhci_root_intr_abort(usbd_xfer_handle xfer)
 	timeout_del(&sc->sc_poll_handle);
 	sc->sc_intr_xfer = NULL;
 
-	if (xfer->pipe->intrxfer == xfer) {
-		DPRINTF(("uhci_root_intr_abort: remove\n"));
-		xfer->pipe->intrxfer = 0;
-	}
 	xfer->status = USBD_CANCELLED;
 #ifdef DIAGNOSTIC
 	UXFER(xfer)->iinfo.isdone = 1;
