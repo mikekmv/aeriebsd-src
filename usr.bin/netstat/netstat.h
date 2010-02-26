@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1992, 1993
  *	Regents of the University of California.  All rights reserved.
@@ -41,6 +40,7 @@ int	bflag;		/* show bytes instead of packets */
 int	dflag;		/* show i/f dropped packets */
 int	Fflag;		/* show routes whose gateways are in specified AF */
 int	gflag;		/* show group (multicast) routing or stats */
+int	hflag;		/* humanize byte counts */
 int	iflag;		/* show interfaces */
 int	lflag;		/* show routing table with use and ref */
 int	mflag;		/* show memory stats */

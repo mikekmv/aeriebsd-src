@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1983, 1988, 1993
  *	Regents of the University of California.  All rights reserved.
@@ -155,7 +154,8 @@ main(int argc, char *argv[])
 
 	af = AF_UNSPEC;
 
-	while ((ch = getopt(argc, argv, "AabdFf:gI:ilM:mN:np:P:qrsT:tuvW:w:")) != -1)
+	while ((ch = getopt(argc, argv,
+	    "AabdFf:ghI:ilM:mN:np:P:qrsT:tuvW:w:")) != -1)
 		switch (ch) {
 		case 'A':
 			Aflag = 1;
@@ -198,6 +198,9 @@ main(int argc, char *argv[])
 			break;
 		case 'g':
 			gflag = 1;
+			break;
+		case 'h':
+			hflag = 1;
 			break;
 		case 'I':
 			iflag = 1;

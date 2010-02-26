@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1983, 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -49,6 +48,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <util.h>
 
 #include "netstat.h"
 
@@ -310,10 +310,19 @@ hexprint:
 			putchar(' ');
 		break;
 	}
-	if (bflag)
-		printf("%10llu %10llu",
-		    ifd->ifi_ibytes, ifd->ifi_obytes);
-	else
+	if (bflag) {
+		char bbf[FMT_SCALED_STRSIZE];
+
+		if (!hflag || fmt_scaled(ifd->ifi_ibytes, bbf) == -1)
+			printf("%10llu ", ifd->ifi_ibytes);
+		else
+			printf("%10s ", bbf);
+
+		if (!hflag || fmt_scaled(ifd->ifi_obytes, bbf) == -1)
+			printf("%10llu", ifd->ifi_obytes);
+		else
+			printf("%10s", bbf);
+	} else
 		printf("%8llu %5llu %8llu %5llu %5llu",
 		    ifd->ifi_ipackets, ifd->ifi_ierrors,
 		    ifd->ifi_opackets, ifd->ifi_oerrors,
@@ -410,11 +419,23 @@ loop:
 
 	fetchifs();
 
-	if (bflag)
-		printf("%10llu %8.8s %10llu %5.5s",
-		    ip_cur.ift_ib - ip_old.ift_ib, " ",
-		    ip_cur.ift_ob - ip_old.ift_ob, " ");
-	else
+	if (bflag) {
+		char bbf[FMT_SCALED_STRSIZE];
+
+		if (!hflag ||
+		    fmt_scaled(ip_cur.ift_ib - ip_old.ift_ib, bbf) == -1)
+			printf("%10s %8.8s ", bbf, " ");
+		else
+			printf("%10llu %8.8s ",
+			    ip_cur.ift_ib - ip_old.ift_ib, " ");
+
+		if (!hflag ||
+		    fmt_scaled(ip_cur.ift_ob - ip_old.ift_ob, bbf) == -1)
+			printf("%10s %8.8s", bbf, " ");
+		else
+			printf("%10llu %8.8s",
+			    ip_cur.ift_ob - ip_old.ift_ob, " ");
+	} else
 		printf("%8llu %5llu %8llu %5llu %5llu",
 		    ip_cur.ift_ip - ip_old.ift_ip,
 		    ip_cur.ift_ie - ip_old.ift_ie,
@@ -428,11 +449,23 @@ loop:
 
 	ip_old = ip_cur;
 
-	if (bflag)
-		printf("  %10llu %8.8s %10llu %5.5s",
-		    sum_cur.ift_ib - sum_old.ift_ib, " ",
-		    sum_cur.ift_ob - sum_old.ift_ob, " ");
-	else
+	if (bflag) {
+		char bbf[FMT_SCALED_STRSIZE];
+
+		if (!hflag ||
+		    fmt_scaled(sum_cur.ift_ib - sum_old.ift_ib, bbf) == -1)
+			printf("  %10llu %8.8s ",
+			    sum_cur.ift_ib - sum_old.ift_ib, " ");
+		else
+			printf("  %10s %8.8s ", bbf, " ");
+
+		if (!hflag ||
+		    fmt_scaled(sum_cur.ift_ob - sum_old.ift_ob, bbf) == -1)
+			printf("  %10llu %8.8s",
+			    sum_cur.ift_ob - sum_old.ift_ob, " ");
+		else
+			printf("  %10s %8.8s", bbf, " ");
+	} else
 		printf("  %8llu %5llu %8llu %5llu %5llu",
 		    sum_cur.ift_ip - sum_old.ift_ip,
 		    sum_cur.ift_ie - sum_old.ift_ie,
