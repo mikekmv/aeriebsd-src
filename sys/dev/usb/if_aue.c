@@ -29,9 +29,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $FreeBSD: src/sys/dev/usb/if_aue.c,v 1.11 2000/01/14 01:36:14 wpaul Exp $
  */
-
 /*
  * ADMtek AN986 Pegasus and AN8511 Pegasus II USB to ethernet driver.
  * Datasheet is available from http://www.admtek.com.tw.
@@ -40,7 +38,6 @@
  * Electrical Engineering Department
  * Columbia University, New York City
  */
-
 /*
  * The Pegasus chip uses four USB "endpoints" to provide 10/100 ethernet
  * support: the control endpoint for reading/writing registers, burst
@@ -60,7 +57,6 @@
  * Registers are accessed using usbd_do_request(). Packet transfers are
  * done using usbd_transfer() and friends.
  */
-
 /*
  * Ported to NetBSD and somewhat rewritten by Lennart Augustsson.
  */
