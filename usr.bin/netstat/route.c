@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1983, 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -27,6 +26,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
+#ifndef lint
+#if 0
+static char sccsid[] = "@(#)route.c     8.6 (Berkeley) 4/28/95";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/protosw.h>

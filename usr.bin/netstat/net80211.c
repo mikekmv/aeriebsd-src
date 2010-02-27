@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Reyk Floeter <reyk@openbsd.org>
  *
@@ -14,6 +13,10 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif /* not lint */
 
 #include <sys/cdefs.h>
 #include <sys/param.h>

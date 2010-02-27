@@ -27,8 +27,15 @@
  * SUCH DAMAGE.
  */
 
+#ifndef lint
+#if 0
+static char sccsid[] = "@(#)if.c        8.3 (Berkeley) 4/28/95";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
+#endif /* not lint */
+
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>

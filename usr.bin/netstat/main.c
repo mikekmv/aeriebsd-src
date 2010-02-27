@@ -27,6 +27,17 @@
  * SUCH DAMAGE.
  */
 
+#ifndef lint
+static const char copyright[] =   
+"@(#) Copyright (c) 1983, 1988, 1993\n\
+	Regents of the University of California.  All rights reserved.\n";
+#if 0
+static char sccsid[] = "@(#)main.c      8.4 (Berkeley) 3/1/94";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
+#endif /* not lint */
+
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/protosw.h>

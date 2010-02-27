@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989 Stephen Deering
  * Copyright (c) 1992, 1993
@@ -31,7 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)mroute.c	8.1 (Berkeley) 6/6/93
  */
 
 /*
@@ -39,6 +37,14 @@
  *
  * MROUTING 1.0
  */
+
+#ifndef lint
+#if 0
+static char sccsid[] = "@(#)mroute.c    8.2 (Berkeley) 4/28/95";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/socket.h>

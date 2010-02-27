@@ -28,6 +28,10 @@
  * SUCH DAMAGE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif /* not lint */
+
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/socket.h>

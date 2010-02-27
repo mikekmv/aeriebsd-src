@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 1998 WIDE Project.
  * All rights reserved.
@@ -62,6 +61,10 @@
  *
  *	@(#)mroute.c	8.2 (Berkeley) 4/28/95
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/queue.h>
