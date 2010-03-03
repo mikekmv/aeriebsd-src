@@ -702,9 +702,7 @@ void
 ehci_idone(struct ehci_xfer *ex)
 {
 	usbd_xfer_handle xfer = &ex->xfer;
-#ifdef EHCI_DEBUG
 	struct ehci_pipe *epipe = (struct ehci_pipe *)xfer->pipe;
-#endif
 	ehci_soft_qtd_t *sqtd, *lsqtd;
 	u_int32_t status = 0, nstatus = 0;
 	int actlen, cerr;
@@ -781,7 +779,17 @@ ehci_idone(struct ehci_xfer *ex)
 			ehci_dump_sqtds(ex->sqtdstart);
 		}
 #endif
-		if ((status & EHCI_QTD_BABBLE) == 0 && cerr > 0)
+		/*
+		 * Endpoints operating in 'low' and 'full' speed have an extra
+		 * error flag (EHCI_QTD_PINGSTATE) if PID is OUT.
+		 */
+		if (EHCI_QTD_GET_PID(status) == EHCI_QTD_PID_OUT &&
+		    EHCI_QH_GET_EPS(epipe->sqh->qh.qh_endp) !=
+		    EHCI_QH_SPEED_HIGH)
+			status &= EHCI_QTD_STATERRS | EHCI_QTD_PINGSTATE;
+		else
+			status &= EHCI_QTD_STATERRS;
+		if (status == 0)
 			xfer->status = USBD_STALLED;
 		else
 			xfer->status = USBD_IOERROR; /* more info XXX */

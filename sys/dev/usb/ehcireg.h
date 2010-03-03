@@ -289,7 +289,7 @@ typedef struct {
 #define  EHCI_QTD_MISSEDMICRO	0x04
 #define  EHCI_QTD_SPLITXSTATE	0x02
 #define  EHCI_QTD_PINGSTATE	0x01
-#define  EHCI_QTD_STATERRS	0x7c
+#define  EHCI_QTD_STATERRS	0x3c
 #define EHCI_QTD_GET_PID(x)	(((x) >>  8) & 0x3)
 #define EHCI_QTD_SET_PID(x)	((x) <<  8)
 #define  EHCI_QTD_PID_OUT	0x0
