@@ -222,3 +222,4 @@ int rel_addrcmp(const void *, const void *);
 int rel_fixsyms(struct objlist *, struct symlist *, int);
 struct ldorder *order_clone(const struct ldarch *, const struct ldorder *);
 int order_printmap(const struct ldorder *, void *);
+int randombit(void);

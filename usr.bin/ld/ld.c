@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.9 2010/02/17 23:16:04 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.10 2010/02/20 16:14:27 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -41,7 +41,7 @@ static const char rcsid[] = "$ABSD: ld.c,v 1.9 2010/02/17 23:16:04 mickey Exp $"
 #include "ld.h"
 
 TAILQ_HEAD(, pathlist) libdirs = TAILQ_HEAD_INITIALIZER(libdirs);
-TAILQ_HEAD(, objlist) objlist = TAILQ_HEAD_INITIALIZER(objlist);
+TAILQ_HEAD(objhead, objlist) objlist = TAILQ_HEAD_INITIALIZER(objlist);
 
 /*
  * this object constain all the generated symbols and sections;
@@ -142,7 +142,7 @@ const struct ldarch *ldarch;
 
 int usage(void);
 int libdir_add(const char *);
-int obj_add(const char *, const char *, FILE *, off_t);
+int obj_add(const char *, const char *, FILE *, off_t, struct objlist *);
 int lib_add(const char *);
 int lib_namtab(const char *, FILE *, u_long, off_t, u_long);
 int lib_symdef(const char *, FILE *, u_long);
@@ -369,7 +369,7 @@ main(int argc, char *argv[])
 		if (trace)
 			printf("%s\n", *argv);
 
-		if (obj_add(*argv, NULL, fp, 0))
+		if (obj_add(*argv, NULL, fp, 0, NULL))
 			return 1;
 		fclose(fp);
 	}
@@ -650,6 +650,7 @@ lib_symdef(const char *path, FILE *fp, u_long len)
 int
 lib_namtab(const char *path, FILE *fp, u_long len, off_t symoff, u_long symlen)
 {
+	struct objlist *sol = TAILQ_LAST(&objlist, objhead);
 	char *p, *pp;
 	uint32_t num, *offs;
 	int i, more;
@@ -700,7 +701,7 @@ lib_namtab(const char *path, FILE *fp, u_long len, off_t symoff, u_long symlen)
 			 * any new undef syms
 			 */
 			more = 1;
-			obj_add(path, name, fp, foff + sizeof mh);
+			obj_add(path, name, fp, foff + sizeof mh, sol);
 			free(name);
 		}
 	}
@@ -793,7 +794,8 @@ obj_foreach(int (*func)(struct objlist *, void *), void *v)
  * needed for the second pass (mapping)
  */
 int
-obj_add(const char *path, const char *name, FILE *fp, off_t foff)
+obj_add(const char *path, const char *name, FILE *fp, off_t foff,
+    struct objlist *sol)
 {
 	off_t ofoff;
 	struct objlist *ol;
@@ -844,7 +846,10 @@ obj_add(const char *path, const char *name, FILE *fp, off_t foff)
 	} else
 		errx(1, "%s: bad format", path);
 
-	TAILQ_INSERT_TAIL(&objlist, ol, ol_entry);
+	if (sol && randombit())
+		TAILQ_INSERT_AFTER(&objlist, sol, ol, ol_entry);
+	else
+		TAILQ_INSERT_TAIL(&objlist, ol, ol_entry);
 	fseeko(fp, ofoff, SEEK_SET);
 	return 0;
 }

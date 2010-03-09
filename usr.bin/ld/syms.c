@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syms.c,v 1.4 2010/01/10 03:48:00 mickey Exp $";
+static const char rcsid[] = "$ABSD: syms.c,v 1.5 2010/01/10 05:56:01 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -276,4 +276,18 @@ order_printmap(const struct ldorder *order, void *v)
 	}
 
 	return 0;
+}
+
+int
+randombit(void)
+{
+	static uint32_t b;
+	static int i;
+
+	if (i == 0) {
+		b = arc4random();
+		i = 31;
+	}
+
+	return b & (1 << i--);
 }
