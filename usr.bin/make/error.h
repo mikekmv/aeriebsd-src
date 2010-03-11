@@ -44,7 +44,6 @@
 extern void Error(char *, ...);
 extern void Fatal(char *, ...);
 extern void Punt(char *, ...);
-extern void DieHorribly(void);
 extern void Finish(int);
 
 /*

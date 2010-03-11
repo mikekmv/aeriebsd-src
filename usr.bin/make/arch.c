@@ -109,6 +109,10 @@
 #undef MACHINE_ARCH
 #define MACHINE_ARCH TARGET_MACHINE_ARCH
 #endif
+#ifdef TARGET_MACHINE_CPU
+#undef MACHINE_CPU
+#define MACHINE_CPU TARGET_MACHINE_CPU
+#endif
 
 static struct ohash archives;	/* Archives we've already examined.  */
 
@@ -852,7 +856,7 @@ ArchTouch(const char *archive, const char *member)
 	arch = ArchFindMember(archive, member, &arHeader, "r+");
 	if (arch != NULL) {
 		snprintf(arHeader.ar_date, sizeof(arHeader.ar_date),
-		    "%-12ld", (long) timestamp2time_t(now));
+		    "%-12ld", (long) time(NULL));
 		if (fseek(arch, -sizeof(struct ar_hdr), SEEK_CUR) == 0)
 			(void)fwrite(&arHeader, sizeof(struct ar_hdr), 1, arch);
 		fclose(arch);

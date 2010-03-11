@@ -148,4 +148,5 @@ extern struct PathEntry *dot;
 /* Handles wildcard expansion on a given directory. */
 extern  void Dir_MatchFilesi(const char *, const char *, struct PathEntry *,
     Lst);
+extern char *PathEntry_name(struct PathEntry *);
 #endif /* DIR_H */

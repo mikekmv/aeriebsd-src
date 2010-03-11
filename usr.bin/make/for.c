@@ -171,7 +171,8 @@ For_Eval(const char *line)
 		LstNode ln;
 		(void)fprintf(stderr, "For: Iterator ");
 		for (ln = Lst_First(&arg->vars); ln != NULL; ln = Lst_Adv(ln))
-			(void)fprintf(stderr, "%s ", (char *)Lst_Datum(ln));
+			(void)fprintf(stderr, "%s ", 
+			    Var_LoopVarName(Lst_Datum(ln)));
 		(void)fprintf(stderr, "List %s\n", sub);
 	}
 
@@ -243,7 +244,7 @@ ForExec(void *valuep, void *argp)
 
 	if (DEBUG(FOR))
 		(void)fprintf(stderr, "--- %s = %s\n",
-		    (char *)Lst_Datum(arg->var), value);
+		    Var_LoopVarName(Lst_Datum(arg->var)), value);
 	Buf_Init(&buf, arg->guess);
 	Var_SubstVar(&buf, arg->text, Lst_Datum(arg->var), value);
 	if (arg->freeold)

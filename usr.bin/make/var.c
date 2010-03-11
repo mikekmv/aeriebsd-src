@@ -635,7 +635,7 @@ var_set_append(const char *name, const char *ename, const char *val, int ctxt,
 		if (DEBUG(VAR))
 			printf("global:%s = %s\n", v->name, var_get_value(v));
 	} else if (DEBUG(VAR))
-		printf("overriden:%s = %s\n", v->name, var_get_value(v));
+		printf("overridden:%s = %s\n", v->name, var_get_value(v));
 }
 
 void
@@ -1087,6 +1087,12 @@ Var_NewLoopVar(const char *name, const char *ename)
 	l->old = *(l->me);
 	l->me->flags = VAR_SEEN_ENV | VAR_DUMMY;
 	return l;
+}
+
+char *
+Var_LoopVarName(struct LoopVar *v)
+{
+	return v->me->name;
 }
 
 void

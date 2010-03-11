@@ -343,7 +343,7 @@ CondCvtArg(const char *str, double *value)
 			if (isdigit(*str))
 				x  = *str - '0';
 			else if (isxdigit(*str))
-				x = 10 + *str - isupper(*str) ? 'A' : 'a';
+				x = 10 + *str - (isupper(*str) ? 'A' : 'a');
 			else
 				return false;
 			i = (i << 4) + x;
@@ -1041,11 +1041,13 @@ Cond_Eval(const char *line)
 		if (condTop == MAXIF) {
 			Parse_Error(level, "if-less elif");
 			return COND_INVALID;
-		} else if (skipIfLevel != 0) {
-			/* If skipping this conditional, just ignore the whole
-			 * thing.  If we don't, the user might be employing a
-			 * variable that's undefined, for which there's an
-			 * enclosing ifdef that we're skipping...  */
+		} else if (skipIfLevel != 0 || condStack[condTop].value) {
+			/*
+			 * Skip if we're meant to or is an else-type
+			 * conditional and previous corresponding one was
+			 * evaluated to true.
+			 */
+			skipLine = true;
 			return COND_SKIP;
 		}
 	} else if (skipLine) {
@@ -1053,6 +1055,16 @@ Cond_Eval(const char *line)
 		 * if we're skipping things...  */
 		skipIfLevel++;
 		return COND_SKIP;
+	} else
+		condTop--;
+
+	if (condTop < 0) {
+		/* This is the one case where we can definitely proclaim a fatal
+		 * error. If we don't, we're hosed.  */
+		Parse_Error(PARSE_FATAL, "Too many nested if's. %d max.", 
+		    MAXIF);
+		condTop = 0;
+		return COND_INVALID;
 	}
 
 	if (ifp->defProc) {
@@ -1091,32 +1103,11 @@ err:
 		}
 	}
 
-	if (!ifp->isElse)
-		condTop--;
-	else if (skipIfLevel != 0 || condStack[condTop].value) {
-		/* If this is an else-type conditional, it should only take
-		 * effect if its corresponding if was evaluated and false. If
-		 * its if was true or skipped, we return COND_SKIP (and start
-		 * skipping in case we weren't already), leaving the stack
-		 * unmolested so later elif's don't screw up...  */
-		skipLine = true;
-		return COND_SKIP;
-	}
-
-	if (condTop < 0) {
-		/* This is the one case where we can definitely proclaim a fatal
-		 * error. If we don't, we're hosed.  */
-		Parse_Error(PARSE_FATAL, "Too many nested if's. %d max.", 
-		    MAXIF);
-		condTop = 0;
-		return COND_INVALID;
-	} else {
 		condStack[condTop].value = value;
 		condStack[condTop].lineno = Parse_Getlineno();
 		condStack[condTop].filename = Parse_Getfilename();
 		skipLine = !value;
 		return value ? COND_PARSE : COND_SKIP;
-	}
 }
 
 void

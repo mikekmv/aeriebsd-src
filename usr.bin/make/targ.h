@@ -57,7 +57,7 @@ extern GNode *Targ_FindNodeih(const char *, const char *, uint32_t, int);
 
 extern inline GNode *
 Targ_FindNodeh(const char *, size_t, uint32_t, int);
-static inline GNode *
+extern inline GNode *
 Targ_FindNodeh(const char *name, size_t n, uint32_t hv, int flags)
 {
 	return Targ_FindNodeih(name, name + n - 1, hv, flags);
@@ -75,7 +75,7 @@ struct ohash_info;
 
 extern struct ohash_info gnode_info;
 
-extern void look_harder_for_target(GNode *);
 extern void Targ_setdirs(const char *, const char *);
 const char *status_to_string(GNode *);
+struct ohash *targets_hash(void);
 #endif

@@ -105,6 +105,7 @@ static void record_option(int, const char *);
 
 static char *figure_out_MACHINE(void);
 static char *figure_out_MACHINE_ARCH(void);
+static char *figure_out_MACHINE_CPU(void);
 static void no_fd_limits(void);
 
 static char *chdir_verify_path(const char *, struct dirs *);
@@ -263,6 +264,9 @@ MainParseArgs(int argc, char **argv)
 				case 'm':
 					debug |= DEBUG_MAKE;
 					break;
+				case 'n':
+					debug |= DEBUG_NAME_MATCHING;
+					break;
 				case 'p':
 					debug |= DEBUG_PARALLEL;
 					break;
@@ -399,7 +403,7 @@ add_dirpath(Lst l, const char *n)
  * Get the name of this type of MACHINE from utsname so we can share an
  * executable for similar machines. (i.e. m68k: amiga hp300, mac68k, sun3, ...)
  *
- * Note that both MACHINE and MACHINE_ARCH are decided at
+ * Note that MACHINE, MACHINE_ARCH and MACHINE_CPU are decided at
  * run-time.
  */
 static char *
@@ -431,6 +435,23 @@ figure_out_MACHINE_ARCH()
 		r = "unknown";	/* XXX: no uname -p yet */
 #else
 		r = MACHINE_ARCH;
+#endif
+	}
+	return r;
+}
+static char *
+figure_out_MACHINE_CPU()
+{
+	char *r = getenv("MACHINE_CPU");
+	if (r == NULL) {
+#if !defined(MACHINE_CPU) && ! defined(MACHINE_ARCH)
+		r = "unknown";	/* XXX: no uname -p yet */
+#else
+#if defined(MACHINE_CPU)
+		r = MACHINE_CPU;
+#else
+		r = MACHINE_ARCH;
+#endif
 #endif
 	}
 	return r;
@@ -646,6 +667,7 @@ main(int argc, char **argv)
 	bool outOfDate = true;	/* false if all targets up to date */
 	char *machine = figure_out_MACHINE();
 	char *machine_arch = figure_out_MACHINE_ARCH();
+	char *machine_cpu = figure_out_MACHINE_CPU();
 	const char *syspath = _PATH_DEFSYSPATH;
 	char *p;
 	static struct dirs d;
@@ -699,6 +721,7 @@ main(int argc, char **argv)
 	Var_Set("MFLAGS", "");
 	Var_Set("MACHINE", machine);
 	Var_Set("MACHINE_ARCH", machine_arch);
+	Var_Set("MACHINE_CPU", machine_cpu);
 
 	/*
 	 * First snag any flags out of the MAKEFLAGS environment variable.

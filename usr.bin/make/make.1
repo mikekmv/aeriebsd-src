@@ -28,7 +28,7 @@
 .\"
 .\"	from: @(#)make.1	8.4 (Berkeley) 3/19/94
 .\"
-.Dd $Mdocdate: December 26 2008 $
+.Dd $Mdocdate: October 24 2009 $
 .Dt MAKE 1
 .Os
 .Sh NAME
@@ -171,6 +171,8 @@ Also known as loud behavior.
 .It Ar m
 Print debugging information about making targets, including modification
 dates.
+.It Ar n
+Print debugging information about target names equivalence computations.
 .It Ar p
 Help finding concurrency issues for parallel make by adding some
 randomization.
@@ -662,6 +664,15 @@ Name of the machine architecture
 was compiled for, obtained from the
 .Ev MACHINE_ARCH
 environment variable, or defined at compilation time.
+.It Va MACHINE_CPU
+Name of the machine processor
+.Nm
+was compiled for, obtained from the
+.Ev MACHINE_CPU
+environment variable, or defined at compilation time.
+On processors where only one endianness is possible, the value of this
+variable is always the same as
+.Ev MACHINE_ARCH .
 .It Va MAKEFILE
 Possibly the file name of the last makefile that has been read.
 It should not be used; see the
@@ -1150,7 +1161,7 @@ made before the sources that succeed it in the line.
 Loops are not
 detected and targets that form loops will be silently ignored.
 .El
-.Sh "SPECIAL TARGETS"
+.Sh SPECIAL TARGETS
 Special targets may not be included with other targets, i.e., they must be
 the only target specified.
 .Bl -tag -width ".NOTPARALLEL"
@@ -1276,6 +1287,7 @@ If no sources are specified, any previously specified suffixes are deleted.
 uses the following environment variables, if they exist:
 .Ev MACHINE ,
 .Ev MACHINE_ARCH ,
+.Ev MACHINE_CPU ,
 .Ev MAKEFLAGS ,
 .Ev MAKEOBJDIR ,
 .Ev MAKEOBJDIRPREFIX ,
@@ -1321,8 +1333,9 @@ directory
 The
 .Nm
 utility is compliant with the
-.St -p1003.1-2004
-specification.
+.St -p1003.1-2008
+specification,
+though its presence is optional.
 .Pp
 The flags
 .Op Fl BDdIjmPV
@@ -1394,9 +1407,7 @@ For loops are expanded before tests, so a fragment such as:
 .Pp
 won't work, and should be rewritten the other way around.
 .Pp
-When handling archives created on earlier than
-.Bx 4.4
-systems,
+When handling pre-BSD 4.4 archives,
 .Nm
 may erroneously mark archive members as out of date if the archive name
 was truncated.

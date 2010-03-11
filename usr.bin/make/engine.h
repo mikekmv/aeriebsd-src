@@ -37,12 +37,12 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-/* ok = Job_CheckCommands(node, abort);
+/* ok = Job_CheckCommands(node);
  *	verify the integrity of a node's commands, pulling stuff off
  * 	.DEFAULT and other places if necessary.
  */
-
-extern bool Job_CheckCommands(GNode *, void (*abortProc)(char *, ...));
+extern bool Job_CheckCommands(GNode *);
+extern void job_failure(GNode *, void (*abortProc)(char *, ...));
 /* Job_Touch(node);
  *	touch the path corresponding to a node or update the corresponding
  *	archive object.
@@ -68,13 +68,16 @@ extern void Make_DoAllVar(GNode *);
 extern volatile sig_atomic_t got_signal;
 
 extern volatile sig_atomic_t got_SIGINT, got_SIGHUP, got_SIGQUIT,
-    got_SIGTERM, got_SIGTSTP, got_SIGTTOU, got_SIGTTIN, got_SIGWINCH;
+    got_SIGTERM, got_SIGTSTP, got_SIGTTOU, got_SIGTTIN, got_SIGWINCH,
+    got_SIGCONT;
 
 extern void SigHandler(int);
 extern int run_gnode(GNode *);
-extern int run_prepared_gnode(GNode *, int);
+extern void run_gnode_parallel(GNode *);
 extern void expand_commands(GNode *);
 
-extern void setup_engine(void);
+extern void setup_engine(int);
+typedef void (*psighandler)(int);
+extern void setup_all_signals(psighandler, psighandler);
 
 #endif

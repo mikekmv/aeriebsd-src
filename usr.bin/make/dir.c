@@ -343,6 +343,12 @@ create_PathEntry(const char *name, const char *ename)
 	return p;
 }
 
+char *
+PathEntry_name(struct PathEntry *p)
+{
+	return p->name;
+}
+
 /* Side Effects: cache the current directory */
 void
 Dir_Init(void)
@@ -743,6 +749,9 @@ Dir_MTime(GNode *gn)
 	struct file_stamp *entry;
 	unsigned int slot;
 	TIMESTAMP	  mtime;
+
+	if (gn->type & OP_PHONY)
+		return gn->mtime;
 
 	if (gn->type & OP_ARCHV)
 		return Arch_MTime(gn);
