@@ -74,6 +74,9 @@ static char sccsid[] = "@(#)t8.c	4.5 (Berkeley) 4/18/91";
 int watchout;
 int once;
 int topat[MAXCOL];
+
+void putsize(char *);
+
 putline(i, nl)
 /* i is line number for deciding format */
 /* nl is line number for finding data   usually identical */
@@ -305,12 +308,13 @@ char *s, *size, *fn;
 funnies( stl, lin)
 {
 	/* write out funny diverted things */
-	int c, s, pl, lwid, dv, lf, ct;
+	int c, pl, lwid, dv, lf, ct;
+	long s;
 	char *fn;
-	fprintf(tabout, ".mk ##\n"); /* rmember current vertical position */
+	fprintf(tabout, ".mk ##\n"); /* remember current vertical position */
 	fprintf(tabout, ".nr %d \\n(##\n", S1); /* bottom position */
-	for(c=0; c<ncol; c++) {
-		s = table[lin][c].col;
+	for(c=0; c < ncol; c++) {
+		s = (long)table[lin][c].col;
 		if (point(s))
 			continue;
 		if (s==0)
@@ -371,8 +375,9 @@ char *fn;
 	if (fn && *fn)
 		fprintf(tabout, fn[1] ? "\\f(%.2s" : "\\f%.2s", fn);
 }
-putsize( s)
-char *s;
+
+void
+putsize(char *s)
 {
 	if (s && *s)
 		fprintf(tabout, "\\s%s",s);
