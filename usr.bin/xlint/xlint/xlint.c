@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994, 1995 Jochen Pohl
  * All Rights Reserved.
@@ -31,7 +30,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: xlint.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -307,22 +306,25 @@ main(int argc, char *argv[])
 	libs = xcalloc(1, sizeof (char *));
 	libsrchpath = xcalloc(1, sizeof (char *));
 
+#if 0	/* WHY in HELL? */
 	appcstrg(&cppflags, "-x");
 	appcstrg(&cppflags, "c");
+#endif
+#if defined(__GNUC__)
 	appcstrg(&cppflags, "-undef");
 	/* even with -undef cpp still identifies as GNUC */
 	appcstrg(&cppflags, "-U__GNUC__");
-#if defined(__GNUC__)
 #if __GNUC__ < 3
 	appcstrg(&cppflags, "-$");
 	appcstrg(&cppflags, "-C");
 #else
 	appcstrg(&cppflags, "-CC");
 #endif
-#endif
 	appcstrg(&cppflags, "-Wcomment");
-	appcstrg(&cppflags, "-D__OpenBSD__");
+#endif
+	appcstrg(&cppflags, "-D__AerieBSD__");
 	appcstrg(&cppflags, "-Dlint");		/* XXX don't def. with -s */
+	appcstrg(&cppflags, "-I/usr/include");
 	appdef(&cppflags, "lint");
 	appdef(&cppflags, "unix");
 
