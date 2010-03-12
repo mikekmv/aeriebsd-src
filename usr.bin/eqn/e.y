@@ -1,4 +1,4 @@
-%{#
+%{
 /*
  * Copyright (C) Caldera International Inc. 2001-2002.
  * All rights reserved.
@@ -81,7 +81,7 @@ static char sccsid[] = "@(#)shift.c	4.4 (Berkeley) 4/17/91";
 static char sccsid[] = "@(#)size.c	4.3 (Berkeley) 4/17/91";
 static char sccsid[] = "@(#)sqrt.c	4.5 (Berkeley) 3/1/93";
 #else
-static const char rcsid[] = "$ABSD: e.y,v 1.2 2009/10/24 15:30:57 mickey Exp $";
+static const char rcsid[] = "$ABSD: e.y,v 1.3 2009/11/03 14:32:48 mickey Exp $";
 #endif
 #endif /* not lint */
 
