@@ -5,7 +5,7 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	banner basename bc bdes bgplg biff \
 	cal calendar cap_mkdb cdio checknr chpass cmp col colcrt colrm \
 	column comm compile_et compress cpp crontab csplit ctags cut \
-	dc deroff diff diff3 dirname du encrypt env expand \
+	dc deroff diff diff3 dirname du encrypt env eqn expand \
 	false file file2c find fgen finger fmt fold from fsplit fstat ftp \
 	gencat getcap getconf getent getopt gprof graph grep gzsig \
 	head hexdump id indent infocmp ipcrm ipcs join jot \
@@ -19,9 +19,9 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	quota radioctl rcs rdist rdistd readlink renice rev \
 	rpcgen rpcinfo rs rsh rup ruptime rusers rwall rwho \
 	sdiff script sectok sed sendbug shar showmount skey \
-	skeyaudit skeyinfo skeyinit sort spell spline split \
+	skeyaudit skeyinfo skeyinit soelim sort spell spline split \
 	ssh stat strings strip su systat sudo \
-	tail talk tcopy tcpbench tee telnet tftp tic time tip tn3270 \
+	tail talk tbl tcopy tcpbench tee telnet tftp tic time tip tn3270 \
 	top touch tput tr true tset tsort tty \
 	usbhidaction usbhidctl ul uname unexpand unifdef uniq units \
 	unvis users uudecode uuencode vacation vgrind vi vis vmstat \
