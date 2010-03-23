@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.15 2010/02/12 20:41:36 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.16 2010/02/20 16:14:27 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -67,6 +67,7 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.15 2010/02/12 20:41:36 mickey Exp 
 #define	elf_symrec	elf32_symrec
 #define	elf_symwrite	elf32_symwrite
 #define	elf_names	elf32_names
+#define	elf_prefer	elf32_prefer
 #elif ELFSIZE == 64
 #define	ELF_HDR(h)	((h).elf64)
 #define	ELF_SYM(h)	((h).sym64)
@@ -100,6 +101,7 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.15 2010/02/12 20:41:36 mickey Exp 
 #define	elf_symrec	elf64_symrec
 #define	elf_symwrite	elf64_symwrite
 #define	elf_names	elf64_names
+#define	elf_prefer	elf64_prefer
 #else
 #error "Unsupported ELF class"
 #endif
@@ -114,6 +116,7 @@ int elf_symprintmap(const struct ldorder *, const struct section *,
     struct symlist *, void *);
 int elf_symwrite(const struct ldorder *, const struct section *,
     struct symlist *, void *);
+Elf_Off elf_prefer(Elf_Off, struct ldorder *, uint64_t);
 
 struct {
 	Elf_Note en;
@@ -241,7 +244,7 @@ ldmap(struct headorder headorder)
 	eh->e_shnum = sysobj.ol_nsect;
 
 	off = sizeof *eh + nphdr * sizeof *phdr;
-	point = __LDPGSZ + off;
+	point = (arc4random() & 0xffffff) + off;
 	TAILQ_FOREACH(ord, &headorder, ldo_entry) {
 
 		shdr = NULL;
@@ -252,21 +255,15 @@ ldmap(struct headorder headorder)
 
 		case ldo_expr:
 			/* mind the gap! */
-			point += (arc4random() & 0xfff) * __LDPGSZ;
+			point += (arc4random() & 0xffffff) + __LDPGSZ;
 			break;
 
 		case ldo_section:
 			/* this is the output section header */
 			shdr = ord->ldo_sect->os_sect;
-			ord->ldo_addr = ord->ldo_start = point;
-			align = shdr->sh_addralign;
-			ord->ldo_addr += align - 1;
-			ord->ldo_addr &= ~(align - 1);
-			if (shdr->sh_type != SHT_NOBITS)
-				off += ord->ldo_addr - ord->ldo_start;
-			shdr->sh_offset = off;
-			ord->ldo_start = ord->ldo_addr;
+			shdr->sh_offset = off = elf_prefer(off, ord, point);
 
+			ord->ldo_start = ord->ldo_addr;
 			/* roll thru all sections and map the symbols */
 			TAILQ_FOREACH(os, &ord->ldo_seclst, os_entry) {
 				shdr = os->os_sect;
@@ -398,6 +395,37 @@ ldmap(struct headorder headorder)
 	ELF_HDR(sysobj.ol_hdr).e_entry = ELF_SYM(sentry->sl_elfsym).st_value;
 
 	return TAILQ_FIRST(&headorder);
+}
+
+/*
+ * off had been calculated before and now only adjust the addr;
+ * align offset of the section in a.out according to [randomised]
+ * section load address
+ *
+ * XXX use of __LDPGSZ breaks cross-linking!!!
+ */
+Elf_Off
+elf_prefer(Elf_Off off, struct ldorder *ord, uint64_t point)
+{
+	uint64_t align, a;
+	Elf_Shdr *shdr = ord->ldo_sect->os_sect;
+	Elf_Off o;
+
+	ord->ldo_addr = point;
+	align = shdr->sh_addralign;
+	ord->ldo_addr += align - 1;
+	ord->ldo_addr &= ~(align - 1);
+	if (shdr->sh_type != SHT_NOBITS)
+		off += ord->ldo_addr - point;
+
+	a = ord->ldo_addr & (__LDPGSZ - 1);
+	o = off & (__LDPGSZ - 1);
+	if (o < a)
+		off += a - o;
+	else if (o > a)
+		off += __LDPGSZ - (o - a);
+
+	return off;
 }
 
 int
