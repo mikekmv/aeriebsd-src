@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.16 2010/02/20 16:14:27 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.17 2010/03/23 20:36:02 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -68,6 +68,7 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.16 2010/02/20 16:14:27 mickey Exp 
 #define	elf_symwrite	elf32_symwrite
 #define	elf_names	elf32_names
 #define	elf_prefer	elf32_prefer
+#define	elf_seek	elf32_seek
 #elif ELFSIZE == 64
 #define	ELF_HDR(h)	((h).elf64)
 #define	ELF_SYM(h)	((h).sym64)
@@ -102,6 +103,7 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.16 2010/02/20 16:14:27 mickey Exp 
 #define	elf_symwrite	elf64_symwrite
 #define	elf_names	elf64_names
 #define	elf_prefer	elf64_prefer
+#define	elf_seek	elf64_seek
 #else
 #error "Unsupported ELF class"
 #endif
@@ -117,6 +119,7 @@ int elf_symprintmap(const struct ldorder *, const struct section *,
 int elf_symwrite(const struct ldorder *, const struct section *,
     struct symlist *, void *);
 Elf_Off elf_prefer(Elf_Off, struct ldorder *, uint64_t);
+int elf_seek(FILE *, off_t, uint64_t);
 
 struct {
 	Elf_Note en;
@@ -376,16 +379,28 @@ ldmap(struct headorder headorder)
 				phdr->p_memsz = ord->ldo_addr - ord->ldo_start;
 				if (shdr->sh_type != SHT_NOBITS)
 					phdr->p_filesz = phdr->p_memsz;
-				phdr->p_align = phdr->p_type == PT_LOAD? __LDPGSZ : 4;
+				phdr->p_align = phdr->p_type == PT_LOAD?
+				    __LDPGSZ : 4;
 			} else
 				phdr->p_memsz = ord->ldo_addr - phdr->p_vaddr;
 		}
 	}
 
 	if (printmap) {
+		FILE *mfp;
+
+		if (!mapfile)
+			mfp = stdout;
+		else {
+			if (!(mfp = fopen(mapfile, "w")))
+				err(1, "fopen: %s", mapfile);
+		}
 		sym_scan(TAILQ_FIRST(&headorder), order_printmap,
-		    elf_symprintmap, NULL);
-		fflush(stdout);
+		    elf_symprintmap, mfp);
+		if (mapfile)
+			fclose(mfp);
+		else
+			fflush(mfp);
 	}
 
 	if (sym_undcheck())
@@ -428,6 +443,9 @@ elf_prefer(Elf_Off off, struct ldorder *ord, uint64_t point)
 	return off;
 }
 
+/*
+ * setup the note section using predefined content
+ */
 int
 elf_note(struct ldorder *neworder)
 {
@@ -437,6 +455,10 @@ elf_note(struct ldorder *neworder)
 	return 0;
 }
 
+/*
+ * add an absolute symbol most likely
+ * defined at the command line
+ */
 struct symlist *
 elf_absadd(const char *name)
 {
@@ -501,6 +523,10 @@ TODO
 	return 0;
 }
 
+/*
+ * called upon every symbol in order to determine
+ * the needs in the string table; calculate the sym name pointers
+ */
 int
 elf_symrec(const struct ldorder *order, const struct section *os,
     struct symlist *sym, void *v)
@@ -516,6 +542,9 @@ elf_symrec(const struct ldorder *order, const struct section *os,
 	return 0;
 }
 
+/*
+ * called upon every symbol in order to write out each one of them
+ */
 int
 elf_symwrite(const struct ldorder *order, const struct section *os,
     struct symlist *sym, void *v)
@@ -533,6 +562,9 @@ elf_symwrite(const struct ldorder *order, const struct section *os,
 	return 0;
 }
 
+/*
+ * called upon every output symbol in order to write out the strings
+ */
 int
 elf_names(const struct ldorder *order, const struct section *os,
     struct symlist *sym, void *v)
@@ -548,6 +580,10 @@ elf_names(const struct ldorder *order, const struct section *os,
 	return 0;
 }
 
+/*
+ * called upon every output symbol in order to produce
+ * the a.out file map
+ */
 int
 elf_symprintmap(const struct ldorder *order, const struct section *os,
     struct symlist *sym, void *v)
@@ -556,17 +592,20 @@ elf_symprintmap(const struct ldorder *order, const struct section *os,
 	Elf_Sym *esym = &ELF_SYM(sym->sl_elfsym);
 
 	if (os != prevos) {
-		printf("%-16s  %8s\t%s\n", "", "",
+		fprintf(v, "%-16s  %8s\t%s\n", "", "",
 		    sym->sl_sect->os_obj->ol_name);
 		prevos = os;
 	}
 
-	printf("%-16s0x%08lx\t\t%s\n", "",
+	fprintf(v, "%-16s0x%08lx\t\t%s\n", "",
 	    (u_long)esym->st_value, sym->sl_name);
 
 	return 0;
 }
 
+/*
+ * allocate commons
+ */
 int
 elf_commons(struct objlist *ol, void *v)
 {
@@ -593,6 +632,11 @@ elf_commons(struct objlist *ol, void *v)
 	return 0;
 }
 
+/*
+ * produce actual a.out
+ * scan through the orders and sections messing the bits
+ * and the headers; give special treatment to the symtab
+ */
 int
 ldload(const char *name, struct ldorder *order)
 {
@@ -633,8 +677,9 @@ ldload(const char *name, struct ldorder *order)
 		if (ord->ldo_type == SHT_NOBITS)
 			continue;
 
-		if (fseeko(fp, shdr->sh_offset, SEEK_SET))
-			err(1, "fseeko: %s", name);
+		/* TODO fill gaps with proper filler */
+		if (elf_seek(fp, shdr->sh_offset, ord->ldo_filler) < 0)
+			err(1, "elf_seek: %s", name);
 
 		/* done w/ meat -- generate symbols */
 		if (ord->ldo_type == SHT_SYMTAB) {
@@ -735,8 +780,8 @@ ldloadasect(FILE *fp, FILE *ofp, const char *name, const struct ldorder *ord,
 	Elf_Shdr *shdr = os->os_sect;
 	int len, bof;
 
-	if (fseeko(ofp, shdr->sh_offset, SEEK_SET) < 0)
-		err(1, "fseeko: %s", name);
+	if (elf_seek(ofp, shdr->sh_offset, ord->ldo_filler) < 0)
+		err(1, "elf_seek: %s", name);
 
 	if (fseeko(fp, os->os_off, SEEK_SET) < 0)
 		err(1, "fseeko: %s", os->os_obj->ol_name);
@@ -1051,6 +1096,10 @@ elf_ld_chkhdr(const char *path, Elf_Ehdr *eh, int type, int *mach,
 	return 0;
 }
 
+/*
+ * regular funky micro-loader that scans through one file
+ * and 
+ */
 int
 uLD(const char *name, char *v, int *size, int flags)
 {
@@ -1240,6 +1289,15 @@ uLD(const char *name, char *v, int *size, int flags)
 			    sh->sh_size);
 		}
 	*size -= k;
+
+	return 0;
+}
+
+int
+elf_seek(FILE *fp, off_t off, uint64_t filler)
+{
+	if (fseeko(fp, off, SEEK_SET) < 0)
+		return -1;
 
 	return 0;
 }

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.10 2010/02/20 16:14:27 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.11 2010/03/09 09:45:18 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -48,14 +48,14 @@ TAILQ_HEAD(objhead, objlist) objlist = TAILQ_HEAD_INITIALIZER(objlist);
  */
 struct objlist sysobj;
 
-int endian = ELFDATANONE;
-int elfclass = ELFCLASSNONE;
-int machine = EM_NONE;
+int endian;	/* ELFDATANONE */
+int elfclass;	/* ELFCLASSNONE */
+int machine;	/* EM_NONE */
 int magic = ZMAGIC;
 int as_needed;
 int Bflag;	/* 0 - static, 1 - dynamic, 2 - shlib */
 int Xflag;	/* 0 - keep, 1 - sieve temps, 2 - sieve all locals */
-int check_sections = 1;
+int check_sections;
 int cref;
 int nostdlib;
 int pie;
@@ -66,6 +66,7 @@ int strip;
 int errors;	/* non-fatal errors accumulated */
 int printmap;	/* print edit map to stdout */
 u_int64_t start_text, start_data, start_bss;
+char *mapfile;
 const char *entry_name;
 struct symlist *sentry;
 struct ldorder *bsorder;
@@ -233,7 +234,9 @@ main(int argc, char *argv[])
 			/* end of options proceede with loading */
 			break;
 
-		case 'M':	/* print linking map to stdout */
+		case 'M':	/* print linking map to stdout/mapfile */
+			if (!strcmp(argv[optind], "-Map"))
+				mapfile = argv[++optind];
 			printmap++;
 			break;
 

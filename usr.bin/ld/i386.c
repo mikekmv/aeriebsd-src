@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: i386.c,v 1.5 2010/01/10 06:58:02 mickey Exp $";
+static const char rcsid[] = "$ABSD: i386.c,v 1.6 2010/02/20 16:14:27 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -41,16 +41,21 @@ static const char rcsid[] = "$ABSD: i386.c,v 1.5 2010/01/10 06:58:02 mickey Exp 
 #define	ELF_STAB_IDXSTR	".stab.indexstr"
 #define	ELF_STAB_COMM	".comment"
 
+/* fill text with smth illigal to avoid nop slides */
+#define	XFILL	0xcecececececececeULL	/* into */
 const struct ldorder i386_order[] = {
 	{ ldo_symbol,	"_start", N_UNDF, 0, LD_ENTRY },
 	{ ldo_interp,	ELF_INTERP, SHT_PROGBITS, SHF_ALLOC,
-	  LD_CONTAINS | LD_DYNAMIC },
+			LD_CONTAINS | LD_DYNAMIC },
 	{ ldo_note,	ELF_NOTE, SHT_NOTE, SHF_ALLOC, LD_CONTAINS },
-	{ ldo_section,	ELF_INIT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR },
+	{ ldo_section,	ELF_INIT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
+			0, XFILL },
 	{ ldo_section,	ELF_PLT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
-	  LD_DYNAMIC },
-	{ ldo_section,	ELF_TEXT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR },
-	{ ldo_section,	ELF_FINI, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR },
+			LD_DYNAMIC, XFILL },
+	{ ldo_section,	ELF_TEXT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
+			0, XFILL },
+	{ ldo_section,	ELF_FINI, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
+			0, XFILL },
 	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
 	{ ldo_symbol,	"etext", N_ABS },
 	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },

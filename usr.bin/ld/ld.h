@@ -152,6 +152,7 @@ struct ldorder {
 #define	LD_CONTAINS	0x0200	/* contents is generated in ldo_wurst */
 #define	LD_SYMTAB	0x0400	/* this is a symtab or relevant section */
 #define	LD_ENTRY	0x1000	/* entry point */
+	uint64_t ldo_filler;	/* gap filler */
 
 	TAILQ_HEAD(, section) ldo_seclst;	/* all sections */
 	TAILQ_ENTRY(ldorder) ldo_entry;		/* list of the order */
@@ -166,6 +167,7 @@ struct ldorder {
 
 extern struct objlist sysobj;
 extern const char *entry_name;
+extern char *mapfile;
 extern struct ldorder *bsorder;
 extern int Bflag, Xflag, pie, errors, printmap, relocatable, strip, warncomm;
 extern int machine, endian, elfclass, magic;
