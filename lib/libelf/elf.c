@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.21 2010/02/12 18:36:15 mickey Exp $";
+    "$ABSD: elf.c,v 1.22 2010/02/12 18:38:13 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -415,6 +415,7 @@ elf2nlist(Elf_Sym *sym, const Elf_Ehdr *eh, const Elf_Shdr *shdr,
 	case STT_FUNC:
 		type = elf_shn2type(eh, sym->st_shndx, NULL);
 		np->n_type = type < 0? N_TEXT : type;
+		np->n_other = 't';
 		if (ELF_ST_BIND(sym->st_info) == STB_WEAK) {
 			np->n_type = N_INDR;
 			np->n_other = 'W';
@@ -687,7 +688,7 @@ elf_strip(const char *name, FILE *fp, const Elf_Ehdr *eh,
 			continue;
 		}
 
-		if (sp->sh_type != SHT_SYMTAB ||
+		if (sp->sh_type != SHT_SYMTAB || sp->sh_addr ||
 		    strcmp(shstr + sp->sh_name, ELF_SYMTAB)) {
 			if (off) {
 				warnx("%s: symtab in the middle", name);
@@ -715,7 +716,7 @@ elf_strip(const char *name, FILE *fp, const Elf_Ehdr *eh,
 		if (elf_save_shdrs(name, fp, 0, eh, shdr))
 			rv = 1;
 		else
-			*nszp = off;
+			*nszp = off - 2 * sizeof *shdr;
 	}
 
 	free(shstr);
