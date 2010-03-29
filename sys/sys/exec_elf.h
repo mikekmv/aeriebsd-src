@@ -359,7 +359,7 @@ typedef struct {
 /* Extract relocation info - r_info */
 #define ELF32_R_SYM(i)		((i) >> 8)
 #define ELF32_R_TYPE(i)		((unsigned char) (i))
-#define ELF32_R_INFO(s,t) 	(((s) << 8) + (unsigned char)(t))
+#define ELF32_R_INFO(s,t) 	(((Elf32_Word)(s) << 8) + (unsigned char)(t))
 
 typedef struct {
 	Elf64_Xword	r_offset;	/* where to do it */
@@ -374,7 +374,7 @@ typedef struct {
 
 #define	ELF64_R_SYM(info)	((info) >> 32)
 #define	ELF64_R_TYPE(info)	((info) & 0xFFFFFFFF)
-#define ELF64_R_INFO(s,t) 	(((s) << 32) + (__uint32_t)(t))
+#define ELF64_R_INFO(s,t) 	(((Elf64_Xword)(s) << 32) + (__uint32_t)(t))
 
 /* Program Header */
 typedef struct {
