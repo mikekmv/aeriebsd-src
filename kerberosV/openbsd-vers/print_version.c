@@ -36,7 +36,7 @@
 #define VERSIONLIST 		{ "heimdal-0.7.2/OpenBSD", }
 #define PACKAGE_BUGREPORT	"bugs@openbsd.org"
 
-char *__progname;
+extern char *__progname;
 
 void
 print_version(const char *progname)
