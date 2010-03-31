@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2004 Theo de Raadt <deraadt@openbsd.org>
  *
@@ -32,7 +31,8 @@ loadfirmware(const char *name, u_char **bufp, size_t *buflen)
 {
 	struct proc *p = curproc;
 	struct nameidata nid;
-	char *path, *ptr;
+	u_char *ptr;
+	char *path;
 	struct iovec iov;
 	struct uio uio;
 	struct vattr va;
