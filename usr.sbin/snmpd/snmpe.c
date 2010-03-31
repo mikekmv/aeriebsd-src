@@ -48,9 +48,9 @@ void	 snmpe_dispatch_parent(int, short, void *);
 int	 snmpe_bind(struct address *);
 void	 snmpe_recvmsg(int fd, short, void *);
 
-struct snmpd	*env = NULL;
+struct snmpd	*env;
 
-struct imsgbuf	*ibuf_parent;
+extern struct imsgbuf	*ibuf_parent;
 
 void
 snmpe_sig_handler(int sig, short event, void *arg)
