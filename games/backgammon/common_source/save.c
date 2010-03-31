@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1980, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)save.c	8.1 (Berkeley) 5/31/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: save.c,v 1.1.1.1 2008/08/26 14:36:42 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -42,7 +41,7 @@ static char rcsid[] = "$ABSD$";
 #include "back.h"
 
 static const char confirm[] = "Are you sure you want to leave now?";
-static const char prompt[] = "Enter a file name:  ";
+static const char prompt2[] = "Enter a file name:  ";
 static const char exist1[] = "The file '";
 static const char exist2[] =
 	"' already exists.\nAre you sure you want to use this file?";
@@ -70,7 +69,7 @@ save(n)
 	}
 	cflag = 1;
 	for (;;) {
-		addstr(prompt);
+		addstr(prompt2);
 		fs = fname;
 		while ((i = readc()) != '\n') {
 			if (i == KEY_BACKSPACE || i == 0177) {
