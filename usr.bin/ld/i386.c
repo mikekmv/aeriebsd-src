@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: i386.c,v 1.6 2010/02/20 16:14:27 mickey Exp $";
+static const char rcsid[] = "$ABSD: i386.c,v 1.7 2010/03/28 09:39:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -106,7 +106,7 @@ i386_fix(off_t off, struct section *os, char *sbuf, int len)
 	struct relist *rp = os->os_rels, *erp = rp + os->os_nrls;
 	Elf32_Shdr *shdr = os->os_sect;
 	char *p, *ep;
-	uint32_t v32, a32;
+	uint32_t a32;
 	int reoff;
 
 /* this evil little loop has to be optimised; for example store last rp on os */
@@ -140,12 +140,8 @@ i386_fix(off_t off, struct section *os, char *sbuf, int len)
 				    rp->rl_sym->sl_sect->os_sect)->sh_addr;
 			if (rp->rl_type == RELOC_PC32)
 				a32 -= shdr->sh_addr + rp->rl_addr;
-			/* it may be unaligned so copy out */
-			memcpy(&v32, p, sizeof v32);
-			v32 = letoh32(v32);
-			v32 += a32 + rp->rl_addend;
-			v32 = htole32(v32);
-			memcpy(p, &v32, sizeof v32);
+
+			i386_fixone(p, a32, rp->rl_addend, rp->rl_type);
 			break;
 
 		case RELOC_GOT32:
@@ -168,4 +164,22 @@ i386_fix(off_t off, struct section *os, char *sbuf, int len)
 	}
 
 	return 0;
+}
+
+int
+i386_fixone(char *p, uint64_t val, uint64_t addend, uint type)
+{
+	uint32_t v32;
+
+	switch (type) {
+	case RELOC_32:
+	case RELOC_PC32:
+		/* it may be unaligned so copy out */
+		memcpy(&v32, p, sizeof v32);
+		v32 = letoh32(v32);
+		v32 += val + addend;
+		v32 = htole32(v32);
+		memcpy(p, &v32, sizeof v32);
+		break;
+	}
 }

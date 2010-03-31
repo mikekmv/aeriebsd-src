@@ -176,6 +176,7 @@ extern const struct ldorder
     i386_order[], m68k_order[], mips_order[], ppc_order[],
     sh_order[], sparc_order[], sparc64_order[], vax_order[];
 int     i386_fix(off_t, struct section *, char *, int);
+int     i386_fixone(char *, uint64_t, uint64_t, uint);
 
 const struct ldarch *ldinit(void);
 int obj_foreach(int (*)(struct objlist *, void *), void *);

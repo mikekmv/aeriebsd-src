@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.17 2010/03/23 20:36:02 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.18 2010/03/28 09:39:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -564,6 +564,8 @@ elf_symwrite(const struct ldorder *order, const struct section *os,
 
 /*
  * called upon every output symbol in order to write out the strings
+ *
+ * TODO merge equal string (make string hash in syms.c)
  */
 int
 elf_names(const struct ldorder *order, const struct section *os,
@@ -993,10 +995,11 @@ int
 elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 {
 	struct section *os, *se;
+	struct relist *r, *er;
 	struct elf_symtab es;
 	Elf_Ehdr *eh;
 	Elf_Shdr *shdr;
-	int i, n;
+	int i, n, rv;
 
 	eh = &ELF_HDR(ol->ol_hdr);
 	elf_fix_header(eh);
@@ -1056,12 +1059,25 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 	ol->ol_sects = es.shdr;
 	ol->ol_snames = es.shstr;
 
-	/* (re)sort the relocs by the address for the loader's pleasure */
-	for (os = ol->ol_sections, se = os + n; os < se; os++)
+	for (rv = 0, os = ol->ol_sections, se = os + n; os < se; os++) {
+		/*
+		 * check all the relocs for resolved syms references;
+		 * accumulte the errors and then fail the loading
+		 */
+		for (r = os->os_rels, er = r + os->os_nrls; r < er; r++)
+			if (r->rl_sym == NULL) {
+				warnx("%s: unresolved reloc #%ld to sym #%d",
+				    ol->ol_name, r - os->os_rels, r->rl_symidx);
+				r->rl_sym = (void *)1; /* avoid more warnings */
+				rv++;
+			}
+
+		/* (re)sort the relocs by the addr for the loaders pleasure */
 		qsort(os->os_rels, os->os_nrls, sizeof *os->os_rels,
 		    rel_addrcmp);
+	}
 
-	return 0;
+	return rv;
 }
 
 /*
@@ -1097,6 +1113,19 @@ elf_ld_chkhdr(const char *path, Elf_Ehdr *eh, int type, int *mach,
 }
 
 /*
+ * seek forward in the output file and fill
+ * the gap with the filler
+ */
+int
+elf_seek(FILE *fp, off_t off, uint64_t filler)
+{
+	if (fseeko(fp, off, SEEK_SET) < 0)
+		return -1;
+
+	return 0;
+}
+
+/*
  * regular funky micro-loader that scans through one file
  * and 
  */
@@ -1107,7 +1136,7 @@ uLD(const char *name, char *v, int *size, int flags)
 	Elf_Shdr *shdr, *sh, *esh, *ssh;
 	Elf_Sym **syms;
 	char *strs, *estr, *p;
-	int i, j, k, nsyms, *nus;
+	int i, j, k, nsyms, *nus, *sect;
 
 	shdr = (Elf_Shdr *)(v + eh->e_shoff);
 	/* find the symbol table */
@@ -1145,10 +1174,20 @@ uLD(const char *name, char *v, int *size, int flags)
 	if (!(nus = calloc(nsyms, sizeof *nus)))
 		err(1, "calloc");
 
+	if (!(sect = calloc(eh->e_shnum, sizeof *sect)))
+		err(1, "calloc");
+
 	for (i = 0; i < nsyms; i++) {
 		syms[i] = (Elf_Sym *)(v + sh->sh_offset + i * sh->sh_entsize);
-		syms[i]->st_other = 0;
+		syms[i]->st_other = 1;
 		nus[i] = i;
+		if (ELF_ST_TYPE(syms[i]->st_info) == STT_SECTION) {
+			/* XXX for now do not care about MD sections */
+			if (syms[i]->st_shndx >= eh->e_shnum)
+				errx(1, "%s: invalid shndx in a sym #%d",
+				    name, i);
+			sect[syms[i]->st_shndx] = i;
+		}
 	}
 	strs = v + esh->sh_offset;
 	estr = strs + esh->sh_size;
@@ -1163,13 +1202,13 @@ uLD(const char *name, char *v, int *size, int flags)
 		if ((rsh = sh + 1) >= esh)
 			continue;
 
+		if (rsh->sh_type != SHT_REL && rsh->sh_type != SHT_RELA)
+			continue;
+
 		if (rsh->sh_offset >= *size ||
 		    rsh->sh_offset + rsh->sh_size > *size)
 			errx(1, "%s: corrupt section header #%ld",
 			    name, rsh - shdr);
-
-		if (rsh->sh_type != SHT_REL || rsh->sh_type != SHT_RELA)
-			continue;
 
 		if ((rsh->sh_type == SHT_REL &&
 		     rsh->sh_entsize < sizeof(Elf_Rel)) ||
@@ -1177,7 +1216,7 @@ uLD(const char *name, char *v, int *size, int flags)
 		     rsh->sh_entsize < sizeof(Elf_RelA)))
 			errx(1, "%s: invalid reloc entry size", name);
 
-		if (rsh->sh_size / rsh->sh_entsize)
+		if (rsh->sh_size / rsh->sh_entsize >= INT_MAX)
 			errx(1, "%s: too many relocs for section %ld",
 			    name, sh - shdr);
 
@@ -1190,8 +1229,13 @@ uLD(const char *name, char *v, int *size, int flags)
 			Elf_Sym *sym;
 			char *snam;
 
+			/* XXX this does not include the reloc size */
+			if (r->r_offset >= sh->sh_size)
+				errx(1, "%s: reloc #%d offset out of range",
+				     name, i);
+
 			if (ELF_R_SYM(r->r_info) >= nsyms)
-				errx(1, "%s: broken reloc %d for section %ld",
+				errx(1, "%s: broken reloc #%d for section %ld",
 				    name, i, sh - shdr);
 
 			sym = syms[ELF_R_SYM(r->r_info)];
@@ -1203,22 +1247,92 @@ uLD(const char *name, char *v, int *size, int flags)
 			if (sym->st_shndx == SHN_UNDEF)
 				continue;
 
-			if (sym->st_shndx >= eh->e_shnum)
-				errx(1, "%s: corrupt sym entry '%s'",
-				    name, snam);
+			/* skip well [un]defined symbols */
+			if (!sym->st_shndx || sym->st_shndx >= eh->e_shnum)
+				continue;
+
+			/* skip over non-local symbols */
+			if (ELF_ST_BIND(sym->st_info) != STB_LOCAL ||
+			    !((snam[0] == '.' && snam[1] == 'L') ||
+			    *snam == 'L' || flags > 1)) {
+				sym->st_other = 0;
+				continue;
+			}
+
 			/*
 			 * move over local syms's relocs to become
-			 * section-relative
+			 * section-relative;
+			 * relAs are easy -- just add to the addendum;
+			 * plain rels oughtta sought MD knowledge
 			 */
-			if (*snam == 'L' || (flags > 1 &&
-			    ELF_ST_BIND(sym->st_info) == STB_LOCAL)) {
-/* TODO fix the address in the text/data */
-				nus[ELF_R_SYM(r->r_info)] = sym->st_shndx;
-				/* mark it for recycling */
-				sym->st_other = 1;
-			}
+			if (rsh->sh_type == SHT_RELA)
+				ra += sym->st_value;
+			else
+				/* XXX hack in i386-only for now */
+				i386_fixone(v + sh->sh_offset + r->r_offset,
+				    sym->st_value, 0, ELF32_R_TYPE(r->r_info));
+
+			if (!sect[sym->st_shndx])
+				errx(1, "%s: misong section #%d",
+				    name, sym->st_shndx);
+			nus[ELF_R_SYM(r->r_info)] = sect[sym->st_shndx];
 		}
 	}
+
+	/* recycle syms; minimise calls to memcpy */
+	for (i = j = k = 0; i < nsyms; i++) {
+		Elf_Sym *sym;
+		char *snam;
+
+		sym = syms[i];
+		if (!sym->st_other) {
+			if (!k)
+				k = i;
+			continue;
+		}
+
+		/* skip over non-local symbols */
+		snam = strs + sym->st_name;
+		if (ELF_ST_BIND(sym->st_info) != STB_LOCAL ||
+		    !((snam[0] == '.' && snam[1] == 'L') ||
+		    *snam == 'L' || flags > 1)) {
+			sym->st_other = 0;
+			if (!k)
+				k = i;
+			continue;
+		}
+
+		/* mark the beginning of the free fragment */
+		if (j == 0) {
+			j = i;
+			k = 0;
+			continue;
+		}
+
+		/* still running through the locals */
+		if (!k)
+			continue;
+
+/*
+printf("hit %s i %d j %d k %d\n", snam, i, j, k);
+*/
+		memcpy(syms[j], syms[k], (i - k) * ssh->sh_entsize);
+		/* mark up new positions for the moved syms */
+		for (k = j + i - k; j < k; j++)
+			nus[i - (k - j)] = j;
+		k = 0;
+	}
+
+	/* extra step in case we had bunch of 'em before the end */
+	if (k && k < i) {
+/*
+printf("i %d j %d k %d\n", i, j, k);
+*/
+		memcpy(syms[j], syms[k], (i - k) * ssh->sh_entsize);
+		for (k = j + i - k; j < k; j++)
+			nus[i - (k - j)] = j;
+	}
+	nsyms = j;
 
 	/* run through the relocs again and map symbol refs */
 	for (sh = shdr, esh = sh + eh->e_shnum; sh < esh; sh++) {
@@ -1228,7 +1342,7 @@ uLD(const char *name, char *v, int *size, int flags)
 		if ((rsh = sh + 1) >= esh)
 			continue;
 
-		if (rsh->sh_type != SHT_REL || rsh->sh_type != SHT_RELA)
+		if (rsh->sh_type != SHT_REL && rsh->sh_type != SHT_RELA)
 			continue;
 
 		p = v + rsh->sh_offset;
@@ -1237,29 +1351,15 @@ uLD(const char *name, char *v, int *size, int flags)
 			Elf_Rel *r = (Elf_Rel *)(p + i * rsh->sh_entsize);
 			int ns = ELF_R_SYM(r->r_info);
 
-			r->r_info = ELF_R_INFO(ELF_R_TYPE(r->r_info), nus[ns]);
+/*
+printf("ns %d -> %d\n", ns, nus[ns]);
+*/
+			r->r_info = ELF_R_INFO(nus[ns], ELF_R_TYPE(r->r_info));
 		}
 	}
 
 	if (!flags)
 		return 0;
-
-	/* recycle syms; minimise calls to memcpy */
-	for (i = j = k = 0; i < nsyms; i++) {
-		if (!syms[i]->st_other)
-			continue;
-
-		if (!j)
-			k = j = i;
-		else if (k + 1 == i)
-			k++;
-		else {
-			memcpy(syms[j], syms[k], (i - k) * ssh->sh_entsize);
-			nsyms -= k - j;
-			i -= k - j;
-			k = j = i;
-		}
-	}
 
 	/* adjust .symtab size */
 	j = nsyms * ssh->sh_entsize;
@@ -1270,10 +1370,12 @@ uLD(const char *name, char *v, int *size, int flags)
 	p = v + sh->sh_offset;
 	*p++ = '\0';
 	/* generate .strtab; we assume copy would not overlap (; */
-	for (i = 1; i < nsyms; i++) {
+	for (j = i = 1; i < nsyms; i++) {
 		char *snam = strs + syms[i]->st_name;
-		if (!syms[i]->st_name)
+		/* skip those we have already put out */
+		if (syms[i]->st_name < j)
 			continue;
+		j = syms[i]->st_name;
 		syms[i]->st_name = p - (v + sh->sh_offset);
 		p += strlcpy(p, snam, sh->sh_size) + 1;
 	}
@@ -1289,15 +1391,6 @@ uLD(const char *name, char *v, int *size, int flags)
 			    sh->sh_size);
 		}
 	*size -= k;
-
-	return 0;
-}
-
-int
-elf_seek(FILE *fp, off_t off, uint64_t filler)
-{
-	if (fseeko(fp, off, SEEK_SET) < 0)
-		return -1;
 
 	return 0;
 }
