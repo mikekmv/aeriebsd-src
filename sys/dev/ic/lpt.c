@@ -372,7 +372,7 @@ lptwrite(dev, uio, flags)
 	int error = 0;
 
 	while ((n = min(LPT_BSIZE, uio->uio_resid)) != 0) {
-		uiomove(sc->sc_cp = sc->sc_inbuf->b_data, n, uio);
+		uiomove(sc->sc_cp = (u_int8_t *)sc->sc_inbuf->b_data, n, uio);
 		sc->sc_count = n;
 		error = lptpushbytes(sc);
 		if (error) {
