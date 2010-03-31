@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.18 2010/03/28 09:39:53 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.19 2010/03/31 20:44:55 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -933,7 +933,8 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 		os = NULL;
 	}
 
-	isdef = sym_isdefined(nl.n_un.n_name);
+	if ((isdef = sym_isdefined(nl.n_un.n_name)))
+		dsym = &ELF_SYM(isdef->sl_elfsym);
 	sym = sym_isundef(nl.n_un.n_name);
 	if ((nl.n_type & N_TYPE) == N_UNDF) {
 		if (isdef)
@@ -942,8 +943,8 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 			sym = sym_undef(nl.n_un.n_name);
 			sym->sl_sect = os;
 		}
-	} else if (isdef && (nl.n_type & N_EXT)) {
-		dsym = &ELF_SYM(isdef->sl_elfsym);
+	} else if (isdef && ELF_ST_BIND(dsym->st_info) != STB_LOCAL &&
+	    (nl.n_type & N_EXT)) {
 		if (esym->st_shndx == SHN_COMMON ||
 		    dsym->st_shndx == SHN_COMMON) {
 			if (esym->st_shndx == dsym->st_shndx)
