@@ -458,7 +458,7 @@ int
 uow_read(struct uow_softc *sc, void *buf, int len)
 {
 	usbd_status error;
-	int count;
+	u_int32_t count;
 
 	/* XXX: implement FIFO status monitoring */
 	if (len > DS2490_DATAFIFOSIZE) {
