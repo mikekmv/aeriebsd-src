@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -47,6 +46,7 @@
 #include <string.h>
 #include <term.h>
 #include <termios.h>
+#include <termcap.h>
 #include <unistd.h>
 
 #include "screen.h"
@@ -64,8 +64,6 @@ static void	stopset(int);
 /*
  * Capabilities from TERMCAP.
  */
-char	PC, *BC, *UP;		/* tgoto requires globals: ugh! */
-
 static char
 	*bcstr,			/* backspace char */
 	*CEstr,			/* clear to end of line */
