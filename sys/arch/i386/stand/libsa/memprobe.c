@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997-1999 Michael Shalayeff
  * Copyright (c) 1997-1999 Tobias Weingartner
@@ -226,7 +225,7 @@ addrprobe(u_int kloc)
 	u_int save[NENTS(addrprobe_pat)];
 
 	/* Get location */
-	loc = (int *)(kloc * 1024);
+	loc = (u_int *)(kloc * 1024);
 
 	save[0] = *loc;
 	/* Probe address */

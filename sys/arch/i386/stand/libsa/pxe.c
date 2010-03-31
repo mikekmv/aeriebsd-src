@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2001 Wasabi Systems, Inc.
  * All rights reserved.
@@ -113,7 +112,7 @@ BOOTPLAYER bootplayer;
 
 struct in_addr servip;			/* for tftp */	/* XXX init this */
 
-extern char *bootmac;			/* To pass to kernel */
+extern u_char *bootmac;			/* To pass to kernel */
 
 /* static struct btinfo_netif bi_netif; */
 

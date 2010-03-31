@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1996 Michael Shalayeff
  * Copyright (c) 2003 Tobias Weingartner
@@ -601,7 +600,7 @@ biosdisk_err(u_int error)
 	while (*p && *p != error)
 		while (*p++);
 
-	return ++p;
+	return (const char *)++p;
 }
 
 const struct biosdisk_errors {

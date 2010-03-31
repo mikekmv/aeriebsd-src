@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997 Michael Shalayeff
  * All rights reserved.
@@ -35,7 +34,7 @@
 char *const reg_names[] = { REG_NAMES };
 const int nreg = NENTS(reg_names);
 struct reg reg;
-u_int32_t *const reg_values[] = { REG_VALUES(reg) };
+int *const reg_values[] = { REG_VALUES(reg) };
 char *const trap_names[] = { TRAP_NAMES };
 
 void d_putc(dev_t, int);

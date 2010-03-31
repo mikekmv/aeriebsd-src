@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997-1998 Michael Shalayeff
  * Copyright (c) 1997 Tobias Weingartner
@@ -39,7 +38,7 @@
 typedef void (*startfuncp)(int, int, int, int, int, int, int, int)
     __attribute__ ((noreturn));
 
-char *bootmac = NULL;
+u_char *bootmac = NULL;
 
 void
 run_loadfile(u_long *marks, int howto)

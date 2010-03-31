@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997 Tobias Weingartner
  * All rights reserved.
@@ -349,7 +348,7 @@ disksum(int blk)
 {
 	struct diskinfo *dip, *dip2;
 	int st, reprobe = 0;
-	char *buf;
+	u_char *buf;
 
 	buf = alloca(DEV_BSIZE);
 	for (dip = TAILQ_FIRST(&disklist); dip; dip = TAILQ_NEXT(dip, list)) {
