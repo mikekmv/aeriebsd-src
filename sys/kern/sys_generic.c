@@ -485,11 +485,11 @@ sys_ioctl(struct proc *p, void *v, register_t *retval)
 	struct filedesc *fdp;
 	u_long com;
 	int error;
-	u_int size;
+	size_t size;
 	caddr_t data, memp;
 	int tmp;
 #define STK_PARAMS	128
-	char stkbuf[STK_PARAMS];
+	long stkbuf[STK_PARAMS];
 
 	fdp = p->p_fd;
 	if ((fp = fd_getfile(fdp, SCARG(uap, fd))) == NULL)
@@ -520,10 +520,10 @@ sys_ioctl(struct proc *p, void *v, register_t *retval)
 		memp = (caddr_t)malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
 		data = memp;
 	} else
-		data = stkbuf;
+		data = (caddr_t)stkbuf;
 	if (com&IOC_IN) {
 		if (size) {
-			error = copyin(SCARG(uap, data), data, (u_int)size);
+			error = copyin(SCARG(uap, data), data, size);
 			if (error) {
 				goto out;
 			}
@@ -600,7 +600,7 @@ sys_ioctl(struct proc *p, void *v, register_t *retval)
 	 * already set and checked above.
 	 */
 	if (error == 0 && (com&IOC_OUT) && size)
-		error = copyout(data, SCARG(uap, data), (u_int)size);
+		error = copyout(data, SCARG(uap, data), size);
 out:
 	FRELE(fp);
 	if (memp)
