@@ -1873,12 +1873,11 @@ ENTRY(i686_pagezero)
  *
  */
 ENTRY(himem_zefix)
-#ifdef DDB
 	pushl	%ebp
 	movl	%esp,%ebp
-#endif
 	pushf
 	cli
+	cld
 	pushl	%esi
 	pushl	%edi
 	movl	8(%ebp), %edi
@@ -1886,14 +1885,12 @@ ENTRY(himem_zefix)
 	addl	$KERNBASE, %esi
 	addl	$4*8, %edi	/* save current PD content */
 	movl	$8, %ecx
-	cld
 	rep
 	movsl
 	movl	8(%ebp), %esi	/* install our PDI */
 	movl	%cr3, %edi
 	addl	$KERNBASE, %edi
 	movl	$8, %ecx
-	cld
 	rep
 	movsl
 	movl	12(%ebp), %esi
@@ -1903,7 +1900,6 @@ ENTRY(himem_zefix)
 	movl	%cr4, %eax
 	orl	$(CR4_PAE|CR4_PSE), %eax
 	movl	%eax, %cr4	/* also flushes the hell out of TLBs */
-	cld
 	rep
 	movsl
 	movl	%cr4, %eax
@@ -1915,15 +1911,12 @@ ENTRY(himem_zefix)
 	addl	$KERNBASE, %edi
 	addl	$4*8, %esi
 	movl	$8, %ecx
-	cld
 	rep
 	movsl
 	popl	%edi
 	popl	%esi
 	popf
-#ifdef DDB
 	leave
-#endif
 	ret
 #endif
 

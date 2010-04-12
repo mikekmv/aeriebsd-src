@@ -104,15 +104,15 @@ void himem_create(void *);
 int
 himem_match(struct device *parent, void *match, void *aux)
 {
-	extern u_int64_t avail_end, avail_end2;
+	extern u_int64_t avail_end2;	/* from machdep.c */
 	struct cfdata *cf = match;
 
 	if (cf->cf_unit)
 		return 0;
 
 	/* if no PAE or too little memory then screw it */
-	if (!(cpu_feature & CPUID_PAE) || !avail_end2 ||
-	    (avail_end2 - avail_end) < 4 * HIMEM_MAXCMDS * PAGE_SIZE)
+	if (!(cpu_feature & CPUID_PAE) || avail_end2 < 0x100000000ULL ||
+	    (avail_end2 - 0x100000000ULL) < 4 * HIMEM_MAXCMDS * PAGE_SIZE)
 		return 0;
 
 	return 1;
@@ -181,7 +181,7 @@ himem_attach(struct device *parent, struct device *self, void *aux)
 	sc->sc_size = (avail_end2 - 0x100000000ULL) / DEV_BSIZE;
 	printf(": size %uMB\n", sc->sc_size / 2048);
 
-	/* set a fake diskalbel */
+	/* set a fake disklabel */
 	lp = (void *)uvm_km_zalloc(kernel_map, round_page(sizeof(*lp)));
 	if (lp) {
 		lp->d_secsize = DEV_BSIZE;
