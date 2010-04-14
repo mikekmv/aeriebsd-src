@@ -358,7 +358,10 @@ clocal(NODE *p)
 {
 
 	register struct symtab *q;
-	register NODE *r, *l, *s, *n;
+	register NODE *r, *l;
+#if defined(os_openbsd)
+	register NODE *s, *n;
+#endif
 	register int o;
 	register int m;
 	TWORD t;
@@ -690,7 +693,7 @@ clocal(NODE *p)
 		p->n_right = block(SCONV, p->n_right, NIL,
 		    CHAR, 0, MKSUE(CHAR));
 		break;
-#if defined(os_aeriebsd)
+#if defined(os_openbsd)
 		/* If not using pcc struct return */
 	case STASG:
 		r = p->n_right;
@@ -1234,6 +1237,7 @@ defzero(struct symtab *sp)
 {
 	int off;
 	int al;
+	char *name;
 
 #ifdef TLS
 	if (sp->sflags & STLS) {
@@ -1244,13 +1248,22 @@ defzero(struct symtab *sp)
 	}
 #endif
 
+	if ((name = sp->soname) == NULL)
+		name = exname(sp->sname);
 	al = talign(sp->stype, sp->ssue)/SZCHAR;
 	off = (int)tsize(sp->stype, sp->sdf, sp->ssue);
 	off = (off+(SZCHAR-1))/SZCHAR;
+#ifdef GCC_COMPAT
+	{
+		struct gcc_attrib *ga;
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_VISIBILITY)) &&
+		    strcmp(ga->a1.sarg, "default"))
+			printf("\t.%s %s\n", ga->a1.sarg, name);
+	}
+#endif
 	printf("	.%scomm ", sp->sclass == STATIC ? "l" : "");
 	if (sp->slevel == 0)
-		printf("%s,0%o",
-		    sp->soname ? sp->soname : exname(sp->sname), off);
+		printf("%s,0%o", name, off);
 	else
 		printf(LABFMT ",0%o", sp->soffset, off);
 	if (sp->sclass != STATIC) {

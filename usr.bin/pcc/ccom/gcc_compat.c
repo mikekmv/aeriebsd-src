@@ -102,9 +102,10 @@ gcc_init()
 		kwp->ptr = addname(kwp->name);
 
 	for (i = 0; i < 4; i++) {
+		struct symtab *sp;
 		t = ctype(g77t[i]);
 		p = block(NAME, NIL, NIL, t, NULL, MKSUE(t));
-		struct symtab *sp = lookup(addname(g77n[i]), 0);
+		sp = lookup(addname(g77n[i]), 0);
 		p->n_sp = sp;
 		defid(p, TYPEDEF);
 		nfree(p);
@@ -200,6 +201,7 @@ struct atax {
 	int typ;
 	char *name;
 } atax[GCC_ATYP_MAX] = {
+#ifndef __MSC__
 	[GCC_ATYP_ALIGNED] =	{ A_0ARG|A_1ARG, "aligned" },
 	[GCC_ATYP_PACKED] =	{ A_0ARG|A_1ARG, "packed" },
 	[GCC_ATYP_SECTION] = 	{ A_1ARG|A1_STR, "section" },
@@ -214,10 +216,63 @@ struct atax {
 	[GCC_ATYP_FORMATARG] =	{ A_1ARG, "format_arg" },
 	[GCC_ATYP_GNU_INLINE] =	{ A_0ARG, "gnu_inline" },
 	[GCC_ATYP_MALLOC] =	{ A_0ARG, "malloc" },
+	[GCC_ATYP_NOTHROW] =	{ A_0ARG, "nothrow" },
+	[GCC_ATYP_MODE] =	{ A_1ARG|A1_NAME, "mode" },
+	[GCC_ATYP_CONST] =	{ A_0ARG, "const" },
+	[GCC_ATYP_PURE] =	{ A_0ARG, "pure" },
+	[GCC_ATYP_CONSTRUCTOR] ={ A_0ARG, "constructor" },
+	[GCC_ATYP_DESTRUCTOR] =	{ A_0ARG, "destructor" },
+	[GCC_ATYP_VISIBILITY] =	{ A_1ARG|A1_STR, "visibility" },
+#else
+	{ 0, NULL },
+	{ A_0ARG|A_1ARG, "aligned" },
+	{ A_0ARG, "packed" },
+	{ A_1ARG|A1_STR, "section" },
+	{ 0, NULL }, 	/* GCC_ATYP_TRANSP_UNION */
+	{ A_0ARG, "unused" },
+	{ A_0ARG, "deprecated" },
+	{ 0, NULL }, 	/* GCC_ATYP_MAYALIAS */
+	{ A_1ARG|A1_NAME, "mode" },
+	{ A_0ARG, "noreturn" },
+	{ A_3ARG|A1_STR, "format" },
+	{ A_MANY, "nonnull" },
+	{ A_0ARG|A_1ARG, "sentinel" },
+	{ A_0ARG, "weak" },
+	{ A_1ARG, "format_arg" },
+	{ A_0ARG, "gnu_inline" },
+	{ A_0ARG, "malloc" },
+	{ A_0ARG, "nothrow" },
+	{ A_0ARG, "const" },
+	{ A_0ARG, "pure" },
+	{ A_0ARG, "constructor" },
+	{ A_0ARG, "destructor" },
+	{ A_1ARG|A1_STR, "visibility" },
+	{ A_3ARG|A_MANY|A1_STR, "bounded" },
+	{ 0, NULL },	/* ATTR_COMPLEX */
+#endif
 };
+#if SZPOINT(CHAR) == SZLONGLONG
+#define	GPT	LONGLONG
+#else
+#define	GPT	INT
+#endif
+
+struct atax mods[] = {
+	{ 0, NULL },
+	{ INT, "SI" },
+	{ INT, "word" },
+	{ GPT, "pointer" },
+	{ CHAR, "byte" },
+	{ CHAR, "QI" },
+	{ SHORT, "HI" },
+	{ LONGLONG, "DI" },
+	{ FLOAT, "SF" },
+	{ DOUBLE, "DF" },
+};
+#define	ATSZ	(sizeof(mods)/sizeof(mods[0]))
 
 static int
-amatch(char *s)
+amatch(char *s, struct atax *at, int mx)
 {
 	int i, len;
 
@@ -226,8 +281,8 @@ amatch(char *s)
 	len = strlen(s);
 	if (len > 2 && s[len-1] == '_' && s[len-2] == '_')
 		len -= 2;
-	for (i = 0; i < GCC_ATYP_MAX; i++) {
-		char *t = atax[i].name;
+	for (i = 0; i < mx; i++) {
+		char *t = at[i].name;
 		if (t != NULL && strncmp(s, t, len) == 0 && t[len] == 0)
 			return i;
 	}
@@ -255,8 +310,8 @@ gcc_attribs(NODE *p, void *arg)
 {
 	NODE *q, *r;
 	gcc_ap_t *gap = arg;
-	char *name = NULL;
-	int num, cw, attr, narg;
+	char *name = NULL, *c;
+	int num, cw, attr, narg, i;
 
 	if (p->n_op == NAME) {
 		name = (char *)p->n_sp;
@@ -265,7 +320,7 @@ gcc_attribs(NODE *p, void *arg)
 	} else
 		cerror("bad variable attribute");
 
-	if ((attr = amatch(name)) == 0) {
+	if ((attr = amatch(name, atax, GCC_ATYP_MAX)) == 0) {
 		werror("unsupported attribute '%s'", name);
 		goto out;
 	}
@@ -327,6 +382,20 @@ gcc_attribs(NODE *p, void *arg)
 		else
 			gap->ga[num].a1.iarg *= SZCHAR;
 		break;
+
+	case GCC_ATYP_MODE:
+		if ((i = amatch(gap->ga[num].a1.sarg, mods, ATSZ)) == 0)
+			werror("unknown mode arg %s", gap->ga[num].a1.sarg);
+		gap->ga[num].a1.iarg = mods[i].typ;
+		break;
+
+	case GCC_ATYP_VISIBILITY:
+		c = gap->ga[num].a1.sarg;
+		if (strcmp(c, "default") && strcmp(c, "hidden") &&
+		    strcmp(c, "internal") && strcmp(c, "protected"))
+			werror("unknown visibility %s", c);
+		break;
+
 	default:
 		break;
 	}

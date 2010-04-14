@@ -473,7 +473,7 @@ fcast(NODE *p)
 void
 zzzcode(NODE *p, int c)
 {
-	NODE *r, *l;
+	NODE *l;
 	int pr, lr, s;
 	char *ch;
 
@@ -582,7 +582,6 @@ zzzcode(NODE *p, int c)
                 break;
 
 	case 'P': /* push hidden argument on stack */
-		r = (NODE *)p->n_sue;
 		printf("\tleal -%d(%%ebp),", stkpos);
 		adrput(stdout, getlr(p, '1'));
 		printf("\n\tpushl ");

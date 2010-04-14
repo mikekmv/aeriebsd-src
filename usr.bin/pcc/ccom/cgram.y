@@ -509,15 +509,15 @@ abstract_declarator:
 		|  '[' e ']' attr_var {
 			$$ = biop(LB, bdty(NAME, NULL), eve($2));
 			uawarn($4, "abstract_declarator");
-			}
+		}
 		|  abstract_declarator '[' ']' attr_var {
 			$$ = biop(LB, $1, bcon(NOOFFSET));
 			uawarn($4, "abstract_declarator2");
-			}
+		}
 		|  abstract_declarator '[' e ']' attr_var {
 			$$ = biop(LB, $1, eve($3));
 			uawarn($5, "abstract_declarator3");
-			}
+		}
 		|  '(' ')' { $$ = bdty(UCALL, bdty(NAME, NULL)); }
 		|  '(' ib2 parameter_type_list ')' {
 			$$ = bdty(CALL, bdty(NAME, NULL), $3);
@@ -717,6 +717,10 @@ struct_declarator: declarator attr_var {
 xnfdeclarator:	   declarator attr_var {
 			$$ = xnf = init_declarator($<nodep>0, $1, 1, $2);
 		}
+		|  declarator C_ASM '(' string ')' {
+			pragma_renamed = newstring($4, strlen($4));
+			$$ = xnf = init_declarator($<nodep>0, $1, 1, NULL);
+		}
 		;
 
 /*
@@ -724,13 +728,13 @@ xnfdeclarator:	   declarator attr_var {
  * Returns nothing.
  */
 init_declarator:   declarator attr_var { init_declarator($<nodep>0, $1, 0, $2);}
-		|  declarator C_ASM '(' string ')' {
+		|  declarator C_ASM '(' string ')' attr_var {
 #ifdef GCC_COMPAT
 			pragma_renamed = newstring($4, strlen($4));
-			init_declarator($<nodep>0, $1, 0, NULL);
+			init_declarator($<nodep>0, $1, 0, $6);
 #else
 			werror("gcc extension");
-			init_declarator($<nodep>0, $1, 0, NULL);
+			init_declarator($<nodep>0, $1, 0, $6);
 #endif
 		}
 		|  xnfdeclarator '=' e { simpleinit($1, eve($3)); xnf = NULL; }

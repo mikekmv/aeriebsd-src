@@ -1,5 +1,3 @@
-/*	$OpenBSD: local.c,v 1.2 2007/11/18 17:39:55 ragge Exp $	*/
-
 /*
  * Copyright (c) 2007 Michael Shalayeff
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).

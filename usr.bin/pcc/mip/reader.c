@@ -1,4 +1,4 @@
-/*	$Id: reader.c,v 1.7 2009/12/27 15:09:50 mickey Exp $	*/
+/*	$Id: reader.c,v 1.8 2010/04/14 11:10:58 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -65,7 +65,7 @@
  * allowed to recurse back into pass2_compile().
  */
 
-# include "pass2.h"
+#include "pass2.h"
 
 #include <string.h>
 #include <stdarg.h>
@@ -74,8 +74,7 @@
 /*	some storage declarations */
 int nrecur;
 int lflag;
-int x2debug;
-int udebug = 0;
+int x2debug, udebug, odebug;
 int thisline;
 int fregs;
 int p2autooff, p2maxautooff;
@@ -536,10 +535,7 @@ prcook(int cookie)
 	}
 	return buf;
 }
-
 #endif
-
-int odebug = 0;
 
 int
 geninsn(NODE *p, int cookie)

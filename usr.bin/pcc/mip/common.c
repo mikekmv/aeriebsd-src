@@ -69,7 +69,7 @@
 # endif
 
 int nerrors = 0;  /* number of errors */
-char *ftitle;
+extern char *ftitle;
 int lineno;
 
 int warniserr = 0;

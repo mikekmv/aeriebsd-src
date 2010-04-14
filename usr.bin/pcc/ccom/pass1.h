@@ -181,6 +181,7 @@ int mygenswitch(int, TWORD, struct swents **, int);
 extern	int blevel;
 extern	int instruct, got_type;
 extern	int oldstyle;
+extern	int oflag;
 
 extern	int lineno, nerrors;
 
@@ -343,6 +344,9 @@ NODE *imop(int op, NODE *l, NODE *r);
 NODE *cxelem(int op, NODE *p);
 NODE *cxconj(NODE *p);
 NODE *cxret(NODE *p, NODE *q);
+NODE *cast(NODE *p, TWORD t, TWORD q);
+NODE *builtin_check(NODE *f, NODE *a);
+
 
 #ifdef SOFTFLOAT
 typedef struct softfloat SF;
@@ -404,6 +408,9 @@ enum {	GCC_ATYP_NONE,
 	GCC_ATYP_DEPRECATED,
 	GCC_ATYP_MAYALIAS,
 
+	/* variable attributes */
+	GCC_ATYP_MODE,
+
 	/* function attributes */
 	GCC_ATYP_NORETURN,
 	GCC_ATYP_FORMAT,
@@ -413,6 +420,12 @@ enum {	GCC_ATYP_NONE,
 	GCC_ATYP_FORMATARG,
 	GCC_ATYP_GNU_INLINE,
 	GCC_ATYP_MALLOC,
+	GCC_ATYP_NOTHROW,
+	GCC_ATYP_CONST,
+	GCC_ATYP_PURE,
+	GCC_ATYP_CONSTRUCTOR,
+	GCC_ATYP_DESTRUCTOR,
+	GCC_ATYP_VISIBILITY,
 
 	/* other stuff */
 	GCC_ATYP_BOUNDED,	/* OpenBSD extra boundary checks */

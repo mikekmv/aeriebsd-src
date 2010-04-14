@@ -63,7 +63,7 @@
 
 #include "cpp.h"
 
-void yyerror(char *);
+void yyerror(const char *);
 int yylex(void);
 int setd(int l, int r);
 
@@ -199,7 +199,7 @@ term:
 %%
 
 void
-yyerror(char *err)
+yyerror(const char *err)
 {
 	error(err);
 }

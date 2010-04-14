@@ -54,6 +54,8 @@ defloc(struct symtab *sp)
 	}
 	t = sp->stype;
 	s = ISFTN(t) ? PROG : ISCON(cqual(t, sp->squal)) ? RDATA : DATA;
+	if ((name = sp->soname) == NULL)
+		name = exname(sp->sname);
 #ifdef TLS
 	if (sp->sflags & STLS) {
 		if (s != DATA)
@@ -69,6 +71,19 @@ defloc(struct symtab *sp)
 			nextsect = ga->a1.sarg;
 		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_WEAK)) != NULL)
 			weak = 1;
+		if (gcc_get_attr(sp->ssue, GCC_ATYP_DESTRUCTOR)) {
+			printf("\t.section\t.dtors,\"aw\",@progbits\n");
+			printf("\t.align 4\n\t.long\t%s\n", name);
+			lastloc = -1;
+		}
+		if (gcc_get_attr(sp->ssue, GCC_ATYP_CONSTRUCTOR)) {
+			printf("\t.section\t.ctors,\"aw\",@progbits\n");
+			printf("\t.align 4\n\t.long\t%s\n", name);
+			lastloc = -1;
+		}
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_VISIBILITY)) &&
+		    strcmp(ga->a1.sarg, "default"))
+			printf("\t.%s %s\n", ga->a1.sarg, name);
 	}
 #endif
 	if (nextsect) {
@@ -83,9 +98,6 @@ defloc(struct symtab *sp)
 	al = ISFTN(t) ? ALINT : talign(t, sp->ssue);
 	if (al > ALCHAR)
 		printf("	.align %d\n", al/ALCHAR);
-	if (weak || sp->sclass == EXTDEF || sp->slevel == 0 || ISFTN(t))
-		if ((name = sp->soname) == NULL)
-			name = exname(sp->sname);
 	if (weak)
 		printf("	.weak %s\n", name);
 	else if (sp->sclass == EXTDEF) {
@@ -114,7 +126,7 @@ efcode()
 	gotnr = 0;	/* new number for next fun */
 	if (cftnsp->stype != STRTY+FTN && cftnsp->stype != UNIONTY+FTN)
 		return;
-#if defined(os_aeriebsd)
+#if defined(os_openbsd)
 	/* struct return for small structs */
 	int sz = tsize(BTYPE(cftnsp->stype), cftnsp->sdf, cftnsp->ssue);
 	if (sz == SZCHAR || sz == SZSHORT || sz == SZINT || sz == SZLONGLONG) {
@@ -163,7 +175,7 @@ bfcode(struct symtab **sp, int cnt)
 
 	if (cftnsp->stype == STRTY+FTN || cftnsp->stype == UNIONTY+FTN) {
 		/* Function returns struct, adjust arg offset */
-#if defined(os_aeriebsd)
+#if defined(os_openbsd)
 		/* OpenBSD uses non-standard return for small structs */
 		int sz = tsize(BTYPE(cftnsp->stype), cftnsp->sdf, cftnsp->ssue);
 		if (sz != SZCHAR && sz != SZSHORT &&

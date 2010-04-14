@@ -178,7 +178,7 @@ int	exfail;
 int	Xflag;
 int	Wallflag;
 int	Wflag;
-int	nostartfiles, Bstatic, shared;
+int	nostartfiles, Bstatic = 1, shared;
 int	nostdinc, nostdlib;
 int	onlyas;
 int	pthreads;

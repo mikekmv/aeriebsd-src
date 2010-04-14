@@ -52,9 +52,11 @@ static const int argregsi[] = { RDI, RSI, RDX, RCX, R08, R09 };
 #define	VARSA(x)	(x-SZINT-SZINT-SZPOINT(0))
 
 int lastloc = -1;
+static int stroffset;
 
 static int argtyp(TWORD t, union dimfun *df, struct suedef *sue);
 static NODE *movtomem(NODE *p, int off, int reg);
+static NODE *movtoreg(NODE *p, int rno);
 
 /*
  * Define everything needed to print out some data (or text).
@@ -66,7 +68,7 @@ defloc(struct symtab *sp)
 	extern char *nextsect;
 	static char *loctbl[] = { "text", "data", "section .rodata" };
 	int weak = 0;
-	char *name = NULL;
+	char *name;
 	TWORD t;
 	int s;
 
@@ -76,6 +78,8 @@ defloc(struct symtab *sp)
 	}
 	t = sp->stype;
 	s = ISFTN(t) ? PROG : ISCON(cqual(t, sp->squal)) ? RDATA : DATA;
+	if ((name = sp->soname) == NULL)
+		name = exname(sp->sname);
 #ifdef TLS
 	if (sp->sflags & STLS) {
 		if (s != DATA)
@@ -91,6 +95,19 @@ defloc(struct symtab *sp)
 			nextsect = ga->a1.sarg;
 		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_WEAK)) != NULL)
 			weak = 1;
+		if (gcc_get_attr(sp->ssue, GCC_ATYP_DESTRUCTOR)) {
+			printf("\t.section\t.dtors,\"aw\",@progbits\n");
+			printf("\t.align 8\n\t.quad\t%s\n", name);
+			lastloc = -1;
+		}
+		if (gcc_get_attr(sp->ssue, GCC_ATYP_CONSTRUCTOR)) {
+			printf("\t.section\t.ctors,\"aw\",@progbits\n");
+			printf("\t.align 8\n\t.quad\t%s\n", name);
+			lastloc = -1;
+		}
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_VISIBILITY)) &&
+		    strcmp(ga->a1.sarg, "default"))
+			printf("\t.%s %s\n", ga->a1.sarg, name);
 	}
 #endif
 
@@ -106,9 +123,6 @@ defloc(struct symtab *sp)
 	s = ISFTN(t) ? ALINT : talign(t, sp->ssue);
 	if (s > ALCHAR)
 		printf("	.align %d\n", s/ALCHAR);
-	if (weak || sp->sclass == EXTDEF || sp->slevel == 0 || ISFTN(t))
-		if ((name = sp->soname) == NULL)
-			name = exname(sp->sname);
 	if (weak)
 		printf("        .weak %s\n", name);
 	else if (sp->sclass == EXTDEF) {
@@ -129,12 +143,23 @@ defloc(struct symtab *sp)
 void
 efcode()
 {
+	struct symtab *sp;
 	extern int gotnr;
-	NODE *p, *q;
+	TWORD t;
+	NODE *p;
 
 	gotnr = 0;	/* new number for next fun */
-	if (cftnsp->stype != STRTY+FTN && cftnsp->stype != UNIONTY+FTN)
+	sp = cftnsp;
+	t = DECREF(sp->stype);
+	if (t != STRTY || t != UNIONTY)
 		return;
+	if (argtyp(t, sp->sdf, sp->ssue) != STRMEM)
+		return;
+
+	/* Move input value to rax */
+	p = tempnode(stroffset, INCREF(t), sp->sdf, sp->ssue);
+	ecomp(movtoreg(p, RAX));
+#if 0
 	/* Create struct assignment */
 	q = block(OREG, NIL, NIL, PTR+STRTY, 0, cftnsp->ssue);
 	q->n_rval = RBP;
@@ -144,6 +169,7 @@ efcode()
 	p = buildtree(UMUL, p, NIL);
 	p = buildtree(ASSIGN, q, p);
 	ecomp(p);
+#endif
 }
 
 /*
@@ -158,16 +184,21 @@ bfcode(struct symtab **s, int cnt)
 	NODE *p, *r;
 	int i, rno, typ;
 
-	if (cftnsp->stype == STRTY+FTN || cftnsp->stype == UNIONTY+FTN) {
-		/* Function returns struct, adjust arg offset */
-		for (i = 0; i < cnt; i++) 
-			s[i]->soffset += SZPOINT(LONG);
-	}
-
 	/* recalculate the arg offset and create TEMP moves */
 	/* Always do this for reg, even if not optimizing, to free arg regs */
 	nsse = ngpr = 0;
 	nrsp = ARGINIT;
+	if (cftnsp->stype == STRTY+FTN || cftnsp->stype == UNIONTY+FTN) {
+		sp = cftnsp;
+		if (argtyp(DECREF(sp->stype), sp->sdf, sp->ssue) == STRMEM) {
+			r = block(REG, NIL, NIL, LONG, 0, MKSUE(LONG));
+			regno(r) = ngpr++;
+			p = tempnode(0, r->n_type, r->n_df, r->n_sue);
+			stroffset = regno(p);
+			ecomp(buildtree(ASSIGN, p, r));
+		}
+	}
+
 	for (i = 0; i < cnt; i++) {
 		sp = s[i];
 
@@ -199,6 +230,29 @@ bfcode(struct symtab **s, int cnt)
 				sp->sflags |= STNODE;
 				ecomp(p);
 			}
+			break;
+
+		case STRMEM: /* Struct in memory */
+			sp->soffset = nrsp;
+			nrsp += tsize(sp->stype, sp->sdf, sp->ssue);
+			break;
+
+		case STRREG: /* Struct in register */
+			/* Allocate space on stack for the struct */
+			/* For simplicity always fetch two longwords */
+			autooff += (2*SZLONG);
+
+			r = block(REG, NIL, NIL, LONG, 0, MKSUE(LONG));
+			regno(r) = argregsi[ngpr++];
+			ecomp(movtomem(r, -autooff, FPREG));
+
+			if (tsize(sp->stype, sp->sdf, sp->ssue) > SZLONG) {
+				r = block(REG, NIL, NIL, LONG, 0, MKSUE(LONG));
+				regno(r) = argregsi[ngpr++];
+				ecomp(movtomem(r, -autooff+SZLONG, FPREG));
+			}
+
+			sp->soffset = -autooff;
 			break;
 
 		default:
@@ -492,10 +546,12 @@ argtyp(TWORD t, union dimfun *df, struct suedef *sue)
 	} else if (t == LDOUBLE) {
 		cl = X87; /* XXX */
 	} else if (t == STRTY) {
-		if (tsize(t, df, sue) > 4*SZLONG)
+		/* XXX no SSEOP handling */
+		if ((tsize(t, df, sue) > 2*SZLONG) ||
+		    (gcc_get_attr(sue, GCC_ATYP_PACKED) != NULL))
 			cl = STRMEM;
 		else
-			cerror("clasif");
+			cl = STRREG;
 	} else
 		cerror("FIXME: classify");
 	return cl;
@@ -505,7 +561,7 @@ static void
 argput(NODE *p)
 {
 	NODE *q;
-	int typ, r;
+	int typ, r, ssz;
 
 	/* first arg may be struct return pointer */
 	/* XXX - check if varargs; setup al */
@@ -536,10 +592,37 @@ argput(NODE *p)
 		nfree(q);
 		break;
 
+	case STRREG: /* Struct in registers */
+		/* Cast to long pointer and move to the registers */
+		ssz = tsize(p->n_type, p->n_df, p->n_sue);
+
+		if (ssz <= SZLONG) {
+			q = cast(p->n_left, LONG+PTR, 0);
+			q = buildtree(UMUL, q, NIL);
+			q = movtoreg(q, argregsi[ngpr++]);
+			*p = *q;
+			nfree(q);
+		} else if (ssz <= SZLONG*2) {
+			NODE *qt, *q1, *q2, *ql, *qr;
+
+			qt = tempnode(0, LONG+PTR, 0, MKSUE(LONG));
+			q1 = ccopy(qt);
+			q2 = ccopy(qt);
+			ql = buildtree(ASSIGN, qt, cast(p->n_left,LONG+PTR, 0));
+			qr = movtoreg(buildtree(UMUL, q1, NIL),
+			    argregsi[ngpr++]);
+			ql = buildtree(COMOP, ql, qr);
+			qr = buildtree(UMUL, buildtree(PLUS, q2, bcon(1)), NIL);
+			qr = movtoreg(qr, argregsi[ngpr++]);
+			q = buildtree(COMOP, ql, qr);
+			*p = *q;
+			nfree(q);
+		} else
+			cerror("STRREG");
+		break;
+
 	case STRMEM:
 		/* Struct moved to memory */
-	case STRREG:
-		/* Struct in registers */
 	default:
 		cerror("argument %d", typ);
 	}
@@ -557,6 +640,14 @@ funcode(NODE *p)
 	NODE *l, *r;
 
 	nsse = ngpr = nrsp = 0;
+	/* Check if hidden arg needed */
+	/* If so, add it in pass2 */
+	if ((l = p->n_left)->n_type == INCREF(FTN)+STRTY ||
+	    l->n_type == INCREF(FTN)+UNIONTY) {
+		int ssz = tsize(BTYPE(l->n_type), l->n_df, l->n_sue);
+		if (ssz > 2*SZLONG)
+			ngpr++;
+	}
 	listf(p->n_right, argput);
 
 	/* Always emit number of SSE regs used */
