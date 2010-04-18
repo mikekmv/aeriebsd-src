@@ -1,4 +1,4 @@
-;	$ABSD: syscalls.master,v 1.5 2010/01/19 18:44:40 mickey Exp $
+;	$ABSD: syscalls.master,v 1.6 2010/02/12 14:25:06 mickey Exp $
 
 ;	from: @(#)syscalls.master	8.2 (Berkeley) 1/13/94
 
@@ -72,7 +72,8 @@
 15	STD		{ int freebsd_sys_chmod(char *path, int mode); }
 16	STD		{ int freebsd_sys_chown(char *path, int uid, int gid); }
 17	NOARGS		{ int compat_43_sys_obreak(char *nsize); } break
-18	STD		{ int freebsd_sys_getfsstat(struct freebsd_statfs *buf,\
+18	STD		{ int freebsd_sys_ogetfsstat( \
+			    struct freebsd_ostatfs *buf, \
 			    long bufsize, int flags); }
 19	NOARGS		{ long compat_43_sys_lseek(int fd, long offset, \
 			    int whence); } olseek
@@ -285,10 +286,10 @@
 #endif
 156	NOARGS		{ int compat_43_sys_getdirentries(int fd, char *buf, \
 			    u_int count, long *basep); } ogetdirentries
-157	STD		{ int freebsd_sys_statfs(char *path, \
-			    struct freebsd_statfs *buf); }
-158	STD		{ int freebsd_sys_fstatfs(int fd, \
-			    struct freebsd_statfs *buf); }
+157	STD		{ int freebsd_sys_ostatfs(char *path, \
+			    struct freebsd_ostatfs *buf); }
+158	STD		{ int freebsd_sys_ofstatfs(int fd, \
+			    struct freebsd_ostatfs *buf); }
 159	UNIMPL
 160	UNIMPL
 #ifdef NFSCLIENT
@@ -608,7 +609,8 @@
 394	UNIMPL		mac_syscall
 395	UNIMPL		getfsstat
 396	UNIMPL		statfs
-397	UNIMPL		fsstatfs
+397	STD		{ int freebsd_sys_fstatfs(int fd, \
+			  struct freebsd_statfs *buf); }
 398	UNIMPL		fhstatfs
 399	UNIMPL		nosys
 400	UNIMPL		ksem_close
