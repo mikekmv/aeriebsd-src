@@ -55,9 +55,10 @@
 const char freebsd_emul_path[] = "/emul/freebsd";
 
 static char * convert_from_freebsd_mount_type(int);
+void statfs_to_freebsd_ostatfs(struct proc *, struct mount *, struct statfs *, struct freebsd_ostatfs *);
 void statfs_to_freebsd_statfs(struct proc *, struct mount *, struct statfs *, struct freebsd_statfs *);
 
-struct freebsd_statfs {
+struct freebsd_ostatfs {
 	long	f_spare2;		/* placeholder */
 	long	f_bsize;		/* fundamental file system block size */
 	long	f_iosize;		/* optimal transfer block size */
@@ -75,6 +76,35 @@ struct freebsd_statfs {
 	char	f_fstypename[MFSNAMELEN]; /* fs type name */
 	char	f_mntonname[MNAMELEN];	/* directory on which mounted */
 	char	f_mntfromname[MNAMELEN];/* mounted filesystem */
+};
+
+/*
+ * filesystem statistics
+ */
+#define	FREEBSD_STATFS_VERSION	0x20030518	/* current version number */
+struct freebsd_statfs {
+	uint32_t f_version;		/* structure version number */
+	uint32_t f_type;		/* type of filesystem */
+	uint64_t f_flags;		/* copy of mount exported flags */
+	uint64_t f_bsize;		/* filesystem fragment size */  
+	uint64_t f_iosize;		/* optimal transfer block size */
+	uint64_t f_blocks;		/* total data blocks in filesystem */
+	uint64_t f_bfree;		/* free blocks in filesystem */
+	int64_t  f_bavail;		/* free blocks avail to non-superuser */
+	uint64_t f_files;		/* total file nodes in filesystem */
+	int64_t  f_ffree;		/* free nodes avail to non-superuser */
+	uint64_t f_syncwrites;		/* count of sync writes since mount */
+	uint64_t f_asyncwrites;		/* count of async writes since mount */
+	uint64_t f_syncreads;		/* count of sync reads since mount */
+	uint64_t f_asyncreads;		/* count of async reads since mount */
+	uint64_t f_spare[10];		/* unused spare */
+	uint32_t f_namemax;		/* maximum filename length */
+	uid_t	f_owner;		/* user that mounted the filesystem */
+	fsid_t	f_fsid;			/* filesystem id */
+	char	f_charspare[80];	/* spare string space */
+	char	f_fstypename[16];	/* filesystem type name */
+	char	f_mntfromname[88];	/* mounted filesystem */
+	char	f_mntonname[88];	/* directory on which mounted */
 };
 
 static char *
@@ -529,15 +559,16 @@ freebsd_sys_rmdir(p, v, retval)
 }
 
 /*
- * Convert struct statfs -> struct freebsd_statfs
+ * Convert struct statfs -> struct freebsd_ostatfs
  */
 void
-statfs_to_freebsd_statfs(p, mp, sp, fsp)
+statfs_to_freebsd_ostatfs(p, mp, sp, fsp)
 	struct proc *p;
 	struct mount *mp;
 	struct statfs *sp;
-	struct freebsd_statfs *fsp;
+	struct freebsd_ostatfs *fsp;
 {
+	bzero(fsp, sizeof *fsp);
 	fsp->f_bsize = sp->f_bsize;
 	fsp->f_iosize = sp->f_iosize;
 	fsp->f_blocks = sp->f_blocks;
@@ -561,22 +592,59 @@ statfs_to_freebsd_statfs(p, mp, sp, fsp)
 }
 
 /*
+ * Convert struct statfs -> struct freebsd_statfs
+ */
+void
+statfs_to_freebsd_statfs(p, mp, sp, fsp)
+	struct proc *p;
+	struct mount *mp;
+	struct statfs *sp;
+	struct freebsd_statfs *fsp;
+{
+	bzero(fsp, sizeof *fsp);
+	fsp->f_version = FREEBSD_STATFS_VERSION;
+	fsp->f_bsize = sp->f_bsize;
+	fsp->f_iosize = sp->f_iosize;
+	fsp->f_blocks = sp->f_blocks;
+	fsp->f_bfree = sp->f_bfree;
+	fsp->f_bavail = sp->f_bavail;
+	fsp->f_files = sp->f_files;
+	fsp->f_ffree = sp->f_ffree;
+	/* Don't let non-root see filesystem id (for NFS security) */
+	if (suser(p, 0))
+		fsp->f_fsid.val[0] = fsp->f_fsid.val[1] = 0;
+	else
+		bcopy(&sp->f_fsid, &fsp->f_fsid, sizeof(fsp->f_fsid));
+	fsp->f_owner = sp->f_owner;
+	fsp->f_type = mp->mnt_vfc->vfc_typenum;
+	fsp->f_flags = sp->f_flags;
+	fsp->f_namemax = NAME_MAX;
+	fsp->f_syncwrites = sp->f_syncwrites;
+	fsp->f_asyncwrites = sp->f_asyncwrites;
+	fsp->f_syncreads = sp->f_syncreads;
+	fsp->f_asyncreads = sp->f_asyncreads;
+	bcopy(sp->f_fstypename, fsp->f_fstypename, sizeof fsp->f_fstypename);
+	bcopy(sp->f_mntonname, fsp->f_mntonname, sizeof fsp->f_mntonname);
+	bcopy(sp->f_mntfromname, fsp->f_mntfromname, sizeof fsp->f_mntfromname);
+}
+
+/*
  * Get filesystem statistics.
  */
 /* ARGSUSED */
 int
-freebsd_sys_statfs(p, v, retval)
+freebsd_sys_ostatfs(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	register struct freebsd_sys_statfs_args /* {
+	register struct freebsd_sys_ostatfs_args /* {
 		syscallarg(char *) path;
-		syscallarg(struct freebsd_statfs *) buf;
+		syscallarg(struct freebsd_ostatfs *) buf;
 	} */ *uap = v;
 	register struct mount *mp;
 	register struct statfs *sp;
-	struct freebsd_statfs fsb;
+	struct freebsd_ostatfs fsb;
 	int error;
 	struct nameidata nd;
 	caddr_t sg = stackgap_init(p->p_emul);
@@ -592,7 +660,7 @@ freebsd_sys_statfs(p, v, retval)
 		return (error);
 	sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
 
-	statfs_to_freebsd_statfs(p, mp, sp, &fsb);
+	statfs_to_freebsd_ostatfs(p, mp, sp, &fsb);
 	return (copyout((caddr_t)&fsb, (caddr_t)SCARG(uap, buf), sizeof(fsb)));
 }
 
@@ -601,19 +669,19 @@ freebsd_sys_statfs(p, v, retval)
  */
 /* ARGSUSED */
 int
-freebsd_sys_fstatfs(p, v, retval)
+freebsd_sys_ofstatfs(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
 	register struct freebsd_sys_fstatfs_args /* {
 		syscallarg(int) fd;
-		syscallarg(struct freebsd_statfs *) buf;
+		syscallarg(struct freebsd_ostatfs *) buf;
 	} */ *uap = v;
 	struct file *fp;
 	struct mount *mp;
 	register struct statfs *sp;
-	struct freebsd_statfs fsb;
+	struct freebsd_ostatfs fsb;
 	int error;
 
 	if ((error = getvnode(p->p_fd, SCARG(uap, fd), &fp)) != 0)
@@ -626,7 +694,7 @@ freebsd_sys_fstatfs(p, v, retval)
 		return (error);
 	sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
 
-	statfs_to_freebsd_statfs(p, mp, sp, &fsb);
+	statfs_to_freebsd_ostatfs(p, mp, sp, &fsb);
 	return (copyout((caddr_t)&fsb, (caddr_t)SCARG(uap, buf), sizeof(fsb)));
 }
 
@@ -634,24 +702,24 @@ freebsd_sys_fstatfs(p, v, retval)
  * Get statistics on all filesystems.
  */
 int
-freebsd_sys_getfsstat(p, v, retval)
+freebsd_sys_ogetfsstat(p, v, retval)
 	struct proc *p;
 	void *v;
 	register_t *retval;
 {
-	register struct freebsd_sys_getfsstat_args /* {
-		syscallarg(struct freebsd_statfs *) buf;
+	register struct freebsd_sys_ogetfsstat_args /* {
+		syscallarg(struct freebsd_ostatfs *) buf;
 		syscallarg(long) bufsize;
 		syscallarg(int) flags;
 	} */ *uap = v;
 	register struct mount *mp, *nmp;
 	register struct statfs *sp;
-	struct freebsd_statfs fsb;
+	struct freebsd_ostatfs fsb;
 	caddr_t sfsp;
 	long count, maxcount;
 	int error, flags = SCARG(uap, flags);
 
-	maxcount = SCARG(uap, bufsize) / sizeof(struct freebsd_statfs);
+	maxcount = SCARG(uap, bufsize) / sizeof(struct freebsd_ostatfs);
 	sfsp = (caddr_t)SCARG(uap, buf);
 	count = 0;
 
@@ -676,7 +744,7 @@ freebsd_sys_getfsstat(p, v, retval)
 			}
 			sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
 
-			statfs_to_freebsd_statfs(p, mp, sp, &fsb);
+			statfs_to_freebsd_ostatfs(p, mp, sp, &fsb);
 			error = copyout((caddr_t)&fsb, sfsp, sizeof(fsb));
 			if (error) {
 				vfs_unbusy(mp);
@@ -823,3 +891,30 @@ freebsd_sys_fcntl(p, v, retval)
 	return (sys_fcntl(p, uap, retval));
 }
 
+int
+freebsd_sys_fstatfs(struct proc *p, void *v, register_t *retval)
+{
+	struct freebsd_sys_fstatfs_args /* {
+		syscallarg(int) fd;
+		syscallarg(struct freebsd_statfs *) buf;
+	} */ *uap = v;
+	struct file *fp;
+	struct mount *mp;
+	struct statfs *sp;
+	struct freebsd_statfs fsb;
+	int error;
+
+	if ((error = getvnode(p->p_fd, SCARG(uap, fd), &fp)) != 0)
+		return (error);
+	mp = ((struct vnode *)fp->f_data)->v_mount;
+	sp = &mp->mnt_stat;
+	error = VFS_STATFS(mp, sp, p);
+	FRELE(fp);
+	if (error)
+		return (error);
+	sp->f_flags = mp->mnt_flag & MNT_VISFLAGMASK;
+
+	statfs_to_freebsd_statfs(p, mp, sp, &fsb);
+	return (copyout((caddr_t)&fsb, (caddr_t)SCARG(uap, buf), sizeof(fsb)));
+
+}
