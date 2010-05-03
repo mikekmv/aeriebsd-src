@@ -2217,7 +2217,7 @@ vfs_mount_print(struct mount *mp, int full, int (*pr)(const char *, ...))
 	    mp->mnt_stat.f_bsize, mp->mnt_stat.f_iosize, mp->mnt_stat.f_blocks,
 	    mp->mnt_stat.f_bfree, mp->mnt_stat.f_bavail);
 
-	(*pr)("  files %llu ffiles %llu favail $lld\n", mp->mnt_stat.f_files,
+	(*pr)("  files %llu ffiles %llu favail %lld\n", mp->mnt_stat.f_files,
 	    mp->mnt_stat.f_ffree, mp->mnt_stat.f_favail);
 
 	(*pr)("  f_fsidx {0x%x, 0x%x} owner %u ctime 0x%x\n",
