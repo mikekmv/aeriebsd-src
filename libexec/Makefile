@@ -14,9 +14,9 @@ SUBDIR+=login_passwd login_skey login_reject login_chpass \
 SUBDIR+=rpc.yppasswdd
 .endif
 
-.if (${ELF_TOOLCHAIN:L} == "yes")
-SUBDIR+=ld.so
-.endif
+#.if (${ELF_TOOLCHAIN:L} == "yes")
+#SUBDIR+=ld.so
+#.endif
 
 .if (${KERBEROS5:L} == "yes")
 SUBDIR+=login_krb5 login_krb5-or-pwd
