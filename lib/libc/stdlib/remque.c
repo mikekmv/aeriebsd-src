@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: remque.c,v 1.1.1.1 2008/08/26 14:38:36 root Exp $";
 #endif
 
 #include <search.h>
@@ -42,6 +42,5 @@ void
 remque(void *element)
 {
 	struct qelem *e = (struct qelem *) element;
-	e->q_forw->q_back = e->q_back;
-	e->q_back->q_forw = e->q_forw;
+	(e->q_forw->q_back = e->q_back)->q_forw = e->q_forw;
 }

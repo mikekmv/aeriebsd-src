@@ -86,8 +86,7 @@ syscall_stub()
 	syscallname="$2"
 	funcname="$3"
 
-	arglist="`printf '#include "'"$syscallhdr"'"' | cpp -C | \
-    	grep '^/\* syscall: "'"$syscallname"'" ' | \
+	arglist="`grep '^/\* syscall: "'"$syscallname"'" ' $syscallhdr | \
     	sed -e 's,^/\* syscall: ,,;s, \*/$,,'`"
 
 	eval set -f -- "$arglist"

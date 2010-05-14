@@ -28,13 +28,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: getenv.c,v 1.1.1.1 2008/08/26 14:38:35 root Exp $";
 #endif
 
 #include <stdlib.h>
 #include <string.h>
 
-char *__findenv(const char *name, int *offset);
+char *__findenv(const char *name, int len, int *offset);
 
 /*
  * __findenv --
@@ -46,18 +46,15 @@ char *__findenv(const char *name, int *offset);
  *	This routine *should* be a static; don't use it.
  */
 char *
-__findenv(const char *name, int *offset)
+__findenv(const char *name, int len, int *offset)
 {
 	extern char **environ;
-	int len, i;
+	int i;
 	const char *np;
 	char **p, *cp;
 
 	if (name == NULL || environ == NULL)
 		return (NULL);
-	for (np = name; *np && *np != '='; ++np)
-		;
-	len = np - name;
 	for (p = environ; (cp = *p) != NULL; ++p) {
 		for (np = name, i = len; i && *cp; i--)
 			if (*cp++ != *np++)
@@ -78,6 +75,9 @@ char *
 getenv(const char *name)
 {
 	int offset;
+	const char *np;
 
-	return (__findenv(name, &offset));
+	for (np = name; *np && *np != '='; ++np)
+		;
+	return (__findenv(name, (int)(np - name), &offset));
 }

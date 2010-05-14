@@ -32,7 +32,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: index.S,v 1.2 2009/05/23 01:24:11 mickey Exp $"
+	.asciz "$ABSD: index.S,v 1.3 2009/10/31 21:30:59 mickey Exp $"
 	.text
 #endif /* LIBC_SCCS */
 
@@ -40,14 +40,15 @@
 
 LEAF(index, 0)
 	.set	reorder
+0:
 	lbu	a2, 0(a0)		# get a byte
-	addu	a0, a0, 1
+	daddu	a0, a0, 1
 	beq	a2, a1, fnd
-	bne	a2, zero, index
+	bne	a2, zero, 0b
 notfnd:
 	move	v0, zero
 	j	ra
 fnd:
-	subu	v0, a0, 1
+	dsubu	v0, a0, 1
 	j	ra
 END(index)

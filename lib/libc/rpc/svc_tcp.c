@@ -37,7 +37,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: svc_tcp.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -347,12 +347,11 @@ readtcp(SVCXPRT *xprt, caddr_t buf, int len)
 	struct timeval tmp1, tmp2;
 	struct pollfd *pfd = NULL;
 
-	pfd = (struct pollfd *)malloc(sizeof(*pfd) * (svc_max_pollfd + 1));
+	pfd = (struct pollfd *)calloc(sizeof(*pfd), (svc_max_pollfd + 1));
 	if (pfd == NULL)
 		goto fatal_err;
 	pfd[0].fd = sock;
 	pfd[0].events = POLLIN;
-	pfd[0].revents = 0;
 	memcpy(&pfd[1], svc_pollfd, (sizeof(*pfd) * svc_max_pollfd));
 
 	/*

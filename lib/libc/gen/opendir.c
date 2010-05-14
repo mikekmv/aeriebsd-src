@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: opendir.c,v 1.1.1.1 2008/08/26 14:38:28 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -65,7 +65,11 @@ __opendir2(const char *name, int flags)
 
 	if ((fd = open(name, O_RDONLY | O_NONBLOCK)) == -1)
 		return (NULL);
-	if (fstat(fd, &sb) || !S_ISDIR(sb.st_mode)) {
+	if (fstat(fd, &sb)) {
+		close(fd);
+		return (NULL);
+	}
+	if (!S_ISDIR(sb.st_mode)) {
 		close(fd);
 		errno = ENOTDIR;
 		return (NULL);
@@ -92,7 +96,7 @@ __opendir2(const char *name, int flags)
 	dirp->dd_buf = malloc((size_t)dirp->dd_len);
 	if (dirp->dd_buf == NULL) {
 		free(dirp);
-		close (fd);
+		close(fd);
 		return (NULL);
 	}
 

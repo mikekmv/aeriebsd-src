@@ -161,7 +161,7 @@ long	 nrand48(unsigned short[3]);
 unsigned short *seed48(unsigned short[3]);
 void	 srand48(long);
 
-int	 putenv(const char *);
+int	 putenv(char *);
 #endif
 
 #if __BSD_VISIBLE || __XPG_VISIBLE >= 420
@@ -207,7 +207,7 @@ unsigned long long
  */
 #if __BSD_VISIBLE || __POSIX_VISIBLE >= 200112 || __XPG_VISIBLE >= 600
 int	 setenv(const char *, const char *, int);
-void	 unsetenv(const char *);
+int	 unsetenv(const char *);
 #endif
 
 #if __BSD_VISIBLE

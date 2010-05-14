@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fpurge.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <errno.h>
@@ -46,7 +46,9 @@ static const char rcsid[] = "$ABSD$";
 int
 fpurge(FILE *fp)
 {
+	FLOCKFILE(fp);
 	if (!fp->_flags) {
+		FUNLOCKFILE(fp);
 		errno = EBADF;
 		return(EOF);
 	}
@@ -57,5 +59,6 @@ fpurge(FILE *fp)
 	fp->_p = fp->_bf._base;
 	fp->_r = 0;
 	fp->_w = fp->_flags & (__SLBF|__SNBF) ? 0 : fp->_bf._size;
+	FUNLOCKFILE(fp);
 	return (0);
 }

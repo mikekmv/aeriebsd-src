@@ -32,7 +32,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: rindex.S,v 1.2 2009/05/23 01:24:11 mickey Exp $"
+	.asciz "$ABSD: rindex.S,v 1.3 2009/10/31 21:30:59 mickey Exp $"
 	.text
 #endif /* LIBC_SCCS */
 
@@ -43,9 +43,9 @@ LEAF(rindex, 0)
 	move	v0, zero		# default if not found
 1:
 	lbu	a3, 0(a0)		# get a byte
-	addu	a0, a0, 1
+	daddu	a0, a0, 1
 	bne	a3, a1, 2f
-	subu	v0, a0, 1		# save address of last match
+	dsubu	v0, a0, 1		# save address of last match
 2:
 	bne	a3, zero, 1b		# continue if not end
 	j	ra

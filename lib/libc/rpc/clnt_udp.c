@@ -33,7 +33,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: clnt_udp.c,v 1.1.1.1 2008/08/26 14:38:32 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -177,6 +177,11 @@ clntudp_bufcreate(struct sockaddr_in *raddr, u_long program, u_long version,
 	}
 	cu->cu_sock = *sockp;
 	cl->cl_auth = authnone_create();
+	if (cl->cl_auth == NULL) {
+		rpc_createerr.cf_stat = RPC_SYSTEMERROR;
+		rpc_createerr.cf_error.re_errno = errno;
+		goto fooy;
+	}
 	return (cl);
 fooy:
 	if (cu)

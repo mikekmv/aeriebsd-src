@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fputs.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -47,11 +47,15 @@ fputs(const char *s, FILE *fp)
 {
 	struct __suio uio;
 	struct __siov iov;
+	int ret;
 
 	iov.iov_base = (void *)s;
 	iov.iov_len = uio.uio_resid = strlen(s);
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;
+	FLOCKFILE(fp);
 	_SET_ORIENTATION(fp, -1);
-	return (__sfvwrite(fp, &uio));
+	ret = __sfvwrite(fp, &uio);
+	FUNLOCKFILE(fp);
+	return (ret);
 }

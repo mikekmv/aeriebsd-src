@@ -20,7 +20,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: gcvt.c,v 1.1.1.1 2008/08/26 14:38:35 root Exp $";
 #endif
 
 #include <locale.h>
@@ -45,6 +45,8 @@ gcvt(double value, int ndigit, char *buf)
 	}
 
 	digits = __dtoa(value, 2, ndigit, &decpt, &sign, NULL);
+	if (digits == NULL)
+		return (NULL);
 	if (decpt == 9999) {
 		/*
 		 * Infinity or NaN, convert to inf or nan with sign.

@@ -76,6 +76,7 @@ typedef struct _ftsent {
 
 #define	FTS_ROOTPARENTLEVEL	-1
 #define	FTS_ROOTLEVEL		 0
+#define	FTS_MAXLEVEL		 0x7fff
 	short fts_level;		/* depth (-1 to N) */
 
 #define	FTS_D		 1		/* preorder directory */

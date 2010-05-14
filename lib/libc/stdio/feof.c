@@ -31,10 +31,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: feof.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <stdio.h>
+#include "local.h"
 
 /*
  * A subroutine version of the macro feof.
@@ -44,5 +45,10 @@ static const char rcsid[] = "$ABSD$";
 int
 feof(FILE *fp)
 {
-	return (__sfeof(fp));
+	int	ret;
+
+	FLOCKFILE(fp);
+	ret = __sfeof(fp);
+	FUNLOCKFILE(fp);
+	return (ret);
 }

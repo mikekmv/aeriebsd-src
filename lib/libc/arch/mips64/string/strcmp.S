@@ -32,7 +32,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: strcmp.S,v 1.2 2009/05/23 01:24:11 mickey Exp $"
+	.asciz "$ABSD: strcmp.S,v 1.3 2009/10/31 21:30:59 mickey Exp $"
 	.text
 #endif /* LIBC_SCCS */
 
@@ -50,14 +50,14 @@ LEAF(strcmp, 0)
 	bne	t0, t1, NotEq
 	lbu	t0, 1(a0)		# unroll loop
 	lbu	t1, 1(a1)
-	add	a0, a0, 2
+	dadd	a0, a0, 2
 	beq	t0, zero, LessOrEq	# end of first string?
-	add	a1, a1, 2
+	dadd	a1, a1, 2
 	beq	t0, t1, 1b
 NotEq:
-	subu	v0, t0, t1
+	dsubu	v0, t0, t1
 	j	ra
 LessOrEq:
-	subu	v0, zero, t1
+	dsubu	v0, zero, t1
 	j	ra
 END(strcmp)

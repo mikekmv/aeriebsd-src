@@ -32,7 +32,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: bcopy.S,v 1.2 2009/05/23 01:24:11 mickey Exp $"
+	.asciz "$ABSD: bcopy.S,v 1.3 2009/10/31 21:30:59 mickey Exp $"
 	.text
 #endif /* LIBC_SCCS */
 
@@ -43,7 +43,7 @@
 
 LEAF(bcopy, 0)
 	.set	noreorder
-	addu	t0, a0, a2		# t0 = end of s1 region
+	daddu	t0, a0, a2		# t0 = end of s1 region
 	sltu	t1, a1, t0
 	sltu	t2, a0, a1
 	and	t1, t1, t2		# t1 = true if from < to < (from+len)
@@ -51,11 +51,11 @@ LEAF(bcopy, 0)
 	slt	t2, a2, 12		# check for small copy
 
 	ble	a2, zero, 2f
-	addu	t1, a1, a2		# t1 = end of to region
+	daddu	t1, a1, a2		# t1 = end of to region
 1:
 	lb	v0, -1(t0)		# copy bytes backwards,
-	subu	t0, t0, 1		#  does not happen often so do slow way
-	subu	t1, t1, 1
+	dsubu	t0, t0, 1		#  does not happen often so do slow way
+	dsubu	t1, t1, 1
 	bne	t0, a0, 1b
 	sb	v0, 0(t1)
 2:
@@ -65,56 +65,56 @@ forward:
 	bne	t2, zero, smallcpy	# do a small bcopy
 	xor	v0, a0, a1		# compare low two bits of addresses
 	and	v0, v0, 3
-	subu	a3, zero, a1		# compute # bytes to word align address
+	dsubu	a3, zero, a1		# compute # bytes to word align address
 	beq	v0, zero, aligned	# addresses can be word aligned
 	and	a3, a3, 3
 
 	beq	a3, zero, 1f
-	subu	a2, a2, a3		# subtract from remaining count
+	dsubu	a2, a2, a3		# subtract from remaining count
 	LWHI	v0, 0(a0)		# get next 4 bytes (unaligned)
 	LWLO	v0, 3(a0)
-	addu	a0, a0, a3
+	daddu	a0, a0, a3
 	SWHI	v0, 0(a1)		# store 1, 2, or 3 bytes to align a1
-	addu	a1, a1, a3
+	daddu	a1, a1, a3
 1:
 	and	v0, a2, 3		# compute number of words left
-	subu	a3, a2, v0
+	dsubu	a3, a2, v0
 	move	a2, v0
-	addu	a3, a3, a0		# compute ending address
+	daddu	a3, a3, a0		# compute ending address
 2:
 	LWHI	v0, 0(a0)		# copy words a0 unaligned, a1 aligned
 	LWLO	v0, 3(a0)
-	addu	a0, a0, 4
-	addu	a1, a1, 4
+	daddu	a0, a0, 4
+	daddu	a1, a1, 4
 	bne	a0, a3, 2b
 	sw	v0, -4(a1)
 	b	smallcpy
 	nop
 aligned:
 	beq	a3, zero, 1f
-	subu	a2, a2, a3		# subtract from remaining count
+	dsubu	a2, a2, a3		# subtract from remaining count
 	LWHI	v0, 0(a0)		# copy 1, 2, or 3 bytes to align
-	addu	a0, a0, a3
+	daddu	a0, a0, a3
 	SWHI	v0, 0(a1)
-	addu	a1, a1, a3
+	daddu	a1, a1, a3
 1:
 	and	v0, a2, 3		# compute number of whole words left
-	subu	a3, a2, v0
+	dsubu	a3, a2, v0
 	move	a2, v0
-	addu	a3, a3, a0		# compute ending address
+	daddu	a3, a3, a0		# compute ending address
 2:
 	lw	v0, 0(a0)		# copy words
-	addu	a0, a0, 4
-	addu	a1, a1, 4
+	daddu	a0, a0, 4
+	daddu	a1, a1, 4
 	bne	a0, a3, 2b
 	sw	v0, -4(a1)
 smallcpy:
 	ble	a2, zero, 2f
-	addu	a3, a2, a0		# compute ending address
+	daddu	a3, a2, a0		# compute ending address
 1:
 	lbu	v0, 0(a0)		# copy bytes
-	addu	a0, a0, 1
-	addu	a1, a1, 1
+	daddu	a0, a0, 1
+	daddu	a1, a1, 1
 	bne	a0, a3, 1b
 	sb	v0, -1(a1)
 2:

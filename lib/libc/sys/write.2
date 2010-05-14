@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)write.2	8.5 (Berkeley) 4/2/94
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: May 26 2009 $
 .Dt WRITE 2
 .Os
 .Sh NAME
@@ -180,6 +180,12 @@ An I/O error occurred while reading from or writing to the file system.
 .It Bq Er EAGAIN
 The file was marked for non-blocking I/O, and no data could be
 written immediately.
+.It Bq Er EFAULT
+Part of
+.Fa iov
+or
+.Fa buf
+points outside the process's allocated address space.
 .El
 .Pp
 In addition,
@@ -188,18 +194,22 @@ and
 .Fn pwrite
 may return the following error:
 .Bl -tag -width Er
-.It Bq Er EFAULT
-Part of
-.Fa iov
-or data to be written to the file points outside the process's
-allocated address space.
 .It Bq Er EINVAL
 .Fa nbytes
 was larger than
 .Ev SSIZE_MAX .
 .El
 .Pp
-Also,
+.Fn pwrite
+and
+.Fn pwritev
+may return the following error:
+.Bl -tag -width Er
+.It Bq Er ESPIPE
+.Fa d
+is associated with a pipe, socket, or FIFO.
+.El
+.Pp
 .Fn writev
 and
 .Fn pwritev
@@ -207,8 +217,8 @@ may return one of the following errors:
 .Bl -tag -width Er
 .It Bq Er EDESTADDRREQ
 The destination is no longer available when writing to a
-.Ux
-domain datagram socket on which
+.Ux Ns -domain
+datagram socket on which
 .Xr connect 2
 had been used to set a destination address.
 .It Bq Er EINVAL

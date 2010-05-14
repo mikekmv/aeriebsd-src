@@ -29,7 +29,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: fts.c,v 1.1.1.1 2008/08/26 14:38:27 root Exp $";
+static const char rcsid[] = "$ABSD: fts.c,v 1.2 2009/05/26 23:27:22 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -636,15 +636,13 @@ fts_build(FTS *sp, int type)
 	len++;
 	maxlen = sp->fts_pathlen - len;
 
-	if (cur->fts_level == SHRT_MAX) {
-		(void)closedir(dirp);
-		cur->fts_info = FTS_ERR;
-		SET(FTS_STOP);
-		errno = ENAMETOOLONG;
-		return (NULL);
-	}
-
-	level = cur->fts_level + 1;
+	/*
+	 * fts_level is a short so we must prevent it from wrapping
+	 * around to FTS_ROOTLEVEL and FTS_ROOTPARENTLEVEL.
+	 */
+	level = cur->fts_level;
+	if (level < FTS_MAXLEVEL)
+	    level++;
 
 	/* Read the directory, attaching each entry to the `link' pointer. */
 	doadjust = 0;

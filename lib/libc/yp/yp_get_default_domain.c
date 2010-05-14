@@ -25,7 +25,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: yp_get_default_domain.c,v 1.1.1.1 2008/08/26 14:38:41 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -44,5 +44,7 @@ yp_get_default_domain(char **domp)
 		if (getdomainname(_yp_domain, sizeof _yp_domain))
 			return YPERR_NODOM;
 	*domp = _yp_domain;
+	if (_yp_domain[0] == '\0')
+		return YPERR_NODOM;
 	return 0;
 }

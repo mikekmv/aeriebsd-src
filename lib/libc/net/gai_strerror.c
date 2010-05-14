@@ -32,7 +32,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: gai_strerror.c,v 1.1.1.1 2008/08/26 14:38:30 root Exp $";
 #endif
 
 /* gai_strerror() v1.38 */
@@ -73,6 +73,8 @@ gai_strerror(int errnum)
 		return "invalid value for hints";
 	case EAI_PROTOCOL:
 		return "resolved protocol is unknown";
+	case EAI_OVERFLOW:
+		return "argument buffer overflow";
 	default:
 		return "unknown/invalid error";
 	}

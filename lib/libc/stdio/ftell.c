@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ftell.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -48,20 +48,22 @@ ftello(FILE *fp)
 
 	if (fp->_seek == NULL) {
 		errno = ESPIPE;			/* historic practice */
-		return ((off_t)-1);
+		pos = -1;
+		goto out;
 	}
 
 	/*
 	 * Find offset of underlying I/O object, then
 	 * adjust for buffered bytes.
 	 */
+	FLOCKFILE(fp);
 	__sflush(fp);		/* may adjust seek offset on append stream */
 	if (fp->_flags & __SOFF)
 		pos = fp->_offset;
 	else {
 		pos = (*fp->_seek)(fp->_cookie, (fpos_t)0, SEEK_CUR);
-		if (pos == -1L)
-			return (pos);
+		if (pos == -1)
+			goto out;
 	}
 	if (fp->_flags & __SRD) {
 		/*
@@ -80,6 +82,7 @@ ftello(FILE *fp)
 		 */
 		pos += fp->_p - fp->_bf._base;
 	}
+out:	FUNLOCKFILE(fp);
 	return (pos);
 }
 

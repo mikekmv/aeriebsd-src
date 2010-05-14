@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)sigaltstack.2	8.1 (Berkeley) 6/4/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt SIGALTSTACK 2
 .Os
 .Sh NAME
@@ -108,7 +108,7 @@ if ((sigstk.ss_sp = malloc(SIGSTKSZ)) == NULL)
 	/* error return */
 sigstk.ss_size = SIGSTKSZ;
 sigstk.ss_flags = 0;
-if (sigaltstack(&sigstk,0) < 0)
+if (sigaltstack(&sigstk, 0) == -1)
 	perror("sigaltstack");
 .Ed
 .Pp

@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fputwc.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <errno.h>
@@ -82,9 +82,9 @@ fputwc(wchar_t wc, FILE *fp)
 {
 	wint_t r;
 
-	flockfile(fp);
+	FLOCKFILE(fp);
 	r = __fputwc_unlock(wc, fp);
-	funlockfile(fp);
+	FUNLOCKFILE(fp);
 
 	return (r);
 }

@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fgetln.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -74,19 +74,19 @@ char *
 fgetln(FILE *fp, size_t *lenp)
 {
 	unsigned char *p;
+	char *ret;
 	size_t len;
 	size_t off;
 
+	FLOCKFILE(fp);
+	_SET_ORIENTATION(fp, -1);
+
 	/* make sure there is input */
-	if (fp->_r <= 0 && __srefill(fp)) {
-		*lenp = 0;
-		return (NULL);
-	}
+	if (fp->_r <= 0 && __srefill(fp))
+		goto error;
 
 	/* look for a newline in the input */
 	if ((p = memchr((void *)fp->_p, '\n', fp->_r)) != NULL) {
-		char *ret;
-
 		/*
 		 * Found one.  Flag buffer as modified to keep fseek from
 		 * `optimising' a backward seek, in case the user stomps on
@@ -98,6 +98,7 @@ fgetln(FILE *fp, size_t *lenp)
 		fp->_flags |= __SMOD;
 		fp->_r -= len;
 		fp->_p = p;
+		FUNLOCKFILE(fp);
 		return (ret);
 	}
 
@@ -142,12 +143,15 @@ fgetln(FILE *fp, size_t *lenp)
 		break;
 	}
 	*lenp = len;
+	ret = (char *)fp->_lb._base;
 #ifdef notdef
-	fp->_lb._base[len] = '\0';
+	ret[len] = '\0';
 #endif
-	return ((char *)fp->_lb._base);
+	FUNLOCKFILE(fp);
+	return (ret);
 
 error:
 	*lenp = 0;		/* ??? */
+	FUNLOCKFILE(fp);
 	return (NULL);		/* ??? */
 }

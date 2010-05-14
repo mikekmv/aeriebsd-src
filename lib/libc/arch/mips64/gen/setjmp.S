@@ -30,7 +30,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: setjmp.S,v 1.2 2009/05/23 01:24:11 mickey Exp $"
+	.asciz "$ABSD: setjmp.S,v 1.3 2009/10/31 21:30:58 mickey Exp $"
 	.text
 #endif /* LIBC_SCCS */
 
@@ -69,7 +69,7 @@ NON_LEAF(setjmp, FRAMESZ, ra)
 	jal	_thread_sys_sigaltstack
 
 	REG_L	a0, A0OFF(sp)			# restore jmpbuf
-	lw	v1, REGSZ+4(sp)			# get old ss_onstack
+	ld	v1, REGSZ(sp)			# get old ss_onstack
 	and	v1, v1, 1			# extract onstack flag
 	REG_S	v1, SC_ONSTACK(a0)		# save it in sc_onstack
 	REG_L	ra, RAOFF(sp)

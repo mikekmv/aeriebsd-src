@@ -9,11 +9,13 @@
 #include <sys/cdefs.h>
 #include <machine/ieeefp.h>
 
+__BEGIN_DECLS
 extern fp_rnd    fpgetround(void);
 extern fp_rnd    fpsetround(fp_rnd);
 extern fp_except fpgetmask(void);
 extern fp_except fpsetmask(fp_except);
 extern fp_except fpgetsticky(void);
 extern fp_except fpsetsticky(fp_except);
+__END_DECLS
 
 #endif /* _IEEEFP_H_ */

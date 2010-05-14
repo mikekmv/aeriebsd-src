@@ -129,8 +129,8 @@ __sbprintf(FILE *fp, const char *fmt, va_list ap)
 	fake._lbfsize = 0;	/* not actually used, but Just In Case */
 
 	/* do the work, then copy any error status */
-	ret = vfprintf(&fake, fmt, ap);
-	if (ret >= 0 && fflush(&fake))
+	ret = __vfprintf(&fake, fmt, ap);
+	if (ret >= 0 && __sflush(&fake))
 		ret = EOF;
 	if (fake._flags & __SERR)
 		fp->_flags |= __SERR;
@@ -188,6 +188,17 @@ static int exponent(char *, int, int);
 
 int
 vfprintf(FILE *fp, const char *fmt0, __va_list ap)
+{
+	int ret;
+
+	FLOCKFILE(fp);
+	ret = __vfprintf(fp, fmt0, ap);
+	FUNLOCKFILE(fp);
+	return (ret);
+}
+
+int
+__vfprintf(FILE *fp, const char *fmt0, __va_list ap)
 {
 	char *fmt;		/* format string */
 	int ch;			/* character from fmt */
@@ -436,6 +447,9 @@ reswitch:	switch (ch) {
 		case '#':
 			flags |= ALT;
 			goto rflag;
+		case '\'':
+			/* grouping not implemented */
+			goto rflag;
 		case '*':
 			/*
 			 * ``A negative field width argument is taken as a
@@ -575,11 +589,19 @@ reswitch:	switch (ch) {
 				dtoaresult = cp =
 				    __hldtoa(fparg.ldbl, xdigs, prec,
 				    &expt, &signflag, &dtoaend);
+				if (dtoaresult == NULL) {
+					errno = ENOMEM;
+					goto error;
+				}
 			} else {
 				fparg.dbl = GETARG(double);
 				dtoaresult = cp =
 				    __hdtoa(fparg.dbl, xdigs, prec,
 				    &expt, &signflag, &dtoaend);
+				if (dtoaresult == NULL) {
+					errno = ENOMEM;
+					goto error;
+				}
 			}
 			if (prec < 0)
 				prec = dtoaend - cp;
@@ -613,11 +635,19 @@ fp_begin:
 				dtoaresult = cp =
 				    __ldtoa(&fparg.ldbl, expchar ? 2 : 3, prec,
 				    &expt, &signflag, &dtoaend);
+				if (dtoaresult == NULL) {
+					errno = ENOMEM;
+					goto error;
+				}
 			} else {
 				fparg.dbl = GETARG(double);
 				dtoaresult = cp =
 				    __dtoa(fparg.dbl, expchar ? 2 : 3, prec,
 				    &expt, &signflag, &dtoaend);
+				if (dtoaresult == NULL) {
+					errno = ENOMEM;
+					goto error;
+				}
 				if (expt == 9999)
 					expt = INT_MAX;
  			}
@@ -1067,6 +1097,7 @@ rflag:		ch = *fmt++;
 reswitch:	switch (ch) {
 		case ' ':
 		case '#':
+		case '\'':
 			goto rflag;
 		case '*':
 			ADDASTER();

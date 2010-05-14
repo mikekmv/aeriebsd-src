@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: putc.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -50,6 +50,7 @@ putc_unlocked(int c, FILE *fp)
 		errno = EBADF;
 		return (EOF);
 	}
+	_SET_ORIENTATION(fp, -1);
 	return (__sputc(c, fp));
 }
 
@@ -63,8 +64,8 @@ putc(int c, FILE *fp)
 {
 	int ret;
 
-	flockfile(fp);
+	FLOCKFILE(fp);
 	ret = putc_unlocked(c, fp);
-	funlockfile(fp);
+	FUNLOCKFILE(fp);
 	return (ret);
 }

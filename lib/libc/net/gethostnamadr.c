@@ -48,7 +48,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: gethostnamadr.c,v 1.1.1.1 2008/08/26 14:38:30 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -81,6 +81,7 @@ static char *h_addr_ptrs[MAXADDRS + 1];
 
 #ifdef YP
 static char *__ypdomain;
+static struct hostent * _hna_yphostent(char *);
 #endif
 
 static struct hostent host;
@@ -297,10 +298,12 @@ getanswer(const querybuf *answer, int anslen, const char *qname, int qtype)
 			continue;
 		}
 		if (type != qtype) {
+#ifndef NO_LOG_BAD_DNS_RESPONSES
 			syslog(LOG_NOTICE|LOG_AUTH,
 	       "gethostby*.getanswer: asked for \"%s %s %s\", got type \"%s\"",
 			       qname, p_class(C_IN), p_type(qtype),
 			       p_type(type));
+#endif /* NO_LOG_BAD_DNS_RESPONSES */
 			cp += n;
 			continue;		/* XXX - had_error++ ? */
 		}
@@ -910,8 +913,8 @@ _gethtbyaddr(const void *addr, socklen_t len, int af)
 }
 
 #ifdef YP
-struct hostent *
-_yphostent(char *line)
+static struct hostent *
+_hna_yphostent(char *line)
 {
 	static struct in_addr host_addrs[MAXADDRS];
 	char *p = line;
@@ -1005,7 +1008,7 @@ _yp_gethtbyaddr(const void *addr)
 	r = yp_match(__ypdomain, "hosts.byaddr", name,
 		strlen(name), &__ypcurrent, &__ypcurrentlen);
 	if (r==0)
-		hp = _yphostent(__ypcurrent);
+		hp = _hna_yphostent(__ypcurrent);
 	if (hp==NULL)
 		h_errno = HOST_NOT_FOUND;
 	return (hp);
@@ -1030,7 +1033,7 @@ _yp_gethtbyname(const char *name)
 	r = yp_match(__ypdomain, "hosts.byname", name,
 		strlen(name), &__ypcurrent, &__ypcurrentlen);
 	if (r == 0)
-		hp = _yphostent(__ypcurrent);
+		hp = _hna_yphostent(__ypcurrent);
 	if (hp == NULL)
 		h_errno = HOST_NOT_FOUND;
 	return (hp);

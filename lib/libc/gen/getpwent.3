@@ -26,34 +26,19 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: December 26 2008 $
+.Dd $Mdocdate: May 26 2009 $
 .Dt GETPWENT 3
 .Os
 .Sh NAME
 .Nm getpwent ,
-.Nm getpwnam ,
-.Nm getpwuid ,
-.Nm getpwnam_r ,
-.Nm getpwuid_r ,
-.Nm setpassent ,
 .Nm setpwent ,
 .Nm endpwent
-.Nd password database operations
+.Nd sequential password database access
 .Sh SYNOPSIS
 .Fd #include <sys/types.h>
 .Fd #include <pwd.h>
 .Ft struct passwd *
 .Fn getpwent void
-.Ft struct passwd *
-.Fn getpwnam "const char *login"
-.Ft struct passwd *
-.Fn getpwuid "uid_t uid"
-.Ft int
-.Fn getpwnam_r "const char *login" "struct passwd *pwstore" "char *buf" "size_t buflen" "struct passwd **result"
-.Ft int
-.Fn getpwuid_r "uid_t uid" "struct passwd *pwstore" "char *buf" "size_t buflen" "struct passwd **result"
-.Ft int
-.Fn setpassent "int stayopen"
 .Ft void
 .Fn setpwent void
 .Ft void
@@ -80,60 +65,38 @@ struct passwd {
 };
 .Ed
 .Pp
-The functions
-.Fn getpwnam
-and
-.Fn getpwuid
-search the password database for the given login name or user ID,
-respectively, always returning the first one encountered.
-.Pp
-The re-entrant functions
-.Fn getpwnam_r
-and
-.Fn getpwuid_r
-search the password database for the given login name or user ID,
-respectively, always returning the first one encountered.
-The various strings associated with the result are stored in
-.Va buf ,
-and
-.Va pwstore
-is updated to point at those strings.
-.Pp
+The
 .Fn getpwent
-sequentially reads the password database and is intended for programs
+function sequentially reads the password database and is intended for programs
 that wish to process the complete list of users.
-.Pp
-.Fn setpassent
-accomplishes two purposes.
-First, it causes
-.Fn getpwent
-to
-.Dq rewind
-to the beginning of the database.
-Additionally, if
-.Fa stayopen
-is non-zero, file descriptors are left open, significantly speeding
-up subsequent accesses for all of the routines.
-(This latter functionality is unnecessary for
-.Fn getpwent
-as it doesn't close its file descriptors by default.)
 .Pp
 It is dangerous for long-running programs to keep the file descriptors
 open as the database will become out of date if it is updated while the
 program is running.
+Furthermore, programs that run child processes should be careful to call
+.Fn endpwent
+to close these descriptors before calling
+.Xr execve 2
+or
+.Xr system 3 .
 .Pp
 .Fn setpwent
-is equivalent to
-.Fn setpassent
-with an argument of zero.
+causes
+.Fn getpwent
+to
+.Dq rewind
+to the beginning of the database.
 .Pp
 The
 .Fn endpwent
-function closes any open files.
+function closes any file descriptors opened by
+.Fn setpwent
+or
+.Fn getpwent .
 .Pp
 These routines have been written to
 .Dq shadow
-the password file, i.e.,
+the password file, that is,
 allow only certain programs to have access to the encrypted password.
 If the process which calls them has an effective UID of 0 or has the
 .Dq _shadow
@@ -141,49 +104,22 @@ group in its group vector, the encrypted password will be returned, otherwise,
 the password field of the returned structure will point to the string
 .Ql * .
 .Sh YP SUPPORT
-If YP is active, the functions
-.Fn getpwent ,
-.Fn getpwnam ,
-and
-.Fn getpwnam_r
-also use the
+If YP is active,
+.Fn getpwent
+also uses the
 .Pa master.passwd.byname
 YP map (if available) or the
 .Pa passwd.byname
-YP map; and the functions
-.Fn getpwuid
-and
-.Fn getpwuid_r
-also use the
-.Pa master.passwd.byuid
-YP map (if available) or the
-.Pa passwd.byuid
 YP map.
 This is in addition to the passwd file,
 and respects the order of both normal and YP
 entries in the passwd file.
 .Sh RETURN VALUES
-The functions
-.Fn getpwent ,
-.Fn getpwnam ,
-and
-.Fn getpwuid
-return a valid pointer to a passwd structure on success
+The
+.Fn getpwent
+function returns a valid pointer to a passwd structure on success
 or a null pointer if end-of-file is reached or an error occurs.
 .Pp
-The functions
-.Fn getpwnam_r
-and
-.Fn getpwuid_r
-update
-.Va result
-to point to
-.Va pwstore
-and then return 0 on success.
-.Pp
-The
-.Fn setpassent
-function returns 0 on failure or 1 on success.
 The
 .Fn endpwent
 and
@@ -204,6 +140,7 @@ a Version 7 format password file
 .Xr getlogin 2 ,
 .Xr getgrent 3 ,
 .Xr getgrouplist 3 ,
+.Xr getpwnam 3 ,
 .Xr pw_dup 3 ,
 .Xr passwd 5 ,
 .Xr Makefile.yp 8 ,
@@ -213,36 +150,31 @@ a Version 7 format password file
 .Sh HISTORY
 The
 .Fn getpwent ,
-.Fn getpwnam ,
-.Fn getpwuid ,
 .Fn setpwent ,
 and
 .Fn endpwent
 functions appeared in
 .At v7 .
-The
-.Fn setpassent
-function appeared in
-.Bx 4.3 Reno .
 .Pp
 The historic function
 .Xr setpwfile 3 ,
 which allowed the specification of alternate password databases,
 has been deprecated and is no longer available.
 .Sh BUGS
-The functions
+The
+.Fn getpwent
+function stores its results in an internal static buffer and returns
+a pointer to that buffer.
+Subsequent calls to
 .Fn getpwent ,
 .Fn getpwnam ,
-and
+or
 .Fn getpwuid
-leave their results in an internal static object and return
-a pointer to that object.
-Subsequent calls to any of these functions will modify the same object.
+will overwrite the same buffer.
 .Pp
 The routines
 .Fn getpwent ,
 .Fn endpwent ,
-.Fn setpassent ,
 and
 .Fn setpwent
 are fairly useless in a networked environment and should be

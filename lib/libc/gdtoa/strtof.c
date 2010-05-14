@@ -27,7 +27,7 @@ THIS SOFTWARE.
 ****************************************************************/
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: strtof.c,v 1.1 2009/05/26 23:27:21 mickey Exp $";
 #endif
 
 /* Please send bug reports to David M. Gay (dmg at acm dot org,
@@ -69,6 +69,9 @@ strtof(CONST char *s, char **sp)
 		u.L[0] = bits[0];
 		break;
 
+	  case STRTOG_NoMemory:
+		errno = ERANGE;
+	  	/* FALLTHROUGH */
 	  case STRTOG_Infinite:
 		u.L[0] = 0x7f800000;
 		break;

@@ -15,6 +15,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#if defined(LIBC_SCCS) && !defined(lint)
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -43,11 +47,6 @@ mktemp_internal(char *path, int slen, int mode)
 	size_t len;
 	int fd;
 
-	if (*path == '\0') {
-		errno = EINVAL;
-		return(-1);
-	}
-
 	len = strlen(path);
 	if (len == 0 || slen >= len) {
 		errno = EINVAL;
@@ -56,12 +55,11 @@ mktemp_internal(char *path, int slen, int mode)
 	ep = path + len - slen;
 
 	tries = 1;
-	for (start = ep; start >= path && *--start == 'X';) {
+	for (start = ep; start > path && start[-1] == 'X'; start--) {
 		if (tries < INT_MAX / NUM_CHARS)
 			tries *= NUM_CHARS;
 	}
 	tries *= 2;
-	start++;
 
 	do {
 		for (cp = start; cp != ep; cp++) {

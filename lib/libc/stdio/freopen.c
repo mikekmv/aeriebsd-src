@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: freopen.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -62,6 +62,8 @@ freopen(const char *file, const char *mode, FILE *fp)
 
 	if (!__sdidinit)
 		__sinit();
+
+	FLOCKFILE(fp);
 
 	/*
 	 * There are actually programs that depend on being able to "freopen"
@@ -124,6 +126,7 @@ freopen(const char *file, const char *mode, FILE *fp)
 
 	if (f < 0) {			/* did not get it after all */
 		fp->_flags = 0;		/* set it free */
+		FUNLOCKFILE(fp);
 		errno = sverrno;	/* restore in case _close clobbered */
 		return (NULL);
 	}
@@ -143,6 +146,7 @@ freopen(const char *file, const char *mode, FILE *fp)
 	/* _file is only a short */
 	if (f > SHRT_MAX) {
 		fp->_flags = 0;		/* set it free */
+		FUNLOCKFILE(fp);
 		errno = EMFILE;
 		return (NULL);
 	}
@@ -165,5 +169,6 @@ freopen(const char *file, const char *mode, FILE *fp)
 	 */
 	if (oflags & O_APPEND)
 		(void) __sseek((void *)fp, (fpos_t)0, SEEK_END);
+	FUNLOCKFILE(fp);
 	return (fp);
 }

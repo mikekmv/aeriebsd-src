@@ -31,10 +31,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: putw.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
+#include "local.h"
 #include "fvwrite.h"
 
 int
@@ -42,10 +43,15 @@ putw(int w, FILE *fp)
 {
 	struct __suio uio;
 	struct __siov iov;
+	int ret;
 
 	iov.iov_base = &w;
 	iov.iov_len = uio.uio_resid = sizeof(w);
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;
-	return (__sfvwrite(fp, &uio));
+	FLOCKFILE(fp);
+	_SET_ORIENTATION(fp, -1);
+	ret = __sfvwrite(fp, &uio);
+	FUNLOCKFILE(fp);
+	return (ret);
 }

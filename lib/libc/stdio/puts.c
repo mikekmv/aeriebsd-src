@@ -31,11 +31,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: puts.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
 #include <string.h>
+#include "local.h"
 #include "fvwrite.h"
 
 /*
@@ -47,6 +48,7 @@ puts(const char *s)
 	size_t c = strlen(s);
 	struct __suio uio;
 	struct __siov iov[2];
+	int ret;
 
 	iov[0].iov_base = (void *)s;
 	iov[0].iov_len = c;
@@ -55,5 +57,9 @@ puts(const char *s)
 	uio.uio_resid = c + 1;
 	uio.uio_iov = &iov[0];
 	uio.uio_iovcnt = 2;
-	return (__sfvwrite(stdout, &uio) ? EOF : '\n');
+	FLOCKFILE(stdout);
+	_SET_ORIENTATION(stdout, -1);
+	ret = __sfvwrite(stdout, &uio);
+	FUNLOCKFILE(stdout);
+	return (ret ? EOF : '\n');
 }

@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: findfp.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -42,6 +42,7 @@ static const char rcsid[] = "$ABSD$";
 #include <string.h>
 #include "local.h"
 #include "glue.h"
+#include "thread_private.h"
 
 int	__sdidinit;
 
@@ -57,6 +58,8 @@ int	__sdidinit;
 static FILE usual[FOPEN_MAX - 3];
 static struct __sfileext usualext[FOPEN_MAX - 3];
 static struct glue uglue = { 0, FOPEN_MAX - 3, usual };
+static struct glue *lastglue = &uglue;
+_THREAD_PRIVATE_MUTEX(__sfp_mutex);
 
 struct __sfileext __sFext[3];
 FILE __sF[3] = {
@@ -107,16 +110,25 @@ __sfp(void)
 
 	if (!__sdidinit)
 		__sinit();
-	for (g = &__sglue;; g = g->next) {
+
+	_THREAD_PRIVATE_MUTEX_LOCK(__sfp_mutex);
+	for (g = &__sglue; g != NULL; g = g->next) {
 		for (fp = g->iobs, n = g->niobs; --n >= 0; fp++)
 			if (fp->_flags == 0)
 				goto found;
-		if (g->next == NULL && (g->next = moreglue(NDYNAMIC)) == NULL)
-			break;
 	}
-	return (NULL);
+
+	/* release lock while mallocing */
+	_THREAD_PRIVATE_MUTEX_UNLOCK(__sfp_mutex);
+	if ((g = moreglue(NDYNAMIC)) == NULL)
+		return (NULL);
+	_THREAD_PRIVATE_MUTEX_LOCK(__sfp_mutex);
+	lastglue->next = g;
+	lastglue = g;
+	fp = g->iobs;
 found:
 	fp->_flags = 1;		/* reserve this slot; caller sets real flags */
+	_THREAD_PRIVATE_MUTEX_UNLOCK(__sfp_mutex);
 	fp->_p = NULL;		/* no current pointer */
 	fp->_w = 0;		/* nothing to read or write */
 	fp->_r = 0;
@@ -146,8 +158,12 @@ f_prealloc(void)
 	n = getdtablesize() - FOPEN_MAX + 20;		/* 20 for slop. */
 	for (g = &__sglue; (n -= g->niobs) > 0 && g->next; g = g->next)
 		/* void */;
-	if (n > 0)
-		g->next = moreglue(n);
+	if (n > 0 && ((g = moreglue(n)) != NULL)) {
+		_THREAD_PRIVATE_MUTEX_LOCK(__sfp_mutex);
+		lastglue->next = g;
+		lastglue = g;
+		_THREAD_PRIVATE_MUTEX_UNLOCK(__sfp_mutex);
+	}
 }
 
 /*
@@ -171,12 +187,18 @@ _cleanup(void)
 void
 __sinit(void)
 {
+	_THREAD_PRIVATE_MUTEX(__sinit_mutex);
 	int i;
 
+	_THREAD_PRIVATE_MUTEX_LOCK(__sinit_mutex);
+	if (__sdidinit)
+		goto out;	/* bail out if caller lost the race */
 	for (i = 0; i < FOPEN_MAX - 3; i++) {
 		_FILEEXT_SETUP(usual+i, usualext+i);
 	}
 	/* make sure we clean up on exit */
 	__atexit_register_cleanup(_cleanup); /* conservative */
 	__sdidinit = 1;
+out: 
+	_THREAD_PRIVATE_MUTEX_UNLOCK(__sinit_mutex);
 }

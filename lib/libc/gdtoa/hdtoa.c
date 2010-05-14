@@ -25,7 +25,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: hdtoa.c,v 1.1 2009/05/26 23:27:21 mickey Exp $";
 #endif
 
 #include <sys/types.h>
@@ -165,6 +165,8 @@ __hdtoa(double d, const char *xdigs, int ndigits, int *decpt, int *sign,
 	 */
 	bufsize = (sigfigs > ndigits) ? sigfigs : ndigits;
 	s0 = rv_alloc(bufsize);
+	if (s0 == NULL)
+		return (NULL);
 
 	/*
 	 * We work from right to left, first adding any requested zero
@@ -260,6 +262,8 @@ __hldtoa(long double e, const char *xdigs, int ndigits, int *decpt, int *sign,
 	 */
 	bufsize = (sigfigs > ndigits) ? sigfigs : ndigits;
 	s0 = rv_alloc(bufsize);
+	if (s0 == NULL)
+		return (NULL);
 
 	/*
 	 * We work from right to left, first adding any requested zero

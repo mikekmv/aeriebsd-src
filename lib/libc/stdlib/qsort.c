@@ -28,14 +28,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: qsort.c,v 1.1.1.1 2008/08/26 14:38:36 root Exp $";
 #endif
 
 #include <sys/types.h>
 #include <stdlib.h>
 
 static __inline char	*med3(char *, char *, char *, int (*)(const void *, const void *));
-static __inline void	 swapfunc(char *, char *, int, int);
+static __inline void	 swapfunc(char *, char *, size_t, int);
 
 #define min(a, b)	(a) < (b) ? a : b
 
@@ -43,7 +43,7 @@ static __inline void	 swapfunc(char *, char *, int, int);
  * Qsort routine from Bentley & McIlroy's "Engineering a Sort Function".
  */
 #define swapcode(TYPE, parmi, parmj, n) { 		\
-	long i = (n) / sizeof (TYPE); 			\
+	size_t i = (n) / sizeof (TYPE); 		\
 	TYPE *pi = (TYPE *) (parmi); 			\
 	TYPE *pj = (TYPE *) (parmj); 			\
 	do { 						\
@@ -57,7 +57,7 @@ static __inline void	 swapfunc(char *, char *, int, int);
 	es % sizeof(long) ? 2 : es == sizeof(long)? 0 : 1;
 
 static __inline void
-swapfunc(char *a, char *b, int n, int swaptype)
+swapfunc(char *a, char *b, size_t n, int swaptype)
 {
 	if (swaptype <= 1) 
 		swapcode(long, a, b, n)
@@ -87,7 +87,8 @@ void
 qsort(void *aa, size_t n, size_t es, int (*cmp)(const void *, const void *))
 {
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-	int d, r, swaptype, swap_cnt;
+	int cmp_result, swaptype, swap_cnt;
+	size_t d, r;
 	char *a = aa;
 
 loop:	SWAPINIT(a, es);
@@ -116,16 +117,16 @@ loop:	SWAPINIT(a, es);
 
 	pc = pd = (char *)a + (n - 1) * es;
 	for (;;) {
-		while (pb <= pc && (r = cmp(pb, a)) <= 0) {
-			if (r == 0) {
+		while (pb <= pc && (cmp_result = cmp(pb, a)) <= 0) {
+			if (cmp_result == 0) {
 				swap_cnt = 1;
 				swap(pa, pb);
 				pa += es;
 			}
 			pb += es;
 		}
-		while (pb <= pc && (r = cmp(pc, a)) >= 0) {
-			if (r == 0) {
+		while (pb <= pc && (cmp_result = cmp(pc, a)) >= 0) {
+			if (cmp_result == 0) {
 				swap_cnt = 1;
 				swap(pc, pd);
 				pd -= es;

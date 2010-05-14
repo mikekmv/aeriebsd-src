@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: getttyent.c,v 1.1.1.1 2008/08/26 14:38:28 root Exp $";
 #endif
 
 #include <ttyent.h>
@@ -71,7 +71,7 @@ getttyent(void)
 			return (NULL);
 		/* skip lines that are too big */
 		if (!strchr(p, '\n')) {
-			while ((c = getc(tf)) != '\n' && c != EOF)
+			while ((c = getc_unlocked(tf)) != '\n' && c != EOF)
 				;
 			continue;
 		}

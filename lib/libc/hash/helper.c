@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: helper.c,v 1.1.1.1 2008/08/26 14:38:29 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -65,8 +65,10 @@ HASHFileChunk(const char *filename, char *buf, off_t off, off_t len)
 		}
 		len = sb.st_size;
 	}
-	if (off > 0 && lseek(fd, off, SEEK_SET) < 0)
+	if (off > 0 && lseek(fd, off, SEEK_SET) < 0) {
+		close(fd);
 		return (NULL);
+	}
 
 	while ((nr = read(fd, buffer, MIN(sizeof(buffer), len))) > 0) {
 		HASHUpdate(&ctx, buffer, (size_t)nr);

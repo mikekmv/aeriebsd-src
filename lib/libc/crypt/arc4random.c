@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: arc4random.c,v 1.3 2009/05/08 16:37:14 mikeb Exp $";
+static const char rcsid[] = "$ABSD: arc4random.c,v 1.4 2009/05/26 23:27:20 mickey Exp $";
 #endif
 
 /*
@@ -110,7 +110,6 @@ arc4_stir(void)
 	len = sizeof(rnd);
 	sysctl(mib, 2, rnd, &len, NULL, 0);
 
-	arc4_stir_pid = getpid();
 	arc4_addrandom(rnd, sizeof(rnd));
 
 	/*
@@ -120,6 +119,18 @@ arc4_stir(void)
 	for (i = 0; i < 256; i++)
 		(void)arc4_getbyte();
 	arc4_count = 1600000;
+}
+
+static void
+arc4_stir_if_needed(void)
+{
+	pid_t pid = getpid();
+
+	if (arc4_count <= 0 || !rs_initialized || arc4_stir_pid != pid)
+	{
+		arc4_stir_pid = pid;
+		arc4_stir();
+	}
 }
 
 static inline u_int8_t
@@ -171,8 +182,7 @@ arc4random(void)
 	u_int32_t val;
 	_ARC4_LOCK();
 	arc4_count -= 4;
-	if (arc4_count <= 0 || !rs_initialized || arc4_stir_pid != getpid())
-		arc4_stir();
+	arc4_stir_if_needed();
 	val = arc4_getword();
 	_ARC4_UNLOCK();
 	return val;
@@ -183,8 +193,7 @@ arc4random_buf(void *_buf, size_t n)
 {
 	u_char *buf = (u_char *)_buf;
 	_ARC4_LOCK();
-	if (!rs_initialized || arc4_stir_pid != getpid())
-		arc4_stir();
+	arc4_stir_if_needed();
 	while (n--) {
 		if (--arc4_count <= 0)
 			arc4_stir();

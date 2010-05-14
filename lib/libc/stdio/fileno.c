@@ -31,10 +31,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fileno.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
+#include "local.h"
 
 /*
  * A subroutine version of the macro fileno.
@@ -44,5 +45,10 @@ static const char rcsid[] = "$ABSD$";
 int
 fileno(FILE *fp)
 {
-	return (__sfileno(fp));
+	int     ret;
+
+	FLOCKFILE(fp);
+	ret = __sfileno(fp);
+	FUNLOCKFILE(fp);
+	return (ret);
 }

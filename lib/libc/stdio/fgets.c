@@ -31,9 +31,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fgets.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include "local.h"
@@ -51,9 +52,12 @@ fgets(char *buf, int n, FILE *fp)
 	char *s;
 	unsigned char *p, *t;
 
-	if (n <= 0)		/* sanity check */
+	if (n <= 0) {		/* sanity check */
+		errno = EINVAL;
 		return (NULL);
+	}
 
+	FLOCKFILE(fp);
 	_SET_ORIENTATION(fp, -1);
 	s = buf;
 	n--;			/* leave space for NUL */
@@ -64,8 +68,10 @@ fgets(char *buf, int n, FILE *fp)
 		if (fp->_r <= 0) {
 			if (__srefill(fp)) {
 				/* EOF/error: stop with partial or no line */
-				if (s == buf)
+				if (s == buf) {
+					FUNLOCKFILE(fp);
 					return (NULL);
+				}
 				break;
 			}
 		}
@@ -87,6 +93,7 @@ fgets(char *buf, int n, FILE *fp)
 			fp->_p = t;
 			(void)memcpy((void *)s, (void *)p, len);
 			s[len] = '\0';
+			FUNLOCKFILE(fp);
 			return (buf);
 		}
 		fp->_r -= len;
@@ -96,5 +103,6 @@ fgets(char *buf, int n, FILE *fp)
 		n -= len;
 	}
 	*s = '\0';
+	FUNLOCKFILE(fp);
 	return (buf);
 }

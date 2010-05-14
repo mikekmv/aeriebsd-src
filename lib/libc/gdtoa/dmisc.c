@@ -27,7 +27,7 @@ THIS SOFTWARE.
 ****************************************************************/
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: dmisc.c,v 1.1 2009/05/26 23:27:20 mickey Exp $";
 #endif
 
 /* Please send bug reports to David M. Gay (dmg at acm dot org,
@@ -54,6 +54,12 @@ rv_alloc(int i)
 		j <<= 1)
 			k++;
 	r = (int*)Balloc(k);
+	if (r == NULL)
+		return (
+#ifndef MULTIPLE_THREADS
+		    dtoa_result =
+#endif
+		    NULL);
 	*r = k;
 	return
 #ifndef MULTIPLE_THREADS
@@ -72,6 +78,8 @@ nrv_alloc(char *s, char **rve, int n)
 	char *rv, *t;
 
 	t = rv = rv_alloc(n);
+	if (t == NULL)
+		return NULL;
 	while((*t = *s++) !=0)
 		t++;
 	if (rve)

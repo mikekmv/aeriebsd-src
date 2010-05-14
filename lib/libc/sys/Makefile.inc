@@ -42,8 +42,7 @@ ASM=	accept.o access.o acct.o adjfreq.o adjtime.o bind.o chdir.o chflags.o \
 	getpgrp.o getpid.o getppid.o getpriority.o getresgid.o getresuid.o \
 	getrlimit.o getrusage.o getsid.o \
 	getsockname.o getsockopt.o gettimeofday.o getuid.o issetugid.o \
-	ioctl.o kill.o kevent.o kqueue.o \
-	ktrace.o lchown.o lfs_bmapv.o lfs_markv.o lfs_segclean.o lfs_segwait.o \
+	ioctl.o kill.o kevent.o kqueue.o ktrace.o lchown.o \
 	link.o listen.o lstat.o madvise.o mincore.o minherit.o mkdir.o \
 	mkfifo.o mknod.o mlock.o mlockall.o \
 	mount.o mprotect.o msgctl.o msgget.o msgrcv.o msgsnd.o msync.o \
@@ -81,14 +80,14 @@ ${GASM}: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
 	@printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.TARGET}.o
-	@${LD} -X -r ${.TARGET}.o -o ${.TARGET}
+	@${LD} -X -r -o ${.TARGET} ${.TARGET}.o
 	@rm -f ${.TARGET}.o
 
 ${PASM}: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
 	@printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' | \
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.TARGET}.o
-	@${LD} -X -r ${.TARGET}.o -o ${.TARGET}
+	@${LD} -X -r -o ${.TARGET} ${.TARGET}.o
 	@rm -f ${.TARGET}.o
 
 .if (${MACHINE_ARCH} != "mips")
@@ -108,21 +107,21 @@ ${ASM}: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
 	@printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.TARGET}.o
-	@${LD} -x -r ${.TARGET}.o -o ${.TARGET}
+	@${LD} -X -r -o ${.TARGET} ${.TARGET}.o
 	@rm -f ${.TARGET}.o
 
 ${GPSEUDO}: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
 	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.TARGET}.o
-	@${LD} -X -r ${.TARGET}.o -o ${.TARGET}
+	@${LD} -X -r -o ${.TARGET} ${.TARGET}.o
 	@rm -f ${.TARGET}.o
 
 ${PPSEUDO}: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
 	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.TARGET}.o
-	@${LD} -X -r ${.TARGET}.o -o ${.TARGET}
+	@${LD} -X -r -o ${.TARGET} ${.TARGET}.o
 	@rm -f ${.TARGET}.o
 
 .if (${MACHINE_ARCH} != "mips")
@@ -142,21 +141,21 @@ ${PSEUDO}: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
 	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.TARGET}.o
-	@${LD} -X -r ${.TARGET}.o -o ${.TARGET}
+	@${LD} -X -r -o ${.TARGET} ${.TARGET}.o
 	@rm -f ${.TARGET}.o
 
 ${GPSEUDO_NOERR}: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
 	@printf '#include "SYS.h"\nPSEUDO_NOERROR(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.TARGET}.o
-	@${LD} -X -r ${.TARGET}.o -o ${.TARGET}
+	@${LD} -X -r -o ${.TARGET} ${.TARGET}.o
 	@rm -f ${.TARGET}.o
 
 ${PPSEUDO_NOERR}: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/SYS.h /usr/include/sys/syscall.h
 	@echo creating ${.TARGET}
 	@printf '#include "SYS.h"\nPSEUDO_NOERROR(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.TARGET}.o
-	@${LD} -X -r ${.TARGET}.o -o ${.TARGET}
+	@${LD} -X -r -o ${.TARGET} ${.TARGET}.o
 	@rm -f ${.TARGET}.o
 
 .if (${MACHINE_ARCH} != "mips")
@@ -176,7 +175,7 @@ ${PSEUDO_NOERR}: ${LIBCSRCDIR}/arch/${MACHINE_ARCH}/SYS.h /usr/include/sys/sysca
 	@echo creating ${.TARGET}
 	@printf '#include "SYS.h"\nPSEUDO_NOERROR(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.TARGET}.o
-	@${LD} -X -r ${.TARGET}.o -o ${.TARGET}
+	@${LD} -X -r -o ${.TARGET} ${.TARGET}.o
 	@rm -f ${.TARGET}.o
 
 # Lint stubs for all automatically-generated assembly stubs (GENERATED)
@@ -254,7 +253,7 @@ MLINKS+=getrlimit.2 setrlimit.2
 MLINKS+=getsockopt.2 setsockopt.2
 MLINKS+=gettimeofday.2 settimeofday.2
 MLINKS+=getuid.2 geteuid.2
-MLINKS+=kqueue.2 kevent.2
+MLINKS+=kqueue.2 kevent.2 kqueue.2 EV_SET.2
 MLINKS+=intro.2 errno.2
 MLINKS+=mlock.2 munlock.2
 MLINKS+=mlockall.2 munlockall.2

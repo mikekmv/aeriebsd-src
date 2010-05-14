@@ -31,10 +31,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: getc.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
+#include "local.h"
 
 /*
  * A subroutine version of the macro getc_unlocked.
@@ -57,8 +58,8 @@ getc(FILE *fp)
 {
 	int c;
 
-	flockfile(fp);
+	FLOCKFILE(fp);
 	c = __sgetc(fp);
-	funlockfile(fp);
+	FUNLOCKFILE(fp);
 	return (c);
 }

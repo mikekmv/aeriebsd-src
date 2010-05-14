@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fgetc.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -39,5 +39,5 @@ static const char rcsid[] = "$ABSD$";
 int
 fgetc(FILE *fp)
 {
-	return (__sgetc(fp));
+	return (getc(fp));
 }

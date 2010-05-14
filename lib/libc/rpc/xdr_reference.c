@@ -36,7 +36,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: xdr_reference.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -69,13 +69,12 @@ xdr_reference(XDR *xdrs,
 			return (TRUE);
 
 		case XDR_DECODE:
-			*pp = loc = (caddr_t) mem_alloc(size);
+			*pp = loc = (caddr_t) calloc(size, 1);
 			if (loc == NULL) {
 				(void) fprintf(stderr,
 				    "xdr_reference: out of memory\n");
 				return (FALSE);
 			}
-			memset(loc, 0, (int)size);
 			break;
 	}
 

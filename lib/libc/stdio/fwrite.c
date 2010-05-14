@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fwrite.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -48,9 +48,16 @@ fwrite(const void *buf, size_t size, size_t count, FILE *fp)
 	size_t n;
 	struct __suio uio;
 	struct __siov iov;
+	int ret;
+
+	/*
+	 * ANSI and SUSv2 require a return value of 0 if size or count are 0.
+	 */
+	if ((n = count * size) == 0)
+		return (0);
 
 	iov.iov_base = (void *)buf;
-	uio.uio_resid = iov.iov_len = n = count * size;
+	uio.uio_resid = iov.iov_len = n;
 	uio.uio_iov = &iov;
 	uio.uio_iovcnt = 1;
 
@@ -59,7 +66,11 @@ fwrite(const void *buf, size_t size, size_t count, FILE *fp)
 	 * skip the divide if this happens, since divides are
 	 * generally slow and since this occurs whenever size==0.
 	 */
-	if (__sfvwrite(fp, &uio) == 0)
+	FLOCKFILE(fp);
+	_SET_ORIENTATION(fp, -1);
+	ret = __sfvwrite(fp, &uio);
+	FUNLOCKFILE(fp);
+	if (ret == 0)
 		return (count);
 	return ((n - uio.uio_resid) / size);
 }

@@ -27,7 +27,7 @@ THIS SOFTWARE.
 ****************************************************************/
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: gethex.c,v 1.1 2009/05/26 23:27:21 mickey Exp $";
 #endif
 
 /* Please send bug reports to David M. Gay (dmg at acm dot org,
@@ -173,6 +173,8 @@ gethex( CONST char **sp, FPI *fpi, Long *exp, Bigint **bp, int sign)
 			goto retz;
  ret_tiny:
 			b = Balloc(0);
+			if (b == NULL)
+				return (STRTOG_NoMemory);
 			b->wds = 1;
 			b->x[0] = 1;
 			goto dret;
@@ -196,6 +198,8 @@ gethex( CONST char **sp, FPI *fpi, Long *exp, Bigint **bp, int sign)
 			++n;
 		for(j = n, k = 0; j >>= 1; ++k);
 		*bp = b = Balloc(k);
+		if (b == NULL)
+			return (STRTOG_NoMemory);
 		b->wds = n;
 		for(j = 0; j < n0; ++j)
 			b->x[j] = ALL_ON;
@@ -208,6 +212,8 @@ gethex( CONST char **sp, FPI *fpi, Long *exp, Bigint **bp, int sign)
 	for(k = 0; n > 7; n >>= 1)
 		k++;
 	b = Balloc(k);
+	if (b == NULL)
+		return (STRTOG_NoMemory);
 	x = b->x;
 	n = 0;
 	L = 0;
@@ -255,6 +261,8 @@ gethex( CONST char **sp, FPI *fpi, Long *exp, Bigint **bp, int sign)
 	else if (n < nbits) {
 		n = nbits - n;
 		b = lshift(b, n);
+		if (b == NULL)
+			return (STRTOG_NoMemory);
 		e -= n;
 		x = b->x;
 		}
@@ -332,6 +340,8 @@ gethex( CONST char **sp, FPI *fpi, Long *exp, Bigint **bp, int sign)
 		if (up) {
 			k = b->wds;
 			b = increment(b);
+			if (b == NULL)
+				return (STRTOG_NoMemory);
 			x = b->x;
 			if (irv == STRTOG_Denormal) {
 				if (nbits == fpi->nbits - 1

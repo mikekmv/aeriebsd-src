@@ -179,9 +179,7 @@ double log1p(double);
 double log2(double);
 double logb(double);
 double scalbn(double, int);
-#if 0
 double scalbln(double, long int);
-#endif
 
 double cbrt(double);
 double hypot(double, double);
@@ -287,9 +285,7 @@ float log2f(float);
 float logbf(float);
 float modff(float, float *);
 float scalbnf(float, int);
-#if 0
 float scalblnf(float, long int);
-#endif
 
 float cbrtf(float);
 float fabsf(float);
@@ -414,9 +410,7 @@ long double logbl(long double);
 long double modfl(long double, long double *);
 #endif
 long double scalbnl(long double, int);
-#if 0
 long double scalblnl(long double, long int);
-#endif
 
 #if 0
 long double cbrtl(long double);

@@ -20,7 +20,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ecvt.c,v 1.1.1.1 2008/08/26 14:38:35 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -65,6 +65,8 @@ __cvt(double value, int ndigit, int *decpt, int *sign, int fmode, int pad)
 		*rve = '\0';
 	} else {
 		p = __dtoa(value, fmode + 2, ndigit, decpt, sign, &rve);
+		if (p == NULL)
+			return (NULL);
 		if (*decpt == 9999) {
 			/* Infinity or Nan, convert to inf or nan like printf */
 			*decpt = 0;

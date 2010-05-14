@@ -25,7 +25,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: yp_bind.c,v 1.1.1.1 2008/08/26 14:38:41 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -100,7 +100,7 @@ _yp_dobind(const char *dom, struct dom_binding **ypdb)
 			break;
 	if (ysd == NULL) {
 		if ((ysd = malloc(sizeof *ysd)) == NULL)
-			return YPERR_YPERR;
+			return YPERR_RESRC;
 		(void)memset(ysd, 0, sizeof *ysd);
 		ysd->dom_socket = -1;
 		ysd->dom_vers = 0;
@@ -166,7 +166,14 @@ trynet:
 			clnt_pcreateerror("clnttcp_create");
 			if (new)
 				free(ysd);
-			return YPERR_YPBIND;
+			switch (rpc_createerr.cf_error.re_errno) {
+			case ECONNREFUSED:
+				return YPERR_YPBIND;
+			case ENOMEM:
+				return YPERR_RESRC;
+			default:
+				return YPERR_YPERR;
+			}
 		}
 		if (ntohs(clnt_sin.sin_port) >= IPPORT_RESERVED ||
 		    ntohs(clnt_sin.sin_port) == 20) {

@@ -30,7 +30,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: getpwent.c,v 1.2 2008/12/26 18:50:32 mickey Exp $";
+static const char rcsid[] = "$ABSD: getpwent.c,v 1.3 2009/05/26 23:27:22 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -51,6 +51,7 @@ static const char rcsid[] = "$ABSD: getpwent.c,v 1.2 2008/12/26 18:50:32 mickey 
 #include <rpcsvc/yp.h>
 #include <rpcsvc/ypclnt.h>
 #include "ypinternal.h"
+#include "ypexclude.h"
 #endif
 #include "thread_private.h"
 
@@ -75,11 +76,6 @@ static struct passwd *_pwhashbyuid(uid_t uid, char *buf,
 #ifdef YP
 static char	*__ypdomain;
 
-struct _ypexclude {
-	const char *name;
-	struct _ypexclude *next;
-};
-
 /* Following are used only by setpwent(), getpwent(), and endpwent() */
 enum _ypmode { YPMODE_NONE, YPMODE_FULL, YPMODE_USER, YPMODE_NETGRP };
 static enum	_ypmode __ypmode;
@@ -93,9 +89,6 @@ static struct _ypexclude *__ypexhead;
 
 static int __has_yppw();
 static int __has_ypmaster(void);
-static int __ypexclude_add(struct _ypexclude **, const char *);
-static int __ypexclude_is(struct _ypexclude **, const char *);
-static void __ypexclude_free(struct _ypexclude **);
 static void __ypproto_set(struct passwd *, long *, int, int *);
 static int __ypparse(struct passwd *pw, char *s, int);
 
@@ -109,56 +102,6 @@ static struct passwd *__yppwlookup(int, char *, uid_t, struct passwd *,
 	(__has_ypmaster() ? "master.passwd.byname" : "passwd.byname")
 #define PASSWD_BYUID \
 	(__has_ypmaster() ? "master.passwd.byuid" : "passwd.byuid")
-
-/*
- * Using DB for this just wastes too damn much memory.
- */
-static int
-__ypexclude_add(struct _ypexclude **headp, const char *name)
-{
-	struct _ypexclude *new;
-
-	if (name[0] == '\0')	/* skip */
-		return (0);
-
-	new = (struct _ypexclude *)malloc(sizeof(struct _ypexclude));
-	if (new == NULL)
-		return (1);
-	new->name = strdup(name);
-	if (new->name == NULL) {
-		free(new);
-		return (1);
-	}
-
-	new->next = *headp;
-	*headp = new;
-	return (0);
-}
-
-static int
-__ypexclude_is(struct _ypexclude **headp, const char *name)
-{
-	struct _ypexclude *curr;
-
-	for (curr = *headp; curr; curr = curr->next) {
-		if (strcmp(curr->name, name) == 0)
-			return (1);	/* excluded */
-	}
-	return (0);
-}
-
-static void
-__ypexclude_free(struct _ypexclude **headp)
-{
-	struct _ypexclude *curr, *next;
-
-	for (curr = *headp; curr; curr = next) {
-		next = curr->next;
-		free((void *)curr->name);
-		free(curr);
-	}
-	*headp = NULL;
-}
 
 static void
 __ypproto_set(struct passwd *pw, long *buf, int flags, int *yp_pw_flagsp)
@@ -505,18 +448,16 @@ static int
 __has_yppw(void)
 {
 	DBT key, data, pkey, pdata;
-	char bf[1 + _PW_NAME_LEN];
-	int len;
+	char bf[2];
 
 	key.data = (u_char *)_PW_YPTOKEN;
 	key.size = strlen(_PW_YPTOKEN);
 
 	/* Pre-token database support. */
 	bf[0] = _PW_KEYBYNAME;
-	len = strlen("+");
-	bcopy("+", &bf[1], MIN(len, _PW_NAME_LEN));
+	bf[1] = '+';
 	pkey.data = (u_char *)bf;
-	pkey.size = 1 + MIN(len, _PW_NAME_LEN);
+	pkey.size = sizeof(bf);
 
 	if ((_pw_db->get)(_pw_db, &key, &data, 0) &&
 	    (_pw_db->get)(_pw_db, &pkey, &pdata, 0))

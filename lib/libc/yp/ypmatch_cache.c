@@ -25,7 +25,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ypmatch_cache.c,v 1.1.1.1 2008/08/26 14:38:41 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -56,6 +56,7 @@ ypmatch_add(const char *map, const char *key, u_int keylen, char *val,
     u_int vallen)
 {
 	struct ypmatch_ent *ep;
+	char *newmap = NULL, *newkey = NULL, *newval = NULL;
 	time_t t;
 
 	if (keylen == 0 || vallen == 0)
@@ -63,53 +64,44 @@ ypmatch_add(const char *map, const char *key, u_int keylen, char *val,
 
 	(void)time(&t);
 
+	/* Allocate all required memory first. */
+	if ((newmap = strdup(map)) == NULL ||
+	    (newkey = malloc(keylen)) == NULL ||
+	    (newval = malloc(vallen)) == NULL) {
+		free(newkey);
+		free(newmap);
+		return 0;
+	}
+
 	for (ep = ypmc; ep; ep = ep->next)
 		if (ep->expire_t < t)
 			break;
+
 	if (ep == NULL) {
-		if ((ep = malloc(sizeof *ep)) == NULL)
+		/* No expired node, create a new one. */
+		if ((ep = malloc(sizeof *ep)) == NULL) {
+			free(newval);
+			free(newkey);
+			free(newmap);
 			return 0;
-		(void)memset(ep, 0, sizeof *ep);
-		if (ypmc)
-			ep->next = ypmc;
+		}
+		ep->next = ypmc;
 		ypmc = ep;
-	}
-
-	if (ep->key) {
-		free(ep->key);
-		ep->key = NULL;
-	}
-	if (ep->val) {
+	} else {
+		/* Reuse the first expired node from the list. */
 		free(ep->val);
-		ep->val = NULL;
-	}
-
-	if ((ep->key = malloc(keylen)) == NULL)
-		return 0;
-
-	if ((ep->val = malloc(vallen)) == NULL) {
 		free(ep->key);
-		ep->key = NULL;
-		return 0;
+		free(ep->map);
 	}
 
+	/* Now we have all the memory we need, copy the data in. */
+	(void)memcpy(newkey, key, keylen);
+	(void)memcpy(newval, val, vallen);
+	ep->map = newmap;
+	ep->key = newkey;
+	ep->val = newval;
 	ep->keylen = keylen;
 	ep->vallen = vallen;
-
-	(void)memcpy(ep->key, key, ep->keylen);
-	(void)memcpy(ep->val, val, ep->vallen);
-
-	if (ep->map) {
-		if (strcmp(ep->map, map)) {
-			free(ep->map);
-			if ((ep->map = strdup(map)) == NULL)
-				return 0;
-		}
-	} else {
-		if ((ep->map = strdup(map)) == NULL)
-			return 0;
-	}
-
 	ep->expire_t = t + _yplib_cache;
 	return 1;
 }
@@ -173,7 +165,7 @@ again:
 		*outvallen = yprv.val.valdat_len;
 		if ((*outval = malloc(*outvallen + 1)) == NULL) {
 			_yp_unbind(ysd);
-			return YPERR_YPERR;
+			return YPERR_RESRC;
 		}
 		(void)memcpy(*outval, yprv.val.valdat_val, *outvallen);
 		(*outval)[*outvallen] = '\0';
@@ -203,16 +195,15 @@ again:
 	if (!(r = ypprot_err(yprv.stat))) {
 		*outvallen = yprv.val.valdat_len;
 		if ((*outval = malloc(*outvallen + 1)) == NULL) {
-			r = YPERR_YPERR;
+			r = YPERR_RESRC;
 			goto out;
 		}
 		(void)memcpy(*outval, yprv.val.valdat_val, *outvallen);
 		(*outval)[*outvallen] = '\0';
 #ifdef YPMATCHCACHE
 		if (strcmp(_yp_domain, indomain) == 0)
-			if (!ypmatch_add(inmap, inkey, inkeylen,
-			    *outval, *outvallen))
-				r = YPERR_RESRC;
+			(void)ypmatch_add(inmap, inkey, inkeylen,
+			    *outval, *outvallen);
 #endif
 	}
 out:
@@ -263,16 +254,14 @@ again:
 	}
 	if (!(r = ypprot_err(yprkv.stat))) {
 		*outkeylen = yprkv.key.keydat_len;
-		if ((*outkey = malloc(*outkeylen + 1)) == NULL)
+		*outvallen = yprkv.val.valdat_len;
+		if ((*outkey = malloc(*outkeylen + 1)) == NULL ||
+		    (*outval = malloc(*outvallen + 1)) == NULL) {
+			free(*outkey);
 			r = YPERR_RESRC;
-		else {
+		} else {
 			(void)memcpy(*outkey, yprkv.key.keydat_val, *outkeylen);
 			(*outkey)[*outkeylen] = '\0';
-		}
-		*outvallen = yprkv.val.valdat_len;
-		if ((*outval = malloc(*outvallen + 1)) == NULL)
-			r = YPERR_RESRC;
-		else {
 			(void)memcpy(*outval, yprkv.val.valdat_val, *outvallen);
 			(*outval)[*outvallen] = '\0';
 		}

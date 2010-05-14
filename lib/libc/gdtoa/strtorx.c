@@ -27,7 +27,7 @@ THIS SOFTWARE.
 ****************************************************************/
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: strtorx.c,v 1.1 2009/05/26 23:27:22 mickey Exp $";
 #endif
 
 /* Please send bug reports to David M. Gay (dmg at acm dot org,
@@ -82,6 +82,9 @@ ULtox(UShort *L, ULong *bits, Long exp, int k)
 		L[_1] = (UShort)(bits[1] >> 16);
 		break;
 
+	  case STRTOG_NoMemory:
+		errno = ERANGE;
+		/* FALLTHROUGH */
 	  case STRTOG_Infinite:
 		L[_0] = 0x7fff;
 		L[_1] = L[_2] = L[_3] = L[_4] = 0;

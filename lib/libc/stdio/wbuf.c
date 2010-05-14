@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: wbuf.c,v 1.1.1.1 2008/08/26 14:38:35 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -68,20 +68,20 @@ __swbuf(int c, FILE *fp)
 	 * stuff c into the buffer.  If this causes the buffer to fill
 	 * completely, or if c is '\n' and the file is line buffered,
 	 * flush it (perhaps a second time).  The second flush will always
-	 * happen on unbuffered streams, where _bf._size==1; fflush()
+	 * happen on unbuffered streams, where _bf._size==1; __sflush()
 	 * guarantees that putc() will always call wbuf() by setting _w
 	 * to 0, so we need not do anything else.
 	 */
 	n = fp->_p - fp->_bf._base;
 	if (n >= fp->_bf._size) {
-		if (fflush(fp))
+		if (__sflush(fp))
 			return (EOF);
 		n = 0;
 	}
 	fp->_w--;
 	*fp->_p++ = c;
 	if (++n == fp->_bf._size || (fp->_flags & __SLBF && c == '\n'))
-		if (fflush(fp))
+		if (__sflush(fp))
 			return (EOF);
 	return (c);
 }

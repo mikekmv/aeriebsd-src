@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: getaddrinfo.c,v 1.1.1.1 2008/08/26 14:38:30 root Exp $";
 #endif
 
 /*
@@ -223,7 +223,7 @@ static struct addrinfo *_files_getaddrinfo(const char *,
 	const struct addrinfo *);
 
 #ifdef YP
-static struct addrinfo *_yphostent(char *, const struct addrinfo *);
+static struct addrinfo *_ai_yphostent(char *, const struct addrinfo *);
 static struct addrinfo *_yp_getaddrinfo(const char *,
 	const struct addrinfo *);
 #endif
@@ -233,7 +233,8 @@ static struct addrinfo *getanswer(const querybuf *, int, const char *, int,
 static int res_queryN(const char *, struct res_target *);
 static int res_searchN(const char *, struct res_target *);
 static int res_querydomainN(const char *, const char *, struct res_target *);
-static struct addrinfo *_dns_getaddrinfo(const char *, const struct addrinfo *);
+static struct addrinfo *_dns_getaddrinfo(const char *, const struct addrinfo *,
+	const struct __res_state *);
 
 
 /* XXX macros that make external reference is BAD. */
@@ -517,7 +518,7 @@ explore_fqdn(const struct addrinfo *pai, const char *hostname,
 			break;
 #endif
 		case 'b':
-			result = _dns_getaddrinfo(hostname, pai);
+			result = _dns_getaddrinfo(hostname, pai, _resp);
 			break;
 		case 'f':
 			result = _files_getaddrinfo(hostname, pai);
@@ -826,10 +827,8 @@ get_port(struct addrinfo *ai, const char *servname, int matchonly)
 		return EAI_SERVICE;
 	case SOCK_DGRAM:
 	case SOCK_STREAM:
-		allownumeric = 1;
-		break;
 	case ANY:
-		allownumeric = 0;
+		allownumeric = 1;
 		break;
 	default:
 		return EAI_SOCKTYPE;
@@ -1063,6 +1062,7 @@ getanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 				continue;
 			}
 		} else if (type != qtype) {
+#ifndef NO_LOG_BAD_DNS_RESPONSES
 			if (type != T_KEY && type != T_SIG) {
 				struct syslog_data sdata = SYSLOG_DATA_INIT;
 
@@ -1071,6 +1071,7 @@ getanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 				       qname, p_class(C_IN), p_type(qtype),
 				       p_type(type));
 			}
+#endif /* NO_LOG_BAD_DNS_RESPONSES */
 			cp += n;
 			continue;		/* XXX - had_error++ ? */
 		}
@@ -1142,7 +1143,8 @@ getanswer(const querybuf *answer, int anslen, const char *qname, int qtype,
 
 /*ARGSUSED*/
 static struct addrinfo *
-_dns_getaddrinfo(const char *name, const struct addrinfo *pai)
+_dns_getaddrinfo(const char *name, const struct addrinfo *pai,
+	const struct __res_state *_resp)
 {
 	struct addrinfo *ai;
 	querybuf *buf, *buf2;
@@ -1168,14 +1170,21 @@ _dns_getaddrinfo(const char *name, const struct addrinfo *pai)
 
 	switch (pai->ai_family) {
 	case AF_UNSPEC:
-		/* prefer IPv6 */
+		/* respect user supplied order */
 		q.qclass = C_IN;
-		q.qtype = T_AAAA;
+		q.qtype = (_resp->family[0] == AF_INET6) ? T_AAAA : T_A;
 		q.answer = buf->buf;
 		q.anslen = sizeof(buf->buf);
 		q.next = &q2;
+
+		if (_resp->family[1] == -1) {
+			/* stop here if only one family was given */
+			q.next = NULL;
+			break;
+		}
+
 		q2.qclass = C_IN;
-		q2.qtype = T_A;
+		q2.qtype = (_resp->family[1] == AF_INET6) ? T_AAAA : T_A;
 		q2.answer = buf2->buf;
 		q2.anslen = sizeof(buf2->buf);
 		break;
@@ -1306,7 +1315,7 @@ static char *__ypdomain;
 
 /*ARGSUSED*/
 static struct addrinfo *
-_yphostent(char *line, const struct addrinfo *pai)
+_ai_yphostent(char *line, const struct addrinfo *pai)
 {
 	struct addrinfo sentinel, *cur;
 	struct addrinfo hints, *res, *res0;
@@ -1409,7 +1418,7 @@ _yp_getaddrinfo(const char *name, const struct addrinfo *pai)
 
 			ai4 = *pai;
 			ai4.ai_family = AF_INET;
-			ai = _yphostent(__ypcurrent, &ai4);
+			ai = _ai_yphostent(__ypcurrent, &ai4);
 			if (ai) {
 				cur->ai_next = ai;
 				while (cur && cur->ai_next)
@@ -1422,7 +1431,7 @@ _yp_getaddrinfo(const char *name, const struct addrinfo *pai)
 	r = yp_match(__ypdomain, "ipnodes.byname", name,
 		(int)strlen(name), &__ypcurrent, &__ypcurrentlen);
 	if (r == 0) {
-		ai = _yphostent(__ypcurrent, pai);
+		ai = _ai_yphostent(__ypcurrent, pai);
 		if (ai) {
 			cur->ai_next = ai;
 			while (cur && cur->ai_next)

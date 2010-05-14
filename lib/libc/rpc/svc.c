@@ -37,7 +37,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: svc.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <errno.h>
@@ -104,10 +104,9 @@ __xprt_register(SVCXPRT *xprt)
 
 		while (sock + 1 > size)
 			size += FD_SETSIZE;
-		xp = (SVCXPRT **)mem_alloc(size * sizeof(SVCXPRT *));
+		xp = (SVCXPRT **)calloc(size, sizeof(SVCXPRT *));
 		if (xp == NULL)
 			return (0);
-		memset(xp, 0, size * sizeof(SVCXPRT *));
 		if (xports) {
 			memcpy(xp, xports, xportssize * sizeof(SVCXPRT *));
 			free(xports);
@@ -182,7 +181,7 @@ svc_fd_insert(int sock)
 			if (__svc_fdset != &svc_fdset)
 				free(__svc_fdset);
 			__svc_fdset = fds;
-			__svc_fdsetsize = bytes / sizeof(fd_mask);
+			__svc_fdsetsize = bytes / sizeof(fd_mask) * NFDBITS;
 		}
 	}
 
@@ -193,7 +192,7 @@ svc_fd_insert(int sock)
 		svc_max_pollfd = slot + 1;
 	if (sock < FD_SETSIZE)
 		FD_SET(sock, &svc_fdset);
-	else if (sock < __svc_fdsetsize)
+	if (sock < __svc_fdsetsize && __svc_fdset != &svc_fdset)
 		FD_SET(sock, __svc_fdset);
 	svc_maxfd = max(svc_maxfd, sock);
 
@@ -220,7 +219,7 @@ svc_fd_remove(int sock)
 			svc_used_pollfd--;
 			if (sock < FD_SETSIZE)
 				FD_CLR(sock, &svc_fdset);
-			else if (sock < __svc_fdsetsize)
+			if (sock < __svc_fdsetsize && __svc_fdset != &svc_fdset)
 				FD_CLR(sock, __svc_fdset);
 			if (sock == svc_maxfd) {
 				for (svc_maxfd--; svc_maxfd >= 0; svc_maxfd--)

@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: sleep.c,v 1.1.1.1 2008/08/26 14:38:29 root Exp $";
 #endif
 
 #include <sys/time.h>
@@ -45,8 +45,8 @@ sleep(unsigned int seconds)
 	rqt.tv_sec = seconds;
 	rqt.tv_nsec = 0;
 
-	if (nanosleep(&rqt, &rmt) < 0)
-		;
+	if (nanosleep(&rqt, &rmt) == 0)
+		rmt.tv_sec = 0;
 
 	return(rmt.tv_sec);
 }

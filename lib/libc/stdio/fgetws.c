@@ -26,7 +26,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fgetws.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <errno.h>
@@ -35,15 +35,12 @@ static const char rcsid[] = "$ABSD$";
 #include "local.h"
 
 wchar_t *
-fgetws(ws, n, fp)
-	wchar_t * __restrict ws;
-	int n;
-	FILE * __restrict fp;
+fgetws(wchar_t * __restrict ws, int n, FILE * __restrict fp)
 {
 	wchar_t *wsp;
 	wint_t wc;
 
-	flockfile(fp);
+	FLOCKFILE(fp);
 	_SET_ORIENTATION(fp, 1);
 
 	if (n <= 0) {
@@ -70,11 +67,11 @@ fgetws(ws, n, fp)
 	}
 
 	*wsp++ = L'\0';
-	funlockfile(fp);
+	FUNLOCKFILE(fp);
 
 	return (ws);
 
 error:
-	funlockfile(fp);
+	FUNLOCKFILE(fp);
 	return (NULL);
 }

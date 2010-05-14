@@ -31,16 +31,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: clrerr.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <stdio.h>
+#include "local.h"
 #undef	clearerr
 
 void
 clearerr(FILE *fp)
 {
-	flockfile(fp);
+	FLOCKFILE(fp);
 	__sclearerr(fp);
-	funlockfile(fp);
+	FUNLOCKFILE(fp);
 }

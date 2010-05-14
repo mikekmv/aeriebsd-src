@@ -27,7 +27,7 @@ THIS SOFTWARE.
 ****************************************************************/
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: strtod.c,v 1.1 2009/05/26 23:27:21 mickey Exp $";
 #endif
 
 /* Please send bug reports to David M. Gay (dmg at acm dot org,
@@ -78,7 +78,7 @@ strtod
 	double aadj, aadj1, adj, rv, rv0;
 	Long L;
 	ULong y, z;
-	Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
+	Bigint *bb, *bb1, *bd, *bd0 = NULL, *bs, *delta;
 #ifdef SET_INEXACT
 	int inexact, oldinexact;
 #endif
@@ -167,6 +167,8 @@ strtod
 				sign = 0;
 			  case STRTOG_Zero:
 				break;
+			  case STRTOG_NoMemory:
+				goto ovfl;
 			  default:
 				if (bb) {
 					copybits(bits, fpi.nbits, bb);
@@ -335,7 +337,6 @@ strtod
 #endif
 		dval(rv) = tens[k - 9] * dval(rv) + z;
 		}
-	bd0 = 0;
 	if (nd <= DBL_DIG
 #ifndef RND_PRODQUOT
 #ifndef Honor_FLT_ROUNDS
@@ -552,12 +553,20 @@ strtod
 	/* Put digits into bd: true value = bd * 10^e */
 
 	bd0 = s2b(s0, nd0, nd, y);
+	if (bd0 == NULL)
+		goto ovfl;
 
 	for(;;) {
 		bd = Balloc(bd0->k);
+		if (bd == NULL)
+			goto ovfl;
 		Bcopy(bd, bd0);
 		bb = d2b(dval(rv), &bbe, &bbbits);	/* rv = bb * 2^bbe */
+		if (bb == NULL)
+			goto ovfl;
 		bs = i2b(1);
+		if (bs == NULL)
+			goto ovfl;
 
 		if (e >= 0) {
 			bb2 = bb5 = 0;
@@ -614,19 +623,37 @@ strtod
 			}
 		if (bb5 > 0) {
 			bs = pow5mult(bs, bb5);
+			if (bs == NULL)
+				goto ovfl;
 			bb1 = mult(bs, bb);
+			if (bb1 == NULL)
+				goto ovfl;
 			Bfree(bb);
 			bb = bb1;
 			}
-		if (bb2 > 0)
+		if (bb2 > 0) {
 			bb = lshift(bb, bb2);
-		if (bd5 > 0)
+			if (bb == NULL)
+				goto ovfl;
+		}
+		if (bd5 > 0) {
 			bd = pow5mult(bd, bd5);
-		if (bd2 > 0)
+			if (bd == NULL)
+				goto ovfl;
+		}
+		if (bd2 > 0) {
 			bd = lshift(bd, bd2);
-		if (bs2 > 0)
+			if (bd == NULL)
+				goto ovfl;
+		}
+		if (bs2 > 0) {
 			bs = lshift(bs, bs2);
+			if (bs == NULL)
+				goto ovfl;
+		}
 		delta = diff(bb, bd);
+		if (delta == NULL)
+			goto ovfl;
 		dsign = delta->sign;
 		delta->sign = 0;
 		i = cmp(delta, bs);
@@ -659,6 +686,8 @@ strtod
 #endif
 						  {
 						  delta = lshift(delta,Log2P);
+						  if (delta == NULL)
+							goto ovfl;
 						  if (cmp(delta, bs) <= 0)
 							adj = -0.5;
 						  }
@@ -751,6 +780,8 @@ strtod
 				break;
 				}
 			delta = lshift(delta,Log2P);
+			if (delta == NULL)
+				goto ovfl;
 			if (cmp(delta, bs) > 0)
 				goto drop_down;
 			break;

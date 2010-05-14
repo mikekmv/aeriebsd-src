@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: glob.c,v 1.1.1.1 2008/08/26 14:38:28 root Exp $";
+static const char rcsid[] = "$ABSD: glob.c,v 1.2 2009/05/26 23:27:23 mickey Exp $";
 #endif
 
 /*
@@ -717,8 +717,7 @@ globextend(const Char *path, glob_t *pglob, size_t *limitp)
 	const Char *p;
 
 	newsize = sizeof(*pathv) * (2 + pglob->gl_pathc + pglob->gl_offs);
-	pathv = pglob->gl_pathv ? realloc((char *)pglob->gl_pathv, newsize) :
-	    malloc(newsize);
+	pathv = realloc((char *)pglob->gl_pathv, newsize);
 	if (pathv == NULL) {
 		if (pglob->gl_pathv) {
 			free(pglob->gl_pathv);

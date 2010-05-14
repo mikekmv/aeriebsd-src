@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)execve.2	8.3 (Berkeley) 1/24/94
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt EXECVE 2
 .Os
 .Sh NAME
@@ -67,26 +67,25 @@ An interpreter file begins with a line of the form:
 .Bq Em arg
 .Ed
 .Pp
-When an interpreter file is
-.Fn execve Ap d ,
-the system
-.Fn execve Ap s
-runs the specified
+When an interpreter file is passed to
+.Fn execve
+the system instead calls
+.Fn execve
+with the specified
 .Em interpreter .
 If the optional
 .Em arg
 is specified, it becomes the first argument to the
 .Em interpreter ,
-and the name of the originally
-.Fn execve Ap d
-file becomes the second argument;
-otherwise, the name of the originally
-.Fn execve Ap d
-file becomes the first argument.
+and the original
+.Ar path
+becomes the second argument;
+otherwise,
+.Ar path
+becomes the first argument.
 The original arguments are shifted over to become the subsequent arguments.
-The zeroth argument, normally the name of the
-.Fn execve Ap d
-file, is left unchanged.
+The zeroth argument, normally the name of the file being executed, is left
+unchanged.
 .Pp
 The argument
 .Fa argv

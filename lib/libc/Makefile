@@ -23,7 +23,8 @@ CLEANFILES+=tags
 LIBCSRCDIR=${.CURDIR}
 .include "${LIBCSRCDIR}/Makefile.inc"
 
-NLS=	C.msg Pig.msg de.msg es.msg fi.msg fr.msg nl.msg no.msg ru.msg sv.msg it.msg
+NLS=	C.msg Pig.msg \
+	de.msg da.msg es.msg fi.msg fr.msg nl.msg no.msg ru.msg sv.msg it.msg
 
 copy-to-libkern:	copy-to-libkern-machind copy-to-libkern-machdep
 

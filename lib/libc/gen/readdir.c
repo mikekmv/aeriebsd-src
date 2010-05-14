@@ -28,13 +28,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: readdir.c,v 1.1.1.1 2008/08/26 14:38:28 root Exp $";
 #endif
 
 #include <sys/param.h>
 #include <dirent.h>
-#include <string.h>
-#include <errno.h>
 #include "thread_private.h"
 
 /*
@@ -87,25 +85,4 @@ readdir(DIR *dirp)
 	_MUTEX_UNLOCK(&dirp->dd_lock);
 
 	return (dp);
-}
-
-int
-readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
-{
-	struct dirent *dp;
-
-	_MUTEX_LOCK(&dirp->dd_lock);
-	if (_readdir_unlocked(dirp, &dp, 1) != 0) {
-		_MUTEX_UNLOCK(&dirp->dd_lock);
-		return errno;
-	}
-	if (dp != NULL)
-		memcpy(entry, dp,
-		    sizeof (struct dirent) - MAXNAMLEN + dp->d_namlen);
-	_MUTEX_UNLOCK(&dirp->dd_lock);
-	if (dp != NULL)
-		*result = entry;
-	else
-		*result = NULL;
-	return 0;
 }

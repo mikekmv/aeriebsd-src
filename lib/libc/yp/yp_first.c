@@ -25,7 +25,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: yp_first.c,v 1.1.1.1 2008/08/26 14:38:41 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -76,16 +76,14 @@ again:
 	}
 	if (!(r = ypprot_err(yprkv.stat))) {
 		*outkeylen = yprkv.key.keydat_len;
-		if ((*outkey = malloc(*outkeylen + 1)) == NULL)
+		*outvallen = yprkv.val.valdat_len;
+		if ((*outkey = malloc(*outkeylen + 1)) == NULL ||
+		    (*outval = malloc(*outvallen + 1)) == NULL) {
+			free(*outkey);
 			r = YPERR_RESRC;
-		else {
+		} else {
 			(void)memcpy(*outkey, yprkv.key.keydat_val, *outkeylen);
 			(*outkey)[*outkeylen] = '\0';
-		}
-		*outvallen = yprkv.val.valdat_len;
-		if ((*outval = malloc(*outvallen + 1)) == NULL)
-			r = YPERR_RESRC;
-		else {
 			(void)memcpy(*outval, yprkv.val.valdat_val, *outvallen);
 			(*outval)[*outvallen] = '\0';
 		}

@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fclose.c,v 1.1.1.1 2008/08/26 14:38:33 root Exp $";
 #endif
 
 #include <errno.h>
@@ -48,6 +48,7 @@ fclose(FILE *fp)
 		errno = EBADF;
 		return (EOF);
 	}
+	FLOCKFILE(fp);
 	WCIO_FREE(fp);
 	r = fp->_flags & __SWR ? __sflush(fp) : 0;
 	if (fp->_close != NULL && (*fp->_close)(fp->_cookie) < 0)
@@ -58,7 +59,8 @@ fclose(FILE *fp)
 		FREEUB(fp);
 	if (HASLB(fp))
 		FREELB(fp);
-	fp->_flags = 0;		/* Release this FILE for reuse. */
 	fp->_r = fp->_w = 0;	/* Mess up if reaccessed. */
+	fp->_flags = 0;		/* Release this FILE for reuse. */
+	FUNLOCKFILE(fp);
 	return (r);
 }

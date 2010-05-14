@@ -34,7 +34,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: clnt_simple.c,v 1.1.1.1 2008/08/26 14:38:32 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -67,7 +67,7 @@ callrpc(char *host, int prognum, int versnum, int procnum, xdrproc_t inproc,
 	if (crp == NULL) {
 		crp = (struct callrpc_private *)calloc(1, sizeof (*crp));
 		if (crp == NULL)
-			return (0);
+			return RPC_SYSTEMERROR;
 		callrpc_private = crp;
 	}
 	if (crp->oldhost == NULL) {
@@ -75,7 +75,7 @@ callrpc(char *host, int prognum, int versnum, int procnum, xdrproc_t inproc,
 		if (crp->oldhost == NULL) {
 			free(crp);
 			callrpc_private = save_callrpc_private;
-			return (0);
+			return RPC_SYSTEMERROR;
 		}
 		crp->oldhost[0] = 0;
 		crp->socket = RPC_ANYSOCK;

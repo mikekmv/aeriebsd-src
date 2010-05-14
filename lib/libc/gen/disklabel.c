@@ -28,7 +28,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: disklabel.c,v 1.1.1.1 2008/08/26 14:38:27 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -101,10 +101,6 @@ getdiskbyname(const char *name)
 	getnumdflt(dp->d_secperunit, "su", dp->d_secpercyl * dp->d_ncylinders);
 	getnumdflt(dp->d_rpm, "rm", 3600);
 	getnumdflt(dp->d_interleave, "il", 1);
-	getnumdflt(dp->d_trackskew, "sk", 0);
-	getnumdflt(dp->d_cylskew, "cs", 0);
-	getnumdflt(dp->d_headswitch, "hs", 0);
-	getnumdflt(dp->d_trkseek, "ts", 0);
 	getnumdflt(dp->d_bbsize, "bs", BBSIZE);
 	getnumdflt(dp->d_sbsize, "sb", SBSIZE);
 	strlcpy(psize, "px", sizeof psize);

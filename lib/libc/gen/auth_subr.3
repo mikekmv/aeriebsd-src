@@ -30,7 +30,7 @@
 .\" SUCH DAMAGE.
 .\"
 .\"	BSDI $From: auth_subr.3,v 2.5 2000/03/30 19:11:27 polk Exp $
-.Dd $Mdocdate: April 4 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt BSD_AUTH 3
 .Os
 .Sh NAME
@@ -57,6 +57,7 @@
 .Nm auth_setstate
 .Nd interface to the BSD Authentication system
 .Sh SYNOPSIS
+.Fd #include <sys/types.h>
 .Fd #include <login_cap.h>
 .Fd #include <bsd_auth.h>
 .Ft auth_session_t *

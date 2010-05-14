@@ -32,7 +32,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: Ovfork.S,v 1.2 2009/05/23 01:24:11 mickey Exp $"
+	.asciz "$ABSD: Ovfork.S,v 1.3 2009/10/31 21:30:59 mickey Exp $"
 	.text
 #endif /* LIBC_SCCS */
 
@@ -55,7 +55,7 @@ SYSLEAF(vfork, FRAMESZ)
 	li	v0, SYS_vfork		# system call number for vfork
 	syscall
 	beq	a3, zero, 1f		# jump if no errors
-	la	t9, cerror
+	LA	t9, cerror
 	RESTORE_GP64
 	PTR_ADDU sp, FRAMESZ
 	jr	t9

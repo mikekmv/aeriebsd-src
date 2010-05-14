@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fputc.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -41,9 +41,5 @@ static const char rcsid[] = "$ABSD$";
 int
 fputc(int c, FILE *fp)
 {
-	if (cantwrite(fp)) {
-		errno = EBADF;
-		return (EOF);
-	}
 	return (putc(c, fp));
 }

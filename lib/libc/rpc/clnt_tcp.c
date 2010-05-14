@@ -46,7 +46,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: clnt_tcp.c,v 1.1.1.1 2008/08/26 14:38:32 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -183,7 +183,7 @@ clnttcp_create(struct sockaddr_in *raddr, u_long prog, u_long vers, int *sockp,
 	call_msg.rm_call.cb_vers = vers;
 
 	/*
-	 * pre-serialize the staic part of the call msg and stash it away
+	 * pre-serialize the static part of the call msg and stash it away
 	 */
 	xdrmem_create(&(ct->ct_xdrs), ct->ct_mcall, MCALL_MSG_SIZE,
 	    XDR_ENCODE);
@@ -206,6 +206,11 @@ clnttcp_create(struct sockaddr_in *raddr, u_long prog, u_long vers, int *sockp,
 	h->cl_ops = &tcp_ops;
 	h->cl_private = (caddr_t) ct;
 	h->cl_auth = authnone_create();
+	if (h->cl_auth == NULL) {
+		rpc_createerr.cf_stat = RPC_SYSTEMERROR;
+		rpc_createerr.cf_error.re_errno = errno;
+		goto fooy;
+	}
 	return (h);
 
 fooy:

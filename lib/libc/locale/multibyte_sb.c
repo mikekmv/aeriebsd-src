@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
@@ -29,11 +28,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD: multibyte_sb.c,v 1.1.1.1 2008/08/26 14:38:30 root Exp $";
+static const char rcsid[] = "$ABSD: multibyte_sb.c,v 1.2 2009/05/26 23:27:23 mickey Exp $";
 #endif
 
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 
 /*

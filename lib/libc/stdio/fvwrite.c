@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fvwrite.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -137,7 +137,7 @@ __sfvwrite(FILE *fp, struct __suio *uio)
 				COPY(w);
 				/* fp->_w -= w; */ /* unneeded */
 				fp->_p += w;
-				if (fflush(fp))
+				if (__sflush(fp))
 					goto err;
 			} else if (len >= (w = fp->_bf._size)) {
 				/* write directly */
@@ -177,7 +177,7 @@ __sfvwrite(FILE *fp, struct __suio *uio)
 				COPY(w);
 				/* fp->_w -= w; */
 				fp->_p += w;
-				if (fflush(fp))
+				if (__sflush(fp))
 					goto err;
 			} else if (s >= (w = fp->_bf._size)) {
 				w = (*fp->_write)(fp->_cookie, p, w);
@@ -191,7 +191,7 @@ __sfvwrite(FILE *fp, struct __suio *uio)
 			}
 			if ((nldist -= w) == 0) {
 				/* copied the newline: flush and forget */
-				if (fflush(fp))
+				if (__sflush(fp))
 					goto err;
 				nlknown = 0;
 			}

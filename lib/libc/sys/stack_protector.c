@@ -27,7 +27,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: stack_protector.c,v 1.1.1.1 2008/08/26 14:38:39 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -43,6 +43,7 @@ long __guard[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 static void __guard_setup(void) __attribute__ ((constructor));
 void __stack_smash_handler(char func[], int damaged __attribute__((unused)));
 
+#pragma constructor
 static void
 __guard_setup(void)
 {

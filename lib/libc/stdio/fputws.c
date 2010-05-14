@@ -26,7 +26,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: fputws.c,v 1.1.1.1 2008/08/26 14:38:34 root Exp $";
 #endif
 
 #include <errno.h>
@@ -39,17 +39,17 @@ fputws(ws, fp)
 	const wchar_t * __restrict ws;
 	FILE * __restrict fp;
 {
-	flockfile(fp);
+	FLOCKFILE(fp);
 	_SET_ORIENTATION(fp, 1);
 
 	while (*ws != '\0') {
 		if (__fputwc_unlock(*ws++, fp) == WEOF) {
-			funlockfile(fp);
+			FUNLOCKFILE(fp);
 			return (-1);
 		}
 	}
 
-	funlockfile(fp);
+	FUNLOCKFILE(fp);
 
 	return (0);
 }

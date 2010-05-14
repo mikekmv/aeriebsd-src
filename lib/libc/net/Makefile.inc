@@ -15,7 +15,7 @@ SRCS+=	base64.c freeaddrinfo.c gai_strerror.c getaddrinfo.c gethostnamadr.c \
 	rcmd.c rresvport.c recv.c res_comp.c res_data.c res_debug.c \
 	res_debug_syms.c \
 	res_init.c res_mkquery.c res_query.c res_random.c res_send.c send.c \
-	sethostent.c ethers.c rcmdsh.c
+	sethostent.c ethers.c rcmdsh.c ruserok.c
 
 # IPv6
 SRCS+=	ip6opt.c rthdr.c vars6.c

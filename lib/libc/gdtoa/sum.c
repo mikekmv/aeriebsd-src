@@ -27,7 +27,7 @@ THIS SOFTWARE.
 ****************************************************************/
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: sum.c,v 1.1 2009/05/26 23:27:22 mickey Exp $";
 #endif
 
 /* Please send bug reports to David M. Gay (dmg at acm dot org,
@@ -52,6 +52,8 @@ sum(Bigint *a, Bigint *b)
 		c = b; b = a; a = c;
 		}
 	c = Balloc(a->k);
+	if (c == NULL)
+		return (NULL);
 	c->wds = a->wds;
 	carry = 0;
 	xa = a->x;
@@ -92,6 +94,8 @@ sum(Bigint *a, Bigint *b)
 	if (carry) {
 		if (c->wds == c->maxwds) {
 			b = Balloc(c->k + 1);
+			if (b == NULL)
+				return (NULL);
 			Bcopy(b, c);
 			Bfree(c);
 			c = b;

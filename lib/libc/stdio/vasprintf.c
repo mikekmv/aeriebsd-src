@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: vasprintf.c,v 1.1.1.1 2008/08/26 14:38:35 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -40,7 +40,7 @@ vasprintf(char **str, const char *fmt, __va_list ap)
 	if (f._bf._base == NULL)
 		goto err;
 	f._bf._size = f._w = 127;		/* Leave room for the NUL */
-	ret = vfprintf(&f, fmt, ap);
+	ret = __vfprintf(&f, fmt, ap);
 	if (ret == -1)
 		goto err;
 	*f._p = '\0';

@@ -31,7 +31,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: heapsort.c,v 1.1.1.1 2008/08/26 14:38:35 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -137,7 +137,7 @@ int
 heapsort(void *vbase, size_t nmemb, size_t size,
     int (*compar)(const void *, const void *))
 {
-	int cnt, i, j, l;
+	size_t cnt, i, j, l;
 	char tmp, *tmp1, *tmp2;
 	char *base, *k, *p, *t;
 
