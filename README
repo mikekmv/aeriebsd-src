@@ -13,10 +13,6 @@
 etc/
 	- changing any of the MAKEDEV goodies also generates mans;
 
-lib/
-	- adding new names to a lib requires minor bump;
-	- changing existing api/abi requires a major bump;
-
 lib/libssl/
 	- on new version import needs mans regen from .pod to .man
 	  (see makefile for the rules);
@@ -30,4 +26,4 @@ usr.sbin/httpd/
 
 rejoice!
 --
-    $ABSD$
+    $ABSD: README,v 1.1 2009/11/27 17:14:47 mickey Exp $
