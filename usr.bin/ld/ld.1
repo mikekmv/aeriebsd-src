@@ -14,7 +14,7 @@
 .\" AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 .\" OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: September 8 2009 $
+.Dd $Mdocdate: January 10 2010 $
 .Dt LD 1
 .Os
 .Sh NAME
@@ -24,21 +24,21 @@
 .Nm ld
 .Op Fl dEiMnNOqrsStvVxXZ
 .Op Fl cCDefFhuy Ar name
+.Op Fl T Ar script
+.Op Fl o Ar a.out
+.Ar ...
+.Ar file
 .Op Fl l Ar lib
 .Op Fl L Ar path
 .Op Fl R Ar file
-.Op Fl T Ar script
-.Op Fl o Ar a.out
-.Ar file
-.Fl llib
 .Ar ...
 .Sh DESCRIPTION
 .Nm
-combines several object programs into one, resolves external
+combines several object files into one program, resolves external
 references, and searches libraries.
 
 .Sh FILES
-.Bl -tag -width /usr/local/lib/lib*.a -compact
+.Bl -tag -width /usr/local/lib/lib___.a -compact
 .It Pa /usr/lib/lib*
 Libraries.
 .It Pa /usr/local/lib/lib*
@@ -62,3 +62,9 @@ command first appeared in
 .Pp
 This version was written by
 .An Michael Shalayeff Aq mickey@lucifier.net .
+.Sh CAVEATS
+Current
+.Xr ld 1
+version only supports
+.Xr elf 5
+binaries.
