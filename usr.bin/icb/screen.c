@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 Konrad Merz, Mike Belopuhov
+ * Copyright (c) 2009 Konrad Merz
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -126,12 +126,6 @@ raw_mode(int on)
 		s = save_term;
 	}
 	tcsetattr(2, TCSADRAIN, &s);
-}
-
-int
-get_row(void)
-{
-
 }
 
 /*
