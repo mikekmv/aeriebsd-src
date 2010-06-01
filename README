@@ -20,10 +20,13 @@ lib/libssl/
 sys/
 	- updating *devs files first commits to the source and then
 	  separately the generatees and optionally affected sources;
+	- updating syscalls files first commits into syscalls.master
+	  and then separately generated *.[ch] files;
+	- adding sysctl entries also involves adding 'em to sysctl(3,8);
 
 usr.sbin/httpd/
 	- may require Configure tweaking;
 
 rejoice!
 --
-    $ABSD: README,v 1.1 2009/11/27 17:14:47 mickey Exp $
+    $ABSD: README,v 1.2 2010/05/14 14:15:22 mickey Exp $
