@@ -98,7 +98,7 @@ struct dwarf_nebula *elf_dwarfnebula(unsigned char, const char *, FILE *);
 int	dwarf_addr2line(struct dwarf_nebula *, const char *, FILE *,
 	    long long, char **, char **, int *);
 
-static inline unsigned int
+inline unsigned int
 elf_hash(const unsigned char *name)
 {
 	int hash, v;

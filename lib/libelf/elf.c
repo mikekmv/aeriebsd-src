@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.22 2010/02/12 18:38:13 mickey Exp $";
+    "$ABSD: elf.c,v 1.23 2010/03/28 14:44:04 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -172,10 +172,11 @@ elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 	Elf_Shdr *shdr;
 
 	if ((shdr = calloc(eh->e_shnum, eh->e_shentsize)) == NULL) {
-		warn("%s: malloc shdr", name);
+		warn("calloc(%d, %d)", (int)eh->e_shnum, (int)eh->e_shentsize);
 		return (NULL);
 	}
 
+printf("shdr foff %d\n", (int)foff + eh->e_shoff);
 	if (fseeko(fp, foff + eh->e_shoff, SEEK_SET)) {
 		warn("%s: fseeko", name);
 		free(shdr);
@@ -214,7 +215,7 @@ elf_load_phdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 	Elf_Phdr *phdr;
 
 	if ((phdr = calloc(eh->e_phnum, eh->e_phentsize)) == NULL) {
-		warn("%s: malloc phdr", name);
+		warn("calloc(%d, %d)", (int)eh->e_phnum, (int)eh->e_phentsize);
 		return (NULL);
 	}
 
@@ -518,7 +519,7 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 	char *ret = NULL;
 	int i;
 
-	for (i = 0; i < eh->e_shnum; i++) {
+	for (i = 1; i < eh->e_shnum; i++) {
 		if (shdr[i].sh_type == SHT_STRTAB &&
 		    !strcmp(shstr + shdr[i].sh_name, strtab)) {
 			*pstabsize = shdr[i].sh_size;
@@ -528,7 +529,7 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 			}
 
 			if ((ret = malloc(*pstabsize)) == NULL) {
-				warn("malloc");
+				warn("malloc(%d)", *pstabsize);
 				break;
 			} else if (pread(fileno(fp), ret, *pstabsize,
 			    foff + shdr[i].sh_offset) != *pstabsize) {
@@ -609,7 +610,7 @@ elf_shstrload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 	}
 
 	if ((shstr = malloc(shstrsize)) == NULL) {
-		warn("%s: malloc shsrt", name);
+		warn("malloc(%d)", (int)shstrsize);
 		return (NULL);
 	}
 
@@ -634,11 +635,12 @@ elf_symload(struct elf_symtab *es, FILE *fp, off_t foff,
 {
 	int rv;
 
-	if (!es->shdr &&
-	    !(es->shdr = elf_load_shdrs(es->name, fp, foff, es->ehdr)))
-		return 1;
+	if (!es->shdr) {
+		if (!(es->shdr = elf_load_shdrs(es->name, fp, foff, es->ehdr)))
+			return 1;
+		elf_fix_shdrs(es->ehdr, es->shdr);
+	}
 
-	elf_fix_shdrs(es->ehdr, es->shdr);
 	if (!es->shstr && !(es->shstr = elf_shstrload(es->name, fp, foff,
 	    es->ehdr, es->shdr)))
 		return 1;
