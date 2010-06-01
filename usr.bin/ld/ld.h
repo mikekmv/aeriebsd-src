@@ -21,7 +21,7 @@
 #define	LD_INTERP	"/usr/libexec/ld.so"
 #define	LD_NOTE		"AerieBSD"
 
-#define	ELF_RELSORT	16
+#define	ELF_IBUFSZ	0x10000
 #define	ELF_OBUFSZ	0x10000
 #define	ELF_SBUFSZ	0x200	/* XXX make bigger later */
 
@@ -64,7 +64,6 @@ extern struct symlist *sentry;
 struct relist {
 	uint64_t rl_addr, rl_addend;	/* reloc addr and addend */
 	struct symlist *rl_sym;		/* referene symbol */
-	int rl_symidx;			/* symbol's index */
 	u_char rl_type;			/* relocation type */
 };
 
@@ -86,6 +85,7 @@ struct section {
 	int os_no;			/* elf section number */
 	int os_flags;
 #define	SECTION_LOADED	0x0001
+#define	SECTION_64	0x0002
 };
 
 /*
@@ -105,9 +105,10 @@ struct objlist {
 	const char *ol_name;		/* path and name of the lib member */
 	void *ol_sects;			/* array of section headers */
 	char *ol_snames;		/* sections names */
-	void *ol_aux;			/* aux data (such as phdrs) */
 	struct section *ol_bss;		/* a ref to good ol' .bss */
 	struct section *ol_sections;	/* array of section descriptors */
+	void *ol_aux;			/* aux data (such as phdrs/stab/etc) */
+	int ol_naux;			/* items in the aux data */
 	int ol_nsect;			/* number of sections */
 	int ol_flags;
 #define	OBJ_SYSTEM	0x0001
@@ -119,6 +120,8 @@ struct objlist {
 struct ldarch {
 	int	la_mach;
 	int	la_flags;
+#define	LDARCH_BE	0x0001
+#define	LDARCH_64	SECTION_64	/* 0x002 */
 	const struct ldorder *la_order;
 	int	(*la_fix)(off_t, struct section *, char *, int);
 };
@@ -215,14 +218,12 @@ struct symlist *sym_isundef(const char *);
 struct symlist *sym_define(struct symlist *, struct section *, void *);
 struct symlist *sym_redef(struct symlist *, struct section *, void *);
 struct symlist *sym_add(const char *, struct section *, void *);
-struct symlist *sym_isdefined(const char *);
+struct symlist *sym_isdefined(const char *, struct section *);
 void sym_scan(const struct ldorder *, int (*)(const struct ldorder *, void *),
     int (*)(const struct ldorder *, const struct section *, struct symlist *,
     void *), void *);
 int sym_undcheck(void);
-int rel_symcmp(const void *, const void *);
 int rel_addrcmp(const void *, const void *);
-int rel_fixsyms(struct objlist *, struct symlist *, int);
 struct ldorder *order_clone(const struct ldarch *, const struct ldorder *);
 int order_printmap(const struct ldorder *, void *);
 int randombit(void);

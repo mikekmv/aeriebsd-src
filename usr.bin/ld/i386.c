@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: i386.c,v 1.7 2010/03/28 09:39:53 mickey Exp $";
+static const char rcsid[] = "$ABSD: i386.c,v 1.8 2010/03/31 20:44:55 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -181,5 +181,9 @@ i386_fixone(char *p, uint64_t val, uint64_t addend, uint type)
 		v32 = htole32(v32);
 		memcpy(p, &v32, sizeof v32);
 		break;
+	default:
+		errx(1, "unknown reloc type %d", type);
 	}
+
+	return 0;
 }

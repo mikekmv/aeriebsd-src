@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.11 2010/03/09 09:45:18 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.12 2010/03/28 09:39:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -69,7 +69,6 @@ u_int64_t start_text, start_data, start_bss;
 char *mapfile;
 const char *entry_name;
 struct symlist *sentry;
-struct ldorder *bsorder;
 
 #define OPTSTRING "+B:c:C:dD:e:Ef:F:gh:il:L:m:MnNo:OqrR:sStT:u:vVxXy:Y:z:Z"
 const struct option longopts[] = {
@@ -366,11 +365,11 @@ main(int argc, char *argv[])
 				break;
 			}
 
-		if (!(fp = fopen(*argv, "r")))
-			err(1, "fopen: %s", *argv);
-
 		if (trace)
 			printf("%s\n", *argv);
+
+		if (!(fp = fopen(*argv, "r")))
+			err(1, "fopen: %s", *argv);
 
 		if (obj_add(*argv, NULL, fp, 0, NULL))
 			return 1;
@@ -439,6 +438,9 @@ ldinit(void)
 		}
 	}
 
+	if (!sysobj.ol_nsect)	
+		errx(1, "no sections defined");
+
 	if (!(sysobj.ol_sections = calloc(sysobj.ol_nsect,
 	    sizeof *sysobj.ol_sections)))
 		err(1, "calloc");
@@ -498,6 +500,7 @@ char **nametab;
 int
 lib_add(const char *path)
 {
+	char ibuf[ELF_IBUFSZ];
 	char pathbuf[MAXPATHLEN];
 	char armag[SARMAG];
 	struct ar_hdr ah;
@@ -525,6 +528,7 @@ lib_add(const char *path)
 
 	if (!(fp = fopen(path, "r")))
 		err(1, "%s: fopen", pathbuf);
+	setvbuf(fp, ibuf, _IOFBF, sizeof ibuf);
 
 	if (ltrace)
 		printf("%s\n", path);
@@ -632,6 +636,7 @@ lib_add(const char *path)
 	if (nametab) {
 		free(nametab);
 		free(nt);
+		nametab = NULL;
 	}
 	fclose(fp);
 	return 0;
@@ -906,27 +911,13 @@ ldorder(const struct ldarch *lda)
 				break;
 			}
 			TAILQ_INSERT_TAIL(&headorder, neworder, ldo_entry);
-			/*
-			 * we ignore .sbss special handling and just
-			 * dump everything into .bss
-			 */
-			if (neworder->ldo_type == SHT_NOBITS &&
-			    strcmp(neworder->ldo_name, ELF_BSS)) {
-				if (bsorder) {
-					warnx("dup order %s and %s",
-					    bsorder->ldo_name,
-					    neworder->ldo_name);
-					errors++;
-				}
-				bsorder = neworder;
-			}
 			break;
 
 		case ldo_symbol:
 			/* entry has been already handled in ldinit() */
 			if (order->ldo_flags & LD_ENTRY)
 				break;
-			if ((sym = sym_isdefined(order->ldo_name))) {
+			if ((sym = sym_isdefined(order->ldo_name, NULL))) {
 				warnx("%s: already defined in %s",
 				    order->ldo_name,
 				    sym->sl_sect->os_obj->ol_name);

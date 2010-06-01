@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syms.c,v 1.5 2010/01/10 05:56:01 mickey Exp $";
+static const char rcsid[] = "$ABSD: syms.c,v 1.6 2010/03/09 09:45:18 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -31,22 +31,18 @@ static const char rcsid[] = "$ABSD: syms.c,v 1.5 2010/01/10 05:56:01 mickey Exp 
 
 #include "ld.h"
 
-SPLAY_HEAD(symtree, symlist)
-    undsyms = SPLAY_INITIALIZER(undsyms),
-    defsyms = SPLAY_INITIALIZER(defsyms);
-
 static inline int
 symcmp(struct symlist *a, struct symlist *b)
 {
 	return strcmp(a->sl_name, b->sl_name);
 }
 
+SPLAY_HEAD(symtree, symlist) undsyms = SPLAY_INITIALIZER(undsyms),
+    defsyms = SPLAY_INITIALIZER(defsyms);
+
 SPLAY_PROTOTYPE(symtree, symlist, sl_node, symcmp);
 
 SPLAY_GENERATE(symtree, symlist, sl_node, symcmp);
-
-/* TODO we have to deal with duplicate global names as in global statics
-   perhaps by the means of using objlist* as an additional key */
 
 struct symlist *
 sym_undef(const char *name)
@@ -54,7 +50,7 @@ sym_undef(const char *name)
 	struct symlist *sym;
 
 	if (!(sym = calloc(1, sizeof *sym)))
-		err(1, "malloc");
+		err(1, "calloc");
 
 	if (!(sym->sl_name = strdup(name)))
 		err(1, "strdup");
@@ -88,10 +84,13 @@ sym_define(struct symlist *sym, struct section *os, void *esym)
 struct symlist *
 sym_redef(struct symlist *sym, struct section *os, void *esym)
 {
+	SPLAY_REMOVE(symtree, &defsyms, sym);
 	TAILQ_REMOVE(&sym->sl_sect->os_syms, sym, sl_entry);
 	sym->sl_sect = os;
-	memcpy(&sym->sl_elfsym, esym, sizeof sym->sl_elfsym);
+	if (esym)
+		memcpy(&sym->sl_elfsym, esym, sizeof sym->sl_elfsym);
 	TAILQ_INSERT_TAIL(&os->os_syms, sym, sl_entry);
+	SPLAY_INSERT(symtree, &defsyms, sym);
 	return sym;
 }
 
@@ -101,7 +100,7 @@ sym_add(const char *name, struct section *os, void *esym)
 	struct symlist *sym;
 
 	if (!(sym = calloc(1, sizeof *sym)))
-		err(1, "malloc");
+		err(1, "calloc");
 
 	if (!(sym->sl_name = strdup(name)))
 		err(1, "strdup");
@@ -116,12 +115,18 @@ sym_add(const char *name, struct section *os, void *esym)
 }
 
 struct symlist *
-sym_isdefined(const char *name)
+sym_isdefined(const char *name, struct section *os)
 {
-	struct symlist key;
+	struct symlist key, *sym;
 
+	bzero(&key, sizeof key);
 	key.sl_name = name;
-	return SPLAY_FIND(symtree, &defsyms, &key);
+	if (!(sym = SPLAY_FIND(symtree, &defsyms, &key)) && os) {
+		key.sl_sect = os;
+		sym = SPLAY_FIND(symtree, &defsyms, &key);
+	}
+
+	return sym;
 }
 
 int
@@ -167,63 +172,9 @@ sym_scan(const struct ldorder *order, int (*of)(const struct ldorder *, void *),
 }
 
 /*
- * scan all sections in this object and fix all relocs
- * referencing this symbol
- */
-int
-rel_fixsyms(struct objlist *ol, struct symlist *sym, int is)
-{
-	struct section *os;
-	int i;
-
-	for (i = 0, os = ol->ol_sections; i < ol->ol_nsect; os++, i++) {
-		struct relist *r, *er;
-
-		if (!os->os_nrls)
-			continue;
-
-		if (os->os_nrls > ELF_RELSORT) {
-			struct relist rk, *r0;
-
-			rk.rl_symidx = is;
-			if (!(r0 = bsearch(&rk, os->os_rels, os->os_nrls,
-			    sizeof rk, rel_symcmp)))
-				continue;
-
-			for (r = r0, er = os->os_rels; er <= r; r--)
-				if (r->rl_symidx == is)
-					r->rl_sym = sym;
-				else
-					break;
-
-			r0++;
-			for (er = os->os_rels + os->os_nrls; r0 < er; r0++)
-				if (r0->rl_symidx == is)
-					r0->rl_sym = sym;
-				else
-					break;
-
-		} else
-			for (r = os->os_rels, er = r + os->os_nrls; r < er; r++)
-				if (r->rl_symidx == is)
-					r->rl_sym = sym;
-	}
-
-	return 0;
-}
-
-/*
  * these are comparison functions used to sort relocation
  * array in elf_loadrelocs()
  */
-int
-rel_symcmp(const void *a0, const void *b0)
-{
-	const struct relist *a = a0, *b = b0;
-
-	return a->rl_symidx - b->rl_symidx;
-}
-
 int
 rel_addrcmp(const void *a0, const void *b0)
 {
@@ -245,7 +196,7 @@ order_clone(const struct ldarch *lda, const struct ldorder *order)
 {
 	struct ldorder *neworder;
 
-	if ((neworder = calloc(1, sizeof(*neworder))) == NULL)
+	if ((neworder = calloc(1, sizeof *neworder)) == NULL)
 		err(1, "calloc");
 
 	TAILQ_INIT(&neworder->ldo_seclst);

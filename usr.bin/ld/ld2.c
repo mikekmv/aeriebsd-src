@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.19 2010/03/31 20:44:55 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.20 2010/03/31 21:27:21 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -150,9 +150,6 @@ ldmap(struct headorder headorder)
 	Elf_Off off;
 	int nsect, nphdr, nnames[2];
 
-	/* assign commons */
-	obj_foreach(elf_commons, bsorder);
-
 	eh = &ELF_HDR(sysobj.ol_hdr);
 	eh->e_ident[EI_MAG0] = ELFMAG0;
 	eh->e_ident[EI_MAG1] = ELFMAG1;
@@ -237,6 +234,9 @@ ldmap(struct headorder headorder)
 	if (!(phdr = calloc(nphdr, sizeof *phdr)))
 		err(1, "calloc");
 	sysobj.ol_aux = phdr;
+
+	/* assign commons */
+	obj_foreach(elf_commons, NULL);
 
 	eh->e_phoff = sizeof *eh;
 	eh->e_flags = 0;
@@ -468,7 +468,7 @@ elf_absadd(const char *name)
 	asym.st_name = 0;
 	asym.st_value = 0;
 	asym.st_size = 0;
-	asym.st_info = ELF32_ST_INFO(STB_GLOBAL, STT_NOTYPE);
+	asym.st_info = ELF_ST_INFO(STB_GLOBAL, STT_NOTYPE);
 	asym.st_other = 0;
 	asym.st_shndx = SHN_ABS;
 	if ((sym = sym_isundef(name)))
@@ -565,7 +565,7 @@ elf_symwrite(const struct ldorder *order, const struct section *os,
 /*
  * called upon every output symbol in order to write out the strings
  *
- * TODO merge equal string (make string hash in syms.c)
+ * TODO merge equal strings (make string hash in syms.c)
  */
 int
 elf_names(const struct ldorder *order, const struct section *os,
@@ -620,15 +620,13 @@ elf_commons(struct objlist *ol, void *v)
 			return 0;
 		errx(1, "%s: no .bss", ol->ol_name);
 	}
-	shdr = ol->ol_bss->os_sect;
 
+	shdr = ol->ol_bss->os_sect;
 	while ((sym = TAILQ_FIRST(&ol->ol_sections[0].os_syms))) {
 		esym = &ELF_SYM(sym->sl_elfsym);
 		esym->st_value = shdr->sh_size;
 		shdr->sh_size += ALIGN(esym->st_size);
-		TAILQ_REMOVE(&ol->ol_sections[0].os_syms, sym, sl_entry);
-		sym->sl_sect = ol->ol_bss;
-		TAILQ_INSERT_TAIL(&ol->ol_bss->os_syms, sym, sl_entry);
+		sym_redef(sym, ol->ol_bss, NULL);
 	}
 
 	return 0;
@@ -679,7 +677,6 @@ ldload(const char *name, struct ldorder *order)
 		if (ord->ldo_type == SHT_NOBITS)
 			continue;
 
-		/* TODO fill gaps with proper filler */
 		if (elf_seek(fp, shdr->sh_offset, ord->ldo_filler) < 0)
 			err(1, "elf_seek: %s", name);
 
@@ -817,16 +814,14 @@ ldloadasect(FILE *fp, FILE *ofp, const char *name, const struct ldorder *ord,
 
 /*
  * load the relocations for the section;
- * prepare for loading the symbols and sort the relocs
- * by the symbol index;
- * alternatively we can load relocs after symbols
- * it all depends what is less to scan through.
  */
 int
-elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
+elf_loadrelocs(struct objlist *ol, struct section *os, Elf_Shdr *shdr,
     FILE *fp, off_t foff)
 {
 	Elf_Ehdr *eh = &ELF_HDR(ol->ol_hdr);
+	Elf_Shdr *shbits = os->os_sect;
+	struct symlist **sidx;
 	off_t off;
 	struct relist *r;
 	Elf_Rel rel;
@@ -845,10 +840,13 @@ elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
 	if (!(r = calloc(n, sizeof *r)))
 		err(1, "calloc");
 
-	s->os_rels = r;
-	s->os_nrls = n;
+	os->os_rels = r;
+	os->os_nrls = n;
+	sidx = ol->ol_aux;
 	if (shdr->sh_type == SHT_REL) {
 		for (i = 0; i < n; i++, r++) {
+			int si;
+
 			if (fread(&rel, sizeof rel, 1, fp) != 1)
 				err(1, "fread: %s", ol->ol_path);
 
@@ -856,24 +854,38 @@ elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
 				err(1, "fseeko: %s", ol->ol_path);
 
 			elf_fix_rel(eh, &rel);
-			r->rl_sym = NULL;
+			if ((si = ELF_R_SYM(rel.r_info)) >= ol->ol_naux)
+				errx(1, "%s: invalid reloc #%d",
+				    ol->ol_path, i);
+			if (rel.r_offset > shbits->sh_size)
+				errx(1, "%s: reloc #%d offset 0x%llx "
+				    "is out of range", ol->ol_path, i,
+				    (long long)rel.r_offset);
+			r->rl_sym = sidx[si];
 			r->rl_addend = 0;
 			r->rl_addr = rel.r_offset;
-			r->rl_symidx = ELF_R_SYM(rel.r_info);
 			r->rl_type = ELF_R_TYPE(rel.r_info);
 		}
 	} else {
 		for (i = 0; i < n; i++, r++) {
+			int si;
+
 			if (fread(&rela, sizeof rela, 1, fp) != 1)
 				err(1, "fread: %s", ol->ol_path);
 
 			if (sz && fseeko(fp, sz, SEEK_CUR))
 				err(1, "fseeko: %s", ol->ol_path);
 
-			r->rl_sym = NULL;
+			if ((si = ELF_R_SYM(rela.r_info)) >= ol->ol_naux)
+				errx(1, "%s: invalid reloc #%d",
+				    ol->ol_path, i);
+			if (rel.r_offset > shbits->sh_size)
+				errx(1, "%s: reloc #%d offset 0x%llx "
+				    "is out of range", ol->ol_path, i,
+				    (long long)rel.r_offset);
+			r->rl_sym = sidx[si];
 			r->rl_addr = rela.r_offset;
 			r->rl_addend = rela.r_addend;
-			r->rl_symidx = ELF_R_SYM(rela.r_info);
 			r->rl_type = ELF_R_TYPE(rela.r_info);
 		}
 	}
@@ -881,108 +893,108 @@ elf_loadrelocs(struct objlist *ol, struct section *s, Elf_Shdr *shdr,
 	if (fseeko(fp, off, SEEK_SET) < 0)
 		err(1, "fseeko: %s", ol->ol_path);
 
-	if (s->os_nrls > ELF_RELSORT)
-		qsort(s->os_rels, s->os_nrls, sizeof *s->os_rels,
-		    rel_symcmp);
+	/* we gotta sort them by addr as they come unsorted */
+	qsort(os->os_rels, os->os_nrls, sizeof *os->os_rels, rel_addrcmp);
+
 	return 0;
 }
 
 /*
  * add another symbol from the object;
  * a hook called from elf_symload(3).
- * collect undefined symbols and resolve the defined;
- * resolve relocation reference.
+ * collect undefined symbols and resolve the defined
  */
 int
 elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 {
-	struct nlist nl;
+	static int next;	/* local symbols renaming */
 	struct objlist *ol = v;
 	struct section *os;
-	Elf_Sym *dsym, *esym = vs;
-	struct symlist *isdef, *sym;
+	Elf_Sym *esym = vs;
+	struct symlist **sidx, *sym;
+	char *name;
+
+	if (!is)
+		return 0;
+
+	/* allocate symindex */
+	if (!ol->ol_aux) {
+		if (!(ol->ol_aux = calloc(es->nsyms, sizeof sidx[0])))
+			err(1, "calloc");
+		ol->ol_naux = es->nsyms;
+	}
+	sidx = ol->ol_aux;
 
 	if (ELF_ST_TYPE(esym->st_info) == STT_SECTION) {
 		if (!(sym = calloc(1, sizeof *sym)))
 			err(1, "calloc");
 
 		if (esym->st_shndx >= ol->ol_nsect)
-			errx(1, "corrupt symbol table");
+			errx(1, "%s: corrupt symbol table", es->name);
 		sym->sl_sect = ol->ol_sections + esym->st_shndx;
 		sym->sl_name = NULL;
-		return rel_fixsyms(ol, sym, is);
+		sidx[is] = sym;
+		return 0;
 	}
 
-	bzero(&nl, sizeof nl);
-	elf2nlist(esym, es->ehdr, es->shdr, es->shstr, &nl);
+	if (esym->st_name >= es->stabsz)
+		err(1, "%s: invalid symtab entry #%d", es->name, is);
+	name = es->stab + esym->st_name;
+if (is && *name == '\0') warnx("#%d is null", is);
 
-	nl.n_un.n_name = es->stab + nl.n_un.n_strx;
-	if (*nl.n_un.n_name == '\0')
-		return 0;
-	if ((nl.n_type & N_TYPE) == N_FN || (nl.n_type & N_TYPE) == N_SIZE)
+	/* skip file names and size defs */
+	if (ELF_ST_TYPE(esym->st_info) == STT_FILE)
 		return 0;
 
-	/* this also sets os for SHN_UNDEF which allows us tracking later */
-	if (esym->st_shndx < SHN_LORESERVE)
-		os = ol->ol_sections + esym->st_shndx;
-	else switch (esym->st_shndx) {
-	case SHN_COMMON:
-		os = ol->ol_sections;
+	switch (esym->st_shndx) {
+	case SHN_UNDEF:
+		if (!(sym = sym_isdefined(name, sysobj.ol_sections)) &&
+		    !(sym = sym_isundef(name)))
+			sym = sym_undef(name);
 		break;
+
+	case SHN_COMMON:
+		if ((sym = sym_isdefined(name, ol->ol_sections))) {
+			Elf_Sym *dsym = &ELF_SYM(sym->sl_elfsym);
+
+			if (warncomm)
+				warnx("%s: resolving common %s\n",
+				    es->name, name);
+
+			if (esym->st_size != dsym->st_size)
+				warnx("%s: different size (%lu != %lu)", name,
+				    (u_long)esym->st_size,
+				    (u_long)dsym->st_size);
+		} else if ((sym = sym_isundef(name)))
+			sym = sym_define(sym, ol->ol_sections, vs);
+		else
+			sym = sym_add(name, ol->ol_sections, vs);
+		break;
+
+	case SHN_ABS:
+errx(1, "ABS is not implemented");
+
 	default:
-		os = NULL;
-	}
-
-	if ((isdef = sym_isdefined(nl.n_un.n_name)))
-		dsym = &ELF_SYM(isdef->sl_elfsym);
-	sym = sym_isundef(nl.n_un.n_name);
-	if ((nl.n_type & N_TYPE) == N_UNDF) {
-		if (isdef)
-			sym = isdef;
-		else if (!sym) {
-			sym = sym_undef(nl.n_un.n_name);
-			sym->sl_sect = os;
+		if (esym->st_shndx >= ELF_HDR(ol->ol_hdr).e_shnum)
+			err(1, "%s: invalid section index for #%d",
+			    es->name, is);
+		os = ol->ol_sections + esym->st_shndx;
+		if (ELF_ST_BIND(esym->st_info) == STB_LOCAL &&
+		    sym_isdefined(name, sysobj.ol_sections)) {
+			if (asprintf(&name, "%s.%d", name, next++) < 0)
+				err(1, "asprintf");
 		}
-	} else if (isdef && ELF_ST_BIND(dsym->st_info) != STB_LOCAL &&
-	    (nl.n_type & N_EXT)) {
-		if (esym->st_shndx == SHN_COMMON ||
-		    dsym->st_shndx == SHN_COMMON) {
-			if (esym->st_shndx == dsym->st_shndx)
-				sym = isdef;
-			else {
-				if (warncomm)
-					warnx("resolving common %s\n",
-					    nl.n_un.n_name);
-				if (esym->st_size != dsym->st_size)
-					warnx("%s: different size (%lu != %lu)",
-					    nl.n_un.n_name,
-					    (u_long)esym->st_size,
-					    (u_long)dsym->st_size);
-
-				if (esym->st_shndx == SHN_COMMON)
-					sym = isdef;
-				else
-					sym = sym_redef(sym, os, vs);
-			}
-		} else {
-			sym = isdef;
-			warnx("%s: %s: multiply defined, previously in %s",
-			    es->name, nl.n_un.n_name,
-			    sym->sl_sect->os_obj->ol_name);
-			errors++;
-		}
-	} else {
-		if (isdef && isdef->sl_sect->os_obj == ol)
-			errx(1, "%s: %s: duplicate symbol definition",
-			    isdef->sl_sect->os_obj->ol_name, nl.n_un.n_name);
-
-		if (sym)
+		if ((sym = sym_isdefined(name, ol->ol_sections)) &&
+		    ELF_SYM(sym->sl_elfsym).st_shndx == SHN_COMMON)
+			sym = sym_redef(sym, os, esym);
+		else if ((sym = sym_isundef(name)))
 			sym = sym_define(sym, os, vs);
 		else
-			sym = sym_add(nl.n_un.n_name, os, vs);
+			sym = sym_add(name, os, vs);
 	}
 
-	return rel_fixsyms(ol, sym, is);
+	sidx[is] = sym;
+	return 0;
 }
 
 /*
@@ -995,12 +1007,11 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 int
 elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 {
-	struct section *os, *se;
-	struct relist *r, *er;
+	struct section *os;
 	struct elf_symtab es;
 	Elf_Ehdr *eh;
 	Elf_Shdr *shdr;
-	int i, n, rv;
+	int i, n;
 
 	eh = &ELF_HDR(ol->ol_hdr);
 	elf_fix_header(eh);
@@ -1016,16 +1027,29 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 	if (!(ol->ol_sections = calloc(n, sizeof(struct section))))
 		err(1, "calloc");
 
-	/* scan thru the section list looking for progbits and relocs */
-	for (i = 0; i < n; i++) {
-		os = &ol->ol_sections[i];
+	for (i = 0, os = ol->ol_sections; i < n; os++, i++) {
 		os->os_no = i;
 		os->os_sect = &shdr[i];
 		os->os_obj = ol;
 		os->os_off = foff + shdr[i].sh_offset;
 		TAILQ_INIT(&os->os_syms);
+	}
 
-		if (shdr[i].sh_type == SHT_NOBITS) {
+	/* load symbol table */
+	es.name = ol->ol_name;
+	es.ehdr = eh;
+	es.shdr = shdr;
+	es.shstr = NULL;
+
+	if (elf_symload(&es, fp, foff, elf_symadd, ol))
+		return 1;
+	ol->ol_sects = es.shdr;
+	ol->ol_snames = es.shstr;
+	free(es.stab);
+
+	/* scan thru the section list looking for progbits and relocs */
+	for (i = 0, os = ol->ol_sections; i < n; shdr++, os++, i++) {
+		if (shdr->sh_type == SHT_NOBITS) {
 			if (ol->ol_bss) {
 				warnx("%s: too many NOBITS", ol->ol_name);
 				errors++;
@@ -1034,51 +1058,24 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 			continue;
 		}
 
-		if (shdr[i].sh_type != SHT_PROGBITS)
+		if (shdr->sh_type != SHT_PROGBITS)
 			continue;
 
 		if (i + 1 >= n)
 			continue;
 
-		if (shdr[i + 1].sh_type != SHT_RELA &&
-		    shdr[i + 1].sh_type != SHT_REL)
+		if (shdr[1].sh_type != SHT_RELA &&
+		    shdr[1].sh_type != SHT_REL)
 			continue;
 
-		if (elf_loadrelocs(ol, os, &shdr[i + 1], fp, foff))
+		if (elf_loadrelocs(ol, os, &shdr[1], fp, foff))
 			continue;
 	}
 
-	es.name = ol->ol_name;
-	es.ehdr = eh;
-	es.shdr = shdr;
-	es.shstr = NULL;
+	free(ol->ol_aux);
+	ol->ol_aux = NULL;
 
-	if (elf_symload(&es, fp, foff, elf_symadd, ol))
-		return 1;
-	free(es.stab);
-
-	ol->ol_sects = es.shdr;
-	ol->ol_snames = es.shstr;
-
-	for (rv = 0, os = ol->ol_sections, se = os + n; os < se; os++) {
-		/*
-		 * check all the relocs for resolved syms references;
-		 * accumulte the errors and then fail the loading
-		 */
-		for (r = os->os_rels, er = r + os->os_nrls; r < er; r++)
-			if (r->rl_sym == NULL) {
-				warnx("%s: unresolved reloc #%ld to sym #%d",
-				    ol->ol_name, r - os->os_rels, r->rl_symidx);
-				r->rl_sym = (void *)1; /* avoid more warnings */
-				rv++;
-			}
-
-		/* (re)sort the relocs by the addr for the loaders pleasure */
-		qsort(os->os_rels, os->os_nrls, sizeof *os->os_rels,
-		    rel_addrcmp);
-	}
-
-	return rv;
+	return 0;
 }
 
 /*
@@ -1100,7 +1097,8 @@ elf_ld_chkhdr(const char *path, Elf_Ehdr *eh, int type, int *mach,
 		*mach = eh->e_machine;
 		*class = eh->e_ident[EI_CLASS];
 		*endian = eh->e_ident[EI_DATA];
-		return (ldarch = ldinit()) == NULL? EINVAL : 0;
+		ldarch = ldinit();
+		return ldarch == NULL? EINVAL : 0;
 	}
 
 	if (*mach != eh->e_machine ||
@@ -1115,7 +1113,7 @@ elf_ld_chkhdr(const char *path, Elf_Ehdr *eh, int type, int *mach,
 
 /*
  * seek forward in the output file and fill
- * the gap with the filler
+ * the gap with the filler (not yet ;)
  */
 int
 elf_seek(FILE *fp, off_t off, uint64_t filler)

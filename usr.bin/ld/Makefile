@@ -5,6 +5,7 @@ SRCS=	ld.c ld32.c ld64.c syms.c \
 CLEANFILES+=ld32.c ld64.c
 CPPFLAGS+=-I${.CURDIR} -I${.CURDIR}/../nm
 CFLAGS+=-Wall -g
+LDSTATIC=-static
 LDADD=  -lelf
 DPADD=  ${LIBELF}
 
