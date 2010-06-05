@@ -35,9 +35,9 @@ static const char copyright[] =
 
 #ifndef lint
 #if 0
-static char sccsid[] = "@(#)kdump.c	8.4 (Berkeley) 4/28/95";
+static const char sccsid[] = "@(#)kdump.c	8.4 (Berkeley) 4/28/95";
 #endif
-static const char rcsid[] = "$ABSD: kdump.c,v 1.2 2009/03/21 14:57:09 mickey Exp $";
+static const char rcsid[] = "$ABSD: kdump.c,v 1.3 2010/06/05 10:41:32 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -121,7 +121,7 @@ pid_t pid = -1;
 
 struct emulation {
 	const char *name;	/* Emulation name */
-	char **sysnames;	/* Array of system call names */
+	const char *const *sysnames;	/* Array of system call names */
 	int  nsysnames;		/* Number of */
 };
 
@@ -158,7 +158,7 @@ static void ktremul(char *, size_t);
 static void ktrgenio(struct ktr_genio *, size_t);
 static void ktrnamei(const char *, size_t);
 static void ktrpsig(struct ktr_psig *);
-static void ktrsyscall(struct ktr_syscall *);
+static void ktrsyscall(struct ktr_syscall *, size_t);
 static void ktrsysret(struct ktr_sysret *);
 static void setemul(const char *);
 static void usage(void);
@@ -248,7 +248,7 @@ main(int argc, char *argv[])
 			continue;
 		switch (ktr_header.ktr_type) {
 		case KTR_SYSCALL:
-			ktrsyscall((struct ktr_syscall *)m);
+			ktrsyscall((struct ktr_syscall *)m, ktrlen);
 			break;
 		case KTR_SYSRET:
 			ktrsysret((struct ktr_sysret *)m);
@@ -355,7 +355,7 @@ ioctldecode(u_long cmd)
 }
 
 static void
-ktrsyscall(struct ktr_syscall *ktr)
+ktrsyscall(struct ktr_syscall *ktr, size_t len)
 {
 	int argsize = ktr->ktr_argsize;
 	register_t *ap;
@@ -385,18 +385,25 @@ ktrsyscall(struct ktr_syscall *ktr)
 				c = ',';
 				ap++;
 				argsize -= sizeof(register_t);
-			} else if (ktr->ktr_code == SYS___sysctl) {
+			} else if (ktr->ktr_code == SYS___sysctl && (argsize +
+			    ap[1] * sizeof(int) + sizeof(*ktr)) >= len) {
 				int *np, n;
+				char buf[64];
 
 				n = ap[1];
 				if (n > CTL_MAXNAME)
 					n = CTL_MAXNAME;
-				np = (int *)(ap + 6);
-				for (; n--; np++) {
-					if (c)
-						putchar(c);
-					printf("%d", *np);
-					c = '.';
+				np = (int *)(ap + argsize / sizeof(register_t));
+				if (fancy)
+					printf("%s", sysctlname(np, n,
+					    buf, sizeof buf));
+				else {
+					for (; n--; np++) {
+						if (c)
+							putchar(c);
+						printf("%d", *np);
+						c = '.';
+					}
 				}
 
 				c = ',';

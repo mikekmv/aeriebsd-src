@@ -15,3 +15,4 @@
  */
 
 const char *ioctlname(unsigned long);
+const char *sysctlname(int *, u_int, char *, size_t);

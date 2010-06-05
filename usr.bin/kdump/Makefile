@@ -2,7 +2,7 @@
 LDSTATIC=${STATIC}
 PROG=	kdump
 CFLAGS+=-I${.CURDIR}/../ktrace -I${.CURDIR} -I${.CURDIR}/../../sys
-SRCS=	kdump.c ioctl.c subr.c
+SRCS=	kdump.c ioctl.c sysctl.c subr.c
 .PATH:	${.CURDIR}/../ktrace
 CLEANFILES+=ioctl.c
 

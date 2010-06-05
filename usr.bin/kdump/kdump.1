@@ -28,7 +28,7 @@
 .\"
 .\"	from: @(#)kdump.1	8.1 (Berkeley) 6/6/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt KDUMP 1
 .Os
 .Sh NAME
@@ -83,6 +83,10 @@ tries to decode many system calls into a more human-readable format.
 For example,
 .Xr ioctl 2
 values are replaced with the macro name and
+.Xr sysctl 3
+MIB names are replaced with
+.Xr sysctl 8
+strings and
 .Va errno
 values are replaced with the
 .Xr strerror 3
