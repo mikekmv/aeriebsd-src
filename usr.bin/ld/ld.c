@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.13 2010/06/01 12:59:55 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.14 2010/06/05 11:48:34 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -65,6 +65,7 @@ int relocatable;/* produce relocatable output */
 int strip;
 int errors;	/* non-fatal errors accumulated */
 int printmap;	/* print edit map to stdout */
+int eh_frame_hdr;
 u_int64_t start_text, start_data, start_bss;
 char *mapfile;
 const char *entry_name;
@@ -93,6 +94,7 @@ const struct option longopts[] = {
 	{ "dynamic-linker",	required_argument,	NULL, 'd' },
 	{ "entry",		required_argument,	0, 'e' },
 	{ "export-dynamic",	no_argument,		0, 'E' },
+	{ "eh-frame-hdr",	no_argument,	&eh_frame_hdr, 1 },
 	{ "EB",			no_argument,	&endian, ELFDATA2MSB },
 	{ "EL",			no_argument,	&endian, ELFDATA2LSB },
 	{ "auxiliary",		required_argument,	0, 'f' },
