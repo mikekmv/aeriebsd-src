@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.12 2010/03/28 09:39:53 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.13 2010/06/01 12:59:55 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -70,7 +70,7 @@ char *mapfile;
 const char *entry_name;
 struct symlist *sentry;
 
-#define OPTSTRING "+B:c:C:dD:e:Ef:F:gh:il:L:m:MnNo:OqrR:sStT:u:vVxXy:Y:z:Z"
+#define OPTSTRING "+B:c:C:d:D:e:Ef:F:gh:il:L:m:MnNo:OqrR:sStT:u:vVxXy:Y:z:Z"
 const struct option longopts[] = {
 	{ "as-needed",		no_argument,	&as_needed, 1 },
 	{ "no-as-needed",	no_argument,	&as_needed, 0 },
@@ -90,6 +90,7 @@ const struct option longopts[] = {
 	{ "dn",			no_argument,	&Bflag, 0 },
 	{ "dp",			no_argument,		0, 'd' },
 	{ "dy",			no_argument,	&Bflag, 1 },
+	{ "dynamic-linker",	required_argument,	NULL, 'd' },
 	{ "entry",		required_argument,	0, 'e' },
 	{ "export-dynamic",	no_argument,		0, 'E' },
 	{ "EB",			no_argument,	&endian, ELFDATA2MSB },
@@ -197,7 +198,9 @@ main(int argc, char *argv[])
 		case 'D':	/* define symbol */
 			break;
 
-		case 'd':	/* FORCE_COMMON_ALLOCATION */
+		case 'd':	/* dynlink/FORCE_COMMON_ALLOCATION */
+			if (!strcmp(argv[optind-1], "-dynamic-linker"))
+				optind++;
 			break;
 
 		case 'e':	/* entry */
