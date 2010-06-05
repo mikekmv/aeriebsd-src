@@ -273,6 +273,9 @@ config_rootsearch(cfmatch_t fn, char *rootname, void *aux)
 	 */
 	for (p = cfroots; *p >= 0; p++) {
 		cf = &cfdata[*p];
+		if (cf->cf_fstate == FSTATE_DNOTFOUND ||
+		    cf->cf_fstate == FSTATE_DSTAR)
+			continue;
 		if (strcmp(cf->cf_driver->cd_name, rootname) == 0)
 			mapply(&m, cf);
 	}
