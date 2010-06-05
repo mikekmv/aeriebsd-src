@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -38,7 +37,7 @@ static const char copyright[] =
 #if 0
 static char sccsid[] = "@(#)kdump.c	8.4 (Berkeley) 4/28/95";
 #endif
-static const char rcsid[] = "$ABSD: kdump.c,v 1.1.1.1 2008/08/26 14:42:50 root Exp $";
+static const char rcsid[] = "$ABSD: kdump.c,v 1.2 2009/03/21 14:57:09 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -76,6 +75,7 @@ pid_t pid = -1;
 
 #include <compat/bsdos/bsdos_syscall.h>
 #include <compat/freebsd/freebsd_syscall.h>
+#include <compat/openbsd/openbsd_syscall.h>
 #if defined(__hppa__) || defined(__m68k__)
 #include <compat/hpux/hpux_syscall.h>
 #endif
@@ -99,6 +99,7 @@ pid_t pid = -1;
 
 #include <compat/bsdos/bsdos_syscalls.c>
 #include <compat/freebsd/freebsd_syscalls.c>
+#include <compat/openbsd/openbsd_syscalls.c>
 #if defined(__hppa__) || defined(__m68k__)
 #include <compat/hpux/hpux_syscalls.c>
 #endif
@@ -137,6 +138,7 @@ const struct emulation emulations[] = {
 	{ "ultrix",	ultrix_syscallnames,	ULTRIX_SYS_MAXSYSCALL },
 	{ "bsdos",	bsdos_syscallnames,	BSDOS_SYS_MAXSYSCALL },
 	{ "freebsd",	freebsd_syscallnames,	FREEBSD_SYS_MAXSYSCALL },
+	{ "openbsd",	openbsd_syscallnames,	OPENBSD_SYS_MAXSYSCALL },
 	{ NULL,		NULL,			NULL }
 };
 
