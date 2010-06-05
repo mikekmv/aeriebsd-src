@@ -1,4 +1,3 @@
-
 /*
  *
  * Copyright (c) 1997 Charles D. Cranor and Washington University.
@@ -566,7 +565,6 @@ uvm_fault(orig_map, vaddr, fault_type, access_type)
 	int npages, nback, nforw, centeridx, result, lcv, gotpages;
 	vaddr_t startva, currva;
 	voff_t uoff;
-	paddr_t pa; 
 	struct vm_amap *amap;
 	struct uvm_object *uobj;
 	struct vm_anon *anons_store[UVM_MAXRANGE], **anons, *anon, *oanon;
@@ -790,7 +788,7 @@ ReFault:
 		 * except for center)
 		 */
 		if (lcv != centeridx &&
-		    pmap_extract(ufi.orig_map->pmap, currva, &pa)) {
+		    pmap_extract(ufi.orig_map->pmap, currva, NULL)) {
 			pages[lcv] = PGO_DONTCARE;
 			continue;
 		}
