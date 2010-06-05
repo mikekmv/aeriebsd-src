@@ -16,7 +16,7 @@ ld64.c: ${.CURDIR}/ld2.c
 	echo '#define ELFSIZE 64' | cat - $> > ${.TARGET}
 
 .if make(install)
-SUBDIR+= PSD.doc
+#SUBDIR+= PSD.doc
 .endif
 
 .include <bsd.prog.mk>
