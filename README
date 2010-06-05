@@ -23,10 +23,11 @@ sys/
 	- updating syscalls files first commits into syscalls.master
 	  and then separately generated *.[ch] files;
 	- adding sysctl entries also involves adding 'em to sysctl(3,8);
+	  check kdump if the name lists tree has to updated;
 
 usr.sbin/httpd/
 	- may require Configure tweaking;
 
 rejoice!
 --
-    $ABSD: README,v 1.2 2010/05/14 14:15:22 mickey Exp $
+    $ABSD: README,v 1.3 2010/06/01 14:43:03 mickey Exp $
