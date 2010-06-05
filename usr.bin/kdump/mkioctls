@@ -32,6 +32,10 @@
 #
 ${CC:-cc} -E -nostdinc -idirafter $DESTDIR/usr/include -dM ${1+"$@"} | awk '
 BEGIN {
+	print "#ifndef lint"
+	print "static const char rcsid[] = \"$ABSD$\";"
+	print "#endif /* not lint */"
+	print
 	print "#include <sys/param.h>"
 	print "#include <sys/socket.h>"
 	print "#include <sys/socketvar.h>"

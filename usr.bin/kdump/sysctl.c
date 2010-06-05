@@ -15,6 +15,10 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif /* not lint */
+
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/socket.h>
