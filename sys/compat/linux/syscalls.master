@@ -1,4 +1,4 @@
-;	$ABSD: syscalls.master,v 1.4 2010/01/18 17:41:31 mickey Exp $
+;	$ABSD: syscalls.master,v 1.5 2010/01/19 18:44:40 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -167,7 +167,7 @@
 93	NOARGS		{ int compat_43_sys_ftruncate(int fd, long length); }
 94	NOARGS		{ int sys_fchmod(int fd, int mode); }
 95	STD		{ int linux_sys_fchown16(int fd, int uid, int gid); }
-96	NOARGS		{ int sys_getpriority(int which, int who); }
+96	STD		{ int linux_sys_getpriority(int which, int who); }
 97	NOARGS		{ int sys_setpriority(int which, int who, int prio); }
 98	NOARGS		{ int sys_profil(caddr_t samples, u_int size, \
 			    u_int offset, u_int scale); }
@@ -220,7 +220,8 @@
 123	STD		{ int linux_sys_modify_ldt(void); }
 #endif
 124	STD		{ int linux_sys_adjtimex(void); }
-125	NOARGS		{ int sys_mprotect(caddr_t addr, int len, int prot); }
+125	STD		{ int linux_sys_mprotect(caddr_t addr, int len, \
+			    int prot); }
 126	STD		{ int linux_sys_sigprocmask(int how, \
 			    linux_old_sigset_t *set, linux_old_sigset_t *oset); }
 127	STD		{ int linux_sys_create_module(void); }

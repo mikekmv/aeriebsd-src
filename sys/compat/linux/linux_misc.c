@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1995, 1998, 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -85,6 +84,10 @@ int	linux_select1(struct proc *, register_t *, int, fd_set *,
 static int getdents_common(struct proc *, void *, register_t *, int);
 static void linux_to_bsd_mmap_args(struct sys_mmap_args *,
     const struct linux_sys_mmap2_args *);
+
+char linux_sysname[128] = "Linux";
+char linux_release[128] = "2.4.18";
+char linux_version[128] = "#0 Wed Feb 20 20:00:02 CET 2002";
 
 /*
  * The information on a terminated (or stopped) process needs
@@ -491,10 +494,10 @@ linux_sys_uname(p, v, retval)
 	int len;
 	char *cp;
 
-	strlcpy(luts.l_sysname, ostype, sizeof(luts.l_sysname));
+	strlcpy(luts.l_sysname, linux_sysname, sizeof(luts.l_sysname));
 	strlcpy(luts.l_nodename, hostname, sizeof(luts.l_nodename));
-	strlcpy(luts.l_release, osrelease, sizeof(luts.l_release));
-	strlcpy(luts.l_version, version, sizeof(luts.l_version));
+	strlcpy(luts.l_release, linux_release, sizeof(luts.l_release));
+	strlcpy(luts.l_version, linux_version, sizeof(luts.l_version));
 	strlcpy(luts.l_machine, machine, sizeof(luts.l_machine));
 	strlcpy(luts.l_domainname, domainname, sizeof(luts.l_domainname));
 
@@ -521,10 +524,10 @@ linux_sys_olduname(p, v, retval)
 	int len;
 	char *cp;
 
-	strlcpy(luts.l_sysname, ostype, sizeof(luts.l_sysname));
+	strlcpy(luts.l_sysname, linux_sysname, sizeof(luts.l_sysname));
 	strlcpy(luts.l_nodename, hostname, sizeof(luts.l_nodename));
-	strlcpy(luts.l_release, osrelease, sizeof(luts.l_release));
-	strlcpy(luts.l_version, version, sizeof(luts.l_version));
+	strlcpy(luts.l_release, linux_release, sizeof(luts.l_release));
+	strlcpy(luts.l_version, linux_version, sizeof(luts.l_version));
 	strlcpy(luts.l_machine, machine, sizeof(luts.l_machine));
 
 	/* This part taken from the uname() in libc */
@@ -550,10 +553,10 @@ linux_sys_oldolduname(p, v, retval)
 	int len;
 	char *cp;
 
-	strlcpy(luts.l_sysname, ostype, sizeof(luts.l_sysname));
+	strlcpy(luts.l_sysname, linux_sysname, sizeof(luts.l_sysname));
 	strlcpy(luts.l_nodename, hostname, sizeof(luts.l_nodename));
-	strlcpy(luts.l_release, osrelease, sizeof(luts.l_release));
-	strlcpy(luts.l_version, version, sizeof(luts.l_version));
+	strlcpy(luts.l_release, linux_release, sizeof(luts.l_release));
+	strlcpy(luts.l_version, linux_version, sizeof(luts.l_version));
 	strlcpy(luts.l_machine, machine, sizeof(luts.l_machine));
 
 	/* This part taken from the uname() in libc */
@@ -708,6 +711,70 @@ linux_sys_mremap(p, v, retval)
 	*retval = (register_t)SCARG(uap, old_address);
 	return (0);
 
+}
+
+int
+linux_sys_mprotect(struct proc *p, void *v, register_t *retval)
+{
+	struct linux_sys_mprotect_args /* {
+		syscallarg(caddr_t) addr;
+		syscallarg(int) len;
+		syscallarg(int) prot;
+	} */ *uap = v;
+	struct vm_map_entry *entry;
+	struct vm_map *map;
+	vaddr_t end, start, len, stacklim;
+	int prot, grows;
+
+	start = (vaddr_t)SCARG(uap, addr);
+	len = round_page(SCARG(uap, len));
+	prot = SCARG(uap, prot);
+	grows = prot & (LINUX_PROT_GROWSDOWN | LINUX_PROT_GROWSUP);
+	prot &= ~grows;
+	end = start + len;
+
+	if (start & PAGE_MASK)
+		return EINVAL;
+	if (end < start)
+		return EINVAL;
+	if (end == start)
+		return 0;
+
+	if (prot & ~(PROT_READ | PROT_WRITE | PROT_EXEC))
+		return EINVAL;
+	if (grows == (LINUX_PROT_GROWSDOWN | LINUX_PROT_GROWSUP))
+		return EINVAL;
+
+	map = &p->p_vmspace->vm_map;
+	vm_map_lock(map);
+# ifdef notdef
+	VM_MAP_RANGE_CHECK(map, start, end);
+# endif
+	if (!uvm_map_lookup_entry(map, start, &entry) || entry->start > start) {
+		vm_map_unlock(map);
+		return ENOMEM;
+	}
+
+	/*
+	 * Approximate the behaviour of PROT_GROWS{DOWN,UP}.
+	 */
+
+	stacklim = (vaddr_t)p->p_p->ps_limit->pl_rlimit[RLIMIT_STACK].rlim_cur;
+	if (grows & LINUX_PROT_GROWSDOWN) {
+		if (USRSTACK - stacklim <= start && start < USRSTACK) {
+			start = USRSTACK - stacklim;
+		} else {
+			start = entry->start;
+		}
+	} else if (grows & LINUX_PROT_GROWSUP) {
+		if (USRSTACK <= end && end < USRSTACK + stacklim) {
+			end = USRSTACK + stacklim;
+		} else {
+			end = entry->end;
+		}
+	}
+	vm_map_unlock(map);
+	return uvm_map_protect(map, start, end, prot, FALSE);
 }
 
 /*
@@ -1499,4 +1566,28 @@ linux_sys_sysinfo(p, v, retval)
 	si.mem_unit = 1;
 
 	return (copyout(&si, SCARG(uap, sysinfo), sizeof(si)));
+}
+
+int
+linux_sys_getpriority(p, v, retval)
+	struct proc *p;
+	void *v;
+	register_t *retval;
+{
+	struct linux_sys_getpriority_args /* {
+		syscallarg(int) which;
+		syscallarg(int) who;
+	} */ *uap = v;
+	struct sys_getpriority_args bsa;
+	int error;
+
+	SCARG(&bsa, which) = SCARG(uap, which);
+	SCARG(&bsa, who) = SCARG(uap, who);
+
+	if ((error = sys_getpriority(p, &bsa, retval)))
+		return error;
+
+	*retval = NZERO - *retval;
+
+	return 0;
 }

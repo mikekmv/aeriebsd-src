@@ -245,6 +245,11 @@ struct linux_sys_fchown16_args {
 	syscallarg(int) gid;
 };
 
+struct linux_sys_getpriority_args {
+	syscallarg(int) which;
+	syscallarg(int) who;
+};
+
 struct linux_sys_statfs_args {
 	syscallarg(char *) path;
 	syscallarg(struct linux_statfs *) sp;
@@ -325,6 +330,12 @@ struct linux_sys_modify_ldt_args {
 	syscallarg(int) func;
 	syscallarg(void *) ptr;
 	syscallarg(size_t) bytecount;
+};
+
+struct linux_sys_mprotect_args {
+	syscallarg(caddr_t) addr;
+	syscallarg(int) len;
+	syscallarg(int) prot;
 };
 
 struct linux_sys_sigprocmask_args {
@@ -644,7 +655,7 @@ int	linux_sys_truncate(struct proc *, void *, register_t *);
 int	compat_43_sys_ftruncate(struct proc *, void *, register_t *);
 int	sys_fchmod(struct proc *, void *, register_t *);
 int	linux_sys_fchown16(struct proc *, void *, register_t *);
-int	sys_getpriority(struct proc *, void *, register_t *);
+int	linux_sys_getpriority(struct proc *, void *, register_t *);
 int	sys_setpriority(struct proc *, void *, register_t *);
 int	sys_profil(struct proc *, void *, register_t *);
 int	linux_sys_statfs(struct proc *, void *, register_t *);
@@ -685,7 +696,7 @@ int	linux_sys_modify_ldt(struct proc *, void *, register_t *);
 int	linux_sys_modify_ldt(struct proc *, void *, register_t *);
 #endif
 int	linux_sys_adjtimex(struct proc *, void *, register_t *);
-int	sys_mprotect(struct proc *, void *, register_t *);
+int	linux_sys_mprotect(struct proc *, void *, register_t *);
 int	linux_sys_sigprocmask(struct proc *, void *, register_t *);
 int	linux_sys_create_module(struct proc *, void *, register_t *);
 int	linux_sys_init_module(struct proc *, void *, register_t *);

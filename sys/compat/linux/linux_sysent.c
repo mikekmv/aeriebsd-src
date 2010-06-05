@@ -218,8 +218,8 @@ const struct sysent linux_sysent[] = {
 	    sys_fchmod },			/* 94 = fchmod */
 	{ 3, s(struct linux_sys_fchown16_args), 0,
 	    linux_sys_fchown16 },		/* 95 = fchown16 */
-	{ 2, s(struct sys_getpriority_args), 0,
-	    sys_getpriority },			/* 96 = getpriority */
+	{ 2, s(struct linux_sys_getpriority_args), 0,
+	    linux_sys_getpriority },		/* 96 = getpriority */
 	{ 3, s(struct sys_setpriority_args), 0,
 	    sys_setpriority },			/* 97 = setpriority */
 	{ 4, s(struct sys_profil_args), 0,
@@ -291,8 +291,8 @@ const struct sysent linux_sysent[] = {
 #endif
 	{ 0, 0, 0,
 	    linux_sys_adjtimex },		/* 124 = adjtimex */
-	{ 3, s(struct sys_mprotect_args), 0,
-	    sys_mprotect },			/* 125 = mprotect */
+	{ 3, s(struct linux_sys_mprotect_args), 0,
+	    linux_sys_mprotect },		/* 125 = mprotect */
 	{ 3, s(struct linux_sys_sigprocmask_args), 0,
 	    linux_sys_sigprocmask },		/* 126 = sigprocmask */
 	{ 0, 0, 0,
