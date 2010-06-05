@@ -6,8 +6,10 @@
 .
 	- read style(9) for sources formating guide;
 	- always build in the obj/ tree (make obj);
+	- always run a 'make depend' when building individual progs
+	  although 'make build' will do it for you;
 	- first build and install build tools
-	  (pcc, as, ld, nroff, make, sh, awk);
+	  (share/mk, pcc, as, ld, nroff, make, sh, awk);
 	- make build;
 
 etc/
@@ -30,4 +32,4 @@ usr.sbin/httpd/
 
 rejoice!
 --
-    $ABSD: README,v 1.3 2010/06/01 14:43:03 mickey Exp $
+    $ABSD: README,v 1.4 2010/06/05 11:51:39 mickey Exp $
