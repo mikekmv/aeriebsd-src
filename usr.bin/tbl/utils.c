@@ -73,7 +73,7 @@ static char sccsid[] = "@(#)ts.c	4.3 (Berkeley) 4/18/91";
 static char sccsid[] = "@(#)tt.c	4.3 (Berkeley) 4/18/91";
 static char sccsid[] = "@(#)tv.c	4.4 (Berkeley) 4/18/91";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: utils.c,v 1.1 2010/06/05 14:19:31 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -114,16 +114,16 @@ putline(int i, int nl)
 					if (!vspen(s=table[ip][c].col))
 						break;
 				if (tx(s))
-					fprintf(tabout, ".ne \\n(%c|u+\\n(.Vu\n", s);
+					printf(".ne \\n(%c|u+\\n(.Vu\n", s);
 				continue;
 			}
 			if (point(s))
 				continue;
-			fprintf(tabout, ".ne \\n(%c|u+\\n(.Vu\n", s);
+			printf(".ne \\n(%c|u+\\n(.Vu\n", s);
 			watchout = 1;
 		}
 	if (linestop[nl])
-		fprintf(tabout, ".mk #%c\n", linestop[nl]+'a'-1);
+		printf(".mk #%c\n", linestop[nl]+'a'-1);
 	lf = prev(nl);
 	if (instead[nl]) {
 		puts(instead[nl]);
@@ -145,13 +145,12 @@ putline(int i, int nl)
 			if (vspen(table[lf][c].col))
 				vspf=1;
 	}
-	if (vspf) {
-		fprintf(tabout, ".nr #^ \\n(\\*(#du\n");
-		fprintf(tabout, ".nr #- \\n(#^\n"); /* current line position relative to bottom */
-	}
-	vspf=0;
-	chfont=0;
-	for(c=0; c<ncol; c++) {
+	if (vspf)
+		puts(".nr #^ \\n(\\*(#du\n"
+		    ".nr #- \\n(#^"); /* current line position relative to bottom */
+	vspf = 0;
+	chfont = 0;
+	for(c = 0; c < ncol; c++) {
 		s = table[nl][c].col;
 		if (s==0)
 			continue;
@@ -160,25 +159,24 @@ putline(int i, int nl)
 			continue;
 		lf=prev(nl);
 		if (lf>=0 && vspen(table[lf][c].col))
-			fprintf(tabout, ".if (\\n(%c|+\\n(^%c-1v)>\\n(#- .nr #- +(\\n(%c|+\\n(^%c-\\n(#--1v)\n",s,'a'+c,s,'a'+c);
+			printf(".if (\\n(%c|+\\n(^%c-1v)>\\n(#- .nr #- +(\\n(%c|+\\n(^%c-\\n(#--1v)\n",s,'a'+c,s,'a'+c);
 		else
-			fprintf(tabout, ".if (\\n(%c|+\\n(#^-1v)>\\n(#- .nr #- +(\\n(%c|+\\n(#^-\\n(#--1v)\n",s,s);
+			printf(".if (\\n(%c|+\\n(#^-1v)>\\n(#- .nr #- +(\\n(%c|+\\n(#^-\\n(#--1v)\n",s,s);
 	}
 	if (allflg && once>0 )
 		fullwide(i,'-');
 	once=1;
 	runtabs(i, nl);
-	if (allh(i) && !pr1403) {
-		fprintf(tabout, ".nr %d \\n(.v\n", SVS);
-		fprintf(tabout, ".vs \\n(.vu-\\n(.sp\n");
-	}
+	if (allh(i) && !pr1403)
+		printf(".nr %d \\n(.v\n.vs \\n(.vu-\\n(.sp\n", SVS);
 	if (chfont)
-		fprintf(tabout, ".nr %2d \\n(.f\n", S1);
-	fprintf(tabout, ".nr 35 1m\n");
-	fprintf(tabout, "\\&");
+		printf(".nr %2d \\n(.f\n", S1);
+	puts(".nr 35 1m");
+	printf("\\&");
 	vct = 0;
-	for(c=0; c<ncol; c++) {
-		if (watchout==0 && i+1<nlin && (lf=left(i,c, &lwid))>=0) {
+	for (c = 0; c < ncol; c++) {
+		if (watchout == 0 && i + 1 < nlin &&
+		    (lf = left(i, c, &lwid))>=0) {
 			tohcol(c);
 			drawvert(lf, i, c, lwid);
 			vct += 2;
@@ -186,16 +184,17 @@ putline(int i, int nl)
 		if (rightl && c+1==ncol)
 			continue;
 		vforml=i;
-		for(lf=prev(nl); lf>=0 && vspen(table[lf][c].col); lf=prev(lf))
+		for (lf = prev(nl); lf >= 0 && vspen(table[lf][c].col);
+		    lf=prev(lf))
 			vforml= lf;
-		form= ctype(vforml,c);
+		form = ctype(vforml, c);
 		if (form != 's') {
 			ct = c+CLEFT;
 			if (form=='a')
 				ct = c+CMID;
 			if (form=='n' && table[nl][c].rcol && lused[c]==0)
 				ct= c+CMID;
-			fprintf(tabout, "\\h'|\\n(%du'", ct);
+			printf("\\h'|\\n(%du'", ct);
 		}
 		s= table[nl][c].col;
 		fn = font[stynum[vforml]][c];
@@ -209,17 +208,17 @@ putline(int i, int nl)
 					ip = prev(nl);
 					if (ip>=0 && vspen(table[ip][c].col)) {
 						if (exvspen==0) {
-							fprintf(tabout, "\\v'-(\\n(\\*(#du-\\n(^%cu", c+'a');
+							printf("\\v'-(\\n(\\*(#du-\\n(^%cu", c + 'a');
 							if (cmidx)
-								fprintf(tabout, "-((\\n(#-u-\\n(^%cu)/2u)", c+'a');
+								printf("-((\\n(#-u-\\n(^%cu)/2u)", c+'a');
 							vct++;
-							fprintf(tabout, "'");
+							putchar('\'');
 							exvspen=1;
 						}
 					}
-					fprintf(tabout, "%c%c",F1,F2);
+					printf("%c%c", F1, F2);
 					puttext(s, fn, size);
-					fprintf(tabout, "%c",F1);
+					printf("%c",F1);
 				}
 				s= table[nl][c].rcol;
 				form=1;
@@ -234,10 +233,12 @@ putline(int i, int nl)
 		case '-':
 		case '=':
 			if (real(table[nl][c].col))
-				fprintf(stderr,"%s: line %d: Data ignored on table line %d\n", ifile, iline-1, i+1);
+				fprintf(stderr,
+				 "%s: line %d: Data ignored on table line %d\n",
+				 ifile, iline - 1, i + 1);
 			makeline(i,c,ct);
 			continue;
-			default:
+		default:
 			continue;
 		}
 		if (realsplit ? rused[c]: used[c]) { /*Zero field width*/
@@ -254,23 +255,24 @@ putline(int i, int nl)
 			cmidx = ctop[stynum[nl]][c]==0;
 			if (ip>=0 && vspen(table[ip][c].col)) {
 				if (exvspen==0) {
-					fprintf(tabout, "\\v'-(\\n(\\*(#du-\\n(^%cu", c+'a');
+					printf("\\v'-(\\n(\\*(#du-\\n(^%cu",
+					    c + 'a');
 					if (cmidx)
-						fprintf(tabout, "-((\\n(#-u-\\n(^%cu)/2u)", c+'a');
+						printf("-((\\n(#-u-\\n(^%cu)/2u)", c + 'a');
 					vct++;
-					fprintf(tabout, "'");
+					putchar('\'');
 				}
 			}
-			fprintf(tabout, "%c", F1);
+			printf("%c", F1);
 			if (form!= 1)
-				fprintf(tabout, "%c", F2);
+				putchar(F2);
 			if (vspen(s))
 				vspf=1;
 			else
 				puttext(s, fn, size);
 			if (form !=2)
-				fprintf(tabout, "%c", F2);
-			fprintf(tabout, "%c", F1);
+				putchar(F2);
+			putchar(F1);
 		}
 		if (ip >= 0) {
 			if (vspen(table[ip][c].col)) {
@@ -280,34 +282,34 @@ putline(int i, int nl)
 				    (cmidx == !ctop[stynum[nl]][c + 1]) &&
 				    (left(i, c + 1, &lwid) < 0);
 				if (exvspen == 0) {
-					fprintf(tabout,
-					    "\\v'(\\n(\\*(#du-\\n(^%cu", c+'a');
+					printf("\\v'(\\n(\\*(#du-\\n(^%cu",
+					    c + 'a');
 					if (cmidx)
-						fprintf(tabout,
+						printf(
 						    "-((\\n(#-u-\\n(^%cu)/2u)",
 						    c + 'a');
 					vct++;
-					fprintf(tabout, "'");
+					putchar('\'');
 				}
 			} else
 				exvspen = 0;
 		}
 		/* if lines need to be split for gcos here is the place for a backslash */
 		if (vct > 7 && c < ncol) {
-			fprintf(tabout, "\n.sp-1\n\\&");
+			printf("\n.sp-1\n\\&");
 			vct = 0;
 		}
 	}
-	fprintf(tabout, "\n");
+	putchar('\n');
 	if (allh(i) && !pr1403)
-		fprintf(tabout, ".vs \\n(%du\n", SVS);
+		printf(".vs \\n(%du\n", SVS);
 	if (watchout)
 		funnies(i,nl);
 	if (vspf) {
 		for(c=0; c<ncol; c++)
 		if (vspen(table[nl][c].col) && (nl==0 || (lf=prev(nl))<0 || !vspen(table[lf][c].col)))
 		{
-			fprintf(tabout, ".nr ^%c \\n(#^u\n", 'a'+c);
+			printf(".nr ^%c \\n(#^u\n", 'a' + c);
 			topat[c]=nl;
 		}
 	}
@@ -319,9 +321,9 @@ puttext(const char *s, const char *fn, const char *size)
 	if (point(s)) {
 		putfont(fn);
 		putsize(size);
-		fprintf(tabout, "%s",s);
+		printf("%s", s);
 		if (*fn > 0)
-			fprintf(tabout, "\\f\\n(%2d", S1);
+			printf("\\f\\n(%2d", S1);
 		if (size!=0)
 			putsize("0");
 	}
@@ -335,79 +337,77 @@ funnies(int stl, int lin)
 	const char *s;
 	char *fn;
 
-	fprintf(tabout, ".mk ##\n"); /* remember current vertical position */
-	fprintf(tabout, ".nr %d \\n(##\n", S1); /* bottom position */
+	puts(".mk ##");	/* remember current vertical position */
+	printf(".nr %d \\n(##\n", S1); /* bottom position */
 	for(c = 0; c < ncol; c++) {
 		s = table[lin][c].col;
 		if (point(s))
 			continue;
 		if (s == NULL)
 			continue;
-		fprintf(tabout, ".sp |\\n(##u-1v\n");
-		fprintf(tabout, ".nr %d ", SIND);
+		printf(".sp |\\n(##u-1v\n.nr %d ", SIND);
 		for (ct = 0, pl = stl; pl >= 0 && !isalpha(ct = ctype(pl,c));
 		    pl = prev(pl))
 			;
 		switch (ct) {
 		case 'n':
 		case 'c':
-			fprintf(tabout, "(\\n(%du+\\n(%du-\\n(%c-u)/2u\n", 
+			printf("(\\n(%du+\\n(%du-\\n(%c-u)/2u\n", 
 			    c + CLEFT, c - 1 + ctspan(lin, c) + CRIGHT, s);
 			break;
 		case 'l':
-			fprintf(tabout, "\\n(%du\n",c+CLEFT);
+			printf("\\n(%du\n", c + CLEFT);
 			break;
 		case 'a':
-			fprintf(tabout, "\\n(%du\n",c+CMID);
+			printf("\\n(%du\n", c + CMID);
 			break;
 		case 'r':
-			fprintf(tabout, "\\n(%du-\\n(%c-u\n", c+CRIGHT, s);
+			printf("\\n(%du-\\n(%c-u\n", c + CRIGHT, s);
 			break;
 		}
-		fprintf(tabout, ".in +\\n(%du\n", SIND);
+		printf(".in +\\n(%du\n", SIND);
 		fn = font[stynum[stl]][c];
 		putfont(fn);
 		pl = prev(stl);
 		if (stl > 0 && pl >= 0 && vspen(table[pl][c].col)) {
-			fprintf(tabout, ".sp |\\n(^%cu\n", 'a'+c);
-			if (ctop[stynum[stl]][c]==0) {
-				fprintf(tabout, ".nr %d \\n(#-u-\\n(^%c-\\n(%c|+1v\n",TMP, 'a'+c, s);
-				fprintf(tabout, ".if \\n(%d>0 .sp \\n(%du/2u\n", TMP, TMP);
-			}
+			printf(".sp |\\n(^%cu\n", 'a' + c);
+			if (ctop[stynum[stl]][c] == 0)
+				printf(".nr %d \\n(#-u-\\n(^%c-\\n(%c|+1v\n"
+				    ".if \\n(%d>0 .sp \\n(%du/2u\n",
+				    TMP, 'a' + c, s, TMP, TMP);
 		}
-		fprintf(tabout, ".%c+\n",s);
-		fprintf(tabout, ".in -\\n(%du\n", SIND);
+		printf(".%c+\n.in -\\n(%du\n", s, SIND);
 		if (*fn>0)
 			putfont("P");
-		fprintf(tabout, ".mk %d\n", S2);
-		fprintf(tabout, ".if \\n(%d>\\n(%d .nr %d \\n(%d\n", S2, S1, S1, S2);
+		printf(".mk %d\n.if \\n(%d>\\n(%d .nr %d \\n(%d\n",
+		    S2, S2, S1, S1, S2);
 	}
-	fprintf(tabout, ".sp |\\n(%du\n", S1);
+	printf(".sp |\\n(%du\n", S1);
 	for(c=dv=0; c<ncol; c++) {
 		if (stl+1< nlin && (lf=left(stl,c,&lwid))>=0) {
 			if (dv++ == 0)
-				fprintf(tabout, ".sp -1\n");
+				puts(".sp -1");
 			tohcol(c);
 			dv++;
 			drawvert(lf, stl, c, lwid);
 		}
 	}
 	if (dv)
-		fprintf(tabout,"\n");
+		putchar('\n');
 }
 
 void
 putfont(const char *fn)
 {
 	if (fn && *fn)
-		fprintf(tabout, fn[1] ? "\\f(%.2s" : "\\f%.2s", fn);
+		printf(fn[1]? "\\f(%.2s" : "\\f%.2s", fn);
 }
 
 void
 putsize(const char *s)
 {
 	if (s && *s)
-		fprintf(tabout, "\\s%s",s);
+		printf("\\s%s", s);
 }
 
 int
@@ -497,11 +497,11 @@ gets1(char *s)
 	char *p;
 	int nbl = 0;
 	iline++;
-	p=fgets(s,BUFSIZ,tabin);
+	p = fgets(s, BUFSIZ, stdin);
 	while (p==0) {
-		if (swapin()==0)
-			return(0);
-		p = fgets(s,BUFSIZ,tabin);
+		if (swapin() == 0)
+			return (0);
+		p = fgets(s, BUFSIZ, stdin);
 	}
 
 	while (*s)
@@ -538,11 +538,11 @@ get1char(void)
 	if (backp > backup)
 		c = *--backp;
 	else
-		c = getc(tabin);
+		c = getc(stdin);
 	if (c == EOF)  {
 		if (swapin() == 0)
 			error("unexpected EOF");
-		c = getc(tabin);
+		c = getc(stdin);
 	}
 	if (c == '\n')
 		iline++;
@@ -564,52 +564,46 @@ gettext(char *sp, int ilin, int icol, const char *fn, const char *sz)
 
 	if (textflg==0) {
 		/* remember old line length */
-		fprintf(tabout, ".nr %d \\n(.lu\n", SL);
+		printf(".nr %d \\n(.lu\n", SL);
 		textflg = 1;
 	}
-	fprintf(tabout, ".eo\n");
-	fprintf(tabout, ".am %02d\n", icol+80);
-	fprintf(tabout, ".br\n");
-	fprintf(tabout, ".di %c+\n", texname);
+	printf(".eo\n.am %02d\n.br\n.di %c+\n", icol + 80, texname);
 	rstofill();
 	if (fn && *fn)
-		fprintf(tabout, ".nr %d \\n(.f\n.ft %s\n", S1, fn);
-	fprintf(tabout, ".ft \\n(.f\n"); /* protect font */
+		printf(".nr %d \\n(.f\n.ft %s\n", S1, fn);
+	puts(".ft \\n(.f");	/* protect font */
 	vs = vsize[stynum[ilin]][icol];
 	if ((sz && *sz) || (vs && *vs)) {
-		fprintf(tabout, ".nr %d \\n(.v\n", S2);
+		printf(".nr %d \\n(.v\n", S2);
 		if (vs==0 || *vs==0)
 			vs = "\\n(.s+2";
 		if (sz && *sz)
-			fprintf(tabout, ".ps %s\n",sz);
-		fprintf(tabout, ".vs %s\n",vs);
-		fprintf(tabout, ".if \\n(%du>\\n(.vu .sp \\n(%du-\\n(.vu\n", S2,S2);
+			printf(".ps %s\n", sz);
+		printf(".vs %s\n.if \\n(%du>\\n(.vu .sp \\n(%du-\\n(.vu\n",
+		    vs, S2, S2);
 	}
 	if (cll[icol][0])
-		fprintf(tabout, ".ll %sn\n", cll[icol]);
+		printf(".ll %sn\n", cll[icol]);
 	else
-		fprintf(tabout, ".ll \\n(%du*%du/%du\n",SL,ctspan(ilin,icol),ncol+1);
-	fprintf(tabout,".if \\n(.l<\\n(%d .ll \\n(%du\n", icol+CRIGHT, icol+CRIGHT);
+		printf(".ll \\n(%du*%du/%du\n", SL,
+		    ctspan(ilin, icol), ncol + 1);
+	printf(".if \\n(.l<\\n(%d .ll \\n(%du\n", icol + CRIGHT, icol + CRIGHT);
 	if (ctype(ilin,icol)=='a')
-		fprintf(tabout, ".ll -2n\n");
-	fprintf(tabout, ".in 0\n");
+		puts(".ll -2n");
+	puts(".in 0");
 	while (gets1(line)) {
 		if (line[0]=='T' && line[1]=='}' && line[2]== tab)
 			break;
 		if (match("T}", line))
 			break;
-		fprintf(tabout, "%s\n", line);
+		puts(line);
 	}
 	if (fn && *fn)
-		fprintf(tabout, ".ft \\n(%d\n", S1);
+		printf(".ft \\n(%d\n", S1);
 	if (sz && *sz)
-		fprintf(tabout, ".br\n.ps\n.vs\n");
-	fprintf(tabout, ".br\n");
-	fprintf(tabout, ".di\n");
-	fprintf(tabout, ".nr %c| \\n(dn\n", texname);
-	fprintf(tabout, ".nr %c- \\n(dl\n", texname);
-	fprintf(tabout, "..\n");
-	fprintf(tabout, ".ec \\\n");
+		puts(".br\n.ps\n.vs");
+	printf(".br\n.di\n.nr %c| \\n(dn\n.nr %c- \\n(dl\n..\n.ec \\\n",
+	    texname, texname);
 	/* copy remainder of line */
 	if (line[2])
 		strcpy(sp, line+3);
@@ -624,8 +618,7 @@ void
 untext(void)
 {
 	rstofill();
-	fprintf(tabout, ".nf\n");
-	fprintf(tabout, ".ll \\n(%du\n", SL);
+	printf(".nf\n.ll \\n(%du\n", SL);
 }
 
 /* ti.c: classify line intersections */
@@ -834,9 +827,9 @@ void
 tohcol(int ic)
 {
 	if (ic == 0)
-		fprintf(tabout, "\\h'|0'");
+		printf("\\h'|0'");
 	else
-		fprintf(tabout, "\\h'(|\\n(%du+|\\n(%du)/2u'",
+		printf("\\h'(|\\n(%du+|\\n(%du)/2u'",
 		    ic + CLEFT, ic + CRIGHT - 1);
 }
 
@@ -901,17 +894,19 @@ thish(int i, int c)
 void
 drawvert(int start, int end, int c, int lwid)
 {
-	char *exb=0, *ext=0;
-	int tp=0, sl, ln, pos, epb, ept, vm;
+	char *exb = 0, *ext = 0;
+	int tp = 0, sl, ln, pos, epb, ept, vm;
+
 	end++;
-	vm='v';
+	vm = 'v';
 	/* note: nr 35 has value of 1m outside of linesize */
 	while (instead[end])
 		end++;
-	for(ln=0; ln < lwid; ln++) {
+	for(ln = 0; ln < lwid; ln++) {
 		epb=ept=0;
-		pos = 2*ln-lwid+1;
-		if (pos!=tp) fprintf(tabout, "\\h'%dp'", pos-tp);
+		pos = 2 * ln - lwid + 1;
+		if (pos != tp)
+			printf("\\h'%dp'", pos - tp);
 		tp = pos;
 		if (end<nlin) {
 			if (fullbot[end] || (!instead[end] && allh(end)))
@@ -973,31 +968,33 @@ drawvert(int start, int end, int c, int lwid)
 			case LEFT: case RIGHT: ept -= 1; break;
 			}
 		if (exb)
-			fprintf(tabout, "\\v'%s'", exb);
+			printf("\\v'%s'", exb);
 		if (epb)
-			fprintf(tabout, "\\v'%dp'", epb);
-		fprintf(tabout, "\\s\\n(%d",LSIZE);
+			printf("\\v'%dp'", epb);
+		printf("\\s\\n(%d",LSIZE);
 		if (linsize)
-			fprintf(tabout, "\\v'-\\n(%dp/6u'", LSIZE);
-		fprintf(tabout, "\\h'-\\n(#~u'"); /* adjustment for T450 nroff boxes */
-		fprintf(tabout, "\\L'|\\n(#%cu-%s", linestop[start]+'a'-1, vm=='v'? "1v" : "\\n(35u");
+			printf("\\v'-\\n(%dp/6u'", LSIZE);
+		printf("\\h'-\\n(#~u'"); /* adjustment for T450 nroff boxes */
+		printf("\\L'|\\n(#%cu-%s", linestop[start] + 'a' - 1,
+		    vm == 'v'? "1v" : "\\n(35u");
 		if (ext)
-			fprintf(tabout, "-(%s)",ext);
+			printf("-(%s)", ext);
 		if (exb)
-			fprintf(tabout, "-(%s)", exb);
+			printf("-(%s)", exb);
 		pos = ept-epb;
 		if (pos)
-			fprintf(tabout, "%s%dp", pos>=0? "+" : "", pos);
+			printf("%s%dp", pos >= 0? "+" : "", pos);
 		/* the string #d is either "nl" or ".d" depending
-		 on diversions; on GCOS not the same */
-		fprintf(tabout, "'\\s0\\v'\\n(\\*(#du-\\n(#%cu+%s", linestop[start]+'a'-1,vm=='v' ? "1v" : "\\n(35u");
+		 * on diversions; on GCOS not the same */
+		printf("'\\s0\\v'\\n(\\*(#du-\\n(#%cu+%s",
+		    linestop[start] + 'a' - 1, vm == 'v' ? "1v" : "\\n(35u");
 		if (ext)
-			fprintf(tabout, "+%s",ext);
+			printf("+%s",ext);
 		if (ept)
-			fprintf(tabout, "%s%dp", (-ept)>0 ? "+" : "", (-ept));
-		fprintf(tabout, "'");
+			printf("%s%dp", (-ept)>0 ? "+" : "", (-ept));
+		putchar('\'');
 		if (linsize)
-			fprintf(tabout, "\\v'\\n(%dp/6u'", LSIZE);
+			printf("\\v'\\n(%dp/6u'", LSIZE);
 	}
 }
 
@@ -1122,7 +1119,7 @@ prev(int i)
 	return (i);
 }
 
-int spcount = 0;
+int spcount;
 # define MAXVEC 20
 char *spvecs[MAXVEC];
 
@@ -1161,14 +1158,4 @@ alocv(int n)
 	for (q = tp; q < (int *) thisvec; q++)
 		*q = 0;
 	return (tp);
-}
-
-void
-release(void)
-{
-	extern char *exstore;
-	/* give back unwanted space in some vectors */
-	spcount=0;
-	tpcount= -1;
-	exstore=0;
 }

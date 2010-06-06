@@ -76,7 +76,7 @@ static char sccsid[] = "@(#)tc.c	4.3 (Berkeley) 4/18/91";
 static char sccsid[] = "@(#)tf.c	4.3 (Berkeley) 4/18/91";
 static char sccsid[] = "@(#)tu.c	4.4 (Berkeley) 4/18/91";
 #else
-static const char rcsid[] = "$ABSD: tbl.c,v 1.1 2009/09/19 09:07:16 mickey Exp $";
+static const char rcsid[] = "$ABSD: tbl.c,v 1.2 2010/06/05 14:19:31 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -100,6 +100,7 @@ int tab = '\t';
 int linsize;
 int pr1403;
 int delim1, delim2;
+int nokeep;
 int evenup[MAXCOL], evenflg;
 int F1 = 0;
 int F2 = 0;
@@ -136,8 +137,6 @@ const char texstr[] =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWYXZ0123456789";
 int linstart;
 char *exstore, *exlim;
-FILE *tabin /*= stdin */;
-FILE *tabout /* = stdout */;
 
 int *alocv(int);
 void badsig(int);
@@ -151,24 +150,42 @@ int
 main(int argc, char *argv[])
 {
 	char line[BUFSIZ];
+	int i;
 
 	signal(SIGPIPE, badsig);
 
-	/* required by GCOS because "stdout" is set by troff preprocessor */
-	tabin = stdin;
-	tabout = stdout;
 	sargc = argc;
 	sargv = argv;
 	sargc--; sargv++;
 	if (sargc > 0)
 		swapin();
 	while (gets1(line)) {
-		fprintf(tabout, "%s\n",line);
+		puts(line);
 		if (prefix(".TS", line)) {
-			saveline();
-			savefill();
-			ifdivert();
-			cleanfc();
+			puts(".if \\n+(b.=1 .nr d. \\n(.c-\\n(c.-1");
+			linstart = iline;
+
+			/*
+			 * remembers various things:
+			 *   fill mode, vs, ps in mac 35 (SF)
+			 */
+			printf(".de %d\n"
+			    ".ps \\n(.s\n"
+			    ".vs \\n(.vu\n"
+			    ".in \\n(.iu\n"
+			    ".if \\n(.u .fi\n"
+			    ".if \\n(.j .ad\n"
+			    ".if \\n(.j=0 .na\n"
+			    "..\n"
+			    ".nf\n"
+			/* set obx offset if useful */
+			    ".nr #~ 0\n"
+			    ".if n .nr #~ 0.6n\n", SF);
+
+			puts(".ds #d .d\n"
+			    ".if \\(ts\\n(.z\\(ts\\(ts .ds #d nl");
+			puts(".fc");
+
 			getcomm();
 			getspec();
 			gettbl();
@@ -177,13 +194,25 @@ main(int argc, char *argv[])
 			choochar();
 			maktab();
 			runout();
-			release();
+
+			spcount = 0;
+			tpcount = -1;
+			exstore = 0;
+
 			rstofill();
-			endoff();
-			restline();
+
+			for(i = 0; i < MAXHEAD; i++)
+				if (linestop[i])
+					printf(".nr #%c 0\n", 'a' + i);
+			for(i = 0; i < texct; i++)
+				printf(".rm %c+\n", texstr[i]);
+
+			printf("%s\n.if \\n-(b.=0 .nr c. \\n(.c-\\n(d.-%d\n",
+			    last, iline - linstart);
+			linstart = 0;
 		}
 	}
-	fclose(tabin);
+
 	return(0);
 }
 
@@ -208,20 +237,16 @@ swapin(void)
 	if (sargc <= 0)
 		return(0);
 
-	if (tabin != stdin)
-		fclose(tabin);
-
-	tabin = fopen(ifile= *sargv, "r");
-	if (tabin == NULL)
+	if (!freopen(ifile = *sargv, "r", stdin))
 		error("Can't open file");
-	iline=1;
+	iline = 1;
 
 	/* file names are all put into f. by the GCOS troff preprocessor */
-	fprintf(tabout, ".ds f. %s\n", ifile);
+	printf(".ds f. %s\n", ifile);
 
 	sargc--;
 	sargv++;
-	return(1);
+	return (1);
 }
 
 void
@@ -237,26 +262,26 @@ const struct optstr {
 	const char *optnam;
 	int *optadd;
 } options[] = {
-	{ "expand", &expflg },
-	{ "EXPAND", &expflg },
-	{ "center", &ctrflg },
-	{ "CENTER", &ctrflg },
-	{ "box", &boxflg },
-	{ "BOX", &boxflg },
 	{ "allbox", &allflg },
 	{ "ALLBOX", &allflg },
-	{ "doublebox", &dboxflg },
-	{ "DOUBLEBOX", &dboxflg },
-	{ "frame", &boxflg },
-	{ "FRAME", &boxflg },
-	{ "doubleframe", &dboxflg },
-	{ "DOUBLEFRAME", &dboxflg },
-	{ "tab", &tab },
-	{ "TAB", &tab },
-	{ "linesize", &linsize },
-	{ "LINESIZE", &linsize },
+	{ "box", &boxflg },
+	{ "BOX", &boxflg },
+	{ "center", &ctrflg },
+	{ "CENTER", &ctrflg },
 	{ "delim", &delim1 },
 	{ "DELIM", &delim1 },
+	{ "doublebox", &dboxflg },
+	{ "DOUBLEBOX", &dboxflg },
+	{ "expand", &expflg },
+	{ "EXPAND", &expflg },
+	{ "frame", &boxflg },
+	{ "FRAME", &boxflg },
+	{ "linesize", &linsize },
+	{ "LINESIZE", &linsize },
+	{ "nokeep", &nokeep },
+	{ "NOKEEP", &nokeep },
+	{ "tab", &tab },
+	{ "TAB", &tab },
 	{ NULL }
 };
 
@@ -282,33 +307,31 @@ getcomm(void)
 		if (!isalpha(c))
 			continue;
 		found = 0;
-		for(lp= options; lp->optadd; lp++) {
+		for (lp = options; lp->optadd; lp++) {
 			if (prefix(lp->optnam, cp)) {
 				*(lp->optadd) = 1;
 				cp += strlen(lp->optnam);
 				if (isalpha(*cp))
 					error("Misspelled global option");
-				while (*cp==' ')
+				while (*cp == ' ')
 					cp++;
-				t=nb;
-				if ( *cp == '(')
-					while ((ci= *++cp) != ')')
+				t = nb;
+				if (*cp == '(')
+					while ((ci = *++cp) != ')')
 						*t++ = ci;
 				else
 					cp--;
 				*t++ = 0;
-				*t=0;
-				if (lp->optadd == &tab) {
-					if (nb[0])
+				*t = 0;
+				if (lp->optadd == &tab && nb[0])
 					*(lp->optadd) = nb[0];
-				}
 				if (lp->optadd == &linsize)
 					printf(".nr %d %s\n", LSIZE, nb);
 				if (lp->optadd == &delim1) {
 					delim1 = nb[0];
 					delim2 = nb[1];
 				}
-				found=1;
+				found = 1;
 				break;
 			}
 		}
@@ -339,26 +362,27 @@ void
 getspec(void)
 {
 	int icol, i;
-	for(icol=0; icol<MAXCOL; icol++) {
-		sep[icol]= -1;
-		evenup[icol]=0;
-		cll[icol][0]=0;
-		for(i=0; i<MAXHEAD; i++) {
-			csize[i][icol][0]=0;
-			vsize[i][icol][0]=0;
+
+	for (icol = 0; icol < MAXCOL; icol++) {
+		sep[icol] = -1;
+		evenup[icol] = 0;
+		cll[icol][0] = 0;
+		for(i = 0; i < MAXHEAD; i++) {
+			csize[i][icol][0] = 0;
+			vsize[i][icol][0] = 0;
 			font[i][icol][0] = lefline[i][icol] = 0;
-			ctop[i][icol]=0;
-			style[i][icol]= 'l';
+			ctop[i][icol] = 0;
+			style[i][icol] = 'l';
 		}
 	}
-	nclin=ncol=0;
-	oncol =0;
-	left1flg=rightl=0;
+	nclin = ncol = 0;
+	oncol = 0;
+	left1flg = rightl = 0;
 	readspec();
-	fprintf(tabout, ".rm");
-	for(i=0; i<ncol; i++)
-		fprintf(tabout, " %02d", 80+i);
-	fprintf(tabout, "\n");
+	printf(".rm");
+	for(i=0; i < ncol; i++)
+		printf(" %02d", 80 + i);
+	putchar('\n');
 }
 
 void
@@ -420,11 +444,11 @@ readspec(void)
 			if (c== 's' && icol<=0)
 				error("first column can not be S-type");
 			if (c=='s' && style[nclin][icol-1] == 'a') {
-				fprintf(tabout, ".tm warning: can't span a-type cols, changed to l\n");
+				puts(".tm warning: can't span a-type cols, changed to l");
 				style[nclin][icol-1] = 'l';
 			}
 			if (c=='s' && style[nclin][icol-1] == 'n') {
-				fprintf(tabout, ".tm warning: can't span n-type cols, changed to c\n");
+				puts(".tm warning: can't span n-type cols, changed to c");
 				style[nclin][icol-1] = 'c';
 			}
 			icol++;
@@ -522,25 +546,25 @@ readspec(void)
 			 * of different widths now ....
 			 */
 			if (*snp) {
-				fprintf(tabout,
+				fprintf(stderr,
 				    "Ignored second width specification");
 				continue;
 			}
 #endif
 			stopc=0;
 			while ((c = get1char())) {
-				if (snp==cll[icol-1] && c=='(') {
+				if (snp == cll[icol-1] && c == '(') {
 					stopc = ')';
 					continue;
 				}
-				if ( !stopc && (c>'9' || c< '0'))
+				if ( !stopc && (c >'9' || c < '0'))
 					break;
-				if (stopc && c== stopc)
+				if (stopc && c == stopc)
 					break;
-				*snp++ =c;
+				*snp++ = c;
 			}
 			*snp=0;
-			if (snp-cll[icol-1]>CLLEN)
+			if (snp - cll[icol - 1] > CLLEN)
 				error ("column width too long");
 			if (!stopc)
 				un1getc(c);
@@ -548,7 +572,7 @@ readspec(void)
 		case 'e': case 'E':
 			if (icol<1)
 				continue;
-			evenup[icol-1]=1;
+			evenup[icol - 1]=1;
 			evenflg=1;
 			continue;
 		case '0': case '1': case '2': case '3': case '4':
@@ -558,12 +582,13 @@ readspec(void)
 			while (isdigit(*snp++ = c = get1char()))
 				;
 			un1getc(c);
-			sep[icol-1] = MAX(sep[icol-1], atoi(sn));
+			sep[icol-1] = MAX(sep[icol - 1], atoi(sn));
 			continue;
 		case '|':
 			lefline[nclin][icol]++;
-			if (icol==0) left1flg=1;
-				continue;
+			if (icol == 0)
+				left1flg=1;
+			continue;
 		}
 	}
 	error("EOF reading table specification");
@@ -577,9 +602,9 @@ gettbl(void)
 	int icol, ch;
 
 	cstore = cspace = chspace();
-	textflg=0;
-	for (nlin=nslin=0; gets1(cstore); nlin++) {
-		stynum[nlin]=nslin;
+	textflg = 0;
+	for (nlin = nslin = 0; gets1(cstore); nlin++) {
+		stynum[nlin] = nslin;
 		if (prefix(".TE", cstore)) {
 			leftover = NULL;
 			break;
@@ -588,7 +613,7 @@ gettbl(void)
 			readspec();
 			nslin++;
 		}
-		if (nlin>=MAXLIN) {
+		if (nlin >= MAXLIN) {
 			leftover = cstore;
 			break;
 		}
@@ -597,16 +622,15 @@ gettbl(void)
 			instead[nlin] = cstore;
 			while (*cstore++);
 			continue;
-		}
-		else
+		} else
 			instead[nlin] = 0;
 		if (nodata(nlin)) {
 			if ((ch = oneh(nlin)))
 				fullbot[nlin]= ch;
 			nlin++;
 			nslin++;
-			instead[nlin]=(char *)0;
-			fullbot[nlin]=0;
+			instead[nlin] = NULL;
+			fullbot[nlin] = 0;
 		}
 		table[nlin] = (struct colstr *)alocv((ncol+2)*sizeof(table[0][0]));
 		if (cstore[1]==0)
@@ -698,7 +722,7 @@ permute(void)
 		for(irow=1; irow<nlin; irow++) {
 			if (vspand(irow,jcol,0)) {
 				is = prev(irow);
-				if (is<0)
+				if (is < 0)
 					error("Vertical spanning in first row not allowed");
 				start = table[is][jcol].col;
 				strig = table[is][jcol].rcol;
@@ -719,16 +743,16 @@ permute(void)
 int
 vspand(int ir, int ij, int ifform)
 {
-	if (ir<0)
+	if (ir < 0)
 		return(0);
-	if (ir>=nlin)
+	if (ir >= nlin)
 		return(0);
 	if (instead[ir])
 		return(0);
-	if (ifform==0 && ctype(ir,ij)=='^')
+	if (ifform == 0 && ctype(ir,ij)=='^')
 		return(1);
-	if (table[ir][ij].rcol!=0)
-		return(0);
+	if (!table[ir] || table[ir][ij].rcol != 0)
+		return (0);
 	if (fullbot[ir])
 		return(0);
 	return(vspen(table[ir][ij].col));
@@ -757,11 +781,12 @@ maktab(void)
 	char *s;
 	for(icol=0; icol <ncol; icol++) {
 		doubled[icol] = acase[icol] = 0;
-		fprintf(tabout, ".nr %d 0\n", icol+CRIGHT);
-		for(text=0; text<2; text++) {
+		printf(".nr %d 0\n", icol + CRIGHT);
+		for(text = 0; text < 2; text++) {
 			if (text)
-				fprintf(tabout, ".%02d\n.rm %02d\n", icol+80, icol+80);
-			for(ilin=0; ilin<nlin; ilin++) {
+				printf(".%02d\n.rm %02d\n",
+				    icol + 80, icol + 80);
+			for(ilin = 0; ilin < nlin; ilin++) {
 				if (instead[ilin]|| fullbot[ilin])
 					continue;
 				vforml=ilin;
@@ -779,24 +804,24 @@ maktab(void)
 					s = table[ilin][icol].col;
 					if (tx(s) && text) {
 						if (doubled[icol]==0)
-							fprintf(tabout, ".nr %d 0\n.nr %d 0\n",S1,S2);
+							printf(".nr %d 0\n.nr %d 0\n",S1,S2);
 						doubled[icol]=1;
-						fprintf(tabout, ".if \\n(%c->\\n(%d .nr %d \\n(%c-\n",s,S2,S2,s);
+						printf(".if \\n(%c->\\n(%d .nr %d \\n(%c-\n",s,S2,S2,s);
 					}
 				case 'n':
 					if (table[ilin][icol].rcol!=0) {
 						if (doubled[icol]==0 && text==0)
-						fprintf(tabout, ".nr %d 0\n.nr %d 0\n", S1, S2);
+						printf(".nr %d 0\n.nr %d 0\n", S1, S2);
 						doubled[icol]=1;
 						if (real(s=table[ilin][icol].col) && !vspen(s)) {
 							if (tx(s) != text) continue;
-							fprintf(tabout, ".nr %d ", TMP);
-							wide(s, FN(vforml,icol), SZ(vforml,icol)); fprintf(tabout, "\n");
-							fprintf(tabout, ".if \\n(%d<\\n(%d .nr %d \\n(%d\n", S1, TMP, S1, TMP);
+							printf(".nr %d ", TMP);
+							wide(s, FN(vforml,icol), SZ(vforml,icol)); putchar('\n');
+							printf(".if \\n(%d<\\n(%d .nr %d \\n(%d\n", S1, TMP, S1, TMP);
 						}
 						if (text==0 && real(s=table[ilin][icol].rcol) && !vspen(s) && !barent(s)) {
-							fprintf(tabout, ".nr %d \\w%c%s%c\n",TMP, F1, s, F1);
-							fprintf(tabout, ".if \\n(%d<\\n(%d .nr %d \\n(%d\n",S2,TMP,S2,TMP);
+							printf(".nr %d \\w%c%s%c\n",TMP, F1, s, F1);
+							printf(".if \\n(%d<\\n(%d .nr %d \\n(%d\n",S2,TMP,S2,TMP);
 						}
 						continue;
 					}
@@ -806,45 +831,44 @@ maktab(void)
 					if (real(s=table[ilin][icol].col) && !vspen(s)) {
 						if (tx(s) != text)
 							continue;
-						fprintf(tabout, ".nr %d ", TMP);
-						wide(s, FN(vforml,icol), SZ(vforml,icol)); fprintf(tabout, "\n");
-						fprintf(tabout, ".if \\n(%d<\\n(%d .nr %d \\n(%d\n", icol+CRIGHT, TMP, icol+CRIGHT, TMP);
+						printf(".nr %d ", TMP);
+						wide(s, FN(vforml,icol), SZ(vforml,icol)); putchar('\n');
+						printf(".if \\n(%d<\\n(%d .nr %d \\n(%d\n", icol+CRIGHT, TMP, icol+CRIGHT, TMP);
 					}
 				}
 			}
 		}
-		if (acase[icol]) {
-			fprintf(tabout, ".if \\n(%d>=\\n(%d .nr %d \\n(%du+2n\n",S2,icol+CRIGHT,icol+CRIGHT,S2);
-		}
+		if (acase[icol])
+			printf(".if \\n(%d>=\\n(%d .nr %d \\n(%du+2n\n",S2,icol+CRIGHT,icol+CRIGHT,S2);
 		if (doubled[icol]) {
-			fprintf(tabout, ".nr %d \\n(%d\n", icol+CMID, S1);
-			fprintf(tabout, ".nr %d \\n(%d+\\n(%d\n",TMP,icol+CMID,S2);
-			fprintf(tabout, ".if \\n(%d>\\n(%d .nr %d \\n(%d\n",TMP,icol+CRIGHT,icol+CRIGHT,TMP);
-			fprintf(tabout, ".if \\n(%d<\\n(%d .nr %d +(\\n(%d-\\n(%d)/2\n",TMP,icol+CRIGHT,icol+CMID,icol+CRIGHT,TMP);
+			printf(".nr %d \\n(%d\n", icol+CMID, S1);
+			printf(".nr %d \\n(%d+\\n(%d\n",TMP,icol+CMID,S2);
+			printf(".if \\n(%d>\\n(%d .nr %d \\n(%d\n",TMP,icol+CRIGHT,icol+CRIGHT,TMP);
+			printf(".if \\n(%d<\\n(%d .nr %d +(\\n(%d-\\n(%d)/2\n",TMP,icol+CRIGHT,icol+CMID,icol+CRIGHT,TMP);
 		}
 		if (cll[icol][0]) {
-			fprintf(tabout, ".nr %d %sn\n", TMP, cll[icol]);
-			fprintf(tabout, ".if \\n(%d<\\n(%d .nr %d \\n(%d\n",icol+CRIGHT, TMP, icol+CRIGHT, TMP);
+			printf(".nr %d %sn\n", TMP, cll[icol]);
+			printf(".if \\n(%d<\\n(%d .nr %d \\n(%d\n",icol+CRIGHT, TMP, icol+CRIGHT, TMP);
 		}
 		for(ilin=0; ilin < nlin; ilin++)
 			if ((k = lspan(ilin, icol))) {
 				s=table[ilin][icol-k].col;
 				if (!real(s) || barent(s) || vspen(s) )
 					continue;
-				fprintf(tabout, ".nr %d ", TMP);
+				printf(".nr %d ", TMP);
 				wide(table[ilin][icol-k].col, FN(ilin,icol-k), SZ(ilin,icol-k));
 				for(ik=k; ik>=0; ik--) {
-					fprintf(tabout, "-\\n(%d",CRIGHT+icol-ik);
+					printf("-\\n(%d",CRIGHT+icol-ik);
 					if (!expflg && ik>0)
-						fprintf(tabout, "-%dn", sep[icol-ik]);
+						printf("-%dn", sep[icol-ik]);
 				}
-				fprintf(tabout, "\n");
-				fprintf(tabout, ".if \\n(%d>0 .nr %d \\n(%d/%d\n", TMP, TMP, TMP, k);
-				fprintf(tabout, ".if \\n(%d<0 .nr %d 0\n", TMP, TMP);
-				for(ik=1; ik<=k; ik++) {
+				printf("\n");
+				printf(".if \\n(%d>0 .nr %d \\n(%d/%d\n", TMP, TMP, TMP, k);
+				printf(".if \\n(%d<0 .nr %d 0\n", TMP, TMP);
+				for(ik = 1; ik <= k; ik++) {
 					if (doubled[icol-k+ik])
-						fprintf(tabout, ".nr %d +\\n(%d/2\n", icol-k+ik+CMID, TMP);
-					fprintf(tabout, ".nr %d +\\n(%d\n", icol-k+ik+CRIGHT, TMP);
+						printf(".nr %d +\\n(%d/2\n", icol-k+ik+CMID, TMP);
+					printf(".nr %d +\\n(%d\n", icol-k+ik+CRIGHT, TMP);
 				}
 			}
 	}
@@ -854,11 +878,11 @@ maktab(void)
 # define TMP1 S1
 # define TMP2 S2
 	if (evenflg) {
-		fprintf(tabout, ".nr %d 0\n", TMP);
+		printf(".nr %d 0\n", TMP);
 		for(icol=0; icol<ncol; icol++) {
 			if (evenup[icol]==0)
 				continue;
-			fprintf(tabout, ".if \\n(%d>\\n(%d .nr %d \\n(%d\n",
+			printf(".if \\n(%d>\\n(%d .nr %d \\n(%d\n",
 					icol+CRIGHT, TMP, TMP, icol+CRIGHT);
 		}
 		for(icol=0; icol<ncol; icol++) {
@@ -866,70 +890,69 @@ maktab(void)
 			/* if column not evened just retain old interval */
 				continue;
 			if (doubled[icol])
-				fprintf(tabout, ".nr %d (100*\\n(%d/\\n(%d)*\\n(%d/100\n",
+				printf(".nr %d (100*\\n(%d/\\n(%d)*\\n(%d/100\n",
 				    icol+CMID, icol+CMID, icol+CRIGHT, TMP);
 			/* that nonsense with the 100's and parens tries
 			 to avoid overflow while proportionally shifting
 			 the middle of the number */
-			fprintf(tabout, ".nr %d \\n(%d\n", icol+CRIGHT, TMP);
+			printf(".nr %d \\n(%d\n", icol+CRIGHT, TMP);
 		}
 	}
 	/* now adjust for total table width */
 	for(tsep=icol=0; icol<ncol; icol++)
 		tsep+= sep[icol];
 	if (expflg) {
-		fprintf(tabout, ".nr %d 0", TMP);
+		printf(".nr %d 0", TMP);
 		for(icol=0; icol<ncol; icol++)
-			fprintf(tabout, "+\\n(%d", icol+CRIGHT);
-		fprintf(tabout, "\n");
-		fprintf(tabout, ".nr %d \\n(.l-\\n(%d\n", TMP, TMP);
+			printf("+\\n(%d", icol+CRIGHT);
+		printf("\n");
+		printf(".nr %d \\n(.l-\\n(%d\n", TMP, TMP);
 		if (boxflg || dboxflg || allflg)
 			tsep += 1;
 		else
 			tsep -= sep[ncol-1];
-		fprintf(tabout, ".nr %d \\n(%d/%d\n", TMP, TMP, tsep);
-		fprintf(tabout, ".if \\n(%d<0 .nr %d 0\n", TMP, TMP);
+		printf(".nr %d \\n(%d/%d\n", TMP, TMP, tsep);
+		printf(".if \\n(%d<0 .nr %d 0\n", TMP, TMP);
 	} else
-		fprintf(tabout, ".nr %d 1n\n", TMP);
-	fprintf(tabout, ".nr %d 0\n",CRIGHT-1);
+		printf(".nr %d 1n\n", TMP);
+	printf(".nr %d 0\n",CRIGHT-1);
 	tsep= (boxflg || allflg || dboxflg || left1flg) ? 1 : 0;
-	for(icol=0; icol<ncol; icol++) {
-		fprintf(tabout, ".nr %d \\n(%d+(%d*\\n(%d)\n",icol+CLEFT, icol+CRIGHT-1, tsep, TMP);
-		fprintf(tabout, ".nr %d +\\n(%d\n",icol+CRIGHT, icol+CLEFT);
+	for (icol = 0; icol < ncol; icol++) {
+		printf(".nr %d \\n(%d+(%d*\\n(%d)\n",icol+CLEFT, icol+CRIGHT-1, tsep, TMP);
+		printf(".nr %d +\\n(%d\n",icol+CRIGHT, icol+CLEFT);
 		if (doubled[icol]) {
 			/* the next line is last-ditch effort to avoid zero field width */
-			/*fprintf(tabout, ".if \\n(%d=0 .nr %d 1\n",icol+CMID, icol+CMID);*/
-			fprintf(tabout, ".nr %d +\\n(%d\n", icol+CMID, icol+CLEFT);
-			/*  fprintf(tabout, ".if n .if \\n(%d%%24>0 .nr %d +12u\n",icol+CMID, icol+CMID); */
+			/*printf(".if \\n(%d=0 .nr %d 1\n",icol+CMID, icol+CMID);*/
+			printf(".nr %d +\\n(%d\n", icol+CMID, icol+CLEFT);
+			/*  printf(".if n .if \\n(%d%%24>0 .nr %d +12u\n",icol+CMID, icol+CMID); */
 		}
 		tsep=sep[icol];
 	}
 	if (rightl)
-		fprintf(tabout, ".nr %d (\\n(%d+\\n(%d)/2\n",ncol+CRIGHT-1, ncol+CLEFT-1, ncol+CRIGHT-2);
-	fprintf(tabout, ".nr TW \\n(%d\n", ncol+CRIGHT-1);
+		printf(".nr %d (\\n(%d+\\n(%d)/2\n",ncol+CRIGHT-1, ncol+CLEFT-1, ncol+CRIGHT-2);
+	printf(".nr TW \\n(%d\n", ncol+CRIGHT-1);
 	if (boxflg || allflg || dboxflg)
-		fprintf(tabout, ".nr TW +%d*\\n(%d\n", sep[ncol-1], TMP);
-	fprintf(tabout,
-	    ".if t .if \\n(TW>\\n(.li .tm Table at line %d file %s is too wide - \\n(TW units\n", iline-1, ifile);
+		printf(".nr TW +%d*\\n(%d\n", sep[ncol-1], TMP);
+	printf(".if t .if \\n(TW>\\n(.li .tm Table at line %d file %s is too wide - \\n(TW units\n", iline-1, ifile);
 }
 
 void
 wide(const char *s, const char *fn, const char *size)
 {
 	if (point(s)) {
-		fprintf(tabout, "\\w%c", F1);
+		printf("\\w%c", F1);
 		if (*fn>0)
 			putfont(fn);
 		if (*size)
 			putsize(size);
-		fprintf(tabout, "%s", s);
+		printf("%s", s);
 		if (*fn>0)
 			putfont("P");
 		if (*size)
 			putsize("0");
-		fprintf(tabout, "%c",F1);
+		printf("%c", F1);
 	} else
-		fprintf(tabout, "\\n(%c-", s);
+		printf("\\n(%c-", s);
 }
 
 int
@@ -950,21 +973,21 @@ runout(void)
 	if (boxflg || allflg || dboxflg)
 		need();
 	if (ctrflg) {
-		fprintf(tabout, ".nr #I \\n(.i\n");
-		fprintf(tabout, ".in +(\\n(.lu-\\n(TWu-\\n(.iu)/2u\n");
+		printf(".nr #I \\n(.i\n");
+		printf(".in +(\\n(.lu-\\n(TWu-\\n(.iu)/2u\n");
 	}
-	fprintf(tabout, ".fc %c %c\n", F1, F2);
-	fprintf(tabout, ".nr #T 0-1\n");
+	printf(".fc %c %c\n", F1, F2);
+	printf(".nr #T 0-1\n");
 	deftail();
 	for(i=0; i<nlin; i++)
 		putline(i,i);
 	if (leftover)
 		yetmore();
-	fprintf(tabout, ".fc\n");
-	fprintf(tabout, ".nr T. 1\n");
-	fprintf(tabout, ".T# 1\n");
+	printf(".fc\n");
+	printf(".nr T. 1\n");
+	printf(".T# 1\n");
 	if (ctrflg)
-		fprintf(tabout, ".in \\n(#Iu\n");
+		printf(".in \\n(#Iu\n");
 }
 
 void
@@ -972,7 +995,7 @@ runtabs(int lform, int ldata)
 {
 	int c, ct, vforml, lf;
 
-	fprintf(tabout, ".ta ");
+	printf(".ta ");
 	for(c = 0; c < ncol; c++) {
 		vforml = lform;
 		for (lf = prev(lform); lf >= 0 && vspen(table[lf][c].col);
@@ -985,20 +1008,20 @@ runtabs(int lform, int ldata)
 		case 'a':
 			if (table[ldata][c].rcol)
 				if (lused[c]) /*Zero field width*/
-					fprintf(tabout, "\\n(%du ",c+CMID);
+					printf("\\n(%du ", c + CMID);
 		case 'c':
 		case 'l':
 		case 'r':
 			if (realsplit? rused[c]: (used[c]+lused[c]))
-				fprintf(tabout, "\\n(%du ",c+CRIGHT);
+				printf("\\n(%du ", c + CRIGHT);
 			continue;
 		case 's':
 			if (lspan(lform, c))
-				fprintf(tabout, "\\n(%du ", c+CRIGHT);
+				printf("\\n(%du ", c + CRIGHT);
 			continue;
 		}
 	}
-	fprintf(tabout, "\n");
+	putchar('\n');
 }
 
 int
@@ -1021,17 +1044,18 @@ void
 need(void)
 {
 	int texlin, horlin, i;
-	for(texlin=horlin=i=0; i<nlin; i++) {
-		if (fullbot[i]!=0)
+
+	for(texlin = horlin = i = 0; i < nlin; i++) {
+		if (fullbot[i] != 0)
 			horlin++;
-		else if (instead[i]!=0)
+		else if (instead[i] != 0)
 			continue;
 		else if (allh(i))
 			horlin++;
 		else
 			texlin++;
 	}
-	fprintf(tabout, ".ne %dv+%dp\n",texlin,2*horlin);
+	printf(".ne %dv+%dp\n", texlin, 2 * horlin);
 }
 
 void
@@ -1040,46 +1064,46 @@ deftail(void)
 	int i, c, lf, lwid;
 	for(i=0; i<MAXHEAD; i++)
 		if (linestop[i])
-			fprintf(tabout, ".nr #%c 0-1\n", linestop[i]+'a'-1);
-	fprintf(tabout, ".nr #a 0-1\n");
-	fprintf(tabout, ".eo\n");
-	fprintf(tabout, ".de T#\n");
-	fprintf(tabout, ".ds #d .d\n");
-	fprintf(tabout, ".if \\(ts\\n(.z\\(ts\\(ts .ds #d nl\n");
-	fprintf(tabout, ".mk ##\n");
-	fprintf(tabout, ".nr ## -1v\n");
-	fprintf(tabout, ".ls 1\n");
+			printf(".nr #%c 0-1\n", linestop[i] + 'a' - 1);
+	puts(".nr #a 0-1\n"
+	    ".eo\n"
+	    ".de T#\n"
+	    ".ds #d .d\n"
+	    ".if \\(ts\\n(.z\\(ts\\(ts .ds #d nl\n"
+	    ".mk ##\n"
+	    ".nr ## -1v\n"
+	    ".ls 1");
 	for(i=0; i<MAXHEAD; i++)
 		if (linestop[i])
-			fprintf(tabout, ".if \\n(#T>=0 .nr #%c \\n(#T\n",linestop[i]+'a'-1);
+			printf(".if \\n(#T>=0 .nr #%c \\n(#T\n",
+			    linestop[i] + 'a' - 1);
 	if (boxflg || allflg || dboxflg) /* bottom of table line */
 		if (fullbot[nlin-1]==0) {
 			if (!pr1403)
-				fprintf(tabout, ".if \\n(T. .vs \\n(.vu-\\n(.sp\n");
-			fprintf(tabout, ".if \\n(T. ");
+				puts(".if \\n(T. .vs \\n(.vu-\\n(.sp");
+			printf(".if \\n(T. ");
 			drawline(nlin,0,ncol, dboxflg ? '=' : '-',1,0);
-			fprintf(tabout, "\n.if \\n(T. .vs\n");
+			puts("\n.if \\n(T. .vs");
 			/* T. is really an argument to a macro but because of 
 			 eqn we don't dare pass it as an argument and reference by $1 */
 		}
 	for(c=0; c<ncol; c++) {
 		if ((lf=left(nlin-1,c, &lwid))>=0) {
-			fprintf(tabout, ".if \\n(#%c>=0 .sp -1\n",linestop[lf]+'a'-1);
-			fprintf(tabout, ".if \\n(#%c>=0 ", linestop[lf]+'a'-1);
+			printf(".if \\n(#%c>=0 .sp -1\n",
+			    linestop[lf] + 'a' - 1);
+			printf(".if \\n(#%c>=0 ", linestop[lf] + 'a' - 1);
 			tohcol(c);
 			drawvert(lf, nlin-1, c, lwid);
-			fprintf(tabout, "\\h'|\\n(TWu'\n");
+			puts("\\h'|\\n(TWu'");
 		}
 	}
 	if (boxflg || allflg || dboxflg) /* right hand line */ {
-		fprintf(tabout, ".if \\n(#a>=0 .sp -1\n");
-		fprintf(tabout, ".if \\n(#a>=0 \\h'|\\n(TWu'");
+		printf(".if \\n(#a>=0 .sp -1\n"
+		    ".if \\n(#a>=0 \\h'|\\n(TWu'");
 		drawvert (0, nlin-1, ncol, dboxflg? 2 : 1);
-		fprintf(tabout, "\n");
+		putchar('\n');
 	}
-	fprintf(tabout, ".ls\n");
-	fprintf(tabout, "..\n");
-	fprintf(tabout, ".ec\n");
+	puts(".ls\n..\n.ec");
 }
 
 /* tb.c: check which entries exist, also storage allocation */
@@ -1099,7 +1123,7 @@ checkuse(void)
 				continue;
 			if ((k == 'n'||k == 'a')) {
 				rused[c]|= real(table[i][c].rcol);
-				if( !real(table[i][c].rcol))
+				if (!real(table[i][c].rcol))
 				used[c] |= real(table[i][c].col);
 				if (table[i][c].rcol)
 				lused[c] |= real(table[i][c].col);
@@ -1164,80 +1188,21 @@ choochar(void)
 	/* choose second funny character */
 	for(s="\002\003\005\006\007:_~^`@;,<=>#%&!/?{}+-*ABCDEFGHIJKMNOPQRSTUVWXZabcdefgjkoqrstuwxyz";
 	    *s; s++) {
-		if (had[*s]==0) {
-			F2= *s;
+		if (had[*s] == 0) {
+			F2 = *s;
 			break;
 		}
 	}
-	if (F1==0 || F2==0)
+	if (F1 == 0 || F2 == 0)
 		error("couldn't find characters to use for delimiters");
 }
 
 /* tf.c: save and restore fill mode around table */
 
 void
-savefill(void)
-{
-	/* remembers various things: fill mode, vs, ps in mac 35 (SF) */
-	fprintf(tabout, ".de %d\n",SF);
-	fprintf(tabout, ".ps \\n(.s\n");
-	fprintf(tabout, ".vs \\n(.vu\n");
-	fprintf(tabout, ".in \\n(.iu\n");
-	fprintf(tabout, ".if \\n(.u .fi\n");
-	fprintf(tabout, ".if \\n(.j .ad\n");
-	fprintf(tabout, ".if \\n(.j=0 .na\n");
-	fprintf(tabout, "..\n");
-	fprintf(tabout, ".nf\n");
-	/* set obx offset if useful */
-	fprintf(tabout, ".nr #~ 0\n");
-	fprintf(tabout, ".if n .nr #~ 0.6n\n");
-}
-
-void
 rstofill(void)
 {
-	fprintf(tabout, ".%d\n",SF);
-}
-
-void
-endoff(void)
-{
-	int i;
-
-	for(i = 0; i < MAXHEAD; i++)
-		if (linestop[i])
-			fprintf(tabout, ".nr #%c 0\n", 'a'+i);
-	for(i = 0; i < texct; i++)
-		fprintf(tabout, ".rm %c+\n",texstr[i]);
-	fprintf(tabout, "%s\n", last);
-}
-
-void
-ifdivert(void)
-{
-	fprintf(tabout, ".ds #d .d\n");
-	fprintf(tabout, ".if \\(ts\\n(.z\\(ts\\(ts .ds #d nl\n");
-}
-
-void
-saveline(void)
-{
-	fprintf(tabout, ".if \\n+(b.=1 .nr d. \\n(.c-\\n(c.-1\n");
-	linstart = iline;
-}
-
-void
-restline(void)
-{
-	fprintf(tabout, ".if \\n-(b.=0 .nr c. \\n(.c-\\n(d.-%d\n",
-	    iline - linstart);
-	linstart = 0;
-}
-
-void
-cleanfc(void)
-{
-	fprintf(tabout, ".fc\n");
+	printf(".%d\n", SF);
 }
 
 /* tu.c: draws horizontal lines */
@@ -1246,20 +1211,22 @@ void
 makeline(int i, int c, int lintype)
 {
 	int cr, type, shortl;
+
 	type = thish(i,c);
-	if (type==0) 
+	if (type == 0) 
 		return;
-	cr=c;
+	cr = c;
 	shortl = (table[i][c].col[0]=='\\');
-	if (c>0 && !shortl && thish(i,c-1) == type)
+	if (c > 0 && !shortl && thish(i, c - 1) == type)
 		return;
-	if (shortl==0)
-		for(cr=c; cr < ncol && (ctype(i,cr)=='s'||type==thish(i,cr)); cr++)
+	if (shortl == 0)
+		for (cr = c; cr < ncol && (ctype(i,cr) == 's' ||
+		    type == thish(i,cr)); cr++)
 			;
 	else
-		for(cr=c+1; cr<ncol && ctype(i,cr)=='s'; cr++)
+		for (cr = c + 1; cr < ncol && ctype(i, cr) == 's'; cr++)
 			;
-	drawline(i, c, cr-1, lintype, 0, shortl);
+	drawline(i, c, cr - 1, lintype, 0, shortl);
 }
 
 void
@@ -1268,21 +1235,21 @@ fullwide(int i, int lintype)
 	int cr, cl;
 
 	if (!pr1403)
-		fprintf(tabout, ".nr %d \\n(.v\n.vs \\n(.vu-\\n(.sp\n", SVS);
-	cr= 0;
-	while (cr<ncol) {
-		cl=cr;
-		while (i>0 && vspand(prev(i),cl,1))
+		printf(".nr %d \\n(.v\n.vs \\n(.vu-\\n(.sp\n", SVS);
+	cr = 0;
+	while (cr < ncol) {
+		cl = cr;
+		while (i > 0 && vspand(prev(i), cl, 1))
 			cl++;
-		for(cr=cl; cr<ncol; cr++)
-			if (i>0 && vspand(prev(i),cr,1))
+		for(cr = cl; cr < ncol; cr++)
+			if (i > 0 && vspand(prev(i), cr, 1))
 				break;
 		if (cl<ncol)
-			drawline(i,cl,(cr<ncol?cr-1:cr),lintype,1,0);
+			drawline(i, cl,(cr < ncol? cr - 1 : cr), lintype, 1, 0);
 	}
-	fprintf(tabout, "\n");
+	putchar('\n');
 	if (!pr1403)
-		fprintf(tabout, ".vs \\n(%du\n", SVS);
+		printf(".vs \\n(%du\n", SVS);
 }
 
 void
@@ -1303,11 +1270,11 @@ drawline(int i, int cl, int cr, int lintype, int noheight, int shortl)
 		return;
 	nodata = cr-cl>=ncol || noheight || allh(i);
 	if (!nodata)
-		fprintf(tabout, "\\v'-.5m'");
+		printf("\\v'-.5m'");
 	for(ln=oldpos=0; ln<lcount; ln++) {
 		linpos = 2*ln - lcount +1;
 		if (linpos != oldpos)
-			fprintf(tabout, "\\v'%dp'", linpos-oldpos);
+			printf("\\v'%dp'", linpos - oldpos);
 		oldpos=linpos;
 		if (shortl==0) {
 			tohcol(cl);
@@ -1318,14 +1285,14 @@ drawline(int i, int cl, int cr, int lintype, int noheight, int shortl)
 				case THRU: exhl = "1p"; break;
 				}
 				if (exhl[0])
-					fprintf(tabout, "\\h'%s'", exhl);
+					printf("\\h'%s'", exhl);
 			} else if (lcount==1) {
-				switch(interv(i,cl)) {
+				switch(interv(i, cl)) {
 				case TOP: case BOT: exhl = "-1p"; break;
 				case THRU: exhl = "1p"; break;
 				}
 				if (exhl[0])
-					fprintf(tabout, "\\h'%s'", exhl);
+					printf("\\h'%s'", exhl);
 			}
 
 			if (lcount > 1) {
@@ -1342,31 +1309,30 @@ drawline(int i, int cl, int cr, int lintype, int noheight, int shortl)
 				}
 			}
 		} else
-			fprintf(tabout, "\\h'|\\n(%du'", cl+CLEFT);
-		fprintf(tabout, "\\s\\n(%d",LSIZE);
+			printf("\\h'|\\n(%du'", cl + CLEFT);
+		printf("\\s\\n(%d", LSIZE);
 		if (linsize)
-			fprintf(tabout, "\\v'-\\n(%dp/6u'", LSIZE);
+			printf("\\v'-\\n(%dp/6u'", LSIZE);
 		if (shortl)
-			fprintf(tabout, "\\l'|\\n(%du'", cr+CRIGHT);
+			printf("\\l'|\\n(%du'", cr + CRIGHT);
 		else {
 			lnch = "\\(ul";
 			if (pr1403)
 				lnch = lintype==2 ? "=" : "\\(ru";
 			if (cr + 1 >= ncol)
-				fprintf(tabout, "\\l'|\\n(TWu%s%s'", exhr,lnch);
+				printf("\\l'|\\n(TWu%s%s'", exhr, lnch);
 			else
-				fprintf(tabout,
-				    "\\l'(|\\n(%du+|\\n(%du)/2u%s%s'",
+				printf("\\l'(|\\n(%du+|\\n(%du)/2u%s%s'",
 				    cr + CRIGHT, cr + 1 + CLEFT, exhr, lnch);
 		}
 		if (linsize)
-			fprintf(tabout, "\\v'\\n(%dp/6u'", LSIZE);
-		fprintf(tabout, "\\s0");
+			printf("\\v'\\n(%dp/6u'", LSIZE);
+		printf("\\s0");
 	}
 	if (oldpos!=0)
-		fprintf(tabout, "\\v'%dp'", -oldpos);
+		printf("\\v'%dp'", -oldpos);
 	if (!nodata)
-		fprintf(tabout, "\\v'+.5m'");
+		printf("\\v'+.5m'");
 }
 
 void

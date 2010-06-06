@@ -117,8 +117,8 @@ extern int texname;
 extern int texct, texmax;
 extern const char texstr[];
 extern int linstart;
+extern int spcount, tpcount;
 
-extern FILE *tabin, *tabout;
 # define CRIGHT 80
 # define CLEFT 40
 # define CMID 60
@@ -147,12 +147,6 @@ void rstofill(void);
 int swapin(void);
 void getstop(void);
 void drawline(int, int, int, int, int, int);
-void cleanfc(void);
-void restline(void);
-void saveline(void);
-void ifdivert(void);
-void endoff(void);
-void savefill(void);
 void choochar(void);
 void checkuse(void);
 void deftail(void);
@@ -189,7 +183,6 @@ int allh(int);
 int left(int, int, int *);
 void drawvert(int, int, int, int);
 void funnies(int, int);
-void release(void);
 int barent(const char *);
 int midbcol(int, int);
 int midbar(int, int);
