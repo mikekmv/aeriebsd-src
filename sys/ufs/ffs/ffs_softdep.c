@@ -1,4 +1,3 @@
-
 /*
  * Copyright 1998, 2000 Marshall Kirk McKusick. All Rights Reserved.
  *
@@ -555,6 +554,7 @@ STATIC int req_clear_inodedeps;	/* syncer process flush some inodedeps */
 #define FLUSH_INODES	1
 STATIC int req_clear_remove;	/* syncer process flush some freeblks */
 #define FLUSH_REMOVE	2
+STATIC int num_freeblkdep;	/* number of freeblks workitems allocated */
 /*
  * runtime statistics
  */
@@ -1980,6 +1980,7 @@ softdep_setup_freeblocks(ip, length)
 	 * has never been written to disk, so we can process the
 	 * freeblks below once we have deleted the dependencies.
 	 */
+	num_freeblkdep++;
 	delay = (inodedep->id_state & DEPCOMPLETE);
 	if (delay)
 		WORKLIST_INSERT(&inodedep->id_bufwait, &freeblks->fb_list);
@@ -2442,7 +2443,10 @@ handle_workitem_freeblocks(freeblks)
 	if (allerror)
 		softdep_error("handle_workitem_freeblks", allerror);
 #endif /* DIAGNOSTIC */
+	ACQUIRE_LOCK(&lk);
+	num_freeblkdep--;
 	WORKITEM_FREE(freeblks, D_FREEBLKS);
+	FREE_LOCK(&lk);
 }
 
 /*
@@ -5243,11 +5247,16 @@ softdep_slowdown(vp)
 {
 	int max_softdeps_hard;
 
+	ACQUIRE_LOCK(&lk);
 	max_softdeps_hard = max_softdeps * 11 / 10;
 	if (num_dirrem < max_softdeps_hard / 2 &&
-	    num_inodedep < max_softdeps_hard)
+	    num_inodedep < max_softdeps_hard &&
+	    num_freeblkdep < max_softdeps_hard) {
+		FREE_LOCK(&lk);
 		return (0);
-	stat_sync_limit_hit += 1;
+	}
+	stat_sync_limit_hit++;
+	FREE_LOCK(&lk);
 	return (1);
 }
 
@@ -5417,7 +5426,7 @@ clear_inodedeps(p)
 	struct proc *p;
 {
 	struct inodedep_hashhead *inodedephd;
-	struct inodedep *inodedep;
+	struct inodedep *inodedep = NULL;
 	static int next = 0;
 	struct mount *mp;
 	struct vnode *vp;
