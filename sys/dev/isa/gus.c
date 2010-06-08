@@ -2453,7 +2453,7 @@ ad1848_devmap_t gusmapping[] = {
   {GUSMAX_RECORD_SOURCE, AD1848_KIND_RECORDSOURCE, -1}
 };
 
-int nummap = sizeof(gusmapping) / sizeof(gusmapping[0]);
+static const int nummap = sizeof(gusmapping) / sizeof(gusmapping[0]);
 
 int
 gusmax_mixer_get_port(addr, cp)
