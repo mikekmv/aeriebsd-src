@@ -134,7 +134,7 @@ u_int32_t *bnx_TXP_b06FwSbss;
 u_int32_t *bnx_rv2p_proc1;
 u_int32_t *bnx_rv2p_proc2;
 
-void	nswaph(u_int32_t *p, int wcount);
+static void	nswaph(u_int32_t *p, int wcount);
 
 /****************************************************************************/
 /* BNX Driver Version                                                       */
@@ -422,7 +422,7 @@ bnx_probe(struct device *parent, void *match, void *aux)
 	    sizeof(bnx_devices)/sizeof(bnx_devices[0])));
 }
 
-void
+static void
 nswaph(u_int32_t *p, int wcount)
 {
 	for (; wcount; wcount -=4) {
