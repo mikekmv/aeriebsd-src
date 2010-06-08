@@ -63,7 +63,7 @@ typedef __uint16_t	Elf64_Quarter;
 
 /*
  * e_ident[] identification indexes 
- * See http://www.caldera.com/developers/gabi/2000-07-17/ch4.eheader.html
+ * See See http://www.sco.com/developers/gabi/latest/ch4.eheader.html
  */
 #define EI_MAG0		0		/* file ID */
 #define EI_MAG1		1		/* file ID */
@@ -111,6 +111,8 @@ typedef __uint16_t	Elf64_Quarter;
 #define ELFOSABI_TRU64		10	/* TRU64 UNIX */
 #define ELFOSABI_MODESTO	11	/* Novell Modesto */
 #define ELFOSABI_OPENBSD	12	/* OpenBSD */
+#define ELFOSABI_OPENVMS	13	/* OpenVMS */
+#define ELFOSABI_NSK		14	/* HP Non-Stop Kernel */
 #define ELFOSABI_ARM		97	/* ARM */
 #define ELFOSABI_STANDALONE	255	/* Standalone (embedded) application */
 
@@ -163,6 +165,8 @@ typedef struct {
 #define ET_DYN		3		/* shared object file */
 #define ET_CORE		4		/* core file */
 #define ET_NUM		5		/* number of types */
+#define ET_LOOS		0xfe00		/* reserved range for OS */
+#define ET_HIOS		0xfeff		/*  specific e_type */
 #define ET_LOPROC	0xff00		/* reserved range for processor */
 #define ET_HIPROC	0xffff		/*  specific e_type */
 
@@ -176,24 +180,32 @@ typedef struct {
 #define EM_486		6		/* Intel 80486 - unused? */
 #define EM_860		7		/* Intel 80860 */
 #define EM_MIPS		8		/* MIPS R3000 Big-Endian only */
-/* 
- * Don't know if EM_MIPS_RS4_BE,
- * EM_SPARC64, EM_PARISC,
- * or EM_PPC are ABI compliant
- */
 #define EM_MIPS_RS4_BE	10		/* MIPS R4000 Big-Endian */
+/* 
+ * Don't know if EM_SPARC64 is ABI-compliant
+ */
 #define EM_SPARC64	11		/* SPARC v9 64-bit unoffical */
-#define EM_PARISC	15		/* HPPA */
+#define EM_PARISC	15		/* HP PA-RISC */
 #define EM_SPARC32PLUS	18		/* Enhanced instruction set SPARC */
+#define EM_960		19		/* Intel 80960 */
 #define EM_PPC		20		/* PowerPC */
+#define EM_PPC64	21		/* PowerPC 64-bit */
+#define EM_S390		22		/* IBM S/390 */
 #define EM_ARM		40		/* Advanced RISC Machines ARM */
 #define EM_ALPHA	41		/* DEC ALPHA */
 #define	EM_SH		42		/* Hitachi/Renesas Super-H */
 #define EM_SPARCV9	43		/* SPARC version 9 */
 #define EM_ALPHA_EXP	0x9026		/* DEC ALPHA */
 #define EM_AMD64	62		/* AMD64 architecture */
+#define EM_PDP10	64		/* DEC PDP-10 */
+#define EM_PDP11	65		/* DEC PDP-11 */
 #define EM_VAX		75		/* DEC VAX */
-#define EM_NUM		15		/* number of machine types */
+#define EM_MMIX		80		/* Donald Knuth's MMIX */
+#define EM_AVR		83		/* Atmel AVR 8-bit microcontroller */
+#define EM_OPENRISC	92		/* OpenRISC */
+#define EM_AVR32	185		/* Atmel 32-bit microprocessor family*/
+#define EM_MICROPLAZE	189		/* Xilinx MicroBlaze 32-bit RISC */
+#define EM_NUM		190		/* number of machine types */
 
 /* Version */
 #define EV_NONE		0		/* Invalid */
