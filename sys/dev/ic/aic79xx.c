@@ -109,7 +109,7 @@ const struct ahd_hard_error_entry ahd_hard_errors[] = {
 	{ MPARERR,	"Scratch or SCB Memory Parity Error" },
 	{ CIOPARERR,	"CIOBUS Parity Error" },
 };
-const u_int num_errors = NUM_ELEMENTS(ahd_hard_errors);
+static const u_int num_errors = NUM_ELEMENTS(ahd_hard_errors);
 
 const struct ahd_phase_table_entry ahd_phase_table[] =
 {
@@ -129,7 +129,7 @@ const struct ahd_phase_table_entry ahd_phase_table[] =
  * In most cases we only wish to itterate over real phases, so
  * exclude the last element from the count.
  */
-const u_int num_phases = NUM_ELEMENTS(ahd_phase_table) - 1;
+static const u_int num_phases = NUM_ELEMENTS(ahd_phase_table) - 1;
 
 /* Our Sequencer Program */
 #include <dev/microcode/aic7xxx/aic79xx_seq.h>
