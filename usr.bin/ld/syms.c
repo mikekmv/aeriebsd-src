@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syms.c,v 1.6 2010/03/09 09:45:18 mickey Exp $";
+static const char rcsid[] = "$ABSD: syms.c,v 1.7 2010/06/01 12:59:56 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -64,6 +64,7 @@ sym_isundef(const char *name)
 {
 	struct symlist key;
 
+	bzero(&key, sizeof key);
 	key.sl_name = name;
 	return SPLAY_FIND(symtree, &undsyms, &key);
 }
@@ -85,7 +86,8 @@ struct symlist *
 sym_redef(struct symlist *sym, struct section *os, void *esym)
 {
 	SPLAY_REMOVE(symtree, &defsyms, sym);
-	TAILQ_REMOVE(&sym->sl_sect->os_syms, sym, sl_entry);
+	if (sym->sl_sect)
+		TAILQ_REMOVE(&sym->sl_sect->os_syms, sym, sl_entry);
 	sym->sl_sect = os;
 	if (esym)
 		memcpy(&sym->sl_elfsym, esym, sizeof sym->sl_elfsym);

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.20 2010/03/31 21:27:21 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.21 2010/06/01 12:59:56 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -972,21 +972,38 @@ if (is && *name == '\0') warnx("#%d is null", is);
 		break;
 
 	case SHN_ABS:
-errx(1, "ABS is not implemented");
+		if (ELF_ST_BIND(esym->st_info) == STB_LOCAL) {
+			if (asprintf(&name, "%s.%d", name, next++) < 0)
+				err(1, "asprintf");
+/* XXX leaking */
+		}
+		if ((sym = sym_isdefined(name, ol->ol_sections)))
+			warnx("%s: %s: already defined in %s",
+			    ol->ol_path, name,
+			    sym->sl_sect->os_obj->ol_path);
+		else if ((sym = sym_isundef(name)))
+			sym = sym_define(sym, NULL, vs);
+		else
+			sym = sym_add(name, NULL, vs);
+		break;
 
 	default:
 		if (esym->st_shndx >= ELF_HDR(ol->ol_hdr).e_shnum)
 			err(1, "%s: invalid section index for #%d",
 			    es->name, is);
 		os = ol->ol_sections + esym->st_shndx;
-		if (ELF_ST_BIND(esym->st_info) == STB_LOCAL &&
-		    sym_isdefined(name, sysobj.ol_sections)) {
+		if (ELF_ST_BIND(esym->st_info) == STB_LOCAL) {
 			if (asprintf(&name, "%s.%d", name, next++) < 0)
 				err(1, "asprintf");
+/* XXX leaking */
 		}
 		if ((sym = sym_isdefined(name, ol->ol_sections)) &&
 		    ELF_SYM(sym->sl_elfsym).st_shndx == SHN_COMMON)
 			sym = sym_redef(sym, os, esym);
+		else if (sym)
+			warnx("%s: %s: already defined in %s",
+			    ol->ol_path, name,
+			    sym->sl_sect->os_obj->ol_path);
 		else if ((sym = sym_isundef(name)))
 			sym = sym_define(sym, os, vs);
 		else
