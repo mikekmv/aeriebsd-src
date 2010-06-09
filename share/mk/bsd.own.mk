@@ -106,9 +106,9 @@ STATIC?=	-static
 
 # don't try to generate PIC versions of libraries on machines
 # which don't support PIC.
-.if ${MACHINE_ARCH} == "vax"
+#.if ${MACHINE_ARCH} == "vax"
 NOPIC=
-.endif
+#.endif
 
 # pic relocation flags.
 .if (${MACHINE_ARCH} == "alpha") || (${MACHINE_ARCH} == "sparc64")
