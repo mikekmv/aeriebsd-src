@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.24 2010/06/01 13:01:19 mickey Exp $";
+    "$ABSD: elf.c,v 1.25 2010/06/09 11:37:51 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -176,7 +176,6 @@ elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 		return (NULL);
 	}
 
-printf("shdr foff %d\n", (int)foff + eh->e_shoff);
 	if (fseeko(fp, foff + eh->e_shoff, SEEK_SET)) {
 		warn("%s: fseeko", name);
 		free(shdr);
@@ -529,7 +528,7 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 			}
 
 			if ((ret = malloc(*pstabsize)) == NULL) {
-				warn("malloc(%d)", *pstabsize);
+				warn("malloc(%d)", (int)*pstabsize);
 				break;
 			} else if (pread(fileno(fp), ret, *pstabsize,
 			    foff + shdr[i].sh_offset) != *pstabsize) {
