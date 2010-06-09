@@ -451,10 +451,7 @@ trap(struct trapframe frame)
 		if (frame.tf_err & PGEX_P)
 			goto we_re_toast;
 #endif
-		cr2 = rcr2();
-		KERNEL_LOCK();
-		goto faultcommon;
-
+		/* FALLTHROUGH */
 	case T_PAGEFLT|T_USER: {	/* page fault */
 		vaddr_t va, fa;
 		struct vmspace *vm;
@@ -463,7 +460,6 @@ trap(struct trapframe frame)
 
 		cr2 = rcr2();
 		KERNEL_PROC_LOCK(p);
-	faultcommon:
 		vm = p->p_vmspace;
 		if (vm == NULL)
 			goto we_re_toast;
