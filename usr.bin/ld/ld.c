@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.14 2010/06/05 11:48:34 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.15 2010/06/05 14:22:47 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -53,6 +53,7 @@ int elfclass;	/* ELFCLASSNONE */
 int machine;	/* EM_NONE */
 int magic = ZMAGIC;
 int as_needed;
+int dflag;	/* force common allocation (even for -r) */
 int Bflag;	/* 0 - static, 1 - dynamic, 2 - shlib */
 int Xflag;	/* 0 - keep, 1 - sieve temps, 2 - sieve all locals */
 int check_sections;
@@ -150,7 +151,7 @@ int lib_add(const char *);
 int lib_namtab(const char *, FILE *, u_long, off_t, u_long);
 int lib_symdef(const char *, FILE *, u_long);
 int mmbr_name(struct ar_hdr *, char **, int, int *, FILE *);
-struct headorder ldorder(const struct ldarch *);
+struct headorder *ldorder(const struct ldarch *);
 int uLD(const char *, const char *);
 
 int
@@ -203,9 +204,15 @@ main(int argc, char *argv[])
 		case 'd':	/* dynlink/FORCE_COMMON_ALLOCATION */
 			if (!strcmp(argv[optind-1], "-dynamic-linker"))
 				optind++;
+			else {
+				optind--;
+				dflag++;
+			}
 			break;
 
 		case 'e':	/* entry */
+			if (!strcmp(argv[optind-1], "-export-dynamic"))
+				optind++;
 			entry_name = optarg;
 			break;
 
@@ -678,7 +685,8 @@ lib_namtab(const char *path, FILE *fp, u_long len, off_t symoff, u_long symlen)
 		err(1, "fread: %s", path);
 
 	offs = (uint32_t *)pp;
-	num = betoh32(*offs++);
+	num = *offs++;
+	num = betoh32(num);
 
 	more = 1;
 	while (more) {
@@ -867,10 +875,11 @@ obj_add(const char *path, const char *name, FILE *fp, off_t foff,
 	return 0;
 }
 
-struct headorder
+struct headorder headorder;	/* XXX until struct arg/ret works */
+
+struct headorder *
 ldorder(const struct ldarch *lda)
 {
-	struct headorder headorder;
 	const struct ldorder *order;
 	struct ldorder *neworder, *ssorder;
 	struct symlist *sym;
@@ -974,7 +983,7 @@ ldorder(const struct ldarch *lda)
 		err(1, "malloc");
 	sysobj.ol_snames = ssorder->ldo_wurst;
 
-	return headorder;
+	return &headorder;
 }
 
 int

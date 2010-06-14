@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.21 2010/06/01 12:59:56 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.22 2010/06/08 23:18:09 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -137,7 +137,7 @@ struct {
  * NB maybe this can be moved to the ld.c
  */
 struct ldorder *
-ldmap(struct headorder headorder)
+ldmap(struct headorder *headorder)
 {
 	struct ldorder *ord, *next;
 	struct section *os;
@@ -169,7 +169,7 @@ ldmap(struct headorder headorder)
 	 */
 	shdr = sysobj.ol_sects;
 	sysobj.ol_sections[0].os_sect = shdr++;
-	for (nsect = 1, nphdr = 0, ord = TAILQ_FIRST(&headorder);
+	for (nsect = 1, nphdr = 0, ord = TAILQ_FIRST(headorder);
 	    ord != TAILQ_END(NULL); ord = next) {
 
 		next = TAILQ_NEXT(ord, ldo_entry);
@@ -185,7 +185,7 @@ ldmap(struct headorder headorder)
 			/* count names and assign st_names */
 			nnames[0] = 0;
 			nnames[1] = 1;
-			sym_scan(TAILQ_FIRST(&headorder), NULL, elf_symrec,
+			sym_scan(TAILQ_FIRST(headorder), NULL, elf_symrec,
 			    nnames);
 			ord->ldo_wsize = nnames[0] + sizeof *esym;
 		} else if (ord->ldo_order == ldo_strtab) {
@@ -195,14 +195,14 @@ ldmap(struct headorder headorder)
 			if (!(ord->ldo_wurst = malloc(ord->ldo_wsize)))
 				err(1, "malloc");
 			*(char *)ord->ldo_wurst = '\0';
-			sym_scan(TAILQ_FIRST(&headorder), NULL, elf_names, ord);
+			sym_scan(TAILQ_FIRST(headorder), NULL, elf_names, ord);
 		} else if (ord->ldo_order == ldo_expr)
 			continue;
 
 		/* skip empty sections */
 		if (TAILQ_EMPTY(&ord->ldo_seclst) &&
 		    !((ord->ldo_flags & LD_CONTAINS) && ord->ldo_wsize)) {
-			TAILQ_REMOVE(&headorder, ord, ldo_entry);
+			TAILQ_REMOVE(headorder, ord, ldo_entry);
 			continue;
 		}
 
@@ -248,7 +248,7 @@ ldmap(struct headorder headorder)
 
 	off = sizeof *eh + nphdr * sizeof *phdr;
 	point = (arc4random() & 0xffffff) + off;
-	TAILQ_FOREACH(ord, &headorder, ldo_entry) {
+	TAILQ_FOREACH(ord, headorder, ldo_entry) {
 
 		shdr = NULL;
 		switch (ord->ldo_order) {
@@ -334,7 +334,7 @@ ldmap(struct headorder headorder)
 
 			p = q = ord->ldo_wurst;
 			*p++ = '\0';
-			TAILQ_FOREACH(sord, &headorder, ldo_entry) {
+			TAILQ_FOREACH(sord, headorder, ldo_entry) {
 				size_t n;
 
 				if (sord->ldo_order == ldo_symbol ||
@@ -395,7 +395,7 @@ ldmap(struct headorder headorder)
 			if (!(mfp = fopen(mapfile, "w")))
 				err(1, "fopen: %s", mapfile);
 		}
-		sym_scan(TAILQ_FIRST(&headorder), order_printmap,
+		sym_scan(TAILQ_FIRST(headorder), order_printmap,
 		    elf_symprintmap, mfp);
 		if (mapfile)
 			fclose(mfp);
@@ -409,7 +409,7 @@ ldmap(struct headorder headorder)
 	/* save the entry point address */
 	ELF_HDR(sysobj.ol_hdr).e_entry = ELF_SYM(sentry->sl_elfsym).st_value;
 
-	return TAILQ_FIRST(&headorder);
+	return TAILQ_FIRST(headorder);
 }
 
 /*
