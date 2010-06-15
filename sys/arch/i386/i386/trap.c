@@ -494,7 +494,7 @@ trap(struct trapframe frame)
 			if (map != kernel_map)
 				uvm_grow(p, va);
 			if (type == T_PAGEFLT) {
-				KERNEL_UNLOCK();
+				KERNEL_PROC_UNLOCK();
 				return;
 			}
 			KERNEL_PROC_UNLOCK(p);
@@ -503,7 +503,7 @@ trap(struct trapframe frame)
 
 		if (type == T_PAGEFLT) {
 			if (pcb->pcb_onfault != 0) {
-				KERNEL_UNLOCK();
+				KERNEL_PROC_UNLOCK();
 				goto copyfault;
 			}
 			printf("uvm_fault(%p, 0x%lx, 0, %d) -> %x\n",
