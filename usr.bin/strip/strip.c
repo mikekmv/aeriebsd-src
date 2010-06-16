@@ -38,7 +38,7 @@ static const char copyright[] =
 #ifndef lint
 /*static char sccsid[] = "from: @(#)strip.c	5.8 (Berkeley) 11/6/91";*/
 static char const rcsid[] =
-    "$ABSD: strip.c,v 1.4 2009/03/20 16:32:03 mickey Exp $";
+    "$ABSD: strip.c,v 1.5 2009/07/30 12:01:11 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -124,23 +124,71 @@ main(int argc, char *argv[])
 		if (IS_ELF(eh.elf32) &&
 		    eh.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
 		    eh.elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
+			Elf32_Shdr *shdr, *sh, *esh;
+			char *shstr;
+
 			elf32_fix_header(&eh.elf32);
 			if (sfcn == s_stab)
-				errors |= elf32_symseed(fn, fp, &eh.elf32,
-				    &sb, &newsize, xflag);
-			else
-				errors |= elf32_strip(fn, fp, &eh.elf32,
-				    &sb, &newsize);
+				errx(1, "not implemented");
+
+			if (!(shdr = elf32_load_shdrs(fn, fp, 0, &eh.elf32)))
+				exit(1);
+
+			elf32_fix_shdrs(&eh.elf32, shdr);
+			if (!(shstr = elf32_shstrload(fn, fp, 0, &eh.elf32,
+			    shdr)))
+				exit(1);
+
+			for (sh = shdr, esh = sh + eh.elf32.e_shnum;
+			    sh < esh; sh++)
+				if (!strcmp(shstr + sh->sh_name, ELF_SYMTAB)) {
+					eh.elf32.e_shnum = sh - shdr;
+					newsize = eh.elf32.e_shoff +
+					    (sh - shdr) * sizeof *shdr;
+
+					if (fseeko(fp, 0, SEEK_SET))
+						err(1, "fseeko: %s", fn);
+
+					elf32_fix_header(&eh.elf32);
+					if (fwrite(&eh.elf32, sizeof eh.elf32,
+					    1, fp) != 1)
+						err(1, "fwrite: %s", fn);
+				}
+
 		} else if (IS_ELF(eh.elf64) &&
 		    eh.elf64.e_ident[EI_CLASS] == ELFCLASS64 &&
 		    eh.elf64.e_ident[EI_VERSION] == ELF_TARG_VER) {
+			Elf64_Shdr *shdr, *sh, *esh;
+			char *shstr;
+
 			elf64_fix_header(&eh.elf64);
 			if (sfcn == s_stab)
-				errors |= elf64_symseed(fn, fp, &eh.elf64,
-				    &sb, &newsize, xflag);
-			else
-				errors |= elf64_strip(fn, fp, &eh.elf64,
-				    &sb, &newsize);
+				errx(1, "not implemented");
+
+			if (!(shdr = elf64_load_shdrs(fn, fp, 0, &eh.elf64)))
+				exit(1);
+
+			elf64_fix_shdrs(&eh.elf64, shdr);
+			if (!(shstr = elf64_shstrload(fn, fp, 0, &eh.elf64,
+			    shdr)))
+				exit(1);
+
+			for (sh = shdr, esh = sh + eh.elf64.e_shnum;
+			    sh < esh; sh++)
+				if (!strcmp(shstr + sh->sh_name, ELF_SYMTAB)) {
+					eh.elf64.e_shnum = sh - shdr;
+					newsize = eh.elf64.e_shoff +
+					    (sh - shdr) * sizeof *shdr;
+
+					if (fseeko(fp, 0, SEEK_SET))
+						err(1, "fseeko: %s", fn);
+
+					elf64_fix_header(&eh.elf64);
+					if (fwrite(&eh.elf64, sizeof eh.elf64,
+					    1, fp) != 1)
+						err(1, "fwrite: %s", fn);
+				}
+
 		} else if (BAD_OBJECT(eh.aout)) {
 			fclose(fp);
 			ERROR(EFTYPE);
