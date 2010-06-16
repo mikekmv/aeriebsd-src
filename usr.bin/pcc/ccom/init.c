@@ -246,9 +246,13 @@ beginit(struct symtab *sp)
 	csym = sp;
 
 	numents = 0; /* no entries in array list */
-	if (ISARY(sp->stype))
+	if (ISARY(sp->stype)) {
 		basesz = tsize(DECREF(sp->stype), sp->sdf+1, sp->ssue);
-	else
+		if (basesz == 0) {
+			uerror("array has incomplete type");
+			basesz = SZINT;
+		}
+	} else
 		basesz = tsize(DECREF(sp->stype), sp->sdf, sp->ssue);
 	SLIST_INIT(&lpole);
 
@@ -319,7 +323,7 @@ stkpush(void)
 		is->in_lnk = ISSOU(DECREF(t)) ? pstk->in_sym->ssue->suem : 0;
 		is->in_t = DECREF(t);
 		is->in_sym = sp;
-		if (pstk->in_df->ddim != NOOFFSET &&
+		if (pstk->in_df->ddim != NOOFFSET && pstk->in_df->ddim &&
 		    pstk->in_n >= pstk->in_df->ddim) {
 			werror("excess of initializing elements");
 			pstk->in_n--;
@@ -396,7 +400,7 @@ findoff(void)
 	OFFSZ off;
 
 #ifdef PCC_DEBUG
-	if (ISARY(pstk->in_t) || ISSOU(pstk->in_t))
+	if (ISARY(pstk->in_t))
 		cerror("findoff on bad type %x", pstk->in_t);
 #endif
 
@@ -513,30 +517,40 @@ scalinit(NODE *p)
 	/*
 	 * Get to the simple type if needed.
 	 */
-	while (ISSOU(pstk->in_t) || ISARY(pstk->in_t))
+	while (ISSOU(pstk->in_t) || ISARY(pstk->in_t)) {
 		stkpush();
-		
-	/* let buildtree do typechecking (and casting) */
-	q = block(NAME, NIL,NIL, pstk->in_t, pstk->in_sym->sdf,
-	    pstk->in_sym->ssue);
-	p = buildtree(ASSIGN, q, p);
-	nfree(p->n_left);
-	q = optim(p->n_right);
-	nfree(p);
+		/* If we are doing auto struct init */
+		if (ISSOU(pstk->in_t) && ISSOU(p->n_type) &&
+		    pstk->in_sym->ssue->suem == p->n_sue->suem)
+			break;
+	}
+
+	if (ISSOU(pstk->in_t) == 0) {
+		/* let buildtree do typechecking (and casting) */
+		q = block(NAME, NIL,NIL, pstk->in_t, pstk->in_sym->sdf,
+		    pstk->in_sym->ssue);
+		p = buildtree(ASSIGN, q, p);
+		nfree(p->n_left);
+		q = optim(p->n_right);
+		nfree(p);
+	} else
+		q = p;
+
+	woff = findoff();
 
 	/* bitfield sizes are special */
 	if (pstk->in_sym->sclass & FIELD)
 		fsz = -(pstk->in_sym->sclass & FLDSIZ);
 	else
-		fsz = (int)tsize(pstk->in_t, pstk->in_sym->sdf, pstk->in_sym->ssue);
-	woff = findoff();
+		fsz = (int)tsize(pstk->in_t, pstk->in_sym->sdf,
+		    pstk->in_sym->ssue);
 
 	nsetval(woff, fsz, q);
 
 	stkpop();
 #ifdef PCC_DEBUG
 	if (idebug > 2) {
-		printf("scalinit e(%p)\n", p);
+		printf("scalinit e(%p)\n", q);
 	}
 #endif
 	return woff;
@@ -778,8 +792,11 @@ mkstack(NODE *p)
 {
 
 #ifdef PCC_DEBUG
-	if (idebug)
+	if (idebug) {
 		printf("mkstack: %p\n", p);
+		if (idebug > 1 && p)
+			fwalk(p, eprint, 0);
+	}
 #endif
 
 	if (p == NULL)
@@ -907,6 +924,8 @@ asginit(NODE *p)
 				pstk->in_fl = 1; /* simulate ilbrace */
 
 			strcvt(p);
+			if (ISARY(csym->stype) && csym->sdf->ddim == NOOFFSET)
+				asginit(bcon(0)); /* Null-term arrays */
 			if (g == 0)
 				irbrace();
 			return;

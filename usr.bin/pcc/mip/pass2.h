@@ -441,8 +441,8 @@ void optimize(struct p2env *);
 
 struct basicblock {
 	DLIST_ENTRY(basicblock) bbelem;
-	SLIST_HEAD(, cfgnode) children; /* CFG - children to this node */
 	SLIST_HEAD(, cfgnode) parents; /* CFG - parents to this node */
+	struct cfgnode *ch[2];		/* Child 1 (and 2) */
 	int bbnum;	/* this basic block number */
 	unsigned int dfnum; /* DFS-number */
 	unsigned int dfparent; /* Parent in DFS */
@@ -457,8 +457,7 @@ struct basicblock {
 	bittype *Aphi;
 	SLIST_HEAD(, phiinfo) phi;
 
-	bittype *vin, *vout, *vgen, *vkill ;
-	bittype *exin, *exout ;
+	bittype *gen, *killed, *in, *out;	/* Liveness analysis */
 
 	struct interpass *first; /* first element of basic block */
 	struct interpass *last;  /* last element of basic block */
@@ -517,6 +516,8 @@ struct phiinfo {
 struct p2env {
 	struct interpass ipole;			/* all statements */
 	struct interpass_prolog *ipp, *epp;	/* quick references */
+	struct bblockinfo bbinfo;
+	struct labelinfo labinfo;
 	struct basicblock bblocks;
 	int nbblocks;
 };

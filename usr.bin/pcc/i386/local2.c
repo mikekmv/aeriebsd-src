@@ -130,18 +130,12 @@ eoftn(struct interpass_prolog *ipp)
 	if (ftype == STRTY || ftype == UNIONTY) {
 		printf("	movl 8(%%ebp),%%eax\n");
 		printf("	leave\n");
-#ifdef os_win32
 		printf("	ret $%d\n", 4 + ipp->ipp_argstacksize);
-#else
-		printf("	ret $%d\n", 4);
-#endif
 	} else {
 		printf("	leave\n");
-#ifdef os_win32
 		if (ipp->ipp_argstacksize)
 			printf("	ret $%d\n", ipp->ipp_argstacksize);
 		else
-#endif
 			printf("	ret\n");
 	}
 
@@ -371,7 +365,7 @@ starg(NODE *p)
 static void
 fcomp(NODE *p)  
 {
-	
+
 	if (p->n_left->n_op == REG) {
 		if (p->n_su & DORIGHT)
 			expand(p, 0, "	fxch\n");
@@ -511,6 +505,8 @@ zzzcode(NODE *p, int c)
 		pr = p->n_qual;
 		if (p->n_op == STCALL || p->n_op == USTCALL)
 			pr += 4;
+		if (p->n_flags & FFPPOP)
+			printf("	fstp	%%st(0)\n");
 		if (p->n_op == UCALL)
 			return; /* XXX remove ZC from UCALL */
 		if (pr)
@@ -532,6 +528,11 @@ zzzcode(NODE *p, int c)
 
 	case 'G': /* Floating point compare */
 		fcomp(p);
+		break;
+
+	case 'H': /* assign of longlong between regs */
+		rmove(DECRA(p->n_right->n_reg, 0),
+		    DECRA(p->n_left->n_reg, 0), LONGLONG);
 		break;
 
 	case 'I': /* float casts */
@@ -577,8 +578,8 @@ zzzcode(NODE *p, int c)
 		else if (p->n_op == RS) ch = "ashr";
 		else if (p->n_op == LS) ch = "ashl";
 		else ch = 0, comperr("ZO");
-		printf("\tcall " EXPREFIX "__%sdi3\n\taddl $%d,%s\n",
-			ch, pr, rnames[ESP]);
+		printf("\tcall " EXPREFIX "__%sdi3%s\n\taddl $%d,%s\n",
+			ch, (kflag ? "@PLT" : ""), pr, rnames[ESP]);
                 break;
 
 	case 'P': /* push hidden argument on stack */

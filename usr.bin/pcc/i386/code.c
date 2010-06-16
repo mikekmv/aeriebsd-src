@@ -86,6 +86,18 @@ defloc(struct symtab *sp)
 			printf("\t.%s %s\n", ga->a1.sarg, name);
 	}
 #endif
+	if (kflag && !ISFTN(t)) {
+		/* Must place aggregates with pointers in relocatable memory */
+		TWORD t2 = t;
+
+		while (ISARY(t2))
+			t2 = DECREF(t2);
+		if (t2 > LDOUBLE) {
+			/* put in reloc memory */
+			printf("\t.section .data.rel.local,\"aw\",@progbits\n");
+			s = lastloc = -1;
+		}
+	}
 	if (nextsect) {
 		printf("	.section %s,\"wa\",@progbits\n", nextsect);
 		nextsect = NULL;
@@ -165,9 +177,7 @@ efcode()
 void
 bfcode(struct symtab **sp, int cnt)
 {
-#ifdef os_win32
 	extern int argstacksize;
-#endif
 	struct symtab *sp2;
 	extern int gotnr;
 	NODE *n, *p;
@@ -185,14 +195,22 @@ bfcode(struct symtab **sp, int cnt)
 				sp[i]->soffset += SZPOINT(INT);
 	}
 
-#ifdef os_win32
+#ifdef GCC_COMPAT
+	if (gcc_get_attr(cftnsp->ssue, GCC_ATYP_STDCALL) != NULL)
+		cftnsp->sflags |= SSTDCALL;
+#endif
+
 	/*
-	 * Count the arguments and mangle name in symbol table as a callee.
+	 * Count the arguments
 	 */
 	argstacksize = 0;
 	if (cftnsp->sflags & SSTDCALL) {
+#ifdef os_win32
+
 		char buf[256];
 		char *name;
+#endif
+
 		for (i = 0; i < cnt; i++) {
 			TWORD t = sp[i]->stype;
 			if (t == STRTY || t == UNIONTY)
@@ -201,12 +219,16 @@ bfcode(struct symtab **sp, int cnt)
 			else
 				argstacksize += szty(t) * SZINT / SZCHAR;
 		}
+#ifdef os_win32
+		/*
+		 * mangle name in symbol table as a callee.
+		 */
 		if ((name = cftnsp->soname) == NULL)
 			name = exname(cftnsp->sname);
 		snprintf(buf, 256, "%s@%d", name, argstacksize);
 		cftnsp->soname = addname(buf);
-	}
 #endif
+	}
 
 	if (kflag) {
 #define	STL	200

@@ -345,6 +345,8 @@ NODE *cxelem(int op, NODE *p);
 NODE *cxconj(NODE *p);
 NODE *cxret(NODE *p, NODE *q);
 NODE *cast(NODE *p, TWORD t, TWORD q);
+NODE *ccast(NODE *p, TWORD t, TWORD u, union dimfun *df, struct suedef *sue);
+
 NODE *builtin_check(NODE *f, NODE *a);
 
 
@@ -426,6 +428,14 @@ enum {	GCC_ATYP_NONE,
 	GCC_ATYP_CONSTRUCTOR,
 	GCC_ATYP_DESTRUCTOR,
 	GCC_ATYP_VISIBILITY,
+	GCC_ATYP_STDCALL,
+	GCC_ATYP_CDECL,
+	GCC_ATYP_WARN_UNUSED_RESULT,
+	GCC_ATYP_USED,
+	GCC_ATYP_NO_INSTR_FUN,
+	GCC_ATYP_NOINLINE,
+	GCC_ATYP_ALIAS,
+	GCC_ATYP_WEAKREF,
 
 	/* other stuff */
 	GCC_ATYP_BOUNDED,	/* OpenBSD extra boundary checks */
@@ -476,6 +486,17 @@ void stabs_struct(struct symtab *, struct suedef *);
 /* to make character constants into character connstants */
 /* this is a macro to defend against cross-compilers, etc. */
 #define CHARCAST(x) (char)(x)
+#endif
+
+/* sometimes int is smaller than pointers */
+#if SZPOINT(CHAR) <= SZINT
+#define INTPTR  INT
+#elif SZPOINT(CHAR) <= SZLONG
+#define INTPTR  LONG
+#elif SZPOINT(CHAR) <= SZLONGLONG
+#define INTPTR  LONGLONG
+#else
+#error int size unknown
 #endif
 
 /*

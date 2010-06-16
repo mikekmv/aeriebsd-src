@@ -1,3 +1,4 @@
+/*	$Id: local.c,v 1.7 2010/06/16 10:50:55 mickey Exp $	*/
 /*
  * Copyright (c) 2008 Michael Shalayeff
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
@@ -356,7 +357,6 @@ clocal(NODE *p)
 		/* Remove redundant PCONV's. Be careful */
 		l = p->n_left;
 		if (l->n_op == ICON) {
-			l->n_lval = (unsigned)l->n_lval;
 			goto delp;
 		}
 		if (l->n_type < LONG) {
@@ -387,6 +387,15 @@ clocal(NODE *p)
 		break;
 		
 	case SCONV:
+		/* Special-case shifts */
+		if (p->n_type == LONG && (l = p->n_left)->n_op == LS && 
+		    l->n_type == INT && l->n_right->n_op == ICON) {
+			p->n_left = l->n_left;
+			p = buildtree(LS, p, l->n_right);
+			nfree(l);
+			break;
+		}
+
 		l = p->n_left;
 
 		/* Float conversions may need extra casts */
@@ -532,14 +541,7 @@ clocal(NODE *p)
 
 	case LS:
 	case RS:
-		/* shift count must be in a char
-		 * unless longlong, where it must be int */
-		if (p->n_type == LONGLONG || p->n_type == ULONGLONG) {
-			if (p->n_right->n_type != INT)
-				p->n_right = block(SCONV, p->n_right, NIL,
-				    INT, 0, MKSUE(INT));
-			break;
-		}
+		/* shift count must be in a char */
 		if (p->n_right->n_type == CHAR || p->n_right->n_type == UCHAR)
 			break;
 		p->n_right = block(SCONV, p->n_right, NIL,
@@ -672,8 +674,8 @@ cendarg()
 int
 cisreg(TWORD t)
 {
-	if (t == FLOAT || t == DOUBLE || t == LDOUBLE)
-		return 0; /* not yet */
+	if (t == LDOUBLE)
+		return 0;
 	return 1;
 }
 
@@ -1045,12 +1047,38 @@ mypragma(char **ary)
 void
 fixdef(struct symtab *sp)
 {
+	struct gcc_attrib *ga;
 #ifdef TLS
 	/* may have sanity checks here */
 	if (gottls)
 		sp->sflags |= STLS;
 	gottls = 0;
 #endif
+#ifdef HAVE_WEAKREF
+	/* not many as'es have this directive */
+	if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_WEAKREF)) != NULL) {
+		char *wr = ga->a1.sarg;
+		char *sn = sp->soname ? sp->soname : sp->sname;
+		if (wr == NULL) {
+			if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_ALIAS))) {
+				wr = ga->a1.sarg;
+			}
+		}
+		if (wr == NULL)
+			printf("\t.weak %s\n", sn);
+		else
+			printf("\t.weakref %s,%s\n", sn, wr);
+	} else
+#endif
+	       if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_ALIAS)) != NULL) {
+		char *an = ga->a1.sarg;
+		char *sn = sp->soname ? sp->soname : sp->sname;
+		char *v;
+
+		v = gcc_get_attr(sp->ssue, GCC_ATYP_WEAK) ? "weak" : "globl";
+		printf("\t.%s %s\n", v, sn);
+		printf("\t.set %s,%s\n", sn, an);
+	}
 	if (alias != NULL && (sp->sclass != PARAM)) {
 		printf("\t.globl %s\n", exname(sp->soname));
 		printf("%s = ", exname(sp->soname));

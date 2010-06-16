@@ -1,4 +1,4 @@
-/*	$Id: reader.c,v 1.8 2010/04/14 11:10:58 mickey Exp $	*/
+/*	$Id: reader.c,v 1.9 2010/06/16 10:50:56 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -319,6 +319,7 @@ deluseless(NODE *p)
 void
 pass2_compile(struct interpass *ip)
 {
+	void deljumps(struct p2env *);
 	struct p2env *p2e = &p2env;
 	int *addrp;
 	MARK mark;
@@ -379,15 +380,6 @@ pass2_compile(struct interpass *ip)
 	}
 #endif
 
-#if 0
-	DLIST_FOREACH(ip, &p2e->ipole, qelem) {
-		if (ip->type != IP_NODE)
-			continue;
-		if (xtemps == 0)
-			walkf(ip->ip_node, deltemp, 0);
-	}
-#endif
-
 	DLIST_INIT(&prepole, qelem);
 	DLIST_FOREACH(ip, &p2e->ipole, qelem) {
 		if (ip->type != IP_NODE)
@@ -408,6 +400,9 @@ pass2_compile(struct interpass *ip)
 
 	optimize(p2e);
 	ngenregs(p2e);
+
+	if (xssaflag && xtemps && xdeljumps)
+		deljumps(p2e);
 
 	DLIST_FOREACH(ip, &p2e->ipole, qelem)
 		emit(ip);
@@ -1089,7 +1084,6 @@ ffld(NODE *p, int down, int *down1, int *down2 )
 # else
 		o = szty(p->n_type)*SZINT - s - UPKFOFF(v);  /* amount to shift */
 #endif
-
 		/* make & mask part */
 
 		if (ISUNSIGNED(ty)) {
@@ -1106,13 +1100,21 @@ ffld(NODE *p, int down, int *down1, int *down2 )
 				/* whew! */
 			}
 		} else {
+			int mz;
+
+			mz = 0;
+#define	SZT(x) case x: mz = SZ ## x; break;
+			switch (ty) {
+			SZT(CHAR) SZT(SHORT) SZT(INT) SZT(LONG)
+			SZT(LONGLONG)
+			}
 			/* must sign-extend, assume RS will do */
 			/* if not, arch must use rewfld() */
-			p->n_left->n_type = INT; /* Ok? */
+			p->n_left->n_type = ty;
 			p->n_op = RS;
-			p->n_right = mklnode(ICON, SZINT-s, 0, INT);
+			p->n_right = mklnode(ICON, mz-s, 0, INT);
 			p->n_left = mkbinode(LS, p->n_left, 
-			    mklnode(ICON, SZINT-s-o, 0, INT), INT);
+			    mklnode(ICON, mz-s-o, 0, INT), ty);
 		}
 	}
 }

@@ -47,12 +47,23 @@
 	int sz__s = BIT2BYTE(sz); ptr = all(sz__s); memset(ptr, 0, sz__s); }
 
 #undef COMPERR_PERM_MOVE
+#ifdef PCC_DEBUG
 #define	RDEBUG(x)	if (rdebug) printf x
 #define	RRDEBUG(x)	if (rdebug > 1) printf x
 #define	RPRINTIP(x)	if (rdebug) printip(x)
 #define	RDEBUGX(x)		x
 #define UDEBUG(x)	if (udebug) printf x
 #define BDEBUG(x)	if (b2debug) printf x
+#define BBDEBUG(x)	if (b2debug > 1) printf x
+#else
+#define	RDEBUG(x)
+#define	RRDEBUG(x)
+#define	RPRINTIP(x)
+#define	RDEBUGX(x)
+#define UDEBUG(x)
+#define BDEBUG(x)
+#define BBDEBUG(x)
+#endif
 
 #define	VALIDREG(p)	(p->n_op == REG && TESTBIT(validregs, regno(p)))
 
@@ -163,7 +174,14 @@ static int *nsavregs, *ndontregs;
 static REGW *
 newblock(NODE *p)
 {
-	REGW *nb = &nblock[regno(p)];
+	REGW *nb;
+
+#ifdef PCC_DEBUG
+	if (regno(p) < tempmin || regno(p) >= tempmax)
+		comperr("temp %p(%d) outside limits (%d-%d)",
+		    p, regno(p), tempmin, tempmax);
+#endif
+	nb = &nblock[regno(p)];
 	if (nb->link.q_forw == 0) {
 		DLIST_INSERT_AFTER(&initial, nb, link);
 #ifdef PCC_DEBUG
@@ -599,11 +617,15 @@ adjSet(REGW *u, REGW *v)
 				return 1;
 		}
 	}
+#ifdef notdef
 	if (u > v)
 		t = v, v = u, u = t;
 	w = edgehash[((intptr_t)u+(intptr_t)v) & (HASHSZ-1)];
+#else
+	w = edgehash[(u->nodnum+v->nodnum)& (HASHSZ-1)];
+#endif
 	for (; w; w = w->next) {
-		if (u == w->u && v == w->v)
+		if ((u == w->u && v == w->v) || (u == w->v && v == w->u))
 			return 1;
 	}
 	return 0;
@@ -615,11 +637,14 @@ adjSetadd(REGW *u, REGW *v)
 {
 	struct AdjSet *w;
 	int x;
-	REGW *t;
 
+#ifdef notdef
 	if (u > v)
 		t = v, v = u, u = t;
 	x = ((intptr_t)u+(intptr_t)v) & (HASHSZ-1);
+#else
+	x = (u->nodnum+v->nodnum)& (HASHSZ-1);
+#endif
 	w = tmpalloc(sizeof(struct AdjSet));
 	w->u = u, w->v = v;
 	w->next = edgehash[x];
@@ -796,12 +821,23 @@ static void
 moveadd(REGW *def, REGW *use)
 {
 	REGM *r;
+	MOVL *w;
 
 	if (def == use)
 		return; /* no move to itself XXX - ``shouldn't happen'' */
 #ifdef PCC_DEBUG
 	RDEBUG(("moveadd: def %d use %d\n", ASGNUM(def), ASGNUM(use)));
 #endif
+
+	/*
+	 * Check if we are already on move list.
+	 * XXX How can that happen ???
+	 */
+	for (w = MOVELIST(def); w; w = w->next) {
+		if ((w->regm->src == def && w->regm->dst == use) ||
+		    (w->regm->src == use && w->regm->dst == def))
+			return; /* already there XXX reverse? */
+	}
 
 	r = WORKLISTMOVEADD(use, def);
 	MOVELISTADD(def, r);
@@ -1329,30 +1365,45 @@ dce(struct p2env *p2e)
 	BITALLOC(lvar, tmpalloc, xbits);
 	DLIST_FOREACH(bb, &p2e->bblocks, bbelem) {
 		bbnum = bb->bbnum;
-		BDEBUG(("DCE bblock %d, start %p last %p\n",
+		BBDEBUG(("DCE bblock %d, start %p last %p\n",
 		    bbnum, bb->first, bb->last));
 		SETCOPY(lvar, out[bbnum], i, xbits);
 		for (ip = bb->last; ; ip = DLIST_PREV(ip, qelem)) {
 			if (ip->type == IP_NODE && deldead(ip->ip_node, lvar)) {
 				if ((p = deluseless(ip->ip_node)) == NULL) {
-#ifdef notyet
-					if (ip == bb->last) {
-						bb->last =
-						    DLIST_PREV(ip, qelem);
+					struct interpass *previp;
+					struct basicblock *prevbb;
+
+					if (ip == bb->first && ip == bb->last) {
+						/* Remove basic block */
+						previp = DLIST_PREV(ip, qelem);
+						DLIST_REMOVE(ip, qelem);
+						prevbb = DLIST_PREV(bb, bbelem);
+						DLIST_REMOVE(bb, bbelem);
+						bb = prevbb;
 					} else if (ip == bb->first) {
 						bb->first =
 						    DLIST_NEXT(ip, qelem);
+						DLIST_REMOVE(ip, qelem);
+					} else if (ip == bb->last) {
+						previp = DLIST_PREV(ip, qelem);
+						DLIST_REMOVE(ip, qelem);
+						bb->last = previp;
+						bb = DLIST_PREV(bb, bbelem);
+					} else {
+						previp = DLIST_NEXT(ip, qelem);
+						DLIST_REMOVE(ip, qelem);
+						ip = previp;
+						fix++;
+						continue;
 					}
-					DLIST_REMOVE(ip, qelem);
-#else
-					ip->type = IP_ASM;
-					ip->ip_asm = "";
-#endif
 					fix++;
-					BDEBUG(("DCE ip %p deleted\n", ip));
+					BDEBUG(("bb %d: DCE ip %p deleted\n",
+					    bbnum, ip));
+					break;
 				} else while (!DLIST_ISEMPTY(&prepole, qelem)) {
 
-					BDEBUG(("DCE doing ip prepend\n"));
+					BDEBUG(("bb %d: DCE doing ip prepend\n", bbnum));
 #ifdef notyet
 					struct interpass *tipp;
 					tipp = DLIST_NEXT(&prepole, qelem);
@@ -1488,7 +1539,6 @@ Build(struct p2env *p2e)
 	struct basicblock bbfake;
 	struct interpass *ip;
 	struct basicblock *bb;
-	struct cfgnode *cn;
 	bittype *saved;
 	int i, j, again;
 
@@ -1504,7 +1554,7 @@ Build(struct p2env *p2e)
 		bbfake.first = DLIST_NEXT(ipole, qelem);
 		DLIST_INIT(&p2e->bblocks, bbelem);
 		DLIST_INSERT_AFTER(&p2e->bblocks, &bbfake, bbelem);
-		SLIST_INIT(&bbfake.children);
+		bbfake.ch[0] = bbfake.ch[1] = NULL;
 	}
 
 	/* Just fetch space for the temporaries from stack */
@@ -1543,9 +1593,10 @@ livagain:
 		DLIST_FOREACH_REVERSE(bb, &p2e->bblocks, bbelem) {
 			i = bb->bbnum;
 			SETCOPY(saved, out[i], j, xbits);
-			SLIST_FOREACH(cn, &bb->children, cfgelem) {
-				SETSET(out[i], in[cn->bblock->bbnum], j, xbits);
-			}
+			if (bb->ch[0])
+				SETSET(out[i], in[bb->ch[0]->bblock->bbnum], j, xbits);
+			if (bb->ch[1])
+				SETSET(out[i], in[bb->ch[1]->bblock->bbnum], j, xbits);
 			SETCMP(again, saved, out[i], j, xbits);
 			SETCOPY(saved, in[i], j, xbits);
 			SETCOPY(in[i], out[i], j, xbits);
@@ -1819,7 +1870,7 @@ Conservative(REGW *u, REGW *v)
 			continue;
 		if (xncl[CLASS(n)] == regK[CLASS(n)])
 			continue;
-		if (!trivially_colorable(n))
+		if (!trivially_colorable(n) || ONLIST(n) == &precolored)
 			xncl[CLASS(n)]++;
 		if (xncl[CLASS(n)] < regK[CLASS(n)])
 			continue;
@@ -1838,7 +1889,7 @@ Conservative(REGW *u, REGW *v)
 				break;
 		if (ww)
 			continue;
-		if (!trivially_colorable(n))
+		if (!trivially_colorable(n) || ONLIST(n) == &precolored)
 			xncl[CLASS(n)]++;
 		if (xncl[CLASS(n)] < regK[CLASS(n)])
 			continue;
@@ -2027,12 +2078,33 @@ Freeze(void)
 {
 	REGW *u;
 
-	/* XXX
-	 * Should check if the moves to freeze have exactly the same 
+	/*
+	 * To find out:
+	 * Check if the moves to freeze have exactly the same 
 	 * interference edges.  If they do, coalesce them instead, it
 	 * may free up other nodes that they interfere with.
 	 */
-	u = POPWLIST(freezeWorklist);
+
+	/*
+	 * Select nodes to freeze first by using following criteria:
+	 * - Trivially colorable
+	 * - Single or few moves to less trivial nodes.
+	 */
+	DLIST_FOREACH(u, &freezeWorklist, link) {
+		if (u >= &nblock[tempmax] || u < &nblock[tempmin])
+			continue; /* No short range temps */
+		if (!trivially_colorable(u))
+			continue; /* Prefer colorable nodes */
+		/* Check for at most two move-related nodes */
+		if (u->r_moveList->next && u->r_moveList->next->next)
+			continue;
+		/* Ok, remove node */
+		DLIST_REMOVE(u, link);
+		u->r_onlist = 0;
+		break;
+	}
+	if (u == &freezeWorklist) /* Nothing matched criteria, just take one */
+		u = POPWLIST(freezeWorklist);
 	PUSHWLIST(u, simplifyWorklist);
 #ifdef PCC_DEBUG
 	RDEBUG(("Freeze %d\n", ASGNUM(u)));
@@ -2148,6 +2220,36 @@ paint(NODE *p, void *arg)
 	}
 }
 
+/*
+ * See if this node have a move that has been removed in Freeze
+ * but as we can make use of anyway.
+ */
+static int
+colfind(int okColors, REGW *r)
+{
+	REGW *w;
+	MOVL *m;
+	int c;
+
+	for (m = MOVELIST(r); m; m = m->next) {
+		if ((w = m->regm->src) == r)
+			w = m->regm->dst;
+		w = GetAlias(w);
+		if (ONLIST(w) != &coloredNodes && ONLIST(w) != &precolored)
+			continue; /* Not yet colored */
+		c = aliasmap(CLASS(w), COLOR(w));
+		if ((c & okColors) == 0) {
+			RDEBUG(("colfind: Failed coloring from %d\n", ASGNUM(w)));
+			continue;
+		}
+		okColors &= c;
+		RDEBUG(("colfind: Recommend color from %d\n", ASGNUM(w)));
+		break;
+		
+	}
+	return ffs(okColors)-1;
+}
+
 static void
 AssignColors(struct interpass *ip)
 {
@@ -2188,9 +2290,9 @@ AssignColors(struct interpass *ip)
 			RDEBUG(("Spilling node %d\n", ASGNUM(w)));
 #endif
 		} else {
-			PUSHWLIST(w, coloredNodes);
-			c = ffs(okColors)-1;
+			c = colfind(okColors, w);
 			COLOR(w) = color2reg(c, CLASS(w));
+			PUSHWLIST(w, coloredNodes);
 #ifdef PCC_DEBUG
 			RDEBUG(("Coloring %d with %s, free %x\n",
 			    ASGNUM(w), rnames[COLOR(w)], okColors));

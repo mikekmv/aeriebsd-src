@@ -141,13 +141,8 @@ void line(void);
 usch *sheap(const char *fmt, ...);
 void xwarning(usch *);
 void xerror(usch *);
-#ifdef HAVE_CPP_VARARG_MACRO_GCC
 #define warning(...) xwarning(sheap(__VA_ARGS__))
 #define error(...) xerror(sheap(__VA_ARGS__))
-#else
-#define warning printf
-#define error printf
-#endif
 void expmac(struct recur *);
 int cinput(void);
 void getcmnt(void);

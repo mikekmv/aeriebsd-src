@@ -1251,11 +1251,7 @@ callsys(char *f, char *v[])
 		len = strlen(Bflag) + 8;
 		a = malloc(len);
 	}
-#ifdef HAVE_VFORK
 	if ((p = vfork()) == 0) {
-#else
-	if ((p = fork()) == 0) {
-#endif
 		if (Bflag) {
 			if (a == NULL) {
 				error("callsys: malloc failed");

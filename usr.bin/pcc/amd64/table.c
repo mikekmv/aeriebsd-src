@@ -533,11 +533,13 @@ struct optab table[] = {
 		"	Ob AR,AL\n", },
 
 /* m/r |= const */
+#ifdef notdef	/* amd64 lacks immediate 64-bit simple ops */
 { OPSIMP,	INAREG|FOREFF|FORCC,
 	SAREG|SNAME|SOREG,	TLL|TPOINT,
 	SCON,	TANY,
 		0,	RLEFT|RESCC,
 		"	Oq AR,AL\n", },
+#endif
 
 { OPSIMP,	INAREG|FOREFF|FORCC,
 	SAREG|SNAME|SOREG,	TWORD,
@@ -1081,12 +1083,6 @@ struct optab table[] = {
 { OPLOG,	FORCC,
 	SBREG,			TDOUBLE|TFLOAT,
 	SBREG|SNAME|SOREG,	TDOUBLE|TFLOAT,
-		0,	 	RESCC,
-		"	ucomisZg AR,AL\n	jp LC\n", },
-
-{ OPLOG,	FORCC,
-	SBREG|SNAME|SOREG,	TDOUBLE|TFLOAT,
-	SBREG,			TDOUBLE|TFLOAT,
 		0,	 	RESCC,
 		"	ucomisZg AR,AL\n	jp LC\n", },
 

@@ -268,6 +268,9 @@ defid(NODE *ap, int class)
 		p->ssue = sueget(p->ssue);
                 p->ssue->suega = gcc_attr_parse(ap->n_right);
                 ap->n_right = bcon(0);
+		if (pragma_renamed)
+			p->soname = pragma_renamed;
+		pragma_renamed = NULL;
         }
 #endif
 
@@ -480,6 +483,15 @@ redec:			uerror("redeclaration of %s", p->sname);
 
 done:
 	fixdef(p);	/* Leave last word to target */
+#ifndef HAVE_WEAKREF
+	{
+		struct gcc_attrib *ga;
+
+		/* Refer renamed function */
+		if ((ga = gcc_get_attr(p->ssue, GCC_ATYP_WEAKREF)))
+			p->soname = ga->a1.sarg;
+	}
+#endif
 #ifdef PCC_DEBUG
 	if (ddebug)
 		printf( "	sdf, ssue, offset: %p, %p, %d\n",
@@ -1741,11 +1753,7 @@ typenode(NODE *p)
 		tc.type = UCHAR;
 
 #ifdef GCC_COMPAT
-	if (pragma_allpacked && tc.saved && ISSOU(tc.saved->n_type)) {
-		/* Only relevant for structs and unions */
-		q = bdty(CALL, bdty(NAME, "packed"), bcon(pragma_allpacked));
-		tc.posta = (tc.posta == NIL ? q : cmop(tc.posta, q));
-	} else if (pragma_packed) {
+	if (pragma_packed) {
 		q = bdty(CALL, bdty(NAME, "packed"), bcon(pragma_packed));
 		tc.posta = (tc.posta == NIL ? q : cmop(tc.posta, q));
 	}
@@ -2099,6 +2107,16 @@ alprint(union arglist *al, int in)
 		printf("end arglist\n");
 }
 #endif
+static int
+suemeq(struct suedef *s1, struct suedef *s2)
+{
+
+	GETSUE(s1, s1);
+	GETSUE(s2, s2);
+
+	return (s1->suem == s2->suem);
+}
+
 /*
  * Do prototype checking and add conversions before calling a function.
  * Argument f is function and a is a CM-separated list of arguments.
@@ -2282,7 +2300,7 @@ incomp:					uerror("incompatible types for arg %d",
 				goto out;
 #endif
 			} else if (ISSOU(BTYPE(type))) {
-				if (apole->node->n_sue->suem != al[1].sue->suem)
+				if (!suemeq(apole->node->n_sue, al[1].sue))
 					goto incomp;
 			}
 			goto out;
@@ -2302,7 +2320,7 @@ incomp:					uerror("incompatible types for arg %d",
 		/* Check for struct/union compatibility */
 		if (type == arrt) {
 			if (ISSOU(BTYPE(type))) {
-				if (apole->node->n_sue->suem == al[1].sue->suem)
+				if (suemeq(apole->node->n_sue, al[1].sue))
 					goto out;
 			} else
 				goto out;
@@ -2728,10 +2746,10 @@ sspstart()
 	q = clocal(q);
 
 	p = block(NAME, NIL, NIL, INT, 0, MKSUE(INT));
+	p->n_qual = VOL >> TSHIFT;
 	p->n_sp = lookup(stack_chk_canary, SNORMAL);
 	defid(p, AUTO);
 	p = clocal(p);
-
 	ecomp(buildtree(ASSIGN, p, q));
 }
 

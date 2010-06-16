@@ -24,7 +24,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -189,6 +188,7 @@ static void oldargs(NODE *p);
 static void bfix(int a);
 static void uawarn(NODE *p, char *s);
 static int con_e(NODE *p);
+static void dainit(NODE *d, NODE *a);
 
 
 
@@ -222,7 +222,7 @@ struct savbc {
 		elist type_sq cf_spec merge_attribs
 		parameter_declaration abstract_declarator initializer
 		parameter_type_list parameter_list addrlbl
-		declaration_specifiers omd
+		declaration_specifiers designation
 		specifier_qualifier_list merge_specifiers
 		identifier_list arg_param_list type_qualifier_list
 		designator_list designator xasm oplist oper cnstr funtype
@@ -298,18 +298,7 @@ cf_spec:	   C_CLASS { $$ = $1; }
 
 typeof:		   C_TYPEOF '(' term ')' {
 #ifdef GCC_COMPAT
-			struct symtab *sp;
-
-			if ($3->n_op == NAME) {
-				sp = lookup((char *)$3->n_sp, SNOCREAT);
-				if (sp != NULL) {
-					$3->n_type = sp->stype;
-					$3->n_df = sp->sdf;
-					$3->n_sue = sp->ssue;
-				} else
-					uerror("typeof on undeclared variable");
-			}
-			$$ = tyof($3);
+			$$ = tyof(eve($3));
 #endif
 		} /* COMPAT_GCC */
  /*COMPAT_GCC*/	|  C_TYPEOF '(' cast_type ')' {
@@ -405,13 +394,14 @@ declarator:	   '*' declarator { $$ = bdty(UMUL, $2); }
 
 incblev:	   {
 			++blevel;
+			$$ = 0;
 			if (blevel == 1) {
 				ctval = tvaloff;
 				argoff = ARGINIT;
-				$$ = Wshadow;
-				Wshadow = 0;
 			} else if (blevel == 2)
 				$$ = argoff;
+			$$ = ($$ << 1) | Wshadow;
+			Wshadow = 0;
 		}
 		;
 
@@ -485,8 +475,15 @@ parameter_declaration:
 			tfree($1);
 		}
 		|  declaration_specifiers {
+			if ($1->n_op == CM) {
+				$$ = $1->n_left;
+				uawarn($1->n_right, "parameter_declaration2");
+				nfree($1);
+				$1 = $$;
+			}
 			$$ = bdty(NAME, NULL);
 			$$->n_sue = NULL; /* no attributes */
+
 			$$ = tymerge($1, $$);
 			tfree($1);
 		}
@@ -613,7 +610,16 @@ moe:		   C_NAME {  moedef($1); }
 		|  C_TYPENAME '=' e { enummer = con_e($3); moedef($1); }
 		;
 
-struct_dcl:	   str_head '{' struct_dcl_list '}' { $$ = dclstruct($1); }
+struct_dcl:	   str_head '{' struct_dcl_list '}' {
+			NODE *p;
+
+			$$ = dclstruct($1);
+			if (pragma_allpacked) {
+				p = bdty(CALL, bdty(NAME, "packed"),
+				    bcon(pragma_allpacked));
+				$$ = cmop(biop(ATTRIB, p, 0), $$);
+			}
+		}
 		|  C_STRUCT attr_var C_NAME {  $$ = rstruct($3,$1);
 			if ($2) {
 				if (attrwarn)
@@ -755,12 +761,13 @@ initializer:	   e %prec ',' {  $$ = eve($1); }
 		|  ibrace '}' { asginit(bcon(0)); $$ = NULL; }
 		;
 
-init_list:	   designation initializer { asginit($2); }
-		|  init_list ','  designation initializer { asginit($4); }
+init_list:	   designation initializer { dainit($1, $2); }
+		|  init_list ','  designation initializer { dainit($3, $4); }
 		;
 
-designation:	   designator_list '=' { desinit($1); }
-		|  { /* empty */ }
+designation:	   designator_list '=' { desinit($1); $$ = NIL; }
+		|  '[' e C_ELLIPSIS e ']' '=' { $$ = biop(CM, $2, $4); }
+		|  { $$ = NIL; }
 		;
 
 designator_list:   designator { $$ = $1; }
@@ -771,7 +778,7 @@ designator:	   '[' e ']' {
 			int ie = con_e($2);
 			if (ie < 0) {
 				uerror("designator must be non-negative");
-				$2 = 0;
+				ie = 0;
 			}
 			$$ = biop(LB, NIL, bcon(ie));
 		}
@@ -780,10 +787,6 @@ designator:	   '[' e ']' {
 				uerror("invalid designator");
 			$$ = bdty(NAME, $2);
 		}
-		;
-
-omd:		   { $$ = NIL; }
-		|  designator_list { $$ = $1; }
 		;
 
 optcomma	:	/* VOID */
@@ -1085,6 +1088,11 @@ e:		   e ',' e { $$ = biop(COMOP, $1, $3); }
 		|  e '?' e ':' e {
 			$$=biop(QUEST, $1, biop(COLON, $3, $5));
 		}
+		|  e '?' ':' e {
+			NODE *p = tempnode(0, $1->n_type, $1->n_df, $1->n_sue);
+			$$ = biop(COLON, ccopy(p), $4);
+			$$=biop(QUEST, biop(ASSIGN, p, $1), $$);
+		}
 		|  e C_OROR e { $$ = biop($2, $1, $3); }
 		|  e C_ANDAND e { $$ = biop($2, $1, $3); }
 		|  e '|' e { $$ = biop(OR, $1, $3); }
@@ -1148,27 +1156,21 @@ term:		   term C_INCOP {  $$ = biop($2, $1, bcon(1)); }
 		|  term C_STROP C_NAME { $$ = biop($2, $1, bdty(NAME, $3)); }
 		|  term C_STROP C_TYPENAME { $$ = biop($2, $1, bdty(NAME, $3));}
 		|  C_NAME %prec C_SIZEOF /* below ( */{ $$ = bdty(NAME, $1); }
-		|  PCC_OFFSETOF  '(' cast_type ',' C_NAME omd ')' {
-			struct symtab S;
-			NODE *p, *q;
-
-			p = bdty(NAME, $5);
-			if ($6 != NULL) {
-				for (q = $6; q->n_left; q = q->n_left)
-					;
-				q->n_left = p;
-				p = $6;
+		|  PCC_OFFSETOF  '(' cast_type ',' term ')' {
+			$3->n_type = INCREF($3->n_type);
+			$3 = biop(CAST, $3, bcon(0));
+			if ($5->n_op == NAME) {
+				$$ = biop(STREF, $3, $5);
+			} else {
+				NODE *p = $5;
+				while (p->n_left->n_op != NAME)
+					p = p->n_left;
+				p->n_left = biop(STREF, $3, p->n_left);
+				$$ = $5;
 			}
-			S.stype = $3->n_type;
-			S.sdf = $3->n_df;
-			S.ssue = $3->n_sue;
-			S.sclass = AUTO;
-			beginit(&S);
-			tfree($3);
-			desinit(p); /* Sets upp correct place on stack */
-			$$ = bcon(0);
-			$$->n_lval = scalinit($$)/SZCHAR;
-			endictx();
+			$$ = biop(ADDROF, $$, NIL);
+			$3 = block(NAME, NIL, NIL, INTPTR, 0, MKSUE(INTPTR));
+			$$ = biop(CAST, $3, $$);
 		}
 		|  C_ICON { $$ = $1; }
 		|  C_FCON { $$ = $1; }
@@ -1190,7 +1192,7 @@ xa:		  { $<intval>$ = inattr; inattr = 0; }
 clbrace:	   '{'	{ $$ = clbrace($<nodep>-1); }
 		;
 
-string:		   C_STRING { widestr = $1[0] == 'L'; $$ = stradd("", $1); }
+string:		   C_STRING { widestr = 0; $$ = stradd("", $1); }
 		|  string C_STRING { $$ = stradd($1, $2); }
 		;
 
@@ -2092,6 +2094,7 @@ eve(NODE *p)
 	case TYPE:
 	case ICON:
 	case FCON:
+	case TEMP:
 		return p;
 
 	case CLOP:
@@ -2112,9 +2115,9 @@ eve(NODE *p)
 void
 bfix(int a)
 {
-        if (blevel == 1) {
-                Wshadow = a;
-        } else if (blevel == 2)
+	Wshadow = a & 1;
+	a = a >> 1;
+        if (blevel == 2)
                 argoff = a;
         blevel--;
 }
@@ -2133,4 +2136,26 @@ uawarn(NODE *p, char *s)
 	if (attrwarn)
 		werror("unhandled %s attribute", s);
 	tfree(p);
+}
+
+static void
+dainit(NODE *d, NODE *a)
+{
+	if (d == NULL) {
+		asginit(a);
+	} else if (d->n_op == CM) {
+		int is = con_e(d->n_left);
+		int ie = con_e(d->n_right);
+		int i;
+
+		nfree(d);
+		if (ie < is)
+			uerror("negative initializer range");
+		desinit(biop(LB, NIL, bcon(is)));
+		for (i = is; i < ie; i++)
+			asginit(ccopy(a));
+		asginit(a);
+	} else {
+		cerror("dainit");
+	}
 }

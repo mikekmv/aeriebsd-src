@@ -63,6 +63,7 @@ static struct kw {
 /* 17 */{ "__real__", NULL, 0 },
 /* 18 */{ "__imag__", NULL, 0 },
 /* 19 */{ "__builtin_offsetof", NULL, PCC_OFFSETOF },
+/* 20 */{ "__PRETTY_FUNCTION__", NULL, 0 },
 	{ NULL, NULL, 0 },
 };
 
@@ -127,6 +128,9 @@ gcc_keyword(char *str, NODE **n)
 	struct kw *kwp;
 	int i;
 
+	if (inattr)
+		return 0;
+
 	for (i = 0, kwp = kw; kwp->name; kwp++, i++)
 		if (str == kwp->ptr)
 			break;
@@ -149,8 +153,9 @@ gcc_keyword(char *str, NODE **n)
 			cunput(*--tw);
 		return -1;
 	case 7: /* __FUNCTION__ */
+	case 20: /* __PRETTY_FUNCTION__ */
 		if (cftnsp == NULL) {
-			uerror("__FUNCTION__ outside function");
+			uerror("%s outside function", kwp->name);
 			yylval.strp = "";
 		} else
 			yylval.strp = cftnsp->sname; /* XXX - not C99 */
@@ -197,60 +202,52 @@ gcc_keyword(char *str, NODE **n)
 #define	A2_STR	0x200
 #define	A3_STR	0x400
 
+#ifdef __MSC__
+#define	CS(x)
+#else
+#define CS(x) [x] =
+#endif
+
 struct atax {
 	int typ;
 	char *name;
 } atax[GCC_ATYP_MAX] = {
-#ifndef __MSC__
-	[GCC_ATYP_ALIGNED] =	{ A_0ARG|A_1ARG, "aligned" },
-	[GCC_ATYP_PACKED] =	{ A_0ARG|A_1ARG, "packed" },
-	[GCC_ATYP_SECTION] = 	{ A_1ARG|A1_STR, "section" },
-	[GCC_ATYP_UNUSED] =	{ A_0ARG, "unused" },
-	[GCC_ATYP_DEPRECATED] =	{ A_0ARG, "deprecated" },
-	[GCC_ATYP_NORETURN] =	{ A_0ARG, "noreturn" },
-	[GCC_ATYP_FORMAT] =	{ A_3ARG|A1_NAME, "format" },
-	[GCC_ATYP_BOUNDED] =	{ A_3ARG|A_MANY|A1_NAME, "bounded" },
-	[GCC_ATYP_NONNULL] =	{ A_MANY, "nonnull" },
-	[GCC_ATYP_SENTINEL] =	{ A_0ARG|A_1ARG, "sentinel" },
-	[GCC_ATYP_WEAK] =	{ A_0ARG, "weak" },
-	[GCC_ATYP_FORMATARG] =	{ A_1ARG, "format_arg" },
-	[GCC_ATYP_GNU_INLINE] =	{ A_0ARG, "gnu_inline" },
-	[GCC_ATYP_MALLOC] =	{ A_0ARG, "malloc" },
-	[GCC_ATYP_NOTHROW] =	{ A_0ARG, "nothrow" },
-	[GCC_ATYP_MODE] =	{ A_1ARG|A1_NAME, "mode" },
-	[GCC_ATYP_CONST] =	{ A_0ARG, "const" },
-	[GCC_ATYP_PURE] =	{ A_0ARG, "pure" },
-	[GCC_ATYP_CONSTRUCTOR] ={ A_0ARG, "constructor" },
-	[GCC_ATYP_DESTRUCTOR] =	{ A_0ARG, "destructor" },
-	[GCC_ATYP_VISIBILITY] =	{ A_1ARG|A1_STR, "visibility" },
-#else
-	{ 0, NULL },
-	{ A_0ARG|A_1ARG, "aligned" },
-	{ A_0ARG, "packed" },
-	{ A_1ARG|A1_STR, "section" },
-	{ 0, NULL }, 	/* GCC_ATYP_TRANSP_UNION */
-	{ A_0ARG, "unused" },
-	{ A_0ARG, "deprecated" },
-	{ 0, NULL }, 	/* GCC_ATYP_MAYALIAS */
-	{ A_1ARG|A1_NAME, "mode" },
-	{ A_0ARG, "noreturn" },
-	{ A_3ARG|A1_STR, "format" },
-	{ A_MANY, "nonnull" },
-	{ A_0ARG|A_1ARG, "sentinel" },
-	{ A_0ARG, "weak" },
-	{ A_1ARG, "format_arg" },
-	{ A_0ARG, "gnu_inline" },
-	{ A_0ARG, "malloc" },
-	{ A_0ARG, "nothrow" },
-	{ A_0ARG, "const" },
-	{ A_0ARG, "pure" },
-	{ A_0ARG, "constructor" },
-	{ A_0ARG, "destructor" },
-	{ A_1ARG|A1_STR, "visibility" },
-	{ A_3ARG|A_MANY|A1_STR, "bounded" },
-	{ 0, NULL },	/* ATTR_COMPLEX */
-#endif
+	CS(GCC_ATYP_NONE)	{ 0, NULL },
+	CS(GCC_ATYP_ALIGNED)	{ A_0ARG|A_1ARG, "aligned" },
+	CS(GCC_ATYP_PACKED)	{ A_0ARG|A_1ARG, "packed" },
+	CS(GCC_ATYP_SECTION)	{ A_1ARG|A1_STR, "section" },
+	CS(GCC_ATYP_TRANSP_UNION) { A_0ARG, "transparent_union" },
+	CS(GCC_ATYP_UNUSED)	{ A_0ARG, "unused" },
+	CS(GCC_ATYP_DEPRECATED)	{ A_0ARG, "deprecated" },
+	CS(GCC_ATYP_MAYALIAS)	{ A_0ARG, "may_alias" },
+	CS(GCC_ATYP_MODE)	{ A_1ARG|A1_NAME, "mode" },
+	CS(GCC_ATYP_NORETURN)	{ A_0ARG, "noreturn" },
+	CS(GCC_ATYP_FORMAT)	{ A_3ARG|A1_NAME, "format" },
+	CS(GCC_ATYP_NONNULL)	{ A_MANY, "nonnull" },
+	CS(GCC_ATYP_SENTINEL)	{ A_0ARG|A_1ARG, "sentinel" },
+	CS(GCC_ATYP_WEAK)	{ A_0ARG, "weak" },
+	CS(GCC_ATYP_FORMATARG)	{ A_1ARG, "format_arg" },
+	CS(GCC_ATYP_GNU_INLINE)	{ A_0ARG, "gnu_inline" },
+	CS(GCC_ATYP_MALLOC)	{ A_0ARG, "malloc" },
+	CS(GCC_ATYP_NOTHROW)	{ A_0ARG, "nothrow" },
+	CS(GCC_ATYP_CONST)	{ A_0ARG, "const" },
+	CS(GCC_ATYP_PURE)	{ A_0ARG, "pure" },
+	CS(GCC_ATYP_CONSTRUCTOR) { A_0ARG, "constructor" },
+	CS(GCC_ATYP_DESTRUCTOR)	{ A_0ARG, "destructor" },
+	CS(GCC_ATYP_VISIBILITY)	{ A_1ARG|A1_STR, "visibility" },
+	CS(GCC_ATYP_STDCALL)	{ A_0ARG, "stdcall" },
+	CS(GCC_ATYP_CDECL)	{ A_0ARG, "cdecl" },
+	CS(GCC_ATYP_WARN_UNUSED_RESULT) { A_0ARG, "warn_unused_result" },
+	CS(GCC_ATYP_USED)	{ A_0ARG, "used" },
+	CS(GCC_ATYP_NO_INSTR_FUN) { A_0ARG, "no_instrument_function" },
+	CS(GCC_ATYP_NOINLINE)	{ A_0ARG, "noinline" },
+	CS(GCC_ATYP_ALIAS)	{ A_1ARG|A1_STR, "alias" },
+	CS(GCC_ATYP_WEAKREF)	{ A_0ARG|A_1ARG|A1_STR, "weakref" },
+
+	CS(GCC_ATYP_BOUNDED)	{ A_3ARG|A_MANY|A1_NAME, "bounded" },
+	CS(ATTR_COMPLEX)	{ 0, NULL },
 };
+
 #if SZPOINT(CHAR) == SZLONGLONG
 #define	GPT	LONGLONG
 #else
@@ -411,12 +408,13 @@ gcc_ap_t *
 gcc_attr_parse(NODE *p)
 {
 	gcc_ap_t *gap;
-	NODE *q;
+	NODE *q, *r;
 	int i, sz;
 
-	/* count number of elems */
+	/* count number of elems and build tower to the left */
 	for (q = p, i = 1; q->n_op == CM; q = q->n_left, i++)
-		;
+		if (q->n_right->n_op == CM)
+			r = q->n_right, q->n_right = q->n_left, q->n_left = r;
 
 	/* get memory for struct */
 	sz = sizeof(struct gcc_attr_pack) + sizeof(struct gcc_attrib) * i;
