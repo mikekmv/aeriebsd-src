@@ -191,12 +191,16 @@ pfr_initialize(void)
 {
 	pool_init(&pfr_ktable_pl, sizeof(struct pfr_ktable), 0, 0, 0,
 	    "pfrktable", NULL);
+	pool_setipl(&pfr_ktable_pl, IPL_NET);
 	pool_init(&pfr_kentry_pl, sizeof(struct pfr_kentry), 0, 0, 0,
 	    "pfrkentry", NULL);
+	pool_setipl(&pfr_kentry_pl, IPL_NET);
 	pool_init(&pfr_kentry_pl2, sizeof(struct pfr_kentry), 0, 0, 0,
 	    "pfrkentry2", NULL);
+	pool_setipl(&pfr_kentry_pl2, IPL_NET);
 	pool_init(&pfr_kcounters_pl, sizeof(struct pfr_kcounters), 0, 0, 0,
 	    "pfrkcounters", NULL);
+	pool_setipl(&pfr_kcounters_pl, IPL_NET);
 
 	pfr_sin.sin_len = sizeof(pfr_sin);
 	pfr_sin.sin_family = AF_INET;

@@ -57,6 +57,7 @@ typedef struct pool pool_t;
 # define pool_get(pool, flags)	malloc(*(pool))
 # define pool_put(pool, item)	free(item)
 # define pool_init(pool, size, a, ao, f, m, p)	(*(pool)) = (size)
+# define pool_setipl(a,b)
 
 # ifdef PFDEBUG
 #  include <sys/stdarg.h>
@@ -294,8 +295,10 @@ pf_osfp_initialize(void)
 {
 	pool_init(&pf_osfp_entry_pl, sizeof(struct pf_osfp_entry), 0, 0, 0,
 	    "pfosfpen", &pool_allocator_nointr);
+	pool_setipl(&pf_osfp_entry_pl, IPL_NET);
 	pool_init(&pf_osfp_pl, sizeof(struct pf_os_fingerprint), 0, 0, 0,
 	    "pfosfp", &pool_allocator_nointr);
+	pool_setipl(&pf_osfp_pl, IPL_NET);
 	SLIST_INIT(&pf_osfp_list);
 }
 
