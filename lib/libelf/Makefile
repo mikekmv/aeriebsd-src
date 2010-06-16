@@ -1,6 +1,6 @@
 
 LIB=	elf
-SRCS=	elf32.c elf64.c
+SRCS=	elf32.c elf64.c checkoff.c
 CFLAGS+=-Wall
 CLEANFILES+=elf32.c elf64.c
 WANTLINT=

@@ -38,6 +38,8 @@ struct elf_symtab {
 	u_long	nsyms;		/* number of symbols in the table */
 };
 
+int	elf_checkoff(const char *, FILE *, off_t, off_t);
+
 int	elf32_fix_header(Elf32_Ehdr *eh);
 int	elf32_fix_note(Elf32_Ehdr *, Elf32_Note *);
 Elf32_Shdr*elf32_load_shdrs(const char *, FILE *, off_t, const Elf32_Ehdr *);
@@ -61,10 +63,6 @@ char	*elf32_strload(const char *, FILE *, off_t, const Elf32_Ehdr *,
 	    const Elf32_Shdr *shdr, const char *, const char *, size_t *);
 int	elf32_symload(struct elf_symtab *, FILE *, off_t,
 	    int (*func)(struct elf_symtab *, int, void *, void *), void *arg);
-int	elf32_strip(const char *, FILE *, const Elf32_Ehdr *,
-	    struct stat *, off_t *);
-int	elf32_symseed(const char *, FILE *, const Elf32_Ehdr *,
-	    struct stat *, off_t *, int);
 
 int	elf64_fix_header(Elf64_Ehdr *eh);
 int	elf64_fix_note(Elf64_Ehdr *, Elf64_Note *);
@@ -89,28 +87,9 @@ char	*elf64_strload(const char *, FILE *, off_t, const Elf64_Ehdr *,
 	    const Elf64_Shdr *shdr, const char *, const char *, size_t *);
 int	elf64_symload(struct elf_symtab *, FILE *, off_t,
 	    int (*func)(struct elf_symtab *, int, void *, void *), void *arg);
-int	elf64_strip(const char *, FILE *, const Elf64_Ehdr *,
-	    struct stat *, off_t *);
-int	elf64_symseed(const char *, FILE *, const Elf64_Ehdr *,
-	    struct stat *, off_t *, int);
 
 struct dwarf_nebula *elf_dwarfnebula(unsigned char, const char *, FILE *);
 int	dwarf_addr2line(struct dwarf_nebula *, const char *, FILE *,
 	    long long, char **, char **, int *);
-
-inline unsigned int
-elf_hash(const unsigned char *name)
-{
-	int hash, v;
-
-	while (*name) {
-		hash = (hash << 4) + *name++;
-		if ((v = hash & 0xf0000000))
-			hash ^= hash >> 24;
-		hash &= ~v;
-	}
-
-	return hash;
-}
 
 #endif /* _LIBELF_H_ */

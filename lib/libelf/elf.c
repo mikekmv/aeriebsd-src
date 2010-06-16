@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.25 2010/06/09 11:37:51 mickey Exp $";
+    "$ABSD: elf.c,v 1.26 2010/06/09 11:41:08 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -58,8 +58,6 @@ static const char rcsid[] =
 #define	elf_strload	elf32_strload
 #define	elf_symloadx	elf32_symloadx
 #define	elf_symload	elf32_symload
-#define	elf_symseed	elf32_symseed
-#define	elf_strip	elf32_strip
 #define	elf2nlist	elf32_2nlist
 #define	elf_shn2type	elf32_shn2type
 #elif ELFSIZE == 64
@@ -92,8 +90,6 @@ static const char rcsid[] =
 #define	elf_strload	elf64_strload
 #define	elf_symloadx	elf64_symloadx
 #define	elf_symload	elf64_symload
-#define	elf_symseed	elf64_symseed
-#define	elf_strip	elf64_strip
 #define	elf2nlist	elf64_2nlist
 #define	elf_shn2type	elf64_shn2type
 #else
@@ -167,23 +163,27 @@ elf_fix_note(Elf_Ehdr *eh, Elf_Note *en)
 }
 
 Elf_Shdr *
-elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
+elf_load_shdrs(const char *fn, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 {
 	Elf_Shdr *shdr;
 
+	if (elf_checkoff(fn, fp, foff, (off_t)eh->e_phnum * eh->e_phentsize))
+		return NULL;
+
+	/* XXX we might as well induce some shnum&shentsize limits */
 	if ((shdr = calloc(eh->e_shnum, eh->e_shentsize)) == NULL) {
 		warn("calloc(%d, %d)", (int)eh->e_shnum, (int)eh->e_shentsize);
 		return (NULL);
 	}
 
 	if (fseeko(fp, foff + eh->e_shoff, SEEK_SET)) {
-		warn("%s: fseeko", name);
+		warn("%s: fseeko", fn);
 		free(shdr);
 		return (NULL);
 	}
 
 	if (fread(shdr, eh->e_shentsize, eh->e_shnum, fp) != eh->e_shnum) {
-		warnx("%s: premature EOF", name);
+		warnx("%s: premature EOF", fn);
 		free(shdr);
 		return (NULL);
 	}
@@ -192,16 +192,16 @@ elf_load_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 }
 
 int
-elf_save_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
+elf_save_shdrs(const char *fn, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Shdr *shdr)
 {
 	if (fseeko(fp, foff + eh->e_shoff, SEEK_SET)) {
-		warn("%s: fseeko", name);
+		warn("%s: fseeko", fn);
 		return (1);
 	}
 
 	if (fwrite(shdr, eh->e_shentsize, eh->e_shnum, fp) != eh->e_shnum) {
-		warnx("%s: premature EOF", name);
+		warnx("%s: premature EOF", fn);
 		return (1);
 	}
 
@@ -209,23 +209,27 @@ elf_save_shdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 }
 
 Elf_Phdr *
-elf_load_phdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
+elf_load_phdrs(const char *fn, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 {
 	Elf_Phdr *phdr;
 
+	if (elf_checkoff(fn, fp, foff, (off_t)eh->e_phnum * eh->e_phentsize))
+		return NULL;
+
+	/* XXX we might as well induce some shnum&shentsize limits */
 	if ((phdr = calloc(eh->e_phnum, eh->e_phentsize)) == NULL) {
 		warn("calloc(%d, %d)", (int)eh->e_phnum, (int)eh->e_phentsize);
 		return (NULL);
 	}
 
 	if (fseeko(fp, foff + eh->e_phoff, SEEK_SET)) {
-		warn("%s: fseeko", name);
+		warn("%s: fseeko", fn);
 		free(phdr);
 		return (NULL);
 	}
 
 	if (fread(phdr, eh->e_phentsize, eh->e_phnum, fp) != eh->e_phnum) {
-		warnx("%s: premature EOF", name);
+		warnx("%s: premature EOF", fn);
 		free(phdr);
 		return (NULL);
 	}
@@ -234,16 +238,16 @@ elf_load_phdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh)
 }
 
 int
-elf_save_phdrs(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
+elf_save_phdrs(const char *fn, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Phdr *phdr)
 {
 	if (fseeko(fp, foff + eh->e_phoff, SEEK_SET)) {
-		warn("%s: fseeko", name);
+		warn("%s: fseeko", fn);
 		return (1);
 	}
 
 	if (fwrite(phdr, eh->e_phentsize, eh->e_phnum, fp) != eh->e_phnum) {
-		warnx("%s: premature EOF", name);
+		warnx("%s: premature EOF", fn);
 		return (1);
 	}
 
@@ -497,7 +501,7 @@ elf_size(const Elf_Ehdr *eh, const Elf_Shdr *shdr,
 
 	for (i = 0; i < eh->e_shnum; i++) {
 		if (!(shdr[i].sh_flags & SHF_ALLOC))
-			;
+			continue;
 		else if (shdr[i].sh_flags & SHF_EXECINSTR ||
 		    !(shdr[i].sh_flags & SHF_WRITE))
 			*ptext += shdr[i].sh_size;
@@ -511,7 +515,7 @@ elf_size(const Elf_Ehdr *eh, const Elf_Shdr *shdr,
 }
 
 char *
-elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
+elf_strload(const char *fn, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Shdr *shdr, const char *shstr, const char *strtab,
     size_t *pstabsize)
 {
@@ -523,7 +527,7 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 		    !strcmp(shstr + shdr[i].sh_name, strtab)) {
 			*pstabsize = shdr[i].sh_size;
 			if (*pstabsize > SIZE_T_MAX) {
-				warnx("%s: corrupt file", name);
+				warnx("%s: corrupt file", fn);
 				return (NULL);
 			}
 
@@ -532,7 +536,7 @@ elf_strload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 				break;
 			} else if (pread(fileno(fp), ret, *pstabsize,
 			    foff + shdr[i].sh_offset) != *pstabsize) {
-				warn("pread: %s", name);
+				warn("pread: %s", fn);
 				free(ret);
 				ret = NULL;
 				break;
@@ -604,20 +608,20 @@ elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
 }
 
 char *
-elf_shstrload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
+elf_shstrload(const char *fn, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Shdr *shdr)
 {
 	size_t shstrsize;
 	char *shstr;
 
 	if (!eh->e_shstrndx || eh->e_shstrndx >= eh->e_shnum) {
-		warnx("%s: invalid header", name);
+		warnx("%s: invalid header", fn);
 		return NULL;
 	}
 
 	shstrsize = shdr[eh->e_shstrndx].sh_size;
 	if (shstrsize == 0) {
-		warnx("%s: no section name list", name);
+		warnx("%s: no section name list", fn);
 		return (NULL);
 	}
 
@@ -627,13 +631,13 @@ elf_shstrload(const char *name, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 	}
 
 	if (fseeko(fp, foff + shdr[eh->e_shstrndx].sh_offset, SEEK_SET)) {
-		warn("%s: fseeko", name);
+		warn("%s: fseeko", fn);
 		free(shstr);
 		return (NULL);
 	}
 
 	if (fread(shstr, shstrsize, 1, fp) != 1) {
-		warnx("%s: premature EOF", name);
+		warnx("%s: premature EOF", fn);
 		free(shstr);
 		return (NULL);
 	}
@@ -667,81 +671,6 @@ elf_symload(struct elf_symtab *es, FILE *fp, off_t foff,
 			return rv;
 		}
 	}
-
-	return (0);
-}
-
-int
-elf_strip(const char *name, FILE *fp, const Elf_Ehdr *eh,
-    struct stat *sb, off_t *nszp)
-{
-	Elf_Shdr *shdr, *sp;
-	char *shstr;
-	off_t off;
-	size_t sz;
-	int i, sn, rv = 0;
-
-	if (!(shdr = elf_load_shdrs(name, fp, 0, eh)))
-		return 1;
-
-	if (!(shstr = elf_shstrload(name, fp, 0, eh, shdr))) {
-		free(shdr);
-		return 1;
-	}
-
-	sn = 0; sz = 0; off = 0;
-	for (i = eh->e_shnum, sp = shdr; i--; sp++) {
-		if (off && sp->sh_type == SHT_STRTAB) {
-			if (sp->sh_offset > sb->st_size ||
-			    sp->sh_offset < off + sz) {
-				warnx("%s: corrupt section header", name);
-				rv = 1;
-				break;
-			}
-			sz = sp->sh_offset + sp->sh_size - off;
-			continue;
-		}
-
-		if (sp->sh_type != SHT_SYMTAB || sp->sh_addr ||
-		    strcmp(shstr + sp->sh_name, ELF_SYMTAB)) {
-			if (off) {
-				warnx("%s: symtab in the middle", name);
-				rv = 1;
-				break;
-			}
-			continue;
-		}
-
-		sn = (int)(sp - shdr);
-		if (sp->sh_offset > sb->st_size) {
-			warnx("%s: corrupt section header", name);
-			rv = 1;
-			break;
-		}
-		off = sp->sh_offset;
-		sz = sp->sh_size;
-	}
-
-	/* do the dew */
-	if (!rv && sn) {
-		shdr[sn].sh_type = SHT_NULL;
-		shdr[sn+1].sh_type = SHT_NULL;
-		elf_fix_shdrs(eh, shdr);
-		if (elf_save_shdrs(name, fp, 0, eh, shdr))
-			rv = 1;
-		else
-			*nszp = off - 2 * sizeof *shdr;
-	}
-
-	free(shstr);
-	free(shdr);
-	return (rv);
-}
-
-int
-elf_symseed(const char *name, FILE *fp, const Elf_Ehdr *eh,
-    struct stat *sb, off_t *nszp, int strip)
-{
 
 	return (0);
 }
