@@ -437,15 +437,9 @@ trap(struct trapframe frame)
 			goto we_re_toast;
 #ifdef LOCKDEBUG
 		/* If we page-fault while in scheduler, we're doomed. */
-#ifdef notyet
-		if (simple_lock_held(&sched_lock))
-#else
 		if (__mp_lock_held(&sched_lock))
-#endif
 			goto we_re_toast;
 #endif
-
-		pcb = &p->p_addr->u_pcb;
 #if 0
 		/* XXX - check only applies to 386's and 486's with WP off */
 		if (frame.tf_err & PGEX_P)
@@ -460,6 +454,7 @@ trap(struct trapframe frame)
 
 		cr2 = rcr2();
 		KERNEL_PROC_LOCK(p);
+		pcb = &p->p_addr->u_pcb;
 		vm = p->p_vmspace;
 		if (vm == NULL)
 			goto we_re_toast;
@@ -485,25 +480,23 @@ trap(struct trapframe frame)
 		}
 #endif
 
-		onfault = p->p_addr->u_pcb.pcb_onfault;
-		p->p_addr->u_pcb.pcb_onfault = NULL;
+		onfault = pcb->pcb_onfault;
+		pcb->pcb_onfault = NULL;
 		rv = uvm_fault(map, va, 0, ftype);
-		p->p_addr->u_pcb.pcb_onfault = onfault;
+		pcb->pcb_onfault = onfault;
 
 		if (rv == 0) {
 			if (map != kernel_map)
 				uvm_grow(p, va);
-			if (type == T_PAGEFLT) {
-				KERNEL_PROC_UNLOCK();
-				return;
-			}
 			KERNEL_PROC_UNLOCK(p);
+			if (type == T_PAGEFLT)
+				return;
 			goto out;
 		}
 
 		if (type == T_PAGEFLT) {
 			if (pcb->pcb_onfault != 0) {
-				KERNEL_PROC_UNLOCK();
+				KERNEL_PROC_UNLOCK(p);
 				goto copyfault;
 			}
 			printf("uvm_fault(%p, 0x%lx, 0, %d) -> %x\n",
