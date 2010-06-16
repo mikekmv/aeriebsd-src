@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2005 Henning Brauer <henning@openbsd.org>
  * Copyright 2005 Ryan McBride <mcbride@openbsd.org>
@@ -90,7 +89,6 @@ pfi_initialize(void)
 
 	pool_init(&pfi_addr_pl, sizeof(struct pfi_dynaddr), 0, 0, 0,
 	    "pfiaddrpl", &pool_allocator_nointr);
-	pool_setipl(&pfi_addr_pl, IPL_NET);
 	pfi_buffer_max = 64;
 	pfi_buffer = malloc(pfi_buffer_max * sizeof(*pfi_buffer),
 	    PFI_MTYPE, M_WAITOK);

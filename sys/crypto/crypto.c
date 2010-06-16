@@ -639,7 +639,12 @@ void
 crypto_done(struct cryptop *crp)
 {
 	crp->crp_flags |= CRYPTO_F_DONE;
-	crp->crp_callback(crp);
+	if (crp->crp_flags & CRYPTO_F_NOQUEUE)
+		/* not from the crypto queue, wakeup the userland process */
+		crp->crp_callback(crp);
+	else
+		workq_add_task(crypto_workq, 0,
+		    (workq_fn)crp->crp_callback, crp, NULL);
 }
 
 /*
@@ -648,7 +653,7 @@ crypto_done(struct cryptop *crp)
 void
 crypto_kdone(struct cryptkop *krp)
 {
-	krp->krp_callback(krp);
+	workq_add_task(crypto_workq, 0, (workq_fn)krp->krp_callback, krp, NULL);
 }
 
 int

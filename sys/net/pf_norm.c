@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2001 Niels Provos <provos@citi.umich.edu>
  * All rights reserved.
@@ -133,19 +132,14 @@ pf_normalize_init(void)
 {
 	pool_init(&pf_frent_pl, sizeof(struct pf_frent), 0, 0, 0, "pffrent",
 	    NULL);
-	pool_setipl(&pf_frent_pl, IPL_NET);
 	pool_init(&pf_frag_pl, sizeof(struct pf_fragment), 0, 0, 0, "pffrag",
 	    NULL);
-	pool_setipl(&pf_frag_pl, IPL_NET);
 	pool_init(&pf_cache_pl, sizeof(struct pf_fragment), 0, 0, 0,
 	    "pffrcache", NULL);
-	pool_setipl(&pf_cache_pl, IPL_NET);
 	pool_init(&pf_cent_pl, sizeof(struct pf_frcache), 0, 0, 0, "pffrcent",
 	    NULL);
-	pool_setipl(&pf_cent_pl, IPL_NET);
 	pool_init(&pf_state_scrub_pl, sizeof(struct pf_state_scrub), 0, 0, 0,
 	    "pfstscr", NULL);
-	pool_setipl(&pf_state_scrub_pl, IPL_NET);
 
 	pool_sethiwat(&pf_frag_pl, PFFRAG_FRAG_HIWAT);
 	pool_sethardlimit(&pf_frent_pl, PFFRAG_FRENT_HIWAT, NULL, 0);
