@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)append.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: append.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
+    "$ABSD: append.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -78,7 +78,7 @@ append(char **argv)
 	SETCF(0, 0, afp, archive, 0);
 
 	if (options & AR_C) {
-		/* ain't needed for a.out but a small price to pay */
+		/* ain't no need for a.out but a small price to pay */
 		if ((ntsz = mknametab(argv)) == 0)
 			;
 

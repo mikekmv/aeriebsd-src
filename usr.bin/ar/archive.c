@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: archive.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
+    "$ABSD: archive.c,v 1.5 2009/11/01 18:18:50 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -300,7 +300,7 @@ get_namtab(FILE *afp)
 	if (!(p = malloc(chdr.size + 1)))
 		err(1, "%s: alloc nametab", archive);
 
-	if (fread(p, chdr.size, (size_t)1, afp) != 1)
+	if (fread(p, chdr.size, 1, afp) != 1)
 		err(1, "%s: read nametab", archive);
 	p[chdr.size] = '\0';
 
@@ -313,12 +313,13 @@ get_namtab(FILE *afp)
 		err(1, "%s: alloc nametab index", archive);
 
 	for (nt = nametab, pp = p; *p; p++)
-		if (*p == '\n') {
+		/* also skip the tail padding */
+		if (*p == '\n' && p[-1] != '\n') {
 			*nt++ = pp;
 			if (p[-1] == '/')
 				p[-1] = '\0';
-			*p++ = '\0';
-			pp = p;
+			*p = '\0';
+			pp = p + 1;
 		}
 	*nt = NULL;
 }

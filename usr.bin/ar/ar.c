@@ -42,7 +42,7 @@ static const char copyright[] =
 static char sccsid[] = "@(#)ar.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: ar.c,v 1.6 2009/07/30 12:16:13 mickey Exp $";
+    "$ABSD: ar.c,v 1.7 2009/11/01 18:04:18 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -63,7 +63,7 @@ u_int options;
 
 const char *archive, *envtmp, *posarg;
 const char *posname;
-static void badoptions(char *);
+void badoptions(char *);
 void usage(void);
 
 /*
@@ -207,20 +207,21 @@ main(int argc, char *argv[])
 		}
 		posname = rname(posarg);
 	}
-	/* -d only valid with -Tv. */
-	if (options & AR_D && options & ~(AR_D|AR_TR|AR_V))
+	/* -d only valid with -sTv. */
+	if (options & AR_D && options & ~(AR_D|AR_TR|AR_S|AR_V))
 		badoptions("-d");
-	/* -m only valid with -abiTv. */
-	if (options & AR_M && options & ~(AR_A|AR_B|AR_M|AR_TR|AR_V))
+	/* -m only valid with -abiTsv. */
+	if (options & AR_M && options & ~(AR_A|AR_B|AR_M|AR_TR|AR_S|AR_V))
 		badoptions("-m");
 	/* -p only valid with -Tv. */
 	if (options & AR_P && options & ~(AR_P|AR_TR|AR_V))
 		badoptions("-p");
-	/* -q only valid with -cTv. */
-	if (options & AR_Q && options & ~(AR_C|AR_Q|AR_TR|AR_V))
+	/* -q only valid with -csTv. */
+	if (options & AR_Q && options & ~(AR_C|AR_Q|AR_TR|AR_S|AR_V))
 		badoptions("-q");
-	/* -r only valid with -abcuTv. */
-	if (options & AR_R && options & ~(AR_A|AR_B|AR_C|AR_R|AR_U|AR_TR|AR_V))
+	/* -r only valid with -abcuTsv. */
+	if (options & AR_R &&
+	    options & ~(AR_A|AR_B|AR_C|AR_R|AR_U|AR_TR|AR_S|AR_V))
 		badoptions("-r");
 	/* -t only valid with -Tv. */
 	if (options & AR_T && options & ~(AR_T|AR_TR|AR_V))
@@ -237,7 +238,7 @@ main(int argc, char *argv[])
 	exit((*fcall)(argv));
 }
 
-static void
+void
 badoptions(char *arg)
 {
 
