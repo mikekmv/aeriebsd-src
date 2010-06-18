@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: sysctl.c,v 1.2 2010/06/05 11:33:16 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,9 +52,6 @@ static const char rcsid[] = "$ABSD$";
 #include <netinet/ip_carp.h>
 #include <netinet/icmp6.h>
 #include <netinet6/pim6_var.h>
-#include <netipx/ipx.h>
-#include <netipx/ipx_var.h>
-#include <netipx/spx_var.h>
 
 #include <ddb/db_var.h>
 
@@ -116,9 +113,6 @@ const struct ctlname eip[] = ETHERIPCTL_NAMES;
 const struct ctlname ipcomp[] = IPCOMPCTL_NAMES;
 const struct ctlname carp[] = CARPCTL_NAMES;
 const struct ctlname route[] = CTL_NET_RT_NAMES;
-const struct ctlname ipxproto[] = CTL_IPXPROTO_NAMES;
-const struct ctlname ipx[] = IPXCTL_NAMES;
-const struct ctlname spx[] = SPXCTL_NAMES;
 const struct ctlname inet6[] = IPV6CTL_NAMES;
 const struct ctlname ip6proto[] = CTL_IPV6PROTO_NAMES;
 const struct ctlname ip6[] = IPV6CTL_NAMES;
@@ -525,13 +519,6 @@ const struct ctlist kmemlists[] = {
 	{ NULL },
 	{ NULL },
 	{ pim6,		NULL,	PIM6CTL_MAXID },
-}, ipxlists[IPXPROTO_MAXID] = {
-	{ ipx,		NULL,		IPXCTL_MAXID },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-	{ NULL },
-	{ spx,		NULL,		SPXCTL_MAXID },
 }, netlists[NET_MAXID] = {
 	{ NULL },
 	{ NULL },	/* unix */
@@ -556,7 +543,7 @@ const struct ctlist kmemlists[] = {
 	{ NULL },	/* coip */
 	{ NULL },	/* cnt */
 	{ NULL },	/* rtip */
-	{ ipxproto,	ipxlists,	IPXPROTO_MAXID },
+	{ NULL },	/* ipx */
 	{ ip6proto,	inet6lists,	IPV6PROTO_MAXID },
 	{ NULL },	/* pip */
 	{ NULL },	/* isdn */
