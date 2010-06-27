@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2001,2003,2005-2006 Todd C. Miller <Todd.Miller@courtesan.com>
  *
@@ -40,7 +39,7 @@
 #include <crc.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: md5.c,v 1.2 2008/12/26 18:50:18 mickey Exp $";
+static const char rcsid[] = "$ABSD: md5.c,v 1.3 2009/05/26 20:59:16 mickey Exp $";
 #endif
 
 #define STYLE_NORMAL	0
@@ -433,7 +432,8 @@ digest_string(char *string, struct hash_list *hl)
 
 	TAILQ_FOREACH(hf, hl, tailq) {
 		hf->init(&context);
-		hf->update(&context, string, (unsigned int)strlen(string));
+		hf->update(&context, (unsigned char *)string,
+		    (unsigned int)strlen(string));
 		digest_end(hf, &context, digest, sizeof(digest),
 		    hf->base64);
 		digest_printstr(hf, string, digest);
@@ -766,11 +766,11 @@ digest_test(struct hash_list *hl)
 
 		for (i = 0; i < 8; i++) {
 			hf->init(&context);
-			hf->update((void *)&context, test_strings[i],
-			    (unsigned int)strlen(test_strings[i]));
+			hf->update(&context, test_strings[i],
+			    (unsigned int)strlen((char *)test_strings[i]));
 			digest_end(hf, &context, digest, sizeof(digest),
 			    hf->base64);
-			digest_printstr(hf, test_strings[i], digest);
+			digest_printstr(hf, (char *)test_strings[i], digest);
 		}
 
 		/* Now simulate a string of a million 'a' characters. */
