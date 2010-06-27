@@ -335,8 +335,8 @@ starg(NODE *p)
 {
 	FILE *fp = stdout;
 
-	fprintf(fp, "	subl $%d,%%esp\n", p->n_stsize);
 #if defined(MACHOABI)
+	fprintf(fp, "	subl $%d,%%esp\n", p->n_stsize);
 	fprintf(fp, "	subl $4,%%esp\n");
 	fprintf(fp, "	pushl $%d\n", p->n_stsize);
 	expand(p, 0, "	pushl AL\n");
@@ -350,6 +350,7 @@ starg(NODE *p)
 	}
 	fprintf(fp, "	addl $16,%%esp\n");
 #else
+	fprintf(fp, "	subl $%d,%%esp\n", (p->n_stsize+3) & ~3);
 	fprintf(fp, "	pushl $%d\n", p->n_stsize);
 	expand(p, 0, "	pushl AL\n");
 	expand(p, 0, "	leal 8(%esp),A1\n");
@@ -440,7 +441,7 @@ argsiz(NODE *p)
 	if (t == LDOUBLE)
 		return 12;
 	if (t == STRTY || t == UNIONTY)
-		return p->n_stsize;
+		return (p->n_stsize+3) & ~3;
 	comperr("argsiz");
 	return 0;
 }
@@ -543,6 +544,10 @@ zzzcode(NODE *p, int c)
 		ulltofp(p);
 		break;
 
+	case 'K': /* Load longlong reg into another reg */
+		rmove(regno(p), DECRA(p->n_reg, 0), LONGLONG);
+		break;
+
 	case 'M': /* Output sconv move, if needed */
 		l = getlr(p, 'L');
 		/* XXX fixneed: regnum */
@@ -578,8 +583,13 @@ zzzcode(NODE *p, int c)
 		else if (p->n_op == RS) ch = "ashr";
 		else if (p->n_op == LS) ch = "ashl";
 		else ch = 0, comperr("ZO");
+#ifdef ELFABI
 		printf("\tcall " EXPREFIX "__%sdi3%s\n\taddl $%d,%s\n",
 			ch, (kflag ? "@PLT" : ""), pr, rnames[ESP]);
+#else
+		printf("\tcall " EXPREFIX "__%sdi3\n\taddl $%d,%s\n",
+			ch, pr, rnames[ESP]);
+#endif
                 break;
 
 	case 'P': /* push hidden argument on stack */
@@ -1150,8 +1160,8 @@ rmove(int s, int d, TWORD t)
 		    memcmp(rnames[d]+3, rnames[dh]+1, 3) != 0)
 			comperr("rmove dest error");
 #define	SW(x,y) { int i = x; x = y; y = i; }
-		if (sl == dh || sh == dl) {
-			/* Swap if moving to itself */
+		if (sh == dl) {
+			/* Swap if overwriting */
 			SW(sl, sh);
 			SW(dl, dh);
 		}

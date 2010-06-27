@@ -24,6 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -107,6 +108,7 @@
 %token	C_DEFAULT
 %token	C_CASE
 %token	C_SIZEOF
+%token	C_ALIGNOF
 %token	C_ENUM
 %token	C_ELLIPSIS
 %token	C_QUALIFIER
@@ -147,9 +149,9 @@ int oldstyle;	/* Current function being defined */
 static struct symtab *xnf;
 extern int enummer, tvaloff, inattr;
 extern struct rstack *rpole;
-static int ctval, widestr;
+static int ctval, widestr, alwinl;
 NODE *cftnod;
-static int attrwarn = 0;
+static int attrwarn = 1;
 
 #define	NORETYP	SNOCREAT /* no return type, save in unused field in symtab */
 
@@ -333,20 +335,14 @@ attribute:	   {
 declarator:	   '*' declarator { $$ = bdty(UMUL, $2); }
 		|  '*' type_qualifier_list declarator {
 			$$ = bdty(UMUL, $3);
-			if ($2->n_op == QUALIFIER)
+			if ($2->n_op == QUALIFIER) {
 				$$->n_qual = $2->n_type;
-			else
-				werror("FIXME: attributes discarding qualifiers");
-			tfree($2);
+				tfree($2);
+			} else
+				$$ = cmop($$, $2);
 		}
 		|  C_NAME { $$ = bdty(NAME, $1); }
-		|  '(' attr_spec_list declarator ')' {
-			$$ = $3;
-			if (attrwarn)
-				werror("unhandled declarator attribute");
-			tfree($2);
-
-		}
+		|  '(' attr_spec_list declarator ')' { $$ = cmop($3, $2); }
 		|  '(' declarator ')' { $$ = $2; }
 		|  declarator '[' nocon_e ']' {
 			if ((blevel == 0 || rpole != NULL) && !nncon($3))
@@ -374,7 +370,10 @@ declarator:	   '*' declarator { $$ = bdty(UMUL, $2); }
 		|  declarator '[' ']' { $$ = biop(LB, $1, bcon(NOOFFSET)); }
 		|  declarator '[' '*' ']' { $$ = biop(LB, $1, bcon(NOOFFSET)); }
 		|  declarator '(' incblev parameter_type_list ')' {
-			$$ = bdty(CALL, $1, $4);
+			if ($1->n_op == CM) {
+				$1->n_left = bdty(CALL, $1->n_left, $4);
+			} else
+				$$ = bdty(CALL, $1, $4);
 			bfix($3);
 			if (blevel > 0)
 				symclear(blevel);
@@ -455,24 +454,33 @@ parameter_list:	   parameter_declaration { $$ = $1; }
  */
 parameter_declaration:
 		   declaration_specifiers declarator attr_var {
+			NODE *p;
 			if ($1->n_op == CM) {
-				NODE *p = $1->n_left;
-				uawarn($1->n_right, "parameter_declaration1");
-				nfree($1);
-				$1 = p;
-			}
-			if ($1->n_lval != SNULL && $1->n_lval != REGISTER)
+				p = $1->n_left;
+			} else
+				p = $1;
+			if (p->n_lval != SNULL && p->n_lval != REGISTER)
 				uerror("illegal parameter class");
-			$2->n_sue = NULL; /* no attributes */
-			$$ = tymerge($1, $2);
-			nfree($1);
-			uawarn($3, "parameter_declaration");
-			funargs($$);
-		}
-		|  declaration_specifiers abstract_declarator { 
-			$2->n_sue = NULL; /* no attributes */
 			$$ = tymerge($1, $2);
 			tfree($1);
+			uawarn($3, "parameter_declaration");
+			funargs($$);
+			if ($$->n_op == CM) {
+				p = $$->n_left;
+				tfree($$->n_right);
+				nfree($$);
+				$$ = p;
+			}
+		}
+		|  declaration_specifiers abstract_declarator { 
+			$$ = tymerge($1, $2);
+			tfree($1);
+			if ($$->n_op == CM) {
+				NODE *p = $$->n_left;
+				tfree($$->n_right);
+				nfree($$);
+				$$ = p;
+			}
 		}
 		|  declaration_specifiers {
 			if ($1->n_op == CM) {
@@ -659,7 +667,7 @@ struct_dcl_list:   struct_declaration
 
 struct_declaration:
 		   specifier_qualifier_list struct_declarator_list optsemi {
-			nfree($1);
+			tfree($1);
 		}
 		;
 
@@ -682,9 +690,9 @@ struct_declarator_list:
 		;
 
 struct_declarator: declarator attr_var {
-			tymerge($<nodep>0, $1);
-			soumemb($1, (char *)$1->n_sp, 0);
-			nfree($1);
+			NODE *p = tymerge($<nodep>0, $1);
+			soumemb(p, (char *)$1->n_sp, 0);
+			tfree(p);
 			if ($2) {
 				if (attrwarn)
 					werror("unhandled struct_declarator attribute");
@@ -1143,6 +1151,12 @@ term:		   term C_INCOP {  $$ = biop($2, $1, bcon(1)); }
 			$$ = biop(SZOF, $4, bcon(1));
 			inattr = $<intval>2;
 		}
+		|  C_ALIGNOF xa '(' cast_type ')' {
+			int al = talign($4->n_type, $4->n_sue);
+			$$ = bcon(al/SZCHAR);
+			inattr = $<intval>2;
+			tfree($4);
+		}
 		| '(' cast_type ')' clbrace init_list optcomma '}' {
 			endinit();
 			$$ = bdty(NAME, $4);
@@ -1536,11 +1550,16 @@ init_declarator(NODE *tn, NODE *p, int assign, NODE *a)
 static void
 funargs(NODE *p)
 {
-	if (p->n_op == ELLIPSIS)
+	NODE *q = p;
+	
+	if (p->n_op == CM)
+		q = p->n_left;
+
+	if (q->n_op == ELLIPSIS)
 		return;
-	p->n_sp = lookup((char *)p->n_sp, 0);/* XXX */
-	if (ISFTN(p->n_type))
-		p->n_type = INCREF(p->n_type);
+	q->n_sp = lookup((char *)q->n_sp, 0);/* XXX */
+	if (ISFTN(q->n_type))
+		q->n_type = INCREF(q->n_type);
 	defid(p, PARAM);
 }
 
@@ -1585,12 +1604,12 @@ fundef(NODE *tp, NODE *p)
 		ftnarg(q);
 	}
 
+	p = typ = tymerge(tp, p);
 #ifdef PCC_DEBUG
 	if (blevel)
 		cerror("blevel != 0");
 #endif
 
-	p = typ = tymerge(tp, p);
 #ifdef GCC_COMPAT
 	if (p->n_op == CM) {
 		if (a != NULL)
@@ -1617,6 +1636,12 @@ fundef(NODE *tp, NODE *p)
 
 	cftnsp = s;
 	defid(p, class);
+	if (p->n_op == CM &&
+	    gcc_get_attr(p->n_left->n_sue, GCC_ATYP_ALW_INL)) {
+		alwinl = 1;
+		if (xtemps == 0) alwinl |= 2;
+		xtemps = 1;
+	}
 	prolab = getlab();
 	if ((c = cftnsp->soname) == NULL)
 		c = addname(exname(cftnsp->sname));
@@ -1639,6 +1664,8 @@ fend(void)
 		cerror("function level error");
 	ftnend();
 	fun_inline = 0;
+	if (alwinl & 2) xtemps = 0;
+	alwinl = 0;
 	cftnsp = NULL;
 }
 

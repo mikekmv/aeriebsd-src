@@ -64,6 +64,8 @@ static struct kw {
 /* 18 */{ "__imag__", NULL, 0 },
 /* 19 */{ "__builtin_offsetof", NULL, PCC_OFFSETOF },
 /* 20 */{ "__PRETTY_FUNCTION__", NULL, 0 },
+/* 21 */{ "__alignof__", NULL, C_ALIGNOF },
+/* 22 */{ "__typeof", NULL, C_TYPEOF },
 	{ NULL, NULL, 0 },
 };
 
@@ -127,6 +129,10 @@ gcc_keyword(char *str, NODE **n)
 	char tlbuf[TLLEN], *tw;
 	struct kw *kwp;
 	int i;
+
+	/* XXX hack, should pass everything in expressions */
+	if (str == kw[21].ptr)
+		return kw[21].rv;
 
 	if (inattr)
 		return 0;
@@ -243,6 +249,8 @@ struct atax {
 	CS(GCC_ATYP_NOINLINE)	{ A_0ARG, "noinline" },
 	CS(GCC_ATYP_ALIAS)	{ A_1ARG|A1_STR, "alias" },
 	CS(GCC_ATYP_WEAKREF)	{ A_0ARG|A_1ARG|A1_STR, "weakref" },
+	CS(GCC_ATYP_ALLOCSZ)	{ A_1ARG|A_2ARG, "alloc_size" },
+	CS(GCC_ATYP_ALW_INL)	{ A_0ARG, "always_inline" },
 
 	CS(GCC_ATYP_BOUNDED)	{ A_3ARG|A_MANY|A1_NAME, "bounded" },
 	CS(ATTR_COMPLEX)	{ 0, NULL },
@@ -527,7 +535,7 @@ dump_attr(gcc_ap_t *gap)
 	if (gap == NULL)
 		return;
 	for (i = 0; i < gap->num; i++) {
-		printf("%d: ", gap->ga[i].atype);
+		printf("%s: ", atax[gap->ga[i].atype].name);
 		printf("%d %d %d", gap->ga[i].a1.iarg,
 		    gap->ga[i].a2.iarg, gap->ga[i].a3.iarg);
 		printf("\n");

@@ -864,8 +864,37 @@ conval(NODE *p, int o, NODE *q)
 	default:
 		return(0);
 		}
+	/* Do the best in making everything type correct after calc */
+	if (p->n_sp == NULL && q->n_sp == NULL)
+		p->n_lval = valcast(p->n_lval, p->n_type);
 	return(1);
 	}
+
+/*
+ * Ensure that v matches the type t; sign- or zero-extended
+ * as suitable to CONSZ.
+ * Only to be used for integer types.
+ */
+CONSZ
+valcast(CONSZ v, TWORD t)
+{
+	CONSZ r;
+
+	if (t < CHAR || t > ULONGLONG)
+		return v; /* cannot cast */
+
+	if (t >= LONGLONG)
+		return v; /* already largest */
+
+#define M(x)	((((1ULL << ((x)-1)) - 1) << 1) + 1)
+#define	NOTM(x)	(~M(x))
+#define	SBIT(x)	(1ULL << ((x)-1))
+
+	r = v & M(btdims[t].suesize);
+	if (!ISUNSIGNED(t) && (SBIT(btdims[t].suesize) & r))
+		r = r | NOTM(btdims[t].suesize);
+	return r;
+}
 
 /*
  * Checks p for the existance of a pun.  This is called when the op of p

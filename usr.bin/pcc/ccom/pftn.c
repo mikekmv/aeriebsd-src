@@ -651,7 +651,8 @@ done:	cendarg();
 	plabel(prolab); /* after prolog, used in optimization */
 	retlab = getlab();
 	bfcode(parr, nparams);
-	if (fun_inline && xinline)
+	if (fun_inline &&
+	    (xinline || gcc_get_attr(cftnsp->ssue, GCC_ATYP_ALW_INL)))
 		inline_args(parr, nparams);
 	plabel(getlab()); /* used when spilling */
 	if (parlink)
@@ -971,7 +972,12 @@ soumemb(NODE *n, char *name, int class)
 		rpole->rb = sp;
 	else
 		lsp->snext = sp;
-	n->n_sp = sp;
+#ifdef GCC_COMPAT
+	if (n->n_op == CM)
+		n->n_left->n_sp = sp;
+	else
+#endif
+		n->n_sp = sp;
 	if ((class & FIELD) == 0)
 		class = rpole->rsou == STNAME ? MOS : MOU;
 	defid(n, class);
@@ -1821,11 +1827,29 @@ tymerge(NODE *typ, NODE *idp)
 	NODE *gcs;
 
 	if (typ->n_op == CM) {
-		/* has attributes */
+		/* has storage attributes */
 		gcs = ccopy(typ->n_right);
 		typ = typ->n_left;
 	} else
 		gcs = NULL;
+	if (idp->n_op == CM) {
+		/* has type-specific attributes */
+		if (gcs != NIL) {
+			p = idp->n_right;
+			if (p->n_op != CM) {
+				gcs = cmop(gcs, p);
+			} else {
+				while (p->n_left->n_op == CM)
+					p = p->n_left;
+				p->n_left = cmop(gcs, p->n_left);
+				gcs = idp->n_right;
+			}
+		} else
+			gcs = idp->n_right;
+		p = idp;
+		idp = idp->n_left;
+		nfree(p);
+	}
 #endif
 
 	if (typ->n_op != TYPE)

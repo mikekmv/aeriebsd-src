@@ -86,6 +86,7 @@ defloc(struct symtab *sp)
 			printf("\t.%s %s\n", ga->a1.sarg, name);
 	}
 #endif
+#ifdef ELFABI
 	if (kflag && !ISFTN(t)) {
 		/* Must place aggregates with pointers in relocatable memory */
 		TWORD t2 = t;
@@ -98,6 +99,7 @@ defloc(struct symtab *sp)
 			s = lastloc = -1;
 		}
 	}
+#endif
 	if (nextsect) {
 		printf("	.section %s,\"wa\",@progbits\n", nextsect);
 		nextsect = NULL;
@@ -168,6 +170,14 @@ efcode()
 	p = buildtree(UMUL, p, NIL);
 	p = buildtree(ASSIGN, q, p);
 	ecomp(p);
+
+	/* put hidden arg in eax on return */
+	q = block(OREG, NIL, NIL, INT, 0, MKSUE(INT));
+	regno(q) = FPREG;
+	q->n_lval = 8;
+	p = block(REG, NIL, NIL, INT, 0, MKSUE(INT));
+	regno(p) = EAX;
+	ecomp(buildtree(ASSIGN, p, q));
 }
 
 /*
