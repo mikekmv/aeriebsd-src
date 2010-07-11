@@ -9,7 +9,7 @@
 	- always run a 'make depend' when building individual progs
 	  although 'make build' will do it for you;
 	- first build and install build tools
-	  (share/mk, pcc, as, ld, nroff, make, sh, awk);
+	  (share/mk, pcc, xlint, as, ld, nroff, make, sh, sed, awk);
 	- make build;
 
 etc/
@@ -32,4 +32,4 @@ usr.sbin/httpd/
 
 rejoice!
 --
-    $ABSD: README,v 1.4 2010/06/05 11:51:39 mickey Exp $
+    $ABSD: README,v 1.5 2010/06/05 11:54:57 mickey Exp $
