@@ -14,7 +14,7 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	m4 mail make man mesg mg midiplay mixerctl mkdep mklocale \
 	mkstr mktemp modstat more msgs \
 	nc netstat newsyslog nfsstat nice nm nohup oldrdist \
-	pagesize passwd paste patch pctr pkill plot pmdb pr \
+	pagesize passwd paste patch pcc pctr pkill plot pmdb pr \
 	printenv printf \
 	quota radioctl rcs rdist rdistd readlink renice rev \
 	rpcgen rpcinfo rs rsh rup ruptime rusers rwall rwho \
