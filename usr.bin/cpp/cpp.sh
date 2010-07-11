@@ -39,12 +39,12 @@
 #	doesn't search gcc-include
 #
 PATH=/usr/bin:/bin
-TRAD=-traditional
-DGNUC="-D__GNUC__"
+TRAD=-t
+DGNUC=""
 STDINC="-I/usr/include"
 DOLLAR="@dollaropt@"
 OPTS=""
-INCS="-nostdinc"
+INCS=""
 FOUNDFILES=false
 
 CPP=/usr/libexec/cpp
@@ -66,12 +66,13 @@ do
 		STDINC=
 		;;
 	-traditional)
-		TRAD=-traditional
+		TRAD=-t
 		;;
 	-notraditional)
 		TRAD=
 		;;
 	-I*)
+		# replace subseq -I w/ -S
 		INCS="$INCS $A"
 		;;
 	-U__GNUC__)
