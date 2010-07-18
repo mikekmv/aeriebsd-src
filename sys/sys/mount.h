@@ -472,6 +472,8 @@ struct mount {
 				   as next argument */
 #define VFS_BCACHESTAT	3	/* struct: buffer cache statistics given 
 				   as next argument */
+#define VFS_MAXID	4
+
 #define	CTL_VFSGENCTL_NAMES { \
 	{ 0, 0 }, \
 	{ "maxtypenum", CTLTYPE_INT }, \
