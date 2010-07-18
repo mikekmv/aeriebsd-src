@@ -266,7 +266,12 @@ struct ctlname {
 /* Fourth level sysctl names */
 #define KERN_EMUL_NAME		0
 #define KERN_EMUL_ENABLED	1
+#define KERN_EMUL_MAXID		2
 
+#define	CTL_KERN_EMUL_NAMES { \
+	{ "name", CTLTYPE_STRING }, \
+	{ "enabled", CTLTYPE_INT }, \
+}
 
 /*
  * KERN_PROC subtypes
@@ -294,6 +299,15 @@ struct ctlname {
 #define KERN_PROC_NARGV		2
 #define KERN_PROC_ENV		3
 #define KERN_PROC_NENV		4
+#define KERN_PROCARGS_MAXID	5
+
+#define	CTL_KERN_PROCARGS_NAMES { \
+	{ 0, 0 }, \
+	{ "argv", CTLTYPE_STRUCT }, \
+	{ "nargv", CTLTYPE_INT }, \
+	{ "envp", CTLTYPE_STRUCT }, \
+	{ "nenvp", CTLTYPE_INT }, \
+}
 
 /*
  * KERN_PROC subtype ops return arrays of augmented proc structures:
