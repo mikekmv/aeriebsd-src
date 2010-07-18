@@ -311,6 +311,7 @@ himem_scsi_cmd(struct scsi_xfer *xs)
 	case SYNCHRONIZE_CACHE:
 		mtx_enter(&sc->sc_inmtx);
 		if (!TAILQ_EMPTY(&sc->sc_in)) {
+			wakeup(&sc->sc_in);
 			bp = TAILQ_LAST(&sc->sc_in, hibuf_head);
 			bp->hb_flags |= HIMEM_WAKE;
 			msleep(bp, &sc->sc_inmtx, PRIBIO, "himem.sync", 0);
