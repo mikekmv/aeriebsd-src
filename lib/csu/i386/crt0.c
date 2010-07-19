@@ -47,9 +47,10 @@ extern void	_mcleanup(void);
 extern unsigned char _etext, _eprol;
 #endif /* MCRT0 */
 
-
 __asm(".text\n"
 "	.align  4\n"
+"	.type	__start, @function\n"
+"	.type	_start, @function\n"
 "	.globl  __start\n"
 "	.globl  _start\n"
 "_start:\n"
