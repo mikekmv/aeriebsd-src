@@ -31,7 +31,7 @@
 .\"
 .\"	from: @(#)yacc.1	5.7 (Berkeley) 7/30/91
 .\"
-.Dd $Mdocdate: August 26 2008 $
+.Dd $Mdocdate: December 26 2008 $
 .Dt YACC 1
 .Os
 .Sh NAME
@@ -134,6 +134,8 @@ option causes a human-readable description of the generated parser to
 be written to the file
 .Pa y.output .
 .El
+.Pp
+.Ex -std yacc
 .Sh ENVIRONMENT
 .Bl -tag -width TMPDIR
 .It Ev TMPDIR
@@ -186,9 +188,45 @@ to the standard error.
 The
 .Nm
 utility is compliant with the
-.St -p1003.1-2004
-specification.
+.St -p1003.1-2008
+specification,
+though its presence is optional.
 .Pp
 The flags
 .Op Fl or
 are extensions to that specification.
+.Sh HISTORY
+Berkeley Yacc was originally developed using PCC on a VAX with the
+intent of being as compatible as possible with AT&T Yacc.
+Much is owed to the unflagging efforts of Keith Bostic.
+His badgering kept me working on Yacc long after I was ready to
+quit.
+.Pp
+Berkeley Yacc is based on the excellent algorithm for computing
+LALR(1) lookaheads developed by Tom Pennello and Frank DeRemer.
+The algorithm is described in their almost impenetrable article in
+TOPLAS 4,4.
+.Pp
+Finally, much credit must go to those who pointed out deficiencies
+of earlier releases.
+Among the most prolific contributors were
+Benson I. Margulies,
+Dave Gentzel,
+Antoine Verheijen,
+Peter S. Housel,
+Dale Smith,
+Ozan Yigit,
+John Campbell,
+Bill Sommerfeld,
+Paul Hilfinger,
+Gary Bridgewater,
+Dave Bakken,
+Dan Lanciani,
+Richard Sargent,
+and
+Parag Patel.
+.Sh AUTHORS
+The
+.Nm
+utility was written by
+.An Robert Corbett .

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
@@ -35,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)reader.c	5.7 (Berkeley) 1/20/91";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: reader.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -719,7 +718,7 @@ get_literal(void)
 		}
 		if (n > MAXCHAR) illegal_character(c_cptr);
 		c = n;
-	    	break;
+		break;
 
 	    case 'x':
 		c = *cptr++;
@@ -1126,12 +1125,8 @@ initialize_grammar(void)
 {
     nitems = 4;
     maxitems = 300;
-    pitem = (bucket **) MALLOC(maxitems*sizeof(bucket *));
+    pitem = (bucket **) CALLOC(maxitems, sizeof(bucket *));
     if (pitem == 0) no_space();
-    pitem[0] = 0;
-    pitem[1] = 0;
-    pitem[2] = 0;
-    pitem[3] = 0;
 
     nrules = 3;
     maxrules = 100;
@@ -1156,9 +1151,11 @@ initialize_grammar(void)
 void
 expand_items(void)
 {
+    int olditems = maxitems;
     maxitems += 300;
     pitem = (bucket **) REALLOC(pitem, maxitems*sizeof(bucket *));
     if (pitem == 0) no_space();
+    memset(pitem + olditems, 0, (maxitems - olditems)*sizeof(bucket *));
 }
 
 
@@ -1248,7 +1245,8 @@ end_rule(void)
     if (!last_was_action && plhs[nrules]->tag)
     {
 	for (i = nitems - 1; pitem[i]; --i) continue;
-	if (pitem[i+1] == 0 || pitem[i+1]->tag != plhs[nrules]->tag)
+	if (i == maxitems - 1 || pitem[i+1] == 0 ||
+	    pitem[i+1]->tag != plhs[nrules]->tag)
 	    default_action_warning();
     }
 

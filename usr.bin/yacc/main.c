@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
@@ -41,7 +40,7 @@ char copyright[] =
 #if 0
 static char sccsid[] = "@(#)main.c	5.5 (Berkeley) 5/24/93";
 #else
-static char rcsid[] = "$ABSD: main.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $";
+static char rcsid[] = "$ABSD: main.c,v 1.2 2008/12/26 18:52:14 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -179,7 +178,7 @@ getargs(int argc, char *argv[])
 	case 'b':
 	    file_prefix = optarg;
 	    break;
-	    
+
 	case 'd':
 	    dflag = 1;
 	    break;
@@ -192,11 +191,11 @@ getargs(int argc, char *argv[])
 	    output_file_name = optarg;
 	    explicit_file_name = 1;
 	    break;
-	    
+
 	case 'p':
 	    symbol_prefix = optarg;
 	    break;
-	    
+
 	case 'r':
 	    rflag = 1;
 	    break;
@@ -320,22 +319,6 @@ create_file_names(void)
     }
 }
 
-
-FILE *
-fsopen(char *name, char *mode)
-{
-    FILE *fp = NULL;
-    int fd, mod = O_RDONLY;
-
-    if (strchr(mode, 'w'))
-	mod = O_RDWR;
-    if ((fd = open(name, mod | O_EXCL|O_CREAT, 0666)) == -1 ||
-	(fp = fdopen(fd, mode)) == NULL) {
-	if (fd != -1)
-	    close(fd);
-    }
-    return (fp);
-}
 
 void
 open_files(void)

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
@@ -227,11 +226,11 @@ extern char *line;
 extern int lineno;
 extern int outline;
 
-extern char *banner[];
-extern char *tables[];
-extern char *header[];
-extern char *body[];
-extern char *trailer[];
+extern const char *const banner[];
+extern const char *const tables[];
+extern const char *const header[];
+extern const char *const body[];
+extern const char *const trailer[];
 
 extern char *action_file_name;
 extern char *code_file_name;
@@ -360,7 +359,7 @@ extern void make_parser(void);
 extern void verbose(void);
 extern void output(void);
 extern void free_parser(void);
-extern void write_section(char *[]);
+extern void write_section(const char *const []);
 
 extern void create_symbol_table(void);
 extern void free_symbol_table(void);

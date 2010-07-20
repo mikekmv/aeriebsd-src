@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
@@ -35,7 +34,7 @@
 #if 0
 static char sccsid[] = "@(#)skeleton.c	5.8 (Berkeley) 4/29/95";
 #else
-static char rcsid[] = "$ABSD: skeleton.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $";
+static char rcsid[] = "$ABSD: skeleton.c,v 1.2 2008/12/26 18:52:14 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -53,15 +52,14 @@ static char rcsid[] = "$ABSD: skeleton.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp 
 /*  the body either are not useful outside of semantic actions or	*/
 /*  are conditional.							*/
 
-char *banner[] =
-{
+const char *const banner[] = {
     "#ifndef lint",
     "/*static char yysccsid[] = \"from: @(#)yaccpar	1.9 (Berkeley) 02/21/93\";*/",
     "static char yyrcsid[]",
     "#if __GNUC__ >= 2",
     "  __attribute__ ((unused))",
     "#endif /* __GNUC__ >= 2 */",
-    "  = \"$ABSD: skeleton.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $\";",
+    "  = \"$ABSD: skeleton.c,v 1.2 2008/12/26 18:52:14 mickey Exp $\";",
     "#endif",
     "#include <stdlib.h>",
     "#include <string.h>",
@@ -77,8 +75,7 @@ char *banner[] =
 };
 
 
-char *tables[] =
-{
+const char *const tables[] = {
     "#if defined(__cplusplus) || defined(__STDC__)",
     "extern const short yylhs[];",
     "extern const short yylen[];",
@@ -112,7 +109,7 @@ char *tables[] =
 };
 
 
-char *header[] =
+const char *const header[] =
 {
     "#ifdef YYSTACKSIZE",
     "#undef YYMAXDEPTH",
@@ -143,8 +140,7 @@ char *header[] =
 };
 
 
-char *body[] =
-{
+const char *const body[] = {
     "/* allocate initial stack or double stack size, up to YYMAXDEPTH */",
     "#if defined(__cplusplus) || defined(__STDC__)",
     "static int yygrowstack(void)",
@@ -355,8 +351,7 @@ char *body[] =
 };
 
 
-char *trailer[] =
-{
+const char *const trailer[] = {
     "    }",
     "    yyssp -= yym;",
     "    yystate = *yyssp;",
@@ -432,19 +427,16 @@ char *trailer[] =
 
 
 void
-write_section(char *section[])
+write_section(const char *const section[])
 {
-    int c;
-    int i;
-    char *s;
+    int i, c;
+    const char *s;
     FILE *f;
 
     f = code_file;
-    for (i = 0; (s = section[i]); ++i)
-    {
+    for (i = 0; (s = section[i]); ++i) {
 	++outline;
-	while ((c = *s))
-	{
+	while ((c = *s)) {
 	    putc(c, f);
 	    ++s;
 	}

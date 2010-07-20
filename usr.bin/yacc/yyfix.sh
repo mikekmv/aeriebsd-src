@@ -34,7 +34,7 @@ NEWYACC="yylhs yylen yydefred yydgoto yysindex yyrindex yygindex \
 	 yytable yycheck"
 
 if [ $# -eq 0 ]; then
-	echo "usage: $0 file [tables]" >&2
+	echo "usage: `basename $0` file [tables]" >&2
 	exit 1
 fi
 
