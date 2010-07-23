@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.15 2010/06/05 14:22:47 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.16 2010/06/14 21:31:25 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -72,7 +72,7 @@ char *mapfile;
 const char *entry_name;
 struct symlist *sentry;
 
-#define OPTSTRING "+B:c:C:d:D:e:Ef:F:gh:il:L:m:MnNo:OqrR:sStT:u:vVxXy:Y:z:Z"
+#define OPTSTRING "+B:c:C:d:D:e:Ef:F:gh:il:L:m:M:nNo:OqrR:sStT:u:vVxXy:Y:z:Z"
 const struct option longopts[] = {
 	{ "as-needed",		no_argument,	&as_needed, 1 },
 	{ "no-as-needed",	no_argument,	&as_needed, 0 },
@@ -106,6 +106,7 @@ const struct option longopts[] = {
 	{ "library",		required_argument,	0, 'l' },
 	{ "library-path",	required_argument,	0, 'L' },
 	{ "print-map",		no_argument,		0, 'M' },
+	{ "Map",		required_argument,	0, 'M' },
 	{ "nmagic",		no_argument,	&magic, NMAGIC },
 	{ "omagic",		no_argument,	&magic, OMAGIC },
 	{ "output",		required_argument,	0, 'o' },
@@ -246,8 +247,10 @@ main(int argc, char *argv[])
 			break;
 
 		case 'M':	/* print linking map to stdout/mapfile */
-			if (!strcmp(argv[optind], "-Map"))
-				mapfile = argv[++optind];
+			if (!strcmp(argv[optind - 1], "-Map")) {
+				mapfile = argv[optind];
+				optind++;
+			}
 			printmap++;
 			break;
 

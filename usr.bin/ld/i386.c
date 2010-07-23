@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: i386.c,v 1.8 2010/03/31 20:44:55 mickey Exp $";
+static const char rcsid[] = "$ABSD: i386.c,v 1.9 2010/06/01 12:59:55 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -47,7 +47,8 @@ const struct ldorder i386_order[] = {
 	{ ldo_symbol,	"_start", N_UNDF, 0, LD_ENTRY },
 	{ ldo_interp,	ELF_INTERP, SHT_PROGBITS, SHF_ALLOC,
 			LD_CONTAINS | LD_DYNAMIC },
-	{ ldo_note,	ELF_NOTE, SHT_NOTE, SHF_ALLOC, LD_CONTAINS },
+	{ ldo_note,	ELF_NOTE, SHT_NOTE, SHF_ALLOC,
+			LD_CONTAINS | LD_NONMAGIC | LD_NOOMAGIC },
 	{ ldo_section,	ELF_INIT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
 			0, XFILL },
 	{ ldo_section,	ELF_PLT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
@@ -67,9 +68,9 @@ const struct ldorder i386_order[] = {
 	{ ldo_section,	ELF_CTORS, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
 	{ ldo_section,	ELF_DTORS, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
 	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
-	{ ldo_symbol,	"__got_start", N_ABS },
+	{ ldo_symbol,	"__got_start", N_ABS, LD_DYNAMIC },
 	{ ldo_section,	ELF_GOT, SHT_PROGBITS, SHF_ALLOC, LD_DYNAMIC },
-	{ ldo_symbol,	"__got_end", N_ABS },
+	{ ldo_symbol,	"__got_end", N_ABS, LD_DYNAMIC },
 	{ ldo_symbol,	"edata", N_ABS },
 	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
 	{ ldo_symbol,	"__bss_start", N_ABS },

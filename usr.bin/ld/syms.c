@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syms.c,v 1.7 2010/06/01 12:59:56 mickey Exp $";
+static const char rcsid[] = "$ABSD: syms.c,v 1.8 2010/06/08 23:18:09 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -51,6 +51,7 @@ sym_undef(const char *name)
 
 	if (!(sym = calloc(1, sizeof *sym)))
 		err(1, "calloc");
+	TAILQ_INIT(&sym->sl_xref);
 
 	if (!(sym->sl_name = strdup(name)))
 		err(1, "strdup");
@@ -85,14 +86,12 @@ sym_define(struct symlist *sym, struct section *os, void *esym)
 struct symlist *
 sym_redef(struct symlist *sym, struct section *os, void *esym)
 {
-	SPLAY_REMOVE(symtree, &defsyms, sym);
 	if (sym->sl_sect)
 		TAILQ_REMOVE(&sym->sl_sect->os_syms, sym, sl_entry);
 	sym->sl_sect = os;
 	if (esym)
 		memcpy(&sym->sl_elfsym, esym, sizeof sym->sl_elfsym);
 	TAILQ_INSERT_TAIL(&os->os_syms, sym, sl_entry);
-	SPLAY_INSERT(symtree, &defsyms, sym);
 	return sym;
 }
 
@@ -103,6 +102,7 @@ sym_add(const char *name, struct section *os, void *esym)
 
 	if (!(sym = calloc(1, sizeof *sym)))
 		err(1, "calloc");
+	TAILQ_INIT(&sym->sl_xref);
 
 	if (!(sym->sl_name = strdup(name)))
 		err(1, "strdup");
@@ -153,9 +153,47 @@ sym_undcheck(void)
 }
 
 void
-sym_scan(const struct ldorder *order, int (*of)(const struct ldorder *, void *),
-    int (*sf)(const struct ldorder *, const struct section *, struct symlist *,
-    void *), void *v)
+sym_printmap(struct headorder *headorder, ordprint_t of, symprint_t sf)
+{
+	FILE *mfp;
+
+	if (!mapfile)
+		mfp = stdout;
+	else {
+		if (!(mfp = fopen(mapfile, "w")))
+			err(1, "fopen: %s", mapfile);
+	}
+
+	sym_scan(TAILQ_FIRST(headorder), of, sf, mfp);
+
+	if (cref) {
+		struct symlist *sym;
+
+		fputs("\nCross reference table:\n\n", mfp);
+		SPLAY_FOREACH(sym, symtree, &defsyms) {
+			struct xreflist *xl;
+			int first = 1;
+
+			TAILQ_FOREACH(xl, &sym->sl_xref, xl_entry) {
+				if (first) {
+					fprintf(mfp, "%-16s", sym->sl_name);
+					first = 0;
+				} else
+					fprintf(mfp, "\t\t");
+
+				fprintf(mfp, "\t%s\n", xl->xl_obj->ol_name);
+			}
+		}
+	}
+
+	if (mapfile)
+		fclose(mfp);
+	else
+		fflush(mfp);
+}
+
+void
+sym_scan(const struct ldorder *order, ordprint_t of, symprint_t sf, void *v)
 {
 	for(; order != TAILQ_END(NULL); order = TAILQ_NEXT(order, ldo_entry)) {
 		struct section *os;
@@ -220,11 +258,12 @@ order_printmap(const struct ldorder *order, void *v)
 		break;
 
 	case ldo_symbol:
-		printf("%-16s0x%08llx\n", order->ldo_name, order->ldo_start);
+		fprintf(v, "%-16s 0x%08llx\n",
+		    order->ldo_name, order->ldo_start);
 		break;
 
 	default:
-		printf("%-16s0x%08llx\t0x%llx\n", order->ldo_name,
+		fprintf(v, "%-16s 0x%08llx\t0x%llx\n", order->ldo_name,
 		    order->ldo_start, order->ldo_addr - order->ldo_start);
 	}
 

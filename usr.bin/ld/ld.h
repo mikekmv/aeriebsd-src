@@ -31,9 +31,16 @@ struct pathlist {
 	const char *pl_path;
 };
 
-struct objlist;
 struct ldorder;
+struct objlist;
+struct section;
+struct symlist;
+struct xreflist;
 TAILQ_HEAD(headorder, ldorder);
+
+typedef int (*ordprint_t)(const struct ldorder *, void *);
+typedef int (*symprint_t)(const struct ldorder *, const struct section *,
+    struct symlist *, void *);
 
 /*
  * this describes one symbol and links it to both
@@ -45,6 +52,7 @@ TAILQ_HEAD(headorder, ldorder);
  * used for reference in relocs and possibly other places.
  */
 struct symlist {
+	TAILQ_HEAD(, xreflist) sl_xref;	/* xref list */
 	SPLAY_ENTRY(symlist) sl_node;	/* global symbol table */
 	TAILQ_ENTRY(symlist) sl_entry;	/* list per section */
 	union {
@@ -55,6 +63,11 @@ struct symlist {
 	const char *sl_name;
 };
 extern struct symlist *sentry;
+
+struct xreflist {
+	TAILQ_ENTRY(xreflist) xl_entry;	/* xref list for each symbol */
+	struct objlist *xl_obj;
+};
 
 /*
  * relocation description;
@@ -172,8 +185,9 @@ extern struct objlist sysobj;
 extern const char *entry_name;
 extern char *mapfile;
 extern struct ldorder *bsorder;
-extern int Bflag, Xflag, pie, errors, printmap, relocatable, strip, warncomm;
-extern int machine, endian, elfclass, magic;
+extern int Xflag, errors, printmap, cref, relocatable, strip, warncomm;
+extern int machine, endian, elfclass, magic, pie, Bflag;
+extern u_int64_t start_text, start_data, start_bss;
 extern const struct ldorder
     alpha_order[], amd64_order[], arm_order[], hppa_order[],
     i386_order[], m68k_order[], mips_order[], ppc_order[],
@@ -219,11 +233,10 @@ struct symlist *sym_define(struct symlist *, struct section *, void *);
 struct symlist *sym_redef(struct symlist *, struct section *, void *);
 struct symlist *sym_add(const char *, struct section *, void *);
 struct symlist *sym_isdefined(const char *, struct section *);
-void sym_scan(const struct ldorder *, int (*)(const struct ldorder *, void *),
-    int (*)(const struct ldorder *, const struct section *, struct symlist *,
-    void *), void *);
+void sym_scan(const struct ldorder *, ordprint_t, symprint_t, void *);
 int sym_undcheck(void);
 int rel_addrcmp(const void *, const void *);
 struct ldorder *order_clone(const struct ldarch *, const struct ldorder *);
+void sym_printmap(struct headorder *, ordprint_t, symprint_t);
 int order_printmap(const struct ldorder *, void *);
 int randombit(void);

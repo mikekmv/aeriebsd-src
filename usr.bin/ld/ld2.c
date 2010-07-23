@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.22 2010/06/08 23:18:09 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.23 2010/06/14 21:31:25 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -258,7 +258,10 @@ ldmap(struct headorder *headorder)
 
 		case ldo_expr:
 			/* mind the gap! */
-			point += (arc4random() & 0xffffff) + __LDPGSZ;
+			if (magic != ZMAGIC)
+				point += __LDPGSZ;
+			else
+				point += (arc4random() & 0xffffff) + __LDPGSZ;
 			break;
 
 		case ldo_section:
@@ -329,7 +332,7 @@ ldmap(struct headorder *headorder)
 			off += ord->ldo_addr - ord->ldo_start;
 
 			eh->e_shstrndx = ord->ldo_sno;
-			eh->e_shoff = off;
+			eh->e_shoff = (off + 15) & ~15LL;
 			off += sysobj.ol_nsect * sizeof *shdr;
 
 			p = q = ord->ldo_wurst;
@@ -386,22 +389,8 @@ ldmap(struct headorder *headorder)
 		}
 	}
 
-	if (printmap) {
-		FILE *mfp;
-
-		if (!mapfile)
-			mfp = stdout;
-		else {
-			if (!(mfp = fopen(mapfile, "w")))
-				err(1, "fopen: %s", mapfile);
-		}
-		sym_scan(TAILQ_FIRST(headorder), order_printmap,
-		    elf_symprintmap, mfp);
-		if (mapfile)
-			fclose(mfp);
-		else
-			fflush(mfp);
-	}
+	if (printmap)
+		sym_printmap(headorder, order_printmap, elf_symprintmap);
 
 	if (sym_undcheck())
 		return NULL;
@@ -426,6 +415,12 @@ elf_prefer(Elf_Off off, struct ldorder *ord, uint64_t point)
 	Elf_Shdr *shdr = ord->ldo_sect->os_sect;
 	Elf_Off o;
 
+	if (start_text && !strcmp(ord->ldo_name, ".text"))
+		point = start_text;
+	else if (start_data && !strcmp(ord->ldo_name, ".data"))
+		point = start_data;
+	else if (start_bss && !strcmp(ord->ldo_name, ".bss"))
+		point = start_bss;
 	ord->ldo_addr = point;
 	align = shdr->sh_addralign;
 	ord->ldo_addr += align - 1;
@@ -594,13 +589,23 @@ elf_symprintmap(const struct ldorder *order, const struct section *os,
 	Elf_Sym *esym = &ELF_SYM(sym->sl_elfsym);
 
 	if (os != prevos) {
-		fprintf(v, "%-16s  %8s\t%s\n", "", "",
+#if ELFSIZE == 32
+		fprintf(v, "%-16s   %8s\t%s\n", "", "",
 		    sym->sl_sect->os_obj->ol_name);
+#else
+		fprintf(v, "%-16s   %16s\t%s\n", "", "",
+		    sym->sl_sect->os_obj->ol_name);
+#endif
 		prevos = os;
 	}
 
-	fprintf(v, "%-16s0x%08lx\t\t%s\n", "",
+#if ELFSIZE == 32
+	fprintf(v, "%-16s 0x%08lx\t\t%s\n", "",
 	    (u_long)esym->st_value, sym->sl_name);
+#else
+	fprintf(v, "%-16s 0x%016lx\t\t%s\n", "",
+	    (u_long)esym->st_value, sym->sl_name);
+#endif
 
 	return 0;
 }
@@ -1011,6 +1016,17 @@ if (is && *name == '\0') warnx("#%d is null", is);
 	}
 
 	sidx[is] = sym;
+	if (cref && sym && ol) {
+		struct xreflist *xl;
+
+		if (!(xl = calloc(1, sizeof *xl)))
+			errx(1, "calloc");
+		xl->xl_obj = ol;
+		if (sym->sl_sect && sym->sl_sect->os_obj == ol)
+			TAILQ_INSERT_HEAD(&sym->sl_xref, xl, xl_entry);
+		else
+			TAILQ_INSERT_TAIL(&sym->sl_xref, xl, xl_entry);
+	}
 	return 0;
 }
 
@@ -1107,6 +1123,11 @@ elf_ld_chkhdr(const char *path, Elf_Ehdr *eh, int type, int *mach,
 
 	if (eh->e_type != type) {
 		warnx("%s: not a relocatable file", path);
+		return EFTYPE;
+	}
+
+	if (eh->e_ehsize < sizeof *eh) {
+		warnx("%s: ELF header is too short", path);
 		return EFTYPE;
 	}
 
