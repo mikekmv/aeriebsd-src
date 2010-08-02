@@ -131,8 +131,8 @@ himem_attach(struct device *parent, struct device *self, void *aux)
 	
 	TAILQ_INIT(&sc->sc_in);
 	TAILQ_INIT(&sc->sc_free);
-	mtx_init(&sc->sc_inmtx, IPL_SCHED);
-	mtx_init(&sc->sc_freemtx, IPL_BIO);
+	mtx_init(&sc->sc_inmtx, IPL_HIGH);
+	mtx_init(&sc->sc_freemtx, IPL_HIGH);
 
 	pdsize = 4 * PAGE_SIZE;
 	sc->sc_pdir = (u_int64_t *)uvm_km_alloc1(kernel_map, pdsize,
@@ -254,6 +254,12 @@ himem_scsi_cmd(struct scsi_xfer *xs)
 	vaddr_t va, eva;
 	u_int bno, bcnt;
 	int s, res;
+
+#if 0
+	/* we do not want to be double-buffered */
+	if (xs->bp && (xs->bp->b_flags & B_DELWRI))
+		xs->bp->b_flags |= B_NOCACHE;
+#endif
 
 	s = splbio();
 	if (link->target > 0 || !sc->sc_size || link->lun != 0) {
