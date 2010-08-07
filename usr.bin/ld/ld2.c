@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.23 2010/06/14 21:31:25 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.24 2010/07/23 15:51:29 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -954,8 +954,10 @@ if (is && *name == '\0') warnx("#%d is null", is);
 	switch (esym->st_shndx) {
 	case SHN_UNDEF:
 		if (!(sym = sym_isdefined(name, sysobj.ol_sections)) &&
-		    !(sym = sym_isundef(name)))
+		    !(sym = sym_isundef(name))) {
 			sym = sym_undef(name);
+			sym->sl_sect = ol->ol_sections;
+		}
 		break;
 
 	case SHN_COMMON:
