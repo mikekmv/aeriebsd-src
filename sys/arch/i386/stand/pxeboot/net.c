@@ -252,7 +252,7 @@ intoa(n_long addr)
 }
 
 static char *
-number(char *s, int *n)
+number(char *s, n_long *n)
 {
 	for (*n = 0; isdigit(*s); s++)
 		*n = (*n * 10) + *s - '0';
