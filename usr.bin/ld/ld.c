@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.16 2010/06/14 21:31:25 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.17 2010/07/23 15:51:29 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -148,7 +148,7 @@ const struct ldarch *ldarch;
 int usage(void);
 int libdir_add(const char *);
 int obj_add(const char *, const char *, FILE *, off_t, struct objlist *);
-int lib_add(const char *);
+int lib_add(const char *, FILE *fp);
 int lib_namtab(const char *, FILE *, u_long, off_t, u_long);
 int lib_symdef(const char *, FILE *, u_long);
 int mmbr_name(struct ar_hdr *, char **, int, int *, FILE *);
@@ -359,6 +359,8 @@ main(int argc, char *argv[])
 	TAILQ_INSERT_TAIL(&objlist, &sysobj, ol_entry);
 
 	for (; argc--; argv++) {
+		char armag[SARMAG];
+
 		if (**argv == '-')
 			switch (argv[0][1]) {
 			case 'L':
@@ -366,7 +368,7 @@ main(int argc, char *argv[])
 				continue;
 
 			case 'l':	/* load the archive */
-				lib_add(*argv);
+				lib_add(*argv, NULL);
 				continue;
 
 			case 'g':	/* compatibility */
@@ -380,15 +382,20 @@ main(int argc, char *argv[])
 				break;
 			}
 
-		if (trace)
-			printf("%s\n", *argv);
-
 		if (!(fp = fopen(*argv, "r")))
 			err(1, "fopen: %s", *argv);
 
-		if (obj_add(*argv, NULL, fp, 0, NULL))
-			return 1;
-		fclose(fp);
+		if (fread(armag, sizeof armag, 1, fp) != 1)
+			err(1, "fread: %s", *argv);
+
+		fseek(fp, 0, SEEK_SET);
+		if (!strncmp(armag, ARMAG, SARMAG))
+			lib_add(*argv, fp);
+		else {
+			if (obj_add(*argv, NULL, fp, 0, NULL))
+				return 1;
+			fclose(fp);
+		}
 	}
 
 	if (errors)
@@ -513,15 +520,13 @@ char **nametab;
  * each member for symbols to resolve.
  */
 int
-lib_add(const char *path)
+lib_add(const char *path, FILE *fp)
 {
-	char ibuf[ELF_IBUFSZ];
 	char pathbuf[MAXPATHLEN];
 	char armag[SARMAG];
 	struct ar_hdr ah;
 	off_t off, symoff;
 	struct pathlist *pl;
-	FILE *fp;
 	char *p, *nt = NULL;
 	u_long len, symlen;
 	int nlen, ltrace = trace;
@@ -541,9 +546,8 @@ lib_add(const char *path)
 		}
 	}
 
-	if (!(fp = fopen(path, "r")))
-		err(1, "%s: fopen", pathbuf);
-	setvbuf(fp, ibuf, _IOFBF, sizeof ibuf);
+	if (!fp && !(fp = fopen(path, "r")))
+		err(1, "fopen: %s", path);
 
 	if (ltrace)
 		printf("%s\n", path);
@@ -846,6 +850,9 @@ obj_add(const char *path, const char *name, FILE *fp, off_t foff,
 			err(1, "strdup");
 	} else
 		ol->ol_name = ol->ol_path;
+
+	if (trace)
+		printf("%s\n", ol->ol_name);
 
 	if (fread(&ol->ol_hdr, sizeof ol->ol_hdr, 1, fp) != 1)
 		err(1, "fread header: %s", ol->ol_name);
