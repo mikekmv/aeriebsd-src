@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: i386.c,v 1.9 2010/06/01 12:59:55 mickey Exp $";
+static const char rcsid[] = "$ABSD: i386.c,v 1.10 2010/07/23 15:51:29 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -108,6 +108,7 @@ i386_fix(off_t off, struct section *os, char *sbuf, int len)
 	Elf32_Shdr *shdr = os->os_sect;
 	char *p, *ep;
 	uint32_t a32;
+	uint16_t a16;
 	int reoff;
 
 /* this evil little loop has to be optimised; for example store last rp on os */
@@ -145,6 +146,21 @@ i386_fix(off_t off, struct section *os, char *sbuf, int len)
 			i386_fixone(p, a32, rp->rl_addend, rp->rl_type);
 			break;
 
+		case RELOC_16:
+		case RELOC_PC16:
+			if (ep - p < 2)
+				return ep - p;
+			if (rp->rl_sym->sl_name)
+				a16 = rp->rl_sym->sl_elfsym.sym32.st_value;
+			else
+				a16 = ((Elf32_Shdr *)
+				    rp->rl_sym->sl_sect->os_sect)->sh_addr;
+			if (rp->rl_type == RELOC_PC16)
+				a16 -= shdr->sh_addr + rp->rl_addr;
+
+			i386_fixone(p, a16, rp->rl_addend, rp->rl_type);
+			break;
+
 		case RELOC_GOT32:
 		case RELOC_PLT32:
 		case RELOC_COPY:
@@ -153,8 +169,6 @@ i386_fix(off_t off, struct section *os, char *sbuf, int len)
 		case RELOC_RELATIVE:
 		case RELOC_GOTOFF:
 		case RELOC_GOTPC:
-		case RELOC_16:
-		case RELOC_PC16:
 		case RELOC_8:
 		case RELOC_PC8:
 
@@ -171,6 +185,7 @@ int
 i386_fixone(char *p, uint64_t val, uint64_t addend, uint type)
 {
 	uint32_t v32;
+	uint16_t v16;
 
 	switch (type) {
 	case RELOC_32:
@@ -181,6 +196,15 @@ i386_fixone(char *p, uint64_t val, uint64_t addend, uint type)
 		v32 += val + addend;
 		v32 = htole32(v32);
 		memcpy(p, &v32, sizeof v32);
+		break;
+	case RELOC_16:
+	case RELOC_PC16:
+		/* it may be unaligned so copy out */
+		memcpy(&v16, p, sizeof v16);
+		v16 = letoh16(v16);
+		v16 += val + addend;
+		v16 = htole16(v16);
+		memcpy(p, &v16, sizeof v16);
 		break;
 	default:
 		errx(1, "unknown reloc type %d", type);
