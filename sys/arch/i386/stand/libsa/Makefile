@@ -44,6 +44,12 @@ SRCS+=	ufs.c nfs.c tftp.c cd9660.c
 # debugger
 SRCS+=	debug.c
 
+.PATH:  $S/lib/libkern
+# helpers
+SRCS+=	strlcpy.c \
+	ashldi3.c ashrdi3.c lshldi3.c lshrdi3.c \
+	muldi3.c moddi3.c divdi3.c qdivrem.c
+
 NOPROFILE=noprofile
 NOPIC=nopic
 

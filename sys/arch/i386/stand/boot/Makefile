@@ -28,9 +28,6 @@ DPADD=	${LIBSA} ${LIBZ}
 
 .PATH:	${S}/stand/boot
 
-.PATH:	${S}/lib/libkern/arch/i386 ${S}/lib/libkern
-SRCS+=	strlcpy.c moddi3.c divdi3.c qdivrem.c
-
 boot.bin: boot
 	objcopy -v -O binary ${PROG} boot.bin
 
