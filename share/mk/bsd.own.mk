@@ -12,7 +12,7 @@ WARNINGS?=	no
 # Set `SKEY' to `yes' to build with support for S/key authentication.
 SKEY?=		yes
 # Set `KERBEROS5' to `yes' to build with support for Kerberos5 authentication.
-KERBEROS5?=	yes
+KERBEROS5?=	no
 # Set `YP' to `yes' to build with support for NIS/YP.
 YP?=		yes
 # Set `TCP_WRAPPERS' to `yes' to build certain networking daemons with
