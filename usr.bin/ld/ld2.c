@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.24 2010/07/23 15:51:29 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.25 2010/08/07 21:22:28 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -164,6 +164,9 @@ ldmap(struct headorder *headorder)
 	eh->e_machine = machine;
 	eh->e_version = EV_CURRENT;
 
+	/* assign commons */
+	obj_foreach(elf_commons, NULL);
+
 	/*
 	 * stroll through the order counting {e,p,s}hdrs;
 	 */
@@ -234,9 +237,6 @@ ldmap(struct headorder *headorder)
 	if (!(phdr = calloc(nphdr, sizeof *phdr)))
 		err(1, "calloc");
 	sysobj.ol_aux = phdr;
-
-	/* assign commons */
-	obj_foreach(elf_commons, NULL);
 
 	eh->e_phoff = sizeof *eh;
 	eh->e_flags = 0;
@@ -1083,7 +1083,7 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 	free(es.stab);
 
 	/* scan thru the section list looking for progbits and relocs */
-	for (i = 0, os = ol->ol_sections; i < n; shdr++, os++, i++) {
+	for (i = 1, os = ol->ol_sections; i < n; shdr++, os++, i++) {
 		if (shdr->sh_type == SHT_NOBITS) {
 			if (ol->ol_bss) {
 				warnx("%s: too many NOBITS", ol->ol_name);
