@@ -110,7 +110,6 @@
 #define TIMEOUT 5
 #define TIME_WITH_SYS_TIME 1
 #define TRIES_FOR_PASSWORD 3
-#define UNSETENV_VOID 1
 #define USE_INSULTS 1
 #define VOID void
 #define WITHOUT_PASSWD 1

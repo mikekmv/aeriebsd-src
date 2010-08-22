@@ -3,7 +3,7 @@
 
 SUBDIR=	lib sudo visudo
 .if !defined(NOPIC)
-SUBDIR+= noexec
+# SUBDIR+= noexec
 .endif
 
 .include <bsd.subdir.mk>
