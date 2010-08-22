@@ -1,35 +1,41 @@
 #	from: @(#)Makefile	5.5 (Berkeley) 5/21/91
 
+.include <bsd.own.mk>
+
 CFLAGS+=	-DLIBC_SCCS -fno-omit-frame-pointer
 OBJS=		crt0.o gcrt0.o
 OBJS+=		crtbegin.o crtend.o
+.if !defined(NOPIC)
 OBJS+=		crtbeginS.o crtendS.o
+PICFLAG?=-fpic
+.endif
 SRCS=		crt0.c crtbegin.c crtbeginS.c crtend.c crtendS.c
 
 ELFDIR=		${.CURDIR}/../common_elf
 .PATH:		${ELFDIR}
 CFLAGS+=	-I${ELFDIR} -I${.CURDIR}
 
-PICFLAG?=-fpic
-
 all: ${OBJS}
 
 crt0.o: crt0.c
 	@echo ${COMPILE.c} -DCRT0 ${.CURDIR}/crt0.c -o ${.TARGET}
 	@${COMPILE.c} -DCRT0 ${.CURDIR}/crt0.c -o ${.TARGET}.o
-	@${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+	#@${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+	@mv ${.TARGET}.o ${.TARGET}
 	@rm -f ${.TARGET}.o
 
 gcrt0.o: crt0.c
 	@echo ${COMPILE.c} -DMCRT0 ${.CURDIR}/crt0.c -o ${.TARGET}
 	@${COMPILE.c} -DMCRT0 ${.CURDIR}/crt0.c -o ${.TARGET}.o
-	@${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+	#@${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+	@mv ${.TARGET}.o ${.TARGET}
 	@rm -f ${.TARGET}.o
 
 crtbegin.o: crtbegin.c
 	@echo ${COMPILE.c} ${ELFDIR}/crtbegin.c -o ${.TARGET}
 	@${COMPILE.c} ${ELFDIR}/crtbegin.c -o ${.TARGET}.o
-	@${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+	#@${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+	@mv ${.TARGET}.o ${.TARGET}
 	@rm -f ${.TARGET}.o
 
 crtbeginS.o: crtbeginS.c
@@ -41,7 +47,8 @@ crtbeginS.o: crtbeginS.c
 crtend.o: crtend.c
 	@echo ${COMPILE.c} ${ELFDIR}/crtend.c -o ${.TARGET}
 	@${COMPILE.c} ${ELFDIR}/crtend.c -o ${.TARGET}.o
-	@${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+	#@${LD} -x -r -o ${.TARGET} ${.TARGET}.o
+	@mv ${.TARGET}.o ${.TARGET}
 	@rm -f ${.TARGET}.o
 
 crtendS.o: crtendS.c
