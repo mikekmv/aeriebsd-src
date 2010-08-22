@@ -51,11 +51,6 @@ typedef __va_list	va_list;
 #define	va_arg(ap, type) \
 	(*(type *)((ap) += __va_size(type), (ap) - __va_size(type)))
 
-#if __ISO_C_VISIBLE >= 1999
-#define va_copy(dest, src) \
-	((dest) = (src))
-#endif
-
 #define	va_end(ap)	
 
 #endif /* !_I386_STDARG_H_ */
