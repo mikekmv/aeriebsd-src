@@ -60,9 +60,6 @@ static char copyright[] =
 int	firstfile(const char *);
 int	yyparse(void);
 
-extern char *optarg;
-extern int optind;
-
 static struct hashtab *mkopttab;
 static struct nvlist **nextopt;
 static struct nvlist **nextdefopt;
@@ -78,8 +75,7 @@ static int hasparent(struct devi *);
 static int cfcrosscheck(struct config *, const char *, struct nvlist *);
 static void optiondelta(void);
 
-int	madedir = 0;
-
+int	madedir;
 int	verbose;
 
 void

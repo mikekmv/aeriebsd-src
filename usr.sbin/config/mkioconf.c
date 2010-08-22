@@ -186,12 +186,13 @@ int nextraloc = MAXEXTRALOC;\n\
 int uextraloc = 0;\n") < 0);
 }
 
-static int nlocnames, maxlocnames = 8;
+static int nlocnames;
 static char **locnames;
 
 short
 addlocname(const char *name)
 {
+	static int maxlocnames = 8; 
 	int i;
 
 	if (locnames == NULL || nlocnames+1 > maxlocnames) {

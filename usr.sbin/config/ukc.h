@@ -104,15 +104,15 @@ struct nlist knl[] = {
 	{ "_shmmaxpgs" },
 	{ NULL },
 };
-int	maxdev = 0;
-int	totdev = 0;
-int	maxpseudo = 0;
-int	maxlocnames = 0;
+int	maxdev;
+int	totdev;
+int	maxpseudo;
+int	maxlocnames;
 int	base = 16;
 int	cnt = -1;
 int	lines = 18;
-int	oldkernel = 0;
-int	nopdev = 0;
+int	oldkernel;
+int	nopdev;
 #else
 extern struct nlist nl[];
 extern int maxdev;

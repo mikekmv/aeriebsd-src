@@ -24,7 +24,7 @@
  */
 
 #ifndef LINT
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: ukc.c,v 1.1.1.1 2008/08/26 14:44:06 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -48,7 +48,7 @@ static char rcsid[] = "$ABSD$";
 void	init(void);
 void	usage(void);
 
-int	ukc_mod_kernel = 0;
+int	ukc_mod_kernel;
 
 static void
 check_int(int idx, const char *name)
