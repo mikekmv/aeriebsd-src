@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2006 Pierre-Yves Ritschard <pyr@openbsd.org>
  *
@@ -46,9 +45,9 @@ void	pfe_statistics(int, short, void *);
 
 static struct relayd	*env = NULL;
 
-struct imsgbuf	*ibuf_main;
-struct imsgbuf	*ibuf_hce;
-struct imsgbuf	*ibuf_relay;
+extern struct imsgbuf	*ibuf_main;
+extern struct imsgbuf	*ibuf_hce;
+extern struct imsgbuf	*ibuf_relay;
 
 void
 pfe_sig_handler(int sig, short event, void *arg)

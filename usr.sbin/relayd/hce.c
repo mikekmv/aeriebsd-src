@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2006 Pierre-Yves Ritschard <pyr@openbsd.org>
  *
@@ -50,7 +49,7 @@ void	hce_disable_events(void);
 
 static struct relayd *env = NULL;
 struct imsgbuf		*ibuf_pfe;
-struct imsgbuf		*ibuf_main;
+extern struct imsgbuf	*ibuf_main;
 int			 running = 0;
 
 void

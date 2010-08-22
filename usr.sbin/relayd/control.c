@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2003, 2004 Henning Brauer <henning@openbsd.org>
  *
@@ -42,8 +41,8 @@ struct ctl_connlist ctl_conns;
 struct ctl_conn	*control_connbyfd(int);
 void		 control_close(int);
 
-struct imsgbuf	*ibuf_main = NULL;
-struct imsgbuf	*ibuf_hce = NULL;
+extern struct imsgbuf	*ibuf_main;
+extern struct imsgbuf	*ibuf_hce;
 
 int
 control_init(void)
