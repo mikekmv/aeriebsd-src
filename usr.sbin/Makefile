@@ -3,7 +3,7 @@
 SUBDIR=	ac accton acpidump adduser amd apm apmd arp \
 	authpf bgpctl bgpd chroot config cron dev_mkdb \
 	dhcpd dhcrelay dvmrpctl dvmrpd edquota eeprom faithd fdformat \
-	ftp-proxy gpioctl hostapd hotplugd httpd icbd ifstated inetd iostat \
+	ftp-proxy gpioctl hostapd hotplugd icbd ifstated inetd iostat \
 	kgmon kvm_mkdb lpr mailwrapper map-mbone memconfig mopd mrinfo \
 	mrouted mtrace mtree ndp netgroup_mkdb ntpd openssl ospfctl ospfd \
 	pcidump popa3d portmap ppp pppd pppoe procmap pstat pwd_mkdb \
@@ -16,7 +16,7 @@ SUBDIR=	ac accton acpidump adduser amd apm apmd arp \
 	zdump zic ztsscale
 
 .if (${AFS:L} == "yes")
-SUBDIR+=afs
+#SUBDIR+=afs
 .endif
 
 .if (${YP:L} == "yes")
