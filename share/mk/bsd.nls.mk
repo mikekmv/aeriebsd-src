@@ -1,4 +1,3 @@
-#	$NetBSD: bsd.nls.mk,v 1.2 1995/04/27 18:05:38 jtc Exp $
 
 .if !target(.MAIN)
 .MAIN: all

@@ -1,4 +1,3 @@
-#	$NetBSD: bsd.obj.mk,v 1.9 1996/04/10 21:08:05 thorpej Exp $
 
 .if !target(obj)
 .  if defined(NOOBJ)

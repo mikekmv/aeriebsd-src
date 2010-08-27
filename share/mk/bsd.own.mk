@@ -1,4 +1,3 @@
-#	$NetBSD: bsd.own.mk,v 1.24 1996/04/13 02:08:09 thorpej Exp $
 
 # Host-specific overrides
 .if defined(MAKECONF) && exists(${MAKECONF})
@@ -46,6 +45,9 @@ DIRMODE?=	755
 # Define MANPS to have PostScript manual pages generated
 #MANPS=		1
 
+# Define MANHTML to have the HTML man pages generated and installed
+MANHTML=	1
+
 SHAREDIR?=	/usr/share
 SHAREGRP?=	bin
 SHAREOWN?=	root
@@ -60,6 +62,11 @@ PSDIR?=		/usr/share/man/ps
 PSGRP?=		bin
 PSOWN?=		root
 PSMODE?=	${NONBINMODE}
+
+HTMLDIR?=	/var/www/htdocs/man/man
+HTMLGRP?=	bin
+HTMLOWN?=	root
+HTMLMODE?=	${NONBINMODE}
 
 LIBDIR?=	/usr/lib
 LINTLIBDIR?=	/usr/libdata/lint
@@ -86,9 +93,6 @@ LOCALEDIR?=	/usr/share/locale
 LOCALEGRP?=	wheel
 LOCALEOWN?=	root
 LOCALEMODE?=	${NONBINMODE}
-
-# Shared files for system gnu configure, not used yet
-GNUSYSTEM_AUX_DIR?=${BSDSRCDIR}/share/gnu
 
 INSTALL_COPY?=	-c
 .ifndef DEBUG

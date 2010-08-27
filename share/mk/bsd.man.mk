@@ -2,6 +2,7 @@
 
 MANTARGET?=	cat
 NROFF?=		nroff -Tascii
+MANHTMLOFF?=	awk -f ${BSDSRCDIR}/usr.bin/manhtml/manhtml.awk
 TBL?=		tbl
 EQN?=		eqn
 NEQN?=		neqn
@@ -19,6 +20,7 @@ MANLINT?=	\#
 	.1eqn .2eqn .3eqn .4eqn .5eqn .6eqn .7eqn .8eqn .9eqn \
 	.1tbl .2tbl .3tbl .4tbl .5tbl .6tbl .7tbl .8tbl .9tbl \
 	.cat1 .cat2 .cat3 .cat3p .cat4 .cat5 .cat6 .cat7 .cat8 .cat9 \
+	.html1 .html2 .html3 .html3p .html4 .html5 .html6 .html7 .html8 .html9 \
 	.ps1 .ps2 .ps3 .ps3p .ps4 .ps5 .ps6 .ps7 .ps8 .ps9
 
 .9.cat9 .8.cat8 .7.cat7 .6.cat6 .5.cat5 .4.cat4 .3p.cat3p .3.cat3 .2.cat2 .1.cat1:
@@ -44,6 +46,12 @@ MANLINT?=	\#
 	@echo "nroff -Tps -mandoc ${.IMPSRC} > ${.TARGET}"
 	@nroff -Tps -mandoc ${.IMPSRC} > ${.TARGET} || (rm -f ${.TARGET}; false)
 
+.9.html9 .8.html8 .7.html7 .6.html6 .5.html5 .4.html4 .3p.html3p .3.html3 \
+.2.html2 .1.html1:
+	@echo "manhtml ${.IMPSRC} > ${.TARGET}"
+	@${MANHTMLOFF} -v OSNAME=`uname -s` -v OSREL=`uname -r` \
+	    ${.IMPSRC} > ${.TARGET} || (rm -f ${.TARGET}; false)
+
 .9tbl.ps9 .8tbl.ps8 .7tbl.ps7 .6tbl.ps6 .5tbl.ps5 .4tbl.ps4 .3tbl.ps3 \
 .2tbl.ps2 .1tbl.ps1:
 	@echo "${TBL} ${.IMPSRC} | nroff -Tps -mandoc > ${.TARGET}"
@@ -57,7 +65,7 @@ MANLINT?=	\#
 	    (rm -f ${.TARGET}; false)
 
 .if defined(MAN) && !empty(MAN) && !defined(MANALL)
-.  for v s in MANALL .cat PS2ALL .ps
+.  for v s in MANALL .cat PS2ALL .ps HTML2ALL .html
 
 $v=	${MAN:S/.1$/$s1/g:S/.2$/$s2/g:S/.3$/$s3/g:S/.3p$/$s3p/g:S/.4$/$s4/g:S/.5$/$s5/g:S/.6$/$s6/g:S/.7$/$s7/g:S/.8$/$s8/g:S/.9$/$s9/g:S/.1tbl$/$s1/g:S/.2tbl$/$s2/g:S/.3tbl$/$s3/g:S/.4tbl$/$s4/g:S/.5tbl$/$s5/g:S/.6tbl$/$s6/g:S/.7tbl$/$s7/g:S/.8tbl$/$s8/g:S/.9tbl$/$s9/g:S/.1eqn$/$s1/g:S/.2eqn$/$s2/g:S/.3eqn$/$s3/g:S/.4eqn$/$s4/g:S/.5eqn$/$s5/g:S/.6eqn$/$s6/g:S/.7eqn$/$s7/g:S/.8eqn$/$s8/g:S/.9eqn$/$s9/g}
 
@@ -65,6 +73,10 @@ $v=	${MAN:S/.1$/$s1/g:S/.2$/$s2/g:S/.3$/$s3/g:S/.3p$/$s3p/g:S/.4$/$s4/g:S/.5$/$s
 
 .  if defined(MANPS)
 PSALL=${PS2ALL}
+.  endif
+
+.  if defined(MANHTML)
+HTMLALL=${HTML2ALL}
 .  endif
 
 .endif
@@ -98,7 +110,8 @@ install_manpage_fragment= \
 .endif
 
 maninstall:
-.for v d s t in MANALL ${MANDIR} .cat .0 PSALL ${PSDIR} .ps .ps
+.for v d s t in MANALL ${MANDIR} .cat .0 PSALL ${PSDIR} .ps .ps \
+    HTMLALL ${HTMLDIR} .html .html
 .  if defined($v)
 	@for page in ${$v}; do \
 		set -- ${MANSUBDIR}; \
@@ -128,14 +141,14 @@ maninstall:
 .  endfor
 .endif
 
-.if (defined(MANALL) || defined(PSALL)) && !defined(MANLOCALBUILD)
-all: ${MANALL} ${PSALL}
+.if (defined(MANALL) || defined(PSALL) || defined(HTMLALL)) && \
+    !defined(MANLOCALBUILD)
+all: ${MANALL} ${PSALL} ${HTMLALL}
 
 BEFOREMAN?=
-${MANALL} ${PSALL}: ${BEFOREMAN}
-
+${MANALL} ${PSALL} ${HTMLALL}: ${BEFOREMAN}
 
 cleandir: cleanman
 cleanman:
-	rm -f ${MANALL} ${PS2ALL}
+	rm -f ${MANALL} ${PS2ALL} ${HTML2ALL}
 .endif

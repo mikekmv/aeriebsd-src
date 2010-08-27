@@ -1,6 +1,5 @@
-#	$NetBSD: bsd.sys.mk,v 1.2 1995/12/13 01:25:07 cgd Exp $
 #
-# Overrides used for OpenBSD source tree builds.
+# Overrides used for AerieBSD source tree builds.
 
 #CFLAGS+= -Werror
 
