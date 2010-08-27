@@ -667,9 +667,9 @@ psd
 # ./usr/share/doc/psd/09.f77io
 ..
 
-# ./usr/share/doc/psd/10.gdb
-10.gdb
-# ./usr/share/doc/psd/10.gdb
+# ./usr/share/doc/psd/10.dbx
+10.dbx
+# ./usr/share/doc/psd/10.dbx
 ..
 
 # ./usr/share/doc/psd/11.adb
@@ -687,9 +687,9 @@ psd
 # ./usr/share/doc/psd/13.rcs
 ..
 
-# ./usr/share/doc/psd/14.sccs
-14.sccs
-# ./usr/share/doc/psd/14.sccs
+# ./usr/share/doc/psd/14.as
+14.as
+# ./usr/share/doc/psd/14.as
 ..
 
 # ./usr/share/doc/psd/15.yacc
@@ -2612,13 +2612,13 @@ vi.recover	 mode=01777
 ..
 
 # ./www
-www type=dir uname=root gname=daemon mode=755
+www	type=dir uname=root gname=daemon mode=755
 
 # ./www/icons
-icons  type=dir uname=root gname=daemon mode=755
+icons	type=dir uname=root gname=daemon mode=755
 
 # ./www/icons/small
-small  type=dir uname=root gname=daemon mode=755
+small	type=dir uname=root gname=daemon mode=755
 # ./www/icons/small
 ..
 
@@ -2626,27 +2626,87 @@ small  type=dir uname=root gname=daemon mode=755
 ..
 
 #./www/cgi-bin
-cgi-bin  type=dir uname=root gname=daemon mode=755
+cgi-bin	type=dir uname=root gname=daemon mode=755
 #./www/cgi-bin
 ..
 
 #./www/htdocs
-htdocs  type=dir uname=root gname=daemon mode=755
+htdocs	type=dir uname=root gname=daemon mode=755
+
+#./www/htdocs/man
+man	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man/man1
+man1	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man
+..
+
+#./www/htdocs/man/man2
+man2	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man
+..
+
+#./www/htdocs/man/man3
+man3	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man
+..
+
+#./www/htdocs/man/man4
+man4	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man
+..
+
+#./www/htdocs/man/man5
+man5	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man
+..
+
+#./www/htdocs/man/man6
+man6	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man
+..
+
+#./www/htdocs/man/man7
+man7	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man
+..
+
+#./www/htdocs/man/man8
+man8	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man
+..
+
+#./www/htdocs/man/man9
+man9	type=dir uname=root gname=bin mode=755
+
+#./www/htdocs/man
+..
 
 #./www/htdocs
+..
+
+#./www
 ..
 
 #./www/logs
-logs  type=dir uname=root gname=daemon mode=755
+logs	type=dir uname=root gname=daemon mode=755
 #./www/logs
 ..
 
 #./www/conf
-conf  type=dir uname=root gname=daemon mode=755
+conf	type=dir uname=root gname=daemon mode=755
 #./www/conf
 
 #./www/conf/modules
-modules  type=dir uname=root gname=daemon mode=755
+modules	type=dir uname=root gname=daemon mode=755
 #./www/conf/modules
 ..
 
@@ -2659,12 +2719,12 @@ modules.sample  type=dir uname=root gname=daemon mode=755
 ..
 
 #./www/users
-users  type=dir uname=root gname=daemon mode=755
+users	type=dir uname=root gname=daemon mode=755
 #./www/users
 ..
 
 #./www/bin
-bin  type=dir uname=root gname=daemon mode=755
+bin	type=dir uname=root gname=daemon mode=755
 #./www/bin
 ..
 
@@ -2672,7 +2732,7 @@ bin  type=dir uname=root gname=daemon mode=755
 ..
 
 #./var/audit
-audit type=dir uname=root gname=wheel mode=2770
+audit	type=dir uname=root gname=wheel mode=2770
 #./var/audit
 ..
 
