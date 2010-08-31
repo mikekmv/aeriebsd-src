@@ -168,7 +168,10 @@ ELFNAME(check_header)(Elf_Ehdr *ehdr)
 	 * we look at the rest of the Elf_Ehdr structure. These few elements
 	 * are represented in a machine independant fashion.
 	 */
-	if (!IS_ELF(*ehdr) ||
+	if (ehdr->e_ehsize < sizeof *ehdr ||
+	    ehdr->e_phentsize != sizeof(Elf_Phdr) ||
+	    ehdr->e_shentsize != sizeof(Elf_Shdr) ||
+	    !IS_ELF(*ehdr) ||
 	    ehdr->e_ident[EI_CLASS] != ELF_TARG_CLASS ||
 	    ehdr->e_ident[EI_DATA] != ELF_TARG_DATA ||
 	    ehdr->e_ident[EI_VERSION] != ELF_TARG_VER)
@@ -349,6 +352,12 @@ ELFNAME(load_file)(struct proc *p, char *path, struct exec_package *epp,
 		goto bad1;
 
 	for (i = 0; i < eh.e_phnum; i++) {
+		/* XXX should check p_align */
+		if (ph[i].p_memsz < ph[i].p_filesz) {
+			error = ENOEXEC;
+			goto bad1;
+		}
+
 		if (ph[i].p_type == PT_LOAD) {
 			loadmap[idx].vaddr = trunc_page(ph[i].p_vaddr);
 			loadmap[idx].memsz = round_page (ph[i].p_vaddr +
