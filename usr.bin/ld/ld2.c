@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.25 2010/08/07 21:22:28 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.26 2010/08/19 11:28:18 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -332,7 +332,7 @@ ldmap(struct headorder *headorder)
 			off += ord->ldo_addr - ord->ldo_start;
 
 			eh->e_shstrndx = ord->ldo_sno;
-			eh->e_shoff = (off + 15) & ~15LL;
+			eh->e_shoff = off = SHALIGN(off);
 			off += sysobj.ol_nsect * sizeof *shdr;
 
 			p = q = ord->ldo_wurst;
@@ -687,11 +687,8 @@ ldload(const char *name, struct ldorder *order)
 
 		/* done w/ meat -- generate symbols */
 		if (ord->ldo_type == SHT_SYMTAB) {
-			Elf_Sym asym;
-
-			bzero(&asym, sizeof asym);
-			if (fwrite(&asym, sizeof asym, 1, fp) != 1)
-				err(1, "fwrite: %s", name);
+			if (fseek(fp, sizeof(Elf_Sym), SEEK_CUR) < 0)
+				err(1, "fseek: %s", name);
 			sym_scan(order, NULL, elf_symwrite, fp);
 			continue;
 		}

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.17 2010/07/23 15:51:29 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.18 2010/08/17 14:45:25 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -988,7 +988,7 @@ ldorder(const struct ldarch *lda)
 	n = 1;
 	TAILQ_FOREACH(order, &headorder, ldo_entry)
 		n += strlen(order->ldo_name) + 1;
-	ssorder->ldo_wsize = ALIGN(n);
+	ssorder->ldo_wsize = SHALIGN(n);
 	if (!(ssorder->ldo_wurst = malloc(ssorder->ldo_wsize)))
 		err(1, "malloc");
 	sysobj.ol_snames = ssorder->ldo_wurst;
