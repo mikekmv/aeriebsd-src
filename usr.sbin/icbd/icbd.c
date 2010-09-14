@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: icbd.c,v 1.22 2010/01/03 20:54:18 kmerz Exp $";
+static const char rcsid[] = "$ABSD: icbd.c,v 1.23 2010/01/10 12:45:24 kmerz Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -229,8 +229,7 @@ icbd_dns(int fd, short event, void *arg)
 }
 
 void
-icbd_accept(int fd, short event __attribute__((__unused__)),
-    void *arg __attribute__((__unused__)))
+icbd_accept(int fd, short event, void *arg)
 {
 	struct sockaddr_storage ss;
 	struct icb_session *is;
@@ -349,8 +348,7 @@ icbd_drop(struct icb_session *is, char *reason)
 }
 
 void
-icbd_ioerr(struct bufferevent *bev __attribute__((__unused__)), short what,
-    void *arg)
+icbd_ioerr(struct bufferevent *bev, short what, void *arg)
 {
 	struct icb_session *is = (struct icb_session *)arg;
 

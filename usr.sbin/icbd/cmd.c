@@ -15,7 +15,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: cmd.c,v 1.21 2010/01/03 20:54:18 kmerz Exp $";
+static const char rcsid[] = "$ABSD: cmd.c,v 1.22 2010/01/10 12:45:24 kmerz Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -205,7 +205,7 @@ icb_cmd_personal(struct icb_session *is, char *arg)
 }
 
 void
-icb_cmd_pass(struct icb_session *is, char *arg __attribute__((unused)))
+icb_cmd_pass(struct icb_session *is, char *arg)
 {
 	if (!icb_ismoder(is->group, is))
 		(void)icb_pass(is->group, is->group->moder, is);
@@ -230,7 +230,7 @@ icb_cmd_topic(struct icb_session *is, char *arg)
 }
 
 void
-icb_cmd_who(struct icb_session *is, char *arg __attribute__((unused)))
+icb_cmd_who(struct icb_session *is, char *arg)
 {
 	icb_who(is, NULL);
 }
