@@ -25,6 +25,8 @@
 #define	ELF_OBUFSZ	0x10000
 #define	ELF_SBUFSZ	0x200	/* XXX make bigger later */
 
+#define	SHALIGN(a)	(((a) + 15) & ~15)
+
 /* this is used for library path and -L */
 struct pathlist {
 	TAILQ_ENTRY(pathlist) pl_entry;
