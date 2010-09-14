@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: archive.c,v 1.5 2009/11/01 18:18:50 mickey Exp $";
+    "$ABSD: archive.c,v 1.6 2010/06/18 11:24:36 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -314,7 +314,7 @@ get_namtab(FILE *afp)
 
 	for (nt = nametab, pp = p; *p; p++)
 		/* also skip the tail padding */
-		if (*p == '\n' && p[-1] != '\n') {
+		if (*p == '\n' && p[-1] != '\0') {
 			*nt++ = pp;
 			if (p[-1] == '/')
 				p[-1] = '\0';
