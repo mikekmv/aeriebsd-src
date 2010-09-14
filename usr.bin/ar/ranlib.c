@@ -36,7 +36,7 @@
 static char sccsid[] = "@(#)build.c	5.3 (Berkeley) 3/12/91";
 static char sccsid[] = "@(#)touch.c	5.3 (Berkeley) 3/12/91";
 #else
-static const char rcsid[] = "$ABSD: ranlib.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
+static const char rcsid[] = "$ABSD: ranlib.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -207,6 +207,11 @@ read_exec(FILE *rfp, FILE *wfp, long *symcnt, long *tsymlen)
 		size_t stabsize;
 
 		elf32_fix_header(&eh.elf32);
+		if (eh.elf32->e_ehsize < sizeof eh.elf32) {
+			warnx("%s: ELF header is too short", archive);
+			goto bad;
+		}
+
 		if (!(shdr = elf32_load_shdrs(archive, rfp, r_off, &eh.elf32)))
 			goto bad;
 		elf32_fix_shdrs(&eh.elf32, shdr);
@@ -270,6 +275,11 @@ read_exec(FILE *rfp, FILE *wfp, long *symcnt, long *tsymlen)
 		size_t stabsize;
 
 		elf64_fix_header(&eh.elf64);
+		if (eh.elf64->e_ehsize < sizeof eh.elf64) {
+			warnx("%s: ELF header is too short", archive);
+			goto bad;
+		}
+
 		if (!(shdr = elf64_load_shdrs(archive, rfp, r_off, &eh.elf64)))
 			goto bad;
 		elf64_fix_shdrs(&eh.elf64, shdr);
