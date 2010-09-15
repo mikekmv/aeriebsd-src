@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.18 2010/08/17 14:45:25 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.19 2010/09/13 19:44:55 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -885,6 +885,12 @@ obj_add(const char *path, const char *name, FILE *fp, off_t foff,
 	return 0;
 }
 
+/*
+ * produce a loading order for the later mapping stage
+ * this matches each template order for a given arch
+ * against the object list
+ * generate the resulting section name list
+ */
 struct headorder headorder;	/* XXX until struct arg/ret works */
 
 struct headorder *
@@ -996,6 +1002,12 @@ ldorder(const struct ldarch *lda)
 	return &headorder;
 }
 
+/*
+ * a wrapper for the micro-linker (ld2.c)
+ * read the whole object into memory and
+ * call appropriate worker (32/64)
+ * upon success ump out the result
+ */
 int
 uLD(const char *name, const char *output)
 {

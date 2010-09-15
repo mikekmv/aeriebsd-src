@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.26 2010/08/19 11:28:18 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.27 2010/09/13 19:44:55 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -121,6 +121,9 @@ int elf_symwrite(const struct ldorder *, const struct section *,
 Elf_Off elf_prefer(Elf_Off, struct ldorder *, uint64_t);
 int elf_seek(FILE *, off_t, uint64_t);
 
+/*
+ * template note section
+ */
 struct {
 	Elf_Note en;
 	char name[16];
@@ -816,6 +819,8 @@ ldloadasect(FILE *fp, FILE *ofp, const char *name, const struct ldorder *ord,
 
 /*
  * load the relocations for the section;
+ * resolve symbol references and sort out relocs
+ * according to the address as required by the loader
  */
 int
 elf_loadrelocs(struct objlist *ol, struct section *os, Elf_Shdr *shdr,
@@ -1162,8 +1167,13 @@ elf_seek(FILE *fp, off_t off, uint64_t filler)
 }
 
 /*
- * regular funky micro-loader that scans through one file
- * and 
+ * a micro-linker that is only used for cleaning up
+ * a single file from unwanted symbol entries and
+ * thus simplify relocs and shrink symbol table;
+ * depending on the flags may as well completely
+ * fix the object in memory thus performing "dynamic" loading
+ *
+ * operates on the file already in-memory
  */
 int
 uLD(const char *name, char *v, int *size, int flags)

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syms.c,v 1.8 2010/06/08 23:18:09 mickey Exp $";
+static const char rcsid[] = "$ABSD: syms.c,v 1.9 2010/07/23 15:51:29 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -44,6 +44,9 @@ SPLAY_PROTOTYPE(symtree, symlist, sl_node, symcmp);
 
 SPLAY_GENERATE(symtree, symlist, sl_node, symcmp);
 
+/*
+ * add and return a symbol as undefined
+ */
 struct symlist *
 sym_undef(const char *name)
 {
@@ -60,6 +63,9 @@ sym_undef(const char *name)
 	return sym;
 }
 
+/*
+ * check and return for symbol a known undefined
+ */
 struct symlist *
 sym_isundef(const char *name)
 {
@@ -70,6 +76,9 @@ sym_isundef(const char *name)
 	return SPLAY_FIND(symtree, &undsyms, &key);
 }
 
+/*
+ * define and return a previously undefined symbol
+ */
 struct symlist *
 sym_define(struct symlist *sym, struct section *os, void *esym)
 {
@@ -83,6 +92,9 @@ sym_define(struct symlist *sym, struct section *os, void *esym)
 	return sym;
 }
 
+/*
+ * redefine a symbol (used for commons)
+ */
 struct symlist *
 sym_redef(struct symlist *sym, struct section *os, void *esym)
 {
@@ -95,6 +107,9 @@ sym_redef(struct symlist *sym, struct section *os, void *esym)
 	return sym;
 }
 
+/*
+ * add a new symbol as defined
+ */
 struct symlist *
 sym_add(const char *name, struct section *os, void *esym)
 {
@@ -116,6 +131,9 @@ sym_add(const char *name, struct section *os, void *esym)
 	return sym;
 }
 
+/*
+ * check and return for symbol being defined
+ */
 struct symlist *
 sym_isdefined(const char *name, struct section *os)
 {
@@ -131,6 +149,10 @@ sym_isdefined(const char *name, struct section *os)
 	return sym;
 }
 
+/*
+ * if there are any undefined symbols left
+ * report 'em now
+ */
 int
 sym_undcheck(void)
 {
@@ -147,11 +169,13 @@ sym_undcheck(void)
 		err = -1;
 	}
 
-/* TODO check that all relocs got syms resolved! */
-
 	return err;
 }
 
+/*
+ * print out the map of the final executable
+ * if requested also dump out the cross-reference table
+ */
 void
 sym_printmap(struct headorder *headorder, ordprint_t of, symprint_t sf)
 {
@@ -192,6 +216,10 @@ sym_printmap(struct headorder *headorder, ordprint_t of, symprint_t sf)
 		fflush(mfp);
 }
 
+/*
+ * call a given function over all symbols defined to date
+ * used by the strtab generation and map printing
+ */
 void
 sym_scan(const struct ldorder *order, ordprint_t of, symprint_t sf, void *v)
 {
@@ -250,6 +278,10 @@ order_clone(const struct ldarch *lda, const struct ldorder *order)
 	return neworder;
 }
 
+/*
+ * map printing function called for each order member
+ * that is only sections matter for now
+ */
 int
 order_printmap(const struct ldorder *order, void *v)
 {
@@ -270,6 +302,10 @@ order_printmap(const struct ldorder *order, void *v)
 	return 0;
 }
 
+/*
+ * return a random bit 0/1
+ * used for object order randomisation
+ */
 int
 randombit(void)
 {
