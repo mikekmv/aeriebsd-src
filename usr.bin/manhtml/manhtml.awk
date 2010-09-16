@@ -24,9 +24,8 @@ function quote_string(str) {
 }
 
 BEGIN {
-	osname = "AerieBSD";
-	osrelease = "1.0";
-	path = "/home/kmerz/";
+	rev="$ABSD$"
+	path = "";
 	print "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\""
 	print "\"http://www.w3.org/TR/html4/loose.dtd\">"
 	print "<html>"
@@ -35,7 +34,7 @@ BEGIN {
 END {
 	print "<p><hr><p>";
 	print "<table width=100% ><tr>";
-	print "<td>" osname " " osrelease " Refernce Manual </td>";
+	print "<td>" OSNAME " " OSREL " Refernce Manual </td>";
 	print "<td align=center>" date "</td>";
 	print "<td align=right>" title "(" section ") </td>";
 	print "</tr></table>";
@@ -51,15 +50,21 @@ END {
 	next;
 }
 
+/^\.Aq / {
+	sub (/^\.Aq /, "");
+	print "&#139;" $0 "&#155";
+	next;
+}
+
 /^\.Dq / {
 	sub (/^\.Dq /, "");
-	print "\"" $0 "\"";
+	print "&#147;" $0 "&#148;";
 	next;
 }
 
 /^\.Sq / {
 	sub (/^\.Sq /, "");
-	print "\'" $0 "\'";
+	print "&#145" $0 "&#146;";
 	next;
 }
 
@@ -77,7 +82,7 @@ END {
 	print "<body>";
 	print "<table width=100% ><tr>";
 	print "<td>" title "(" section ") </td>";
-	print "<td align=center>" osname " " osrelease " Refernce Manual </td>";
+	print "<td align=center>" OSNAME " " OSREL " Refernce Manual </td>";
 	print "<td align=right>" title "(" section ") </td>";
 	print "</tr></table>";
 	next;
@@ -142,7 +147,7 @@ END {
 # Cross Reference
 /^\.Xr / {
 	sub(/^\.Xr /, "");
-	print "<a href=\"" path "/" $1 "." $2 ".html\">" $1 "(" $2 ")" "</a>";
+	print "<a href=\"" path "/man/man" $2 "/" $1 ".html\">" $1 "(" $2 ")" "</a>";
 	next;
 }
 
