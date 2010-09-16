@@ -35,6 +35,22 @@ xmalloc(size_t size)
 }
 
 void *
+xcalloc(size_t nmemb, size_t size)
+{
+	void *ptr;
+
+	if (size == 0 || nmemb == 0)
+		errx(2, "xcalloc: zero size");
+	if (SIZE_MAX / nmemb < size)
+		errx(2, "xcalloc: nmemb * size > SIZE_MAX");
+	ptr = calloc(nmemb, size);
+	if (ptr == NULL)
+		errx(2, "xcalloc: out of memory (allocating %lu bytes)",
+		    (u_long)(size * nmemb));
+	return ptr;
+}
+
+void *
 xrealloc(void *ptr, size_t nmemb, size_t size)
 {
 	void *new_ptr;
@@ -42,7 +58,7 @@ xrealloc(void *ptr, size_t nmemb, size_t size)
 
 	if (new_size == 0)
 		errx(2, NULL);
-	if (SIZE_T_MAX / nmemb < size)
+	if (SIZE_MAX / nmemb < size)
 		errx(2, NULL);
 	if (ptr == NULL)
 		new_ptr = malloc(new_size);

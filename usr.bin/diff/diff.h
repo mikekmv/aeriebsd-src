@@ -49,9 +49,20 @@
 /*
  * Output flags
  */
-#define	D_HEADER	1	/* Print a header/footer between files */
-#define	D_EMPTY1	2	/* Treat first file as empty (/dev/null) */
-#define	D_EMPTY2	4	/* Treat second file as empty (/dev/null) */
+#define	D_HEADER	0x001	/* Print a header/footer between files */
+#define	D_EMPTY1	0x002	/* Treat first file as empty (/dev/null) */
+#define	D_EMPTY2	0x004	/* Treat second file as empty (/dev/null) */
+
+/*
+ * Command line flags
+ */
+#define D_FORCEASCII	0x008	/* Treat file as ascii regardless of content */
+#define D_FOLDBLANKS	0x010	/* Treat all white space as equal */
+#define D_MINIMAL	0x020	/* Make diff as small as possible */
+#define D_IGNORECASE	0x040	/* Case-insensitive matching */
+#define D_PROTOTYPE	0x080	/* Display C function prototype */
+#define D_EXPANDTABS	0x100	/* Expand tabs to spaces */
+#define D_IGNOREBLANKS	0x200	/* Ignore white space changes */
 
 /*
  * Status values for print_status() and diffreg() return values
@@ -72,9 +83,8 @@ struct excludes {
 	struct excludes *next;
 };
 
-extern int	aflag, bflag, dflag, iflag, lflag, Nflag, Pflag, pflag, rflag,
-		sflag, tflag, Tflag, wflag;
-extern int	format, context, status;
+extern int	lflag, Nflag, Pflag, rflag, sflag, Tflag;
+extern int	diff_format, diff_context, status;
 extern char	*start, *ifdefname, *diffargs, *label[2], *ignore_pats;
 extern struct	stat stb1, stb2;
 extern struct	excludes *excludes_list;
@@ -85,6 +95,6 @@ int	diffreg(char *, char *, int);
 int	easprintf(char **, const char *, ...);
 void	*emalloc(size_t);
 void	*erealloc(void *, size_t);
-void	diffdir(char *, char *);
+void	diffdir(char *, char *, int);
 void	print_only(const char *, size_t, const char *);
 void	print_status(int, char *, char *, char *);

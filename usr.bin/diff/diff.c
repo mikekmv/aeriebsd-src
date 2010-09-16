@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: diff.c,v 1.1.1.1 2008/08/26 14:42:43 root Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,9 +40,8 @@ static const char rcsid[] = "$ABSD$";
 #include "diff.h"
 #include "xmalloc.h"
 
-int	 aflag, bflag, dflag, iflag, lflag, Nflag, Pflag, pflag, rflag;
-int	 sflag, tflag, Tflag, wflag;
-int	 format, context, status;
+int	 lflag, Nflag, Pflag, rflag, sflag, Tflag;
+int	 diff_format, diff_context, status;
 char	*start, *ifdefname, *diffargs, *label[2], *ignore_pats;
 struct stat stb1, stb2;
 struct excludes *excludes_list;
@@ -89,11 +88,11 @@ main(int argc, char **argv)
 {
 	char *ep, **oargv;
 	long  l;
-	int   ch, lastch, gotstdin, prevoptind, newarg;
+	int   ch, dflags, lastch, gotstdin, prevoptind, newarg;
 
 	oargv = argv;
 	gotstdin = 0;
-
+	dflags = 0;
 	lastch = '\0';
 	prevoptind = 1;
 	newarg = 1;
@@ -104,40 +103,40 @@ main(int argc, char **argv)
 			if (newarg)
 				usage();	/* disallow -[0-9]+ */
 			else if (lastch == 'c' || lastch == 'u')
-				context = 0;
-			else if (!isdigit(lastch) || context > INT_MAX / 10)
+				diff_context = 0;
+			else if (!isdigit(lastch) || diff_context > INT_MAX / 10)
 				usage();
-			context = (context * 10) + (ch - '0');
+			diff_context = (diff_context * 10) + (ch - '0');
 			break;
 		case 'a':
-			aflag = 1;
+			dflags |= D_FORCEASCII;
 			break;
 		case 'b':
-			bflag = 1;
+			dflags |= D_FOLDBLANKS;
 			break;
 		case 'C':
 		case 'c':
-			format = D_CONTEXT;
+			diff_format = D_CONTEXT;
 			if (optarg != NULL) {
 				l = strtol(optarg, &ep, 10);
 				if (*ep != '\0' || l < 0 || l >= INT_MAX)
 					usage();
-				context = (int)l;
+				diff_context = (int)l;
 			} else
-				context = 3;
+				diff_context = 3;
 			break;
 		case 'd':
-			dflag = 1;
+			dflags |= D_MINIMAL;
 			break;
 		case 'D':
-			format = D_IFDEF;
+			diff_format = D_IFDEF;
 			ifdefname = optarg;
 			break;
 		case 'e':
-			format = D_EDIT;
+			diff_format = D_EDIT;
 			break;
 		case 'f':
-			format = D_REVERSE;
+			diff_format = D_REVERSE;
 			break;
 		case 'h':
 			/* silently ignore for backwards compatibility */
@@ -146,7 +145,7 @@ main(int argc, char **argv)
 			push_ignore_pats(optarg);
 			break;
 		case 'i':
-			iflag = 1;
+			dflags |= D_IGNORECASE;
 			break;
 		case 'L':
 			if (label[0] == NULL)
@@ -164,10 +163,10 @@ main(int argc, char **argv)
 			Nflag = 1;
 			break;
 		case 'n':
-			format = D_NREVERSE;
+			diff_format = D_NREVERSE;
 			break;
 		case 'p':
-			pflag = 1;
+			dflags |= D_PROTOTYPE;
 			break;
 		case 'P':
 			Pflag = 1;
@@ -176,7 +175,7 @@ main(int argc, char **argv)
 			rflag = 1;
 			break;
 		case 'q':
-			format = D_BRIEF;
+			diff_format = D_BRIEF;
 			break;
 		case 'S':
 			start = optarg;
@@ -188,21 +187,21 @@ main(int argc, char **argv)
 			Tflag = 1;
 			break;
 		case 't':
-			tflag = 1;
+			dflags |= D_EXPANDTABS;
 			break;
 		case 'U':
 		case 'u':
-			format = D_UNIFIED;
+			diff_format = D_UNIFIED;
 			if (optarg != NULL) {
 				l = strtol(optarg, &ep, 10);
 				if (*ep != '\0' || l < 0 || l >= INT_MAX)
 					usage();
-				context = (int)l;
+				diff_context = (int)l;
 			} else
-				context = 3;
+				diff_context = 3;
 			break;
 		case 'w':
-			wflag = 1;
+			dflags |= D_IGNOREBLANKS;
 			break;
 		case 'X':
 			read_excludes_file(optarg);
@@ -254,9 +253,9 @@ main(int argc, char **argv)
 		errx(2, "can't compare - to a directory");
 	set_argstr(oargv, argv);
 	if (S_ISDIR(stb1.st_mode) && S_ISDIR(stb2.st_mode)) {
-		if (format == D_IFDEF)
+		if (diff_format == D_IFDEF)
 			errx(2, "-D option not supported with directories");
-		diffdir(argv[0], argv[1]);
+		diffdir(argv[0], argv[1], dflags);
 	} else {
 		if (S_ISDIR(stb1.st_mode)) {
 			argv[0] = splice(argv[0], argv[1]);
@@ -268,8 +267,8 @@ main(int argc, char **argv)
 			if (stat(argv[1], &stb2) < 0)
 				err(2, "%s", argv[1]);
 		}
-		print_status(diffreg(argv[0], argv[1], 0), argv[0], argv[1],
-		    NULL);
+		print_status(diffreg(argv[0], argv[1], dflags), argv[0], argv[1],
+		    "");
 	}
 	exit(status);
 }
@@ -364,39 +363,37 @@ print_status(int val, char *path1, char *path2, char *entry)
 		break;
 	case D_COMMON:
 		printf("Common subdirectories: %s%s and %s%s\n",
-		    path1, entry ? entry : "", path2, entry ? entry : "");
+		    path1, entry, path2, entry);
 		break;
 	case D_BINARY:
 		printf("Binary files %s%s and %s%s differ\n",
-		    path1, entry ? entry : "", path2, entry ? entry : "");
+		    path1, entry, path2, entry);
 		break;
 	case D_DIFFER:
-		if (format == D_BRIEF)
+		if (diff_format == D_BRIEF)
 			printf("Files %s%s and %s%s differ\n",
-			    path1, entry ? entry : "",
-			    path2, entry ? entry : "");
+			    path1, entry, path2, entry);
 		break;
 	case D_SAME:
 		if (sflag)
 			printf("Files %s%s and %s%s are identical\n",
-			    path1, entry ? entry : "",
-			    path2, entry ? entry : "");
+			    path1, entry, path2, entry);
 		break;
 	case D_MISMATCH1:
 		printf("File %s%s is a directory while file %s%s is a regular file\n",
-		    path1, entry ? entry : "", path2, entry ? entry : "");
+		    path1, entry, path2, entry);
 		break;
 	case D_MISMATCH2:
 		printf("File %s%s is a regular file while file %s%s is a directory\n",
-		    path1, entry ? entry : "", path2, entry ? entry : "");
+		    path1, entry, path2, entry);
 		break;
 	case D_SKIPPED1:
 		printf("File %s%s is not a regular file or directory and was skipped\n",
-		    path1, entry ? entry : "");
+		    path1, entry);
 		break;
 	case D_SKIPPED2:
 		printf("File %s%s is not a regular file or directory and was skipped\n",
-		    path2, entry ? entry : "");
+		    path2, entry);
 		break;
 	}
 }
@@ -405,12 +402,12 @@ __dead void
 usage(void)
 {
 	(void)fprintf(stderr,
-	    "usage: diff [-abdilpqTtw] [-I pattern] [-c | -e | -f | -n | -u]\n"
-	    "            [-L label] file1 file2\n"
-	    "       diff [-abdilpqTtw] [-I pattern] [-L label] -C number file1 file2\n"
-	    "       diff [-abdilqtw] [-I pattern] -D string file1 file2\n"
-	    "       diff [-abdilpqTtw] [-I pattern] [-L label] -U number file1 file2\n"
-	    "       diff [-abdilNPpqrsTtw] [-I pattern] [-c | -e | -f | -n | -u]\n"
+	    "usage: diff [-abdilpTtw] [-c | -e | -f | -n | -q | -u] [-I pattern] [-L label]\n"
+	    "            file1 file2\n"
+	    "       diff [-abdilpTtw] [-I pattern] [-L label] -C number file1 file2\n"
+	    "       diff [-abdiltw] [-I pattern] -D string file1 file2\n"
+	    "       diff [-abdilpTtw] [-I pattern] [-L label] -U number file1 file2\n"
+	    "       diff [-abdilNPprsTtw] [-c | -e | -f | -n | -q | -u] [-I pattern]\n"
 	    "            [-L label] [-S name] [-X file] [-x pattern] dir1 dir2\n");
 
 	exit(2);

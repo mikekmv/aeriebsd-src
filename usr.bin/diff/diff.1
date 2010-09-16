@@ -28,7 +28,7 @@
 .\"
 .\"     @(#)diff.1	8.1 (Berkeley) 6/30/93
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt DIFF 1
 .Os
 .Sh NAME
@@ -36,38 +36,38 @@
 .Nd differential file and directory comparator
 .Sh SYNOPSIS
 .Nm diff
-.Op Fl abdilpqTtw
-.Op Fl I Ar pattern
+.Op Fl abdilpTtw
 .Oo
 .Fl c | e | f |
-.Fl n | u
+.Fl n | q | u
 .Oc
+.Op Fl I Ar pattern
 .Op Fl L Ar label
 .Ar file1 file2
 .Nm diff
-.Op Fl abdilpqTtw
+.Op Fl abdilpTtw
 .Op Fl I Ar pattern
 .Op Fl L Ar label
 .Fl C Ar number
 .Ar file1 file2
 .Nm diff
-.Op Fl abdilqtw
+.Op Fl abdiltw
 .Op Fl I Ar pattern
 .Fl D Ar string
 .Ar file1 file2
 .Nm diff
-.Op Fl abdilpqTtw
+.Op Fl abdilpTtw
 .Op Fl I Ar pattern
 .Op Fl L Ar label
 .Fl U Ar number
 .Ar file1 file2
 .Nm diff
-.Op Fl abdilNPpqrsTtw
-.Op Fl I Ar pattern
+.Op Fl abdilNPprsTtw
 .Oo
 .Fl c | e | f |
-.Fl n | u
+.Fl n | q | u
 .Oc
+.Op Fl I Ar pattern
 .Bk -words
 .Op Fl L Ar label
 .Op Fl S Ar name
@@ -468,19 +468,17 @@ An error occurred.
 .Xr comm 1 ,
 .Xr diff3 1 ,
 .Xr ed 1 ,
-.Xr pr 1 ,
-.Xr sdiff 1 ,
-.Xr fnmatch 3 ,
-.Xr re_format 7
+.Xr patch 1 ,
+.Xr sdiff 1
 .Sh STANDARDS
 The
 .Nm
 utility is compliant with the
-.St -p1003.1-2004
+.St -p1003.1-2008
 specification.
 .Pp
 The flags
-.Op Fl aDdIiLlNnPpqSsTtUuwXx
+.Op Fl aDdIiLlNnPpqSsTtwXx
 are extensions to that specification.
 .Sh HISTORY
 A
