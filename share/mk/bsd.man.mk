@@ -46,12 +46,6 @@ MANLINT?=	\#
 	@echo "nroff -Tps -mandoc ${.IMPSRC} > ${.TARGET}"
 	@nroff -Tps -mandoc ${.IMPSRC} > ${.TARGET} || (rm -f ${.TARGET}; false)
 
-.9.html9 .8.html8 .7.html7 .6.html6 .5.html5 .4.html4 .3p.html3p .3.html3 \
-.2.html2 .1.html1:
-	@echo "manhtml ${.IMPSRC} > ${.TARGET}"
-	@${MANHTMLOFF} -v OSNAME=`uname -s` -v OSREL=`uname -r` \
-	    ${.IMPSRC} > ${.TARGET} || (rm -f ${.TARGET}; false)
-
 .9tbl.ps9 .8tbl.ps8 .7tbl.ps7 .6tbl.ps6 .5tbl.ps5 .4tbl.ps4 .3tbl.ps3 \
 .2tbl.ps2 .1tbl.ps1:
 	@echo "${TBL} ${.IMPSRC} | nroff -Tps -mandoc > ${.TARGET}"
@@ -63,6 +57,24 @@ MANLINT?=	\#
 	@echo "${EQN} ${.IMPSRC} | nroff -Tps -mandoc > ${.TARGET}"
 	@${EQN} ${.IMPSRC} | nroff -Tps -mandoc > ${.TARGET} || \
 	    (rm -f ${.TARGET}; false)
+
+.9.html9 .8.html8 .7.html7 .6.html6 .5.html5 .4.html4 .3p.html3p .3.html3 \
+.2.html2 .1.html1:
+	@echo "manhtml ${.IMPSRC} > ${.TARGET}"
+	@${MANHTMLOFF} -v OSNAME=`uname -s` -v OSREL=${OSREV} \
+	    ${.IMPSRC} > ${.TARGET} || (rm -f ${.TARGET}; false)
+
+.9tbl.html9 .8tbl.html8 .7tbl.html7 .6tbl.html6 .5tbl.html5 .4tbl.html4 \
+.3tbl.html3 .2tbl.html2 .1tbl.html1:
+	@echo "${TBL} ${.IMPSRC} | manhtml > ${.TARGET}"
+	@${TBL} ${.IMPSRC} | ${MANHTMLOFF} -v OSNAME=`uname -s` \
+	    -v OSREL=${OSREV} > ${.TARGET} || (rm -f ${.TARGET}; false)
+
+.9eqn.html9 .8eqn.html8 .7eqn.html7 .6eqn.html6 .5eqn.html5 .4eqn.html4 \
+.3eqn.html3 .2eqn.html2 .1eqn.html1:
+	@echo "${EQN} ${.IMPSRC} | manhtml > ${.TARGET}"
+	@${EQN} ${.IMPSRC} | ${MANHTMLOFF} -v OSNAME=`uname -s` \
+	    -v OSREL=${OSREV} > ${.TARGET} || (rm -f ${.TARGET}; false)
 
 .if defined(MAN) && !empty(MAN) && !defined(MANALL)
 .  for v s in MANALL .cat PS2ALL .ps HTML2ALL .html
