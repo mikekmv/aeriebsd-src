@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 1996 Wolfgang Solfrank.
  * Copyright (C) 1996 TooLs GmbH.
@@ -68,7 +67,7 @@ struct ptable_ent {
 	char name	[1];
 };
 #define	PTFIXSZ		8
-#define	PTSIZE(pp)	roundup(PTFIXSZ + isonum_711((pp)->namlen), 2)
+#define	PTSIZE(pp)	roundup(PTFIXSZ + isonum_711((u_char *)(pp)->namlen), 2)
 
 #define	cdb2devb(bno)	((bno) * ISO_DEFAULT_BLOCK_SIZE / DEV_BSIZE)
 
@@ -79,7 +78,7 @@ pnmatch(char *path, struct ptable_ent *pp)
 	int i;
 
 	cp = pp->name;
-	for (i = isonum_711(pp->namlen); --i >= 0; path++, cp++) {
+	for (i = isonum_711((u_char *)pp->namlen); --i >= 0; path++, cp++) {
 		if (toupper(*path) == *cp)
 			continue;
 		return 0;
@@ -100,7 +99,7 @@ dirmatch(char *path, struct iso_directory_record *dp)
 		return 0;
 
 	cp = dp->name;
-	for (i = isonum_711(dp->name_len); --i >= 0; path++, cp++) {
+	for (i = isonum_711((u_char *)dp->name_len); --i >= 0; path++, cp++) {
 		if (!*path)
 			break;
 		if (toupper(*path) == *cp)
@@ -155,17 +154,17 @@ cd9660_open(char *path, struct open_file *f)
 		rc = EINVAL;
 		if (bcmp(vd->id, ISO_STANDARD_ID, sizeof vd->id) != 0)
 			goto out;
-		if (isonum_711(vd->type) == ISO_VD_END)
+		if (isonum_711((u_char *)vd->type) == ISO_VD_END)
 			goto out;
-		if (isonum_711(vd->type) == ISO_VD_PRIMARY)
+		if (isonum_711((u_char *)vd->type) == ISO_VD_PRIMARY)
 			break;
 	}
-	if (isonum_723(vd->logical_block_size) != ISO_DEFAULT_BLOCK_SIZE)
+	if (isonum_723((u_char *)vd->logical_block_size) != ISO_DEFAULT_BLOCK_SIZE)
 		goto out;
 
 	/* Now get the path table and lookup the directory of the file */
-	bno = isonum_732(vd->type_m_path_table);
-	psize = isonum_733(vd->path_table_size);
+	bno = isonum_732((u_char *)vd->type_m_path_table);
+	psize = isonum_733((u_char *)vd->path_table_size);
 
 	if (psize > ISO_DEFAULT_BLOCK_SIZE) {
 		free(buf, ISO_DEFAULT_BLOCK_SIZE);
@@ -185,7 +184,7 @@ cd9660_open(char *path, struct open_file *f)
 	parent = 1;
 	pp = (struct ptable_ent *)buf;
 	ent = 1;
-	bno = isonum_732(pp->block) + isonum_711(pp->extlen);
+	bno = isonum_732((u_char *)pp->block) + isonum_711((u_char *)pp->extlen);
 
 	rc = ENOENT;
 	/*
@@ -197,18 +196,18 @@ cd9660_open(char *path, struct open_file *f)
 	while (*path) {
 		if ((void *)pp >= buf + psize)
 			break;
-		if (isonum_722(pp->parent) != parent)
+		if (isonum_722((u_char *)pp->parent) != parent)
 			break;
 		if (!pnmatch(path, pp)) {
 			pp = (struct ptable_ent *)((void *)pp + PTSIZE(pp));
 			ent++;
 			continue;
 		}
-		path += isonum_711(pp->namlen) + 1;
+		path += isonum_711((u_char *)pp->namlen) + 1;
 		parent = ent;
-		bno = isonum_732(pp->block) + isonum_711(pp->extlen);
+		bno = isonum_732((u_char *)pp->block) + isonum_711((u_char *)pp->extlen);
 		while ((void *)pp < buf + psize) {
-			if (isonum_722(pp->parent) == parent)
+			if (isonum_722((u_char *)pp->parent) == parent)
 				break;
 			pp = (struct ptable_ent *)((void *)pp + PTSIZE(pp));
 			ent++;
@@ -234,7 +233,7 @@ cd9660_open(char *path, struct open_file *f)
 			}
 			dp = (struct iso_directory_record *)buf;
 		}
-		if (!isonum_711(dp->length)) {
+		if (!isonum_711((u_char *)dp->length)) {
 			if ((void *)dp == buf)
 				psize += ISO_DEFAULT_BLOCK_SIZE;
 			else
@@ -245,9 +244,9 @@ cd9660_open(char *path, struct open_file *f)
 			dsize = isonum_733(dp->size);
 		if (dirmatch(path, dp))
 			break;
-		psize += isonum_711(dp->length);
+		psize += isonum_711((u_char *)dp->length);
 		dp = (struct iso_directory_record *)((void *)dp +
-		    isonum_711(dp->length));
+		    isonum_711((u_char *)dp->length));
 	}
 
 	if (psize >= dsize) {
