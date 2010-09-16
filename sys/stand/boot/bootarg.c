@@ -47,7 +47,7 @@ void
 makebootargs(caddr_t v, size_t *lenp)
 {
 	bootarg_t *p;
-	u_char *q;
+	caddr_t q;
 	size_t l;
 
 	/* get total size */
@@ -63,7 +63,7 @@ makebootargs(caddr_t v, size_t *lenp)
 	*lenp = l;
 	/* copy them out */
 	for (p = bootarg_list, q = v;
-	     p != NULL && ((q + p->ba_size) - (u_char *)v) < l;
+	     p != NULL && ((q + p->ba_size) - v) < l;
 	     q += p->ba_size, p = p->ba_next) {
 #ifdef DEBUG
 		printf("%d,%d ", p->ba_type, p->ba_size);
