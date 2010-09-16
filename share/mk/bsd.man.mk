@@ -149,6 +149,18 @@ maninstall:
 	t=${DESTDIR}${MANDIR}${file:E}${sub}/${file:R}.0${MCOMPRESSSUFFIX}; \
 	echo $$t -\> $$l; \
 	rm -f $$t; ln $$l $$t;
+.       if defined(MANPS)
+	  @l=${DESTDIR}${PSDIR}${lnk:E}${sub}/${lnk:R}.ps; \
+	  t=${DESTDIR}${PSDIR}${file:E}${sub}/${file:R}.ps; \
+	  echo $$t -\> $$l; \
+	  rm -f $$t; ln $$l $$t;
+.       endif
+.       if defined(MANHTML)
+	  @l=${DESTDIR}${HTMLDIR}${lnk:E}${sub}/${lnk:R}.html; \
+	  t=${DESTDIR}${HTMLDIR}${file:E}${sub}/${file:R}.html; \
+	  echo $$t -\> $$l; \
+	  rm -f $$t; ln $$l $$t;
+.       endif
 .     endfor
 .  endfor
 .endif
