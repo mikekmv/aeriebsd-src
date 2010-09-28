@@ -1,3 +1,4 @@
+/*	$Id: order.c,v 1.5 2010/09/28 13:41:25 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -160,9 +161,8 @@ nspecial(struct optab *q)
 	case STASG:
 		{
 			static struct rspecial s[] = {
-				{ NEVER, ESI }, { NEVER, EDI },
-				{ NORIGHT, ESI }, { NORIGHT, EDI },
-				{ NOLEFT, ESI }, { NOLEFT, EDI },
+				{ NEVER, EDI },
+				{ NRIGHT, ESI }, { NOLEFT, ESI },
 				{ NOLEFT, ECX }, { NORIGHT, ECX },
 				{ NEVER, ECX }, { 0 } };
 			return s;

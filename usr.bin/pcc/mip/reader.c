@@ -1,4 +1,4 @@
-/*	$Id: reader.c,v 1.9 2010/06/16 10:50:56 mickey Exp $	*/
+/*	$Id: reader.c,v 1.10 2010/09/28 13:41:26 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -65,7 +65,7 @@
  * allowed to recurse back into pass2_compile().
  */
 
-#include "pass2.h"
+# include "pass2.h"
 
 #include <string.h>
 #include <stdarg.h>

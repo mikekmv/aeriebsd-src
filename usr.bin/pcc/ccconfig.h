@@ -66,4 +66,5 @@
 #define	STABS
 #define	ELFABI
 
-#define WCHAR_TYPE UNSIGNED
+#define WCHAR_TYPE INT
+#define WCHAR_SIZE 4

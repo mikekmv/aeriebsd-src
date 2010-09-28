@@ -267,6 +267,47 @@ struct Wflags {
 
 #define	SZWFL	(sizeof(Wflags)/sizeof(Wflags[0]))
 
+#ifndef USHORT
+/* copied from mip/manifest.h */
+#define	USHORT		5
+#define	INT		6
+#define	UNSIGNED	7
+#endif
+
+/*
+ * Wide char defines.
+ */
+#if WCHAR_TYPE == USHORT
+#define	WCT "short unsigned int"
+#define WCM "65535U"
+#if WCHAR_SIZE != 2
+#error WCHAR_TYPE vs. WCHAR_SIZE mismatch
+#endif
+#elif WCHAR_TYPE == INT
+#define WCT "int"
+#define WCM "2147483647"
+#if WCHAR_SIZE != 4
+#error WCHAR_TYPE vs. WCHAR_SIZE mismatch
+#endif
+#elif WCHAR_TYPE == UNSIGNED
+#define WCT "unsigned int"
+#define WCM "4294967295U"
+#if WCHAR_SIZE != 4
+#error WCHAR_TYPE vs. WCHAR_SIZE mismatch
+#endif
+#else
+#error WCHAR_TYPE not defined or invalid
+#endif
+
+#ifdef GCC_COMPAT
+#ifndef REGISTER_PREFIX
+#define REGISTER_PREFIX ""
+#endif
+#ifndef USER_LABEL_PREFIX
+#define USER_LABEL_PREFIX ""
+#endif
+#endif
+
 int
 main(int argc, char *argv[])
 {
@@ -637,9 +678,7 @@ main(int argc, char *argv[])
 		tmp4 = gettmp();
 	}
 	if (Bflag) {
-		incdir = Bflag;
 		altincdir = Bflag;
-		libdir = Bflag;
 		pccincdir = Bflag;
 		pcclibdir = Bflag;
 	}
@@ -681,6 +720,14 @@ main(int argc, char *argv[])
 		av[na++] = "-D__PCC__=" MKS(PCC_MAJOR);
 		av[na++] = "-D__PCC_MINOR__=" MKS(PCC_MINOR);
 		av[na++] = "-D__PCC_MINORMINOR__=" MKS(PCC_MINORMINOR);
+#ifndef os_win32
+#ifdef GCC_COMPAT
+		av[na++] = "-D__GNUC__=4";
+		av[na++] = "-D__GNUC_MINOR__=3";
+		av[na++] = "-D__GNUC_PATCHLEVEL__=1";
+		av[na++] = "-D__GNUC_STDC_INLINE__=1";
+#endif
+#endif
 		if (ascpp)
 			av[na++] = "-D__ASSEMBLER__";
 		if (sspflag)
@@ -695,20 +742,22 @@ main(int argc, char *argv[])
 			av[na++] = "-V";
 		if (Pflag)
 			av[na++] = "-P";
+		if (Oflag)
+			av[na++] = "-D__OPTIMIZE__";
+#ifdef GCC_COMPAT
+		av[na++] = "-D__REGISTER_PREFIX__=" REGISTER_PREFIX;
+		av[na++] = "-D__USER_LABEL_PREFIX__=" USER_LABEL_PREFIX;
+		if (Oflag)
+			av[na++] = "-D__OPTIMIZE__";
+#endif
 		if (dflag)
 			av[na++] = alist;
 		for (j = 0; cppadd[j]; j++)
 			av[na++] = cppadd[j];
 		av[na++] = "-D__STDC_ISO_10646__=200009L";
-#if WCHAR_SIZE == 2
-		av[na++] = "-D__WCHAR_TYPE__=short unsigned int";
-		av[na++] = "-D__SIZEOF_WCHAR_T__=2";
-		av[na++] = "-D__WCHAR_MAX__=65535U";
-#else
-		av[na++] = "-D__WCHAR_TYPE__=unsigned int";
-		av[na++] = "-D__SIZEOF_WCHAR_T__=4";
-		av[na++] = "-D__WCHAR_MAX__=4294967295U";
-#endif
+		av[na++] = "-D__WCHAR_TYPE__=" WCT;
+		av[na++] = "-D__SIZEOF_WCHAR_T__=" MKS(WCHAR_SIZE);
+		av[na++] = "-D__WCHAR_MAX__=" WCM;
 		av[na++] = "-D__WINT_TYPE__=unsigned int";
 		av[na++] = "-D__SIZE_TYPE__=unsigned long";
 		av[na++] = "-D__PTRDIFF_TYPE__=int";
@@ -781,8 +830,10 @@ main(int argc, char *argv[])
 			av[na++] = wlist[j];
 		for (j = 0; j < nf; j++)
 			av[na++] = flist[j];
+#if !defined(os_sunos) && !defined(mach_i386)
 		if (vflag)
 			av[na++] = "-v";
+#endif
 		if (pgflag)
 			av[na++] = "-p";
 		if (gflag)
@@ -791,6 +842,11 @@ main(int argc, char *argv[])
 		/* darwin always wants PIC compilation */
 		if (!Bstatic)
 			av[na++] = "-k";
+#elif defined(os_sunos) && defined(mach_i386)
+		if (kflag) {
+			av[na++] = "-K";
+			av[na++] = "pic";
+		}
 #else
 		if (kflag)
 			av[na++] = "-k";
@@ -1251,7 +1307,11 @@ callsys(char *f, char *v[])
 		len = strlen(Bflag) + 8;
 		a = malloc(len);
 	}
+#ifdef HAVE_VFORK
 	if ((p = vfork()) == 0) {
+#else
+	if ((p = fork()) == 0) {
+#endif
 		if (Bflag) {
 			if (a == NULL) {
 				error("callsys: malloc failed");

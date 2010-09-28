@@ -1,3 +1,4 @@
+/*	$Id: local2.c,v 1.12 2010/09/28 13:41:25 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -501,8 +502,10 @@ zzzcode(NODE *p, int c)
 		break;
 
 	case 'C':  /* remove from stack after subroutine call */
+#ifdef notyet
 		if (p->n_left->n_flags & FSTDCALL)
 			break;
+#endif
 		pr = p->n_qual;
 		if (p->n_op == STCALL || p->n_op == USTCALL)
 			pr += 4;
@@ -607,7 +610,6 @@ zzzcode(NODE *p, int c)
 		 * XXX should not need esi/edi if not rep movsX.
 		 * XXX can save one insn if src ptr in reg.
 		 */
-		expand(p, INAREG, "	movl AR,%esi\n");
 		switch (p->n_stsize) {
 		case 1:
 			expand(p, INAREG, "	movb (%esi),%cl\n");

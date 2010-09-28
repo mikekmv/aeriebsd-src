@@ -60,7 +60,7 @@ static void ifstmt(void);
 static void cpperror(void);
 static void pragmastmt(void);
 static void undefstmt(void);
-static void cpperror(void);
+static void cppwarning(void);
 static void elifstmt(void);
 static void badop(const char *);
 static int chktg(void);
@@ -219,6 +219,15 @@ run:				ch = NXTCH();
 			if (ch == '#') {
 				ppdir();
 				continue;
+			} else if (ch == '%') {
+				ch = NXTCH();
+				if (ch == ':') {
+					ppdir();
+					continue;
+				} else {
+					unch(ch);
+					ch = '%';
+				}
 			}
 			goto xloop;
 
@@ -624,6 +633,8 @@ inpch(void)
 	if (ifiles->curptr < ifiles->maxread)
 		return *ifiles->curptr++;
 
+	if (ifiles->infil == -1)
+		return -1;
 	if ((len = read(ifiles->infil, ifiles->buffer, CPPBUF)) < 0)
 		error("read error on file %s", ifiles->orgfn);
 	if (len == 0)
@@ -736,10 +747,15 @@ pushfile(const usch *file, const usch *fn, int idx, void *incs)
 	ic->fn = fn;
 	prtline();
 	if (initar) {
+		int oin = ic->infil;
+		ic->infil = -1;
 		*ic->maxread = 0;
 		prinit(initar, ic);
 		if (dMflag)
 			write(ofd, ic->buffer, strlen((char *)ic->buffer));
+		fastscan();
+		prtline();
+		ic->infil = oin;
 		initar = NULL;
 	}
 
@@ -1066,6 +1082,32 @@ cpperror(void)
 }
 
 static void
+cppwarning(void)
+{
+	usch *cp;
+	int c;
+
+	if (flslvl)
+		return;
+	c = sloscan();
+	if (c != WSPACE && c != '\n')
+		error("bad warning");
+
+	/* svinp() add an unwanted \n */
+	cp = stringbuf;
+	while ((c = inch()) && c != '\n')
+		savch(c);
+	savch(0);
+
+	if (flslvl)
+		stringbuf = cp;
+	else
+		warning("#warning %s", cp);
+
+	unch('\n');
+}
+
+static void
 undefstmt(void)
 {
 	struct symtab *np;
@@ -1149,6 +1191,7 @@ static struct {
 	{ "else", elsestmt },
 	{ "endif", endifstmt },
 	{ "error", cpperror },
+	{ "warning", cppwarning },
 	{ "define", define },
 	{ "undef", undefstmt },
 	{ "line", line },
