@@ -65,7 +65,7 @@
 #if 0
 static char sccsid[] = "@(#)lex.c	4.4 (Berkeley) 4/17/91";
 #else
-static const char rcsid[] = "$ABSD: lex.c,v 1.2 2009/10/24 15:30:57 mickey Exp $";
+static const char rcsid[] = "$ABSD: lex.c,v 1.3 2009/11/03 14:32:48 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -277,7 +277,6 @@ define(int type)
 char *
 strsave(char *s)
 {
-	char *malloc();
 	register char *q;
 
 	q = malloc(strlen(s)+1);
