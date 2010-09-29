@@ -1,0 +1,55 @@
+.\"
+.\" Copyright (c) 2010 Michael Shalayeff
+.\" All rights reserved.
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF MIND, USE, DATA OR PROFITS, WHETHER IN
+.\" AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+.\" OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt INTRO 0
+.Os
+.Sh NAME
+.Nm intro
+introduction to the
+.Ax
+Reference Manual
+.Sh DESCRIPTION
+.Bl -tag -width Section_1_ -compact
+.It Section 1
+general commands (tools and utilities)
+.Pq Xr intro 1
+.It Section 2
+system calls and error numbers
+.Pq Xr intro 2
+.It Section 3
+C libraries
+.Pq Xr intro 3
+.It Section 4
+special files and hardware support
+.Pq Xr intro 4
+.It Section 5
+file formats
+.Pq Xr intro 5
+.It Section 6
+games
+.Pq Xr intro 6
+.It Section 7
+miscellaneous information pages
+.Pq Xr intro 7
+.It Section 8
+system maintenance and operation commands
+.Pq Xr intro 8
+.It Section 9
+kernel internals
+.Pq Xr intro 9
+.El
+.\" .Sh COPYRIGHT
