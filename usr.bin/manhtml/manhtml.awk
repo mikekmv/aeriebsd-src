@@ -23,6 +23,15 @@ function quote_string(str) {
 	return str;
 }
 
+function punkt(str) {
+	p = ""
+	if (str ~ /^[\.,\!\?;:()\[\]]*$/) {
+		p = str
+		NF--
+	}
+	return p;
+}
+
 function close_arg() {
 	if (DV == 1) {
 		DV = 0;
@@ -62,7 +71,7 @@ function search_arg(str) {
 }
 
 BEGIN {
-	rev="$ABSD: manhtml.awk,v 1.2 2010/09/16 15:34:21 mickey Exp $"
+	rev="$ABSD: manhtml.awk,v 1.3 2010/09/17 13:15:14 kmerz Exp $"
 	path = "";
 
 	# We need to track begin, end and order of lists.
@@ -81,12 +90,65 @@ BEGIN {
 END {
 	print "<p><hr></p>";
 	print "<table width=100% ><tr>";
-	print "<td>" OSNAME " " OSREL " Refernce Manual </td>";
+	print "<td>" OSNAME " " OSREL " Reference Manual </td>";
 	print "<td align=center>" date "</td>";
 	print "<td align=right>" title "(" section ") </td>";
 	print "</tr></table>";
 	print "</body>";
 	print "</html>";
+}
+
+# Formatting
+/^\.Aq / {
+	sub (/^\.Aq /, "");
+	print "&#139;" $0 "&#155";
+	next;
+}
+
+/^\.Dq / {
+	sub (/^\.Dq /, "");
+	print "&#147;" $0 "&#148;";
+	next;
+}
+
+/^\.Sq / {
+	sub (/^\.Sq /, "");
+	print "&#145" $0 "&#146;";
+	next;
+}
+
+/^\.Em / {
+	sub (/^\.Em /, "");
+	print "<em>" $0 "</em>";
+	next;
+}
+
+# Parenthesis open quote
+/^\.Po/ {
+	print "(";
+	next;
+}
+
+# Parenthesis close quote
+/^\.Pc/ {
+	print ")";
+	next;
+}
+
+# Parenthesis
+/^\.Pq / {
+	sub(/^\.Pq /, "");
+	str = search_arg($0);
+	print "(" str ")";
+	close_arg();
+	next;
+}
+
+# Pathname or file
+/^\.Pa / {
+	sub(/^\.Pa /, "");
+	print "<i>" $0 "</i>";
+	next;
 }
 
 # Document Tilte
@@ -145,10 +207,14 @@ END {
 }
 
 # Name
-/^\.Nm / {
-	sub(/^\.Nm /,"");
-	print "<b>"$0"</b> - ";
-	next;
+/^\.Nm/ {
+	post = punkt($NF);
+	if (NF > 1 && name == "") {
+		name = $2;
+		print "<b>" $2 "</b> - ";
+	} else
+		print "<b>" name "</b>" post;
+	next
 }
 
 # Name Description
@@ -180,8 +246,8 @@ END {
 
 # Cross Reference
 /^\.Xr / {
-	sub(/^\.Xr /, "");
-	print "<a href=\"" path "/man/man" $2 "/" $1 ".html\">" $1 "(" $2 ")" "</a>";
+	post = punkt($NF)
+	print "<a href=\"" path "/man/man" $3 "/" $2 ".html\">" $2 "(" $3 ")" "</a>" post;
 	next;
 }
 
@@ -334,55 +400,6 @@ END {
 	next;
 }
 
-# Angle quote
-/^\.Aq / {
-	sub (/^\.Aq /, "");
-	print "&#139;" $0 "&#155";
-	next;
-}
-
-# Double quote
-/^\.Dq / {
-	sub (/^\.Dq /, "");
-	print "&#147;" $0 "&#148;";
-	next;
-}
-
-# Single quote
-/^\.Sq / {
-	sub (/^\.Sq /, "");
-	print "&#145" $0 "&#146;";
-	next;
-}
-
-# Parenthesis open quote
-/^\.Po/ {
-	print "(";
-	next;
-}
-
-# Parenthesis close quote
-/^\.Pc/ {
-	print ")";
-	next;
-}
-
-# Parenthesis close quote
-/^\.Pq / {
-	sub(/^\.Pq /, "");
-	str = search_arg($0);
-	print "(" str ")";
-	close_arg();
-	next;
-}
-
-# Pathname or file
-/^\.Pa / {
-	sub(/^\.Pa /, "");
-	print "<i>" $0 "</i>";
-	next;
-}
-
 # End list
 /^\.El/ {
 	if (TAG_LIST != 0 && LISTS[LIST_CNT] == "TAG_LIST") {
@@ -404,8 +421,109 @@ END {
 	}
 }
 
-# Text
-// {
-	print $0;
-	next;
+# AT&T UNIX
+/^\.At/ {
+	v=""
+	post = punkt($NF)
+	if (NF == 2) {
+		if ($NF == "32v")
+			v = "Version 32V "
+		else if ($NF == "v1")
+			v = "Version 1 "
+		else if ($NF == "v2")
+			v = "Version 2 "
+		else if ($NF == "v3")
+			v = "Version 3 "
+		else if ($NF == "v4")
+			v = "Version 4 "
+		else if ($NF == "v5")
+			v = "Version 5 "
+		else if ($NF == "v6")
+			v = "Version 6 "
+		else if ($NF == "v7")
+			v = "Version 7 "
+		else if ($NF == "V")
+			v = "System V "
+		else if ($NF == "V.1")
+			v = "System V.1 "
+		else if ($NF == "V.2")
+			v = "System V.2 "
+		else if ($NF == "V.3")
+			v = "System V.3 "
+		else if ($NF == "V.4")
+			v = "System V.4 "
+	}
+	print "<em>" v "AT&T UNIX" "</em>" post
+	next
 }
+
+# AerieBSD
+/^\.Ax/ {
+	v=""
+	post = punkt($NF)
+	if (NF == 2)
+		v = " " $2
+	print "<em>" "&#198;rieBSD" v "</em>" post
+	next
+}
+
+# BSDI BSD/OS
+/^\.Bsx/ {
+	v=""
+	post = punkt($NF)
+	if (NF == 2)
+		v = " " $2
+	print "<em>" "BSDI BSD/OS" v "</em>" post
+	next
+}
+
+# -BSD version
+/^\.Bx/ {
+	v=""
+	rev=""
+	post = punkt($NF)
+	if (NF == 2)
+		v = $2
+	else if (NF == 3) {
+		v = $2
+		if ($3 ~ /[Rr]eno/)
+			rev = "-Reno"
+		else if ($3 ~ /[Tt]ahoe/)
+			rev = "-Tahoe"
+	}
+	print "<em>" v "BSD" rev "</em>" post
+	next
+}
+
+# FreeBSD
+/^\.Fx/ {
+	v=""
+	post = punkt($NF)
+	if (NF == 2)
+		v = " " $2
+	print "<em>" "FreeBSD" v "</em>" post
+	next
+}
+
+# NetBSD
+/^\.Nx/ {
+	v=""
+	post = punkt($NF)
+	if (NF == 2)
+		v = " " $2
+	print "<em>" "NetBSD" v "</em>" post
+	next
+}
+
+# OpenBSD
+/^\.Ox/ {
+	v=""
+	post = punkt($NF)
+	if (NF == 2)
+		v = " " $2
+	print "<em>" "OpenBSD" v "</em>" post
+	next
+}
+
+# Text
+{ print }
