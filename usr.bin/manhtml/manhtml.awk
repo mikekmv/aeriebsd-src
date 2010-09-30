@@ -176,6 +176,8 @@ function callable(str, pp) {
 		sy = no
 		no = "</i>"
 		return sy "<i>" callable(0) "" pp
+	} else if (fun == "Ta") {
+		return "</td><td>" callable(0) "" pp
 	} else if (fun == "Tn") {
 		return "<b>" callable($0) "</b>" pp
 	} else if (fun == "Va") {
@@ -209,7 +211,7 @@ function callable(str, pp) {
 }
 
 BEGIN {
-	rev="$ABSD: manhtml.awk,v 1.5 2010/09/30 14:04:15 mickey Exp $"
+	rev="$ABSD: manhtml.awk,v 1.6 2010/09/30 14:49:18 mickey Exp $"
 	path = "";
 	no = ""	# normal text
 	name = ""
