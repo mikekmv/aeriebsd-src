@@ -16,36 +16,13 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/un.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-
-#include <termios.h>
-#include <util.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <event.h>
-#include <string.h>
-#include <errno.h>
-#include <err.h>
-#include <signal.h>
-#include <fcntl.h>
-
-#ifndef _AETOUCH_H_
-#define _AETOUCH_H_
-
 #define	BUFSIZE 4096
 struct ae_msg {
 	int type;
-	 #define MSG_PUSH	0
-	 #define MSG_DTACH	1
-	 #define MSG_WINCH 	2	
-	 #define MSG_QUIT	3
+#define	MSG_PUSH	0
+#define	MSG_DTACH	1
+#define	MSG_WINCH 	2	
+#define	MSG_QUIT	3
 	int len;
 	union {
 		unsigned char buf[sizeof(struct winsize)];
@@ -53,8 +30,4 @@ struct ae_msg {
 	} u; 
 };
 
-extern char *__progname;
-
 int attach(char *);
-
-#endif /* _AETOUCH_H_ */

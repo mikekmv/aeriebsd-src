@@ -16,6 +16,23 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <sys/types.h>
+#include <sys/un.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+
+#include <termios.h>
+#include <util.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <event.h>
+#include <string.h>
+#include <errno.h>
+#include <err.h>
+#include <signal.h>
+
 #include <paths.h>
 
 #include "aetouch.h"
@@ -100,8 +117,7 @@ attach(char *path)
 }
 
 void
-master_in(int fd, short event __attribute__((__unused__)),
-    void *arg __attribute__((__unused__)))
+master_in(int fd, short event, void *arg)
 {
 	int len;
 	char buf[BUFSIZE];
@@ -118,8 +134,7 @@ master_in(int fd, short event __attribute__((__unused__)),
 }
 
 void
-std_in(int fd, short event __attribute__((__unused__)),
-    void *arg __attribute__((__unused__)))
+std_in(int fd, short event, void *arg)
 {
 	struct ae_msg am;
 	int i, end = 0;
@@ -181,8 +196,8 @@ mksocket(char *path)
 void
 restore(void)
 {
-	/* Restor TERM */
- 	tcsetattr(0, TCSADRAIN, &save_term);
+	/* Restore TERM */
+	tcsetattr(0, TCSADRAIN, &save_term);
 }
 
 void
@@ -210,6 +225,7 @@ signal_handler(int sig)
 char *
 getdetached(void)
 {
+	extern char *__progname;
 	DIR *dirp;
 	struct dirent *de;
 	int len, found = 0;

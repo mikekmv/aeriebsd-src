@@ -16,6 +16,25 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <sys/types.h>
+#include <sys/queue.h>
+#include <sys/un.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
+
+#include <termios.h>
+#include <util.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <event.h>
+#include <string.h>
+#include <errno.h>
+#include <err.h>
+#include <signal.h>
+#include <fcntl.h>
+
 #include "aetouch.h"
 
 void remove_client(int fd);
@@ -43,13 +62,11 @@ struct ae_client {
 void
 usage(void)
 {
-	fprintf(stderr, "usage: %s [-dh] [-a file]"
-	    " [command ...]\n", __progname);
-	fprintf(stderr, "a - attach to specific socket\n");
-	fprintf(stderr, "d - attach to first socket found\n");
-	fprintf(stderr, "h - show this message\n\n");
-	fprintf(stderr, "press CTRL-a-d to detach\n");
-	_exit(1);
+	extern char *__progname;
+
+	fprintf(stderr, "usage: %s [-dh] [-a file] [command ...]\n",
+	    __progname);
+	exit(1);
 }
 
 void
@@ -174,6 +191,7 @@ main(int argc, char **argv)
 int
 mkname(char **path)
 {
+	extern char *__progname;
 	int res;
 	char *result;
 
@@ -262,8 +280,7 @@ remove_client(int fd)
 }
 
 void
-pty_in(int fd, short event __attribute__((__unused__)),
-    void *arg __attribute__((__unused__)))
+pty_in(int fd, short event, void *arg)
 {
 	struct ae_client *a;
 	int written, len;
@@ -289,8 +306,7 @@ pty_in(int fd, short event __attribute__((__unused__)),
 }
 
 void
-accept_client(int fd, short event __attribute__((__unused__)),
-    void *arg __attribute__((__unused__)))
+accept_client(int fd, short event, void *arg)
 {
 	struct event *ev;
 	int client;
@@ -308,8 +324,7 @@ accept_client(int fd, short event __attribute__((__unused__)),
 }
 
 void
-client_command(int fd, short event __attribute__((__unused__)),
-    void *arg __attribute__((__unused__)))
+client_command(int fd, short event, void *arg)
 {
 	int len;
 	struct ae_msg am;
@@ -337,7 +352,7 @@ client_command(int fd, short event __attribute__((__unused__)),
 }
 
 void
-master_signal(int sig __attribute__((__unused__)))
+master_signal(int sig)
 {
 	exit(1);
 }
