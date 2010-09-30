@@ -203,7 +203,8 @@ function callable(str, pp) {
 			arch = "/" $1
 			sub(/[^ ]* ?/,"")
 		}
-		return "<a href=\"" path "/man/man" sect arch "/" man ".html\">" man "(" sect arch ")" "</a>" pp
+		return "<a href=\"/man/man" sect arch "/" man ".html\">" \
+		    man "(" sect arch ")" "</a>" pp
 	} else if (NF > 0) {
 		return fun " " callable($0) "" pp
 	} else
@@ -211,18 +212,9 @@ function callable(str, pp) {
 }
 
 BEGIN {
-	rev="$ABSD: manhtml.awk,v 1.6 2010/09/30 14:49:18 mickey Exp $"
-	path = "";
-	no = ""	# normal text
-	name = ""
-
-	# We need to track begin, end and order of lists.
-	# We will keep track of it with two arrays. One array to keep the
-	# order of the various lists and one array to keep the amount of the
-	# individual lists.
-	TAG_LIST=0
-	COLUMN_LIST=0
-	LIST_CNT=0
+	rev="$ABSD: manhtml.awk,v 1.7 2010/09/30 15:20:06 mickey Exp $"
+	no = "";	# normal text
+	name = ""	# man name from .Nm
 
 	print "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\""
 	print "\"http://www.w3.org/TR/html4/loose.dtd\">"
@@ -276,10 +268,6 @@ END {
 # Ogranisation
 /^\.Os/ {
 	print "<head>";
-	print "<style type=\"text/css\">";
-	print "body { margin-left: 30px; margin-right: 30px; }";
-	print "div.tag_list { margin-left: 30px; }";
-	print "</style>";
 	print "<title>" title "</title></head>";
 	print "<body>";
 	print "<table width=100% ><tr>";
@@ -371,20 +359,31 @@ END {
 /^\.Bl/ {
 	it = 0
 	bl = $2
-	if ($2 == "-column")
+	if (bl == "-tag")
+		print "<dl>"
+	else if (bl == "-enum")
+		print "<ol>"
+	else if (bl == "-bullet")
+		print "<ul style=\"list-style-type:disc\">"
+	else if (bl == "-dash" || bl == "-hyphen")
+		print "<ul style=\"list-style-type:circle\">"
+	else if ($2 == "-column")
 		print "<p></p><table>"
 	next
 }
 
 # List item
-/^\.It / {
+/^\.It ?/ {
 	it++
 	sub(/^\.It /, "");
 	if (bl == "-tag") {
 		if (it > 1)
-			print "</div><p></p>"
-		print callable($0) "" no "<div class=\"tag_list\">"
+			print "</dd>"
+		print "<dt>" callable($0) "" no "</dt><dd>"
 		no = ""
+	} else if (bl == "-bullet" || bl == "-dash" || bl == "-hyphen" ||
+	    bl == "-enum") {
+		print "<li>"
 	} else if (bl == "-column") {
 		bit = ""
 		bot = ""
@@ -409,7 +408,11 @@ END {
 # End list
 /^\.El/ {
 	if (bl == "-tag")
-		print "</div>"
+		print "</dl>"
+	else if (bl == "-enum")
+		print "</ol>"
+	else if (bl == "-bullet" || bl == "-dash" || bl == "-hyphen")
+		print "</ul>"
 	else if (bl == "-column")
 		print "</table><p></p>";
 	next
