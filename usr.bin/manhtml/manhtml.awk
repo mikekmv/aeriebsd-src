@@ -24,7 +24,7 @@ function quote_string(str) {
 	return str;
 }
 
-function punkt(str) {
+function punkt(str, p) {
 	p = ""
 	if (str ~ /^[\.,\!\?;:()\[\]]*$/) {
 		p = str
@@ -209,7 +209,7 @@ function callable(str, pp) {
 }
 
 BEGIN {
-	rev="$ABSD: manhtml.awk,v 1.4 2010/09/29 11:27:33 mickey Exp $"
+	rev="$ABSD: manhtml.awk,v 1.5 2010/09/30 14:04:15 mickey Exp $"
 	path = "";
 	no = ""	# normal text
 	name = ""
