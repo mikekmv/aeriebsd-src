@@ -3,6 +3,7 @@
 
 HTML0DIR=${HTMLDIR:S/\/man//}
 GENFILES=index.html
+CLEANFILES+=${GENFILES}
 
 index.html: ${.CURDIR}/../../share/man/man0/intro.0
 	@echo "manhtml $? > ${.TARGET}"
@@ -13,7 +14,8 @@ all:: ${GENFILES}
 
 beforeinstall: ${GENFILES}
 	for i in ${GENFILES}; do \
-		install -C -o root -g wheel -m 0444 $$i ${DESTDIR}/${HTML0DIR} \
+		install -C -o root -g wheel -m 0444 $$i \
+		    ${DESTDIR}/${HTML0DIR}; \
 	done
 
 .include <bsd.man.mk>

@@ -1,6 +1,7 @@
 #!/usr/bin/awk -f
 #
 # Copyright (c) 2010 Konrad Merz
+# Copyright (c) 2010 Michael Shalayeff
 # All rights reserved.
 #
 # Permission to use, copy, modify, and distribute this software for any
@@ -28,51 +29,190 @@ function punkt(str) {
 	if (str ~ /^[\.,\!\?;:()\[\]]*$/) {
 		p = str
 		NF--
+		sub(/ [^ ]*$/, "")
 	}
-	return p;
+	return p
 }
 
-function close_arg() {
-	if (DV == 1) {
-		DV = 0;
-		return "</b>"
-	}
-	if (SY == 1) {
-		SY = 0;
-		return "</b>"
-	}
-	if (LI == 1) {
-		LI = 1;
-		return "</i>";
-	}
-}
+function callable(str, pp) {
+	pp = punkt($NF);
+	fun = $1
+	sub(/[^ ]* ?/,"")
 
-function search_arg(str) {
-
-	gsub(/"/, "", str);
-
-	if (str ~ /Dv /) {
-		DV = 1;
-		gsub(/Dv /, "<b> ", str);
-	}
-	if (str ~ /Sy /) {
-		SY = 1;
-		gsub(/Sy /, "<b> ", str);
-	}
-	if (str ~ /Li /) {
-		LI = 1;
-		gsub(/Li /, "<i> ", str);
-	}
-	if  (str ~ /No /) {
-		cls_str = close_arg();
-		sub(/No /, cls_str, str);
-	}
-	return str;
+	if (fun == "Ad") {
+		return "<i>" callable($0) "</i>" pp
+	} else if (fun == "Ac") {
+		return "&#155;" callable($0) "" pp
+	} else if (fun == "Ao") {
+		return "&#139;" callable($0) "" pp
+	} else if (fun == "Aq") {
+		return "&#139;" callable($0) "&#155;" pp
+	} else if (fun == "Ar") {
+		# Command line argument modifier
+		ar = quote_string($1);
+		sub(/[^ ]* ?/,"")
+		return "<u>" ar "</u>" callable($0) "" pp
+	} else if (fun == "Bc") {
+		return "]" callable($0) "" pp
+	} else if (fun == "Bo") {
+		return "[" callable($0) "" pp
+	} else if (fun == "Bq") {
+		return "[" callable($0) "]" pp
+	} else if (fun == "Cm") {
+		# Command line argument modifier
+		ar = quote_string($1);
+		sub(/[^ ]* ?/,"")
+		return "<i>-" ar "</i>" callable($0) "" pp
+	} else if (fun == "Dc") {
+		return "&#148;" callable($0) "" pp
+	} else if (fun == "Do") {
+		return "&#147;" callable($0) "" pp
+	} else if (fun == "Dq") {
+		return "&#147;" callable($0) "&#148;" pp
+	} else if (fun == "Dv") {
+		# Defined variable (source code)
+		dv = quote_string($1);
+		sub(/[^ ]* ?/,"")
+		return "<b>" dv "</b>" callable($0) "" pp
+	} else if (fun == "Em") {
+		return "<em>" callable($0) "</em>" pp
+	} else if (fun == "Eo") {
+		return "&#171;" callable($0) "" pp
+	} else if (fun == "Ec") {
+		return "&#187;" callable($0) "" pp
+	} else if (fun == "Er") {
+		# Error number (source code)
+		er = quote_string($1);
+		sub(/[^ ]* ?/,"")
+		return "<b>" er "</b>" callable($0) "" pp
+	} else if (fun == "Ev") {
+		# Function argument
+		ev = quote_string($1);
+		sub(/[^ ]* ?/,"")
+		return "<b>" ev "</b>" callable($0) "" pp
+	} else if (fun == "Fa") {
+		# Function argument
+		fa = quote_string($1);
+		sub(/[^ ]* ?/,"")
+		return "<i>" fa "</i>" callable($0) "" pp
+	} else if (fun == "Fl") {
+		return "-<b>" callable($0) "</b>" "" pp
+	} else if (fun == "Fc") {
+	} else if (fun == "Fo") {
+	} else if (fun == "Fn") {
+		# Function name
+		fn = quote_string($1)
+		sub(/[^ ]* ?/,"")
+		sub(/^\"/, "");
+		sub(/\"$/, "");
+		gsub(/\" \"/, ", ");
+		fnarg = quote_string($0);
+		return "<b>" fn "</b>(" fnarg ");" pp
+	} else if (fun == "Ft") {
+		# Function type
+		ft = quote_string($1)
+		sub(/[^ ]* ?/,"")
+		return "<p></p><i>" ft "</i>" callable($0) "" pp
+	} else if (fun == "Ic") {
+		no = "</i>"
+		return "<i>" callable(0) "" pp
+	} else if (fun == "Li") {
+		return "<u>" callable(0) "</u>" pp 
+	} else if (fun == "Nm") {
+		if (NF > 0 && name == "") {
+			name = $1;
+			sub(/[^ ]* ?/,"")
+			return "<b>" name "</b> &#151; "
+		} else if (NF > 0) {
+			nam = quote_string($1)
+			sub(/[^ ]* ?/,"")
+			return "<b>" nam "</b>" callable($0) "" pp
+		} else
+			return "<b>" name "</b>" pp
+	} else if (fun == "No") {
+		NO = no
+		no = ""
+		return NO "" callable($0) "" pp
+	} else if (fun == "Ns") {
+		# no space
+	} else if (fun == "Op") {
+		return "[" callable($0) "]" pp
+	} else if (fun == "Ot") {
+		# Old style function type (Fortran only)
+		ot = quote_string($1)
+		sub(/[^ ]* ?/,"")
+		return "<p></p><i>" ot "</i>" callable($0) "" pp
+	} else if (fun == "Pa") {
+		# path name or a file
+		return "<i>" callable($0) "</i>" pp
+	} else if (fun == "Pc") {
+		return ")" callable($0) "" pp
+	} else if (fun == "Po") {
+		return "(" callable($0) "" pp
+	} else if (fun == "Pq") {
+		return "(" callable($0) ")" pp
+	} else if (fun == "Ql") {
+		ql = quote_string($1)
+		sub(/[^ ]* ?/,"")
+		return "&quot;" ql "&quot;" callable($0) "" pp
+	} else if (fun == "Qc") {
+		return "&quot;" callable($0) "" pp
+	} else if (fun == "Qo") {
+		return "&quot;" callable($0) "" pp
+	} else if (fun == "Qq") {
+		return "&quot;" callable($0) "&quot;" pp
+	} else if (fun == "Sc") {
+		return "&#146" callable($0) "" pp
+	} else if (fun == "So") {
+		return "&#145" callable($0) "" pp
+	} else if (fun == "Sq") {
+		return "&#145" callable($0) "&#146;" pp
+	} else if (fun == "St") {
+		# standards
+	} else if (fun == "Sx") {
+		# Section Cross Reference
+	} else if (fun == "Sy") {
+		# Symbolic (traditional English)
+		sy = no
+		no = "</i>"
+		return sy "<i>" callable(0) "" pp
+	} else if (fun == "Tn") {
+		return "<b>" callable($0) "</b>" pp
+	} else if (fun == "Va") {
+		# Variable name
+		va = quote_string($1)
+		sub(/[^ ]* ?/,"")
+		return "<u>" va "</u>" callable($0) "" pp
+	} else if (fun == "Vt") {
+		# Variable type
+		vt = quote_string($1)
+		sub(/[^ ]* ?/,"")
+		return "<i>" vt "</i>" callable($0) "" pp
+	} else if (fun == "Xc") {
+	} else if (fun == "Xo") {
+	} else if (fun == "Xr") {
+		# Cross Reference (need to fix arch pages search)
+		man = $1
+		sect = $2
+		arch = ""
+		sub(/[^ ]* ?/,"")
+		sub(/[^ ]* ?/,"")
+		if (NF > 0) {
+			arch = "/" $1
+			sub(/[^ ]* ?/,"")
+		}
+		return "<a href=\"" path "/man/man" sect arch "/" man ".html\">" man "(" sect arch ")" "</a>" pp
+	} else if (NF > 0) {
+		return fun " " callable($0) "" pp
+	} else
+		return fun "" pp
 }
 
 BEGIN {
-	rev="$ABSD: manhtml.awk,v 1.3 2010/09/17 13:15:14 kmerz Exp $"
+	rev="$ABSD: manhtml.awk,v 1.4 2010/09/29 11:27:33 mickey Exp $"
 	path = "";
+	no = ""	# normal text
+	name = ""
 
 	# We need to track begin, end and order of lists.
 	# We will keep track of it with two arrays. One array to keep the
@@ -90,65 +230,29 @@ BEGIN {
 END {
 	print "<p><hr></p>";
 	print "<table width=100% ><tr>";
-	print "<td>" OSNAME " " OSREL " Reference Manual </td>";
-	print "<td align=center>" date "</td>";
-	print "<td align=right>" title "(" section ") </td>";
+	print "<td> " OSNAME " " OSREL " Reference Manual </td>";
+	print "<td align=center> " date " </td>";
+	print "<td align=right> " title "(" section ") </td>";
 	print "</tr></table>";
 	print "</body>";
 	print "</html>";
 }
 
+# parsed macros
+/^\.(Ad|Ac|Ao|Aq|Ar|Bc|Bo|Bq|Cm|Dc|Do|Dq|Dv|Em|Ec|Eo|Er|Ev|Fa|Fl|Fn|Ft|Ic|Li|Nm|No|Ns|Op|Ot|Pa|Pc|Po|Pq|Qc|Ql|Qo|Qq|Sc|So|Sq|St|Sx|Sy|Tn|Va|Vt|Xc|Xo|Xr) ?/ {
+	sub(/^\./, "")
+	print callable($0) "" no
+	no = ""
+	next
+}
+
 # Formatting
-/^\.Aq / {
-	sub (/^\.Aq /, "");
-	print "&#139;" $0 "&#155";
-	next;
-}
-
-/^\.Dq / {
-	sub (/^\.Dq /, "");
-	print "&#147;" $0 "&#148;";
-	next;
-}
-
-/^\.Sq / {
-	sub (/^\.Sq /, "");
-	print "&#145" $0 "&#146;";
-	next;
-}
-
-/^\.Em / {
-	sub (/^\.Em /, "");
-	print "<em>" $0 "</em>";
-	next;
-}
-
-# Parenthesis open quote
-/^\.Po/ {
-	print "(";
-	next;
-}
-
-# Parenthesis close quote
-/^\.Pc/ {
-	print ")";
-	next;
-}
-
-# Parenthesis
-/^\.Pq / {
-	sub(/^\.Pq /, "");
-	str = search_arg($0);
-	print "(" str ")";
-	close_arg();
-	next;
-}
-
-# Pathname or file
-/^\.Pa / {
-	sub(/^\.Pa /, "");
-	print "<i>" $0 "</i>";
-	next;
+/^\.An / {
+	post = punkt($NF)
+	sub (/^\.An /, "")
+	print "<i>" callable($0) no "</i>" post
+	no = ""
+	next
 }
 
 # Document Tilte
@@ -206,17 +310,6 @@ END {
 	next;
 }
 
-# Name
-/^\.Nm/ {
-	post = punkt($NF);
-	if (NF > 1 && name == "") {
-		name = $2;
-		print "<b>" $2 "</b> - ";
-	} else
-		print "<b>" name "</b>" post;
-	next
-}
-
 # Name Description
 /^\.Nd / {
 	sub(/^\.Nd /, "");
@@ -244,45 +337,11 @@ END {
 	next;
 }
 
-# Cross Reference
-/^\.Xr / {
-	post = punkt($NF)
-	print "<a href=\"" path "/man/man" $3 "/" $2 ".html\">" $2 "(" $3 ")" "</a>" post;
-	next;
-}
-
 # Function declaration
 /^\.Fd / {
 	sub(/^\.Fd /, "");
 	str = quote_string($0);
 	print "<b><kbd>" str "</kbd></b><br>";
-	next;
-}
-
-# Function type
-/^\.Ft / {
-	sub(/^\.Ft /, "");
-	str = quote_string($0);
-	print "<p></p><i>" str "</i> ";
-	next;
-}
-
-# Function name
-/^\.Fn / {
-	sub(/^\.Fn /, "");
-	sub(/ \"/, "(");
-	sub(/\"$/, ");");
-	gsub(/\" \"/, " ,");
-	str = quote_string($0);
-	print "<i>" str "</i>";
-	next;
-}
-
-# Function argument
-/^\.Fa / {
-	sub(/^\.Fa /, "");
-	str = quote_string($0);
-	print "<i>" str "</i>";
 	next;
 }
 
@@ -306,119 +365,52 @@ END {
 	next;
 }
 
-# Literal text
-/^\.Li / {
-	sub(/^\.Li/, "");
-	print "<kbd>" $0 "</kbd>";
-	next;
-}
-
-# Symbolic (traditional English)
-/^\.Sy / {
-	sub(/^\.Sy/, "");
-	print "<b>" $0 "</b>";
-	next;
-}
-
-# Error p
-/^\.Er / {
-	printf ("<b>%s</b>", $2);
-	print $3;
-	next;
-}
-
-/^\.Dv / {
-	printf "<b>%s</b>", $2;
-	print $3
-	next;
-}
-
 # Begin list
 /^\.Bl/ {
-	if ($2 == "-tag") {
-		TAG_LIST++;
-		LISTS[++LIST_CNT] = "TAG_LIST";
-		next;
-	}
-	if ($2 == "-column") {
-		print "<p></p>";
-		print "<table>";
-		COLUMN_LIST++;
-		LISTS[++LIST_CNT] = "COLUMN_LIST";
-		next;
-	}
+	it = 0
+	bl = $2
+	if ($2 == "-column")
+		print "<p></p><table>"
+	next
 }
 
 # List item
 /^\.It / {
+	it++
 	sub(/^\.It /, "");
-	if (TAG_LIST != 0 && LISTS[LIST_CNT] == "TAG_LIST") {
-		if ((TAG_LIST%2) == 1) {
-			str = search_arg($0);
-			print str;
-			cls_str = close_arg();
-			print cls_str;
-			print "<div class=\"tag_list\">";
-			TAG_LIST++;
-			next;
+	if (bl == "-tag") {
+		if (it > 1)
+			print "</div><p></p>"
+		print callable($0) "" no "<div class=\"tag_list\">"
+		no = ""
+	} else if (bl == "-column") {
+		bit = ""
+		bot = ""
+		if (it == 1) {
+			print "<table>"
+			bit = "<b>"
+			bot = "</b>"
 		}
-		if ((TAG_LIST%2) == 0) {
-			print "</div>";
-			str = search_arg($0);
-			print str;
-			cls_str = close_arg();
-			print cls_str;
-			print "<div class=\"tag_list\">";
-			next;
+		gsub(/"/,"")
+		nit = split($0, sa, "\t");
+		print "<tr>";
+		for (i = 1; i <= nit; i++) {
+			$0 = sa[i]
+			print "<td>" bit "" callable($0) "" bot "</td>";
 		}
+		print no "</tr>";
+		no = ""
 	}
-	if (COLUMN_LIST != 0 && LISTS[LIST_CNT] == "COLUMN_LIST") {
-		# XXX: I can't be serious
-		# We will assume for now that if the first tokken is a
-		# Sy we deal with the table header.
-		if ($1 == "Sy") {
-			sub(/Sy/, "");
-			split($0, str_array, "\t");
-			print "<tr>";
-			for (i = 1; i <= length(str_array); i++) {
-				print "<td><b>" str_array[i] "</b></td>";
-			}
-			print "</tr>";
-			next;
-		}
-		printf "<tr>";
-		split($0, str_array, "\t");
-		for (i = 1; i <= length(str_array); i++) {
-			str = search_arg(str_array[i]);
-			print "<td>" str "</td>";
-			str = close_arg();
-		}
-		print cls_str;
-		print "</tr>";
-		next;
-	}
-	next;
+	next
 }
 
 # End list
 /^\.El/ {
-	if (TAG_LIST != 0 && LISTS[LIST_CNT] == "TAG_LIST") {
-		print "</div>";
-		delete LISTS[LIST_CNT];
-		LIST_CNT--;
-		# This may look wired, but yes it is correct.
-		TAG_LIST--;
-		TAG_LIST--;
-		next;
-	}
-	if (COLUMN_LIST != 0 && LISTS[LIST_CNT] == "COLUMN_LIST") {
-		print "</table>";
-		print "<p></p>";
-		delete LISTS[LIST_CNT];
-		LIST_CNT--;
-		COLUMN_LIST--;
-		next;
-	}
+	if (bl == "-tag")
+		print "</div>"
+	else if (bl == "-column")
+		print "</table><p></p>";
+	next
 }
 
 # AT&T UNIX
