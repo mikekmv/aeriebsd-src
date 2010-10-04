@@ -26,7 +26,7 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.Dd $Mdocdate: December 26 2008 $
+.Dd $Mdocdate: May 26 2009 $
 .Dt SYSCTL 3
 .Os
 .Sh NAME
@@ -886,7 +886,7 @@ The random value is added to make buffer overflow exploitation slightly
 harder.
 The bigger the number, the harder it is to brute force this added protection,
 but it also means bigger waste of memory.
-.It Li KERN_SYSVIPC_INFO
+.It Dv KERN_SYSVIPC_INFO
 Return System V style IPC configuration and run-time information.
 The third level name selects the System V style IPC facility.
 .Bl -column "KERN_SYSVIPC_MSG_INFOXXX" "struct shm_sysctl_infoXXX" -offset indent
