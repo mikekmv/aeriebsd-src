@@ -114,8 +114,9 @@ function callable(str, pp) {
 		sub(/[^ ]* ?/,"")
 		return "<p></p><i>" ft "</i>" callable($0) "" pp
 	} else if (fun == "Ic") {
-		no = "</i>"
-		return "<i>" callable(0) "" pp
+		ic = quote_string($1)
+		sub(/[^ ]* ?/,"")
+		return "<i>" ic "</i>" callable($0) "" pp
 	} else if (fun == "Li") {
 		return "<u>" callable(0) "</u>" pp 
 	} else if (fun == "Nm") {
@@ -212,9 +213,12 @@ function callable(str, pp) {
 }
 
 BEGIN {
-	rev="$ABSD: manhtml.awk,v 1.7 2010/09/30 15:20:06 mickey Exp $"
+	rev="$ABSD: manhtml.awk,v 1.8 2010/09/30 17:04:51 mickey Exp $"
 	no = "";	# normal text
 	name = ""	# man name from .Nm
+	ibl = 0		# nested .bl/.el stack
+	blit[ibl] = 0
+	blbl[ibl] = ""
 
 	print "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\""
 	print "\"http://www.w3.org/TR/html4/loose.dtd\">"
@@ -246,6 +250,12 @@ END {
 	sub (/^\.An /, "")
 	print "<i>" callable($0) no "</i>" post
 	no = ""
+	next
+}
+
+/^\.In / {
+	str = quote_string($2);
+	print "#include &lt;<i>" str "</i>&gt;<br>"
 	next
 }
 
@@ -357,6 +367,10 @@ END {
 
 # Begin list
 /^\.Bl/ {
+	if (ibl++) {
+		blit[ibl] = it
+		blbl[ibl] = bl
+	}
 	it = 0
 	bl = $2
 	if (bl == "-tag")
@@ -415,6 +429,11 @@ END {
 		print "</ul>"
 	else if (bl == "-column")
 		print "</table><p></p>";
+	if (ibl) {
+		it = blit[ibl]
+		bl = blbl[ibl]
+		ibl--
+	}
 	next
 }
 
