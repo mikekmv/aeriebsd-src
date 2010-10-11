@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.19 2010/09/13 19:44:55 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.20 2010/09/15 10:37:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -72,8 +72,9 @@ char *mapfile;
 const char *entry_name;
 struct symlist *sentry;
 
-#define OPTSTRING "+B:c:C:d:D:e:Ef:F:gh:il:L:m:M:nNo:OqrR:sStT:u:vVxXy:Y:z:Z"
+#define OPTSTRING "+A:B:c:C:d:D:e:Ef:F:gh:il:L:m:M:nNo:OqrR:sStT:u:vVxXy:Y:z:Z"
 const struct option longopts[] = {
+	{ "architecture",	required_argument,	0, 'A' },
 	{ "as-needed",		no_argument,	&as_needed, 1 },
 	{ "no-as-needed",	no_argument,	&as_needed, 0 },
 	{ "check-sections",	no_argument,	&check_sections, 1 },
@@ -179,6 +180,9 @@ main(int argc, char *argv[])
 		switch (ch) {
 		case 0:
 			/* check out 'li' to see what matched */
+			break;
+
+		case 'A':	/* set machine arch */
 			break;
 
 		case 'B':	/* static/shared/dynamic */
