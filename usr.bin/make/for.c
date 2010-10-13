@@ -24,6 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 /*
  * Copyright (c) 1992, The Regents of the University of California.
  * All rights reserved.
@@ -171,7 +172,7 @@ For_Eval(const char *line)
 		LstNode ln;
 		(void)fprintf(stderr, "For: Iterator ");
 		for (ln = Lst_First(&arg->vars); ln != NULL; ln = Lst_Adv(ln))
-			(void)fprintf(stderr, "%s ", 
+			(void)fprintf(stderr, "%s ",
 			    Var_LoopVarName(Lst_Datum(ln)));
 		(void)fprintf(stderr, "List %s\n", sub);
 	}

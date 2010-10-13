@@ -28,7 +28,7 @@
 .\"
 .\"	from: @(#)make.1	8.4 (Berkeley) 3/19/94
 .\"
-.Dd $Mdocdate: October 24 2009 $
+.Dd $Mdocdate: March 11 2010 $
 .Dt MAKE 1
 .Os
 .Sh NAME
@@ -721,6 +721,11 @@ the rest of the modifier.
 Quotes every shell meta-character in the variable, so that it can be passed
 safely through recursive invocations of
 .Nm make .
+.It Cm :QL
+Quote list: quotes every shell meta-character in the variable, except
+whitespace, so that it can be passed to a shell's
+.Sq for
+loops.
 .It Cm :R
 Replaces each word in the variable with everything but its suffix.
 .Sm off
@@ -829,11 +834,24 @@ is the substring of
 .Ar old_string
 to be replaced in
 .Ar new_string .
+The right hand side
+.Pq Ar new_string
+may contain variable values, which will be expanded.
+To put an actual single dollar, just double it.
 .El
 .Pp
 All modifiers are BSD extensions, except for the standard
 .At V
 style variable substitution.
+.Pp
+The interpretation of
+.Ar %
+and
+.Ar $
+in
+.At V
+variable substitutions is not mandated by POSIX, though it is
+fairly common.
 .Sh INCLUDE STATEMENTS, CONDITIONALS AND FOR LOOPS
 Makefile inclusion, conditional structures and for loops reminiscent
 of the C programming language are provided in
@@ -1319,6 +1337,25 @@ default
 .Ev MAKEOBJDIRPREFIX
 directory
 .El
+.Sh EXIT STATUS
+If
+.Fl q
+was specified, the
+.Nm
+utility exits with one of the following values:
+.Pp
+.Bl -tag -width Ds -offset indent -compact
+.It 0
+Normal behavior.
+.It 1
+The target was not up-to date.
+.It \*(Gt1
+An error occurred.
+.El
+.Pp
+Otherwise, the
+.Nm
+utility exits with a value of 0 on success, and \*(Gt0 if an error occurred.
 .Sh SEE ALSO
 .Xr ed 1 ,
 .Xr mkdep 1 ,

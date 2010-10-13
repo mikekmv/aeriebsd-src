@@ -422,7 +422,7 @@ TargPrintNode(GNode *gn, int pass)
 static void
 TargPrintOnlySrc(GNode *gn)
 {
-	if (OP_NOP(gn->type) && gn->special == SPECIAL_NONE && 
+	if (OP_NOP(gn->type) && gn->special == SPECIAL_NONE &&
 	    !(gn->type & OP_DUMMY))
 		printf("#\t%s [%s]\n", gn->name,
 		    gn->path != NULL ? gn->path : gn->name);
@@ -457,4 +457,10 @@ struct ohash *
 targets_hash()
 {
 	return &targets;
+}
+
+GNode *
+Targ_FindNodeh(const char *name, size_t n, uint32_t hv, int flags)
+{
+	return Targ_FindNodeih(name, name + n - 1, hv, flags);
 }

@@ -636,7 +636,7 @@ read_all_make_rules(bool noBuiltins, bool read_depend,
 			(void)ReadMakefile("Makefile", d);
 
 	/* read a .depend file, if it exists, and we're not building depend */
-	
+
 	if (read_depend)
 		(void)ReadMakefile(".depend", d);
 }

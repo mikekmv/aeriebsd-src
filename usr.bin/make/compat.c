@@ -73,7 +73,7 @@ CompatMake(void *gnp,	/* The node to make */
 	bool cmdsOk;
 
 	if (DEBUG(MAKE))
-		printf("CompatMake(%s, %s)\n", pgn ? pgn->name : "NULL", 
+		printf("CompatMake(%s, %s)\n", pgn ? pgn->name : "NULL",
 		    gn->name);
 
 	/* XXX some loops are not loops, people write dependencies
@@ -155,7 +155,7 @@ CompatMake(void *gnp,	/* The node to make */
 		do {
 			/* We need to be re-made. We also have to make sure
 			 * we've got a $?  variable. To be nice, we also define
-			 * the $> variable using Make_DoAllVar().  
+			 * the $> variable using Make_DoAllVar().
 			 */
 			Make_DoAllVar(sib);
 			cmdsOk = Job_CheckCommands(sib);
@@ -173,7 +173,7 @@ CompatMake(void *gnp,	/* The node to make */
 			else {
 				Job_Touch(sib);
 				if (gn != sib)
-				Job_Touch(gn);
+					Job_Touch(gn);
 			}
 		} else {
 			job_failure(gn, Fatal);
@@ -280,7 +280,7 @@ Compat_Run(Lst targs)		/* List of target nodes to re-create */
 	}
 
 	/* For each entry in the list of targets to create, call CompatMake on
-	 * it to create the thing. CompatMake will leave the 'built_status' 
+	 * it to create the thing. CompatMake will leave the 'built_status'
 	 * field of gn in one of several states:
 	 *	    UPTODATE	    gn was already up-to-date
 	 *	    MADE	    gn was recreated successfully

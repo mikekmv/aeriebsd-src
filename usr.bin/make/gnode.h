@@ -69,7 +69,7 @@ struct Suff_;
 #define UNKNOWN		0
 #define BEINGMADE	1
 #define MADE		2
-#define	UPTODATE	3
+#define UPTODATE	3
 #define ERROR		4
 #define ABORTED		5
 #define CYCLE		6
@@ -86,7 +86,7 @@ struct Suff_;
 struct GNode_ {
     unsigned int special_op;	/* special op to apply */
     unsigned char special;/* type of special node */
-    char must_make;		/* true if this target needs to be remade */
+    char must_make;	/* true if this target needs to be remade */
     char childMade;	/* true if one of this target's children was
 			 * made */
     char built_status;	/* Set to reflect the state of processing
