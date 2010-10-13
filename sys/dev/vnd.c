@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1988 University of Utah.
  * Copyright (c) 1990, 1993
@@ -115,7 +114,7 @@ struct vndbuf {
 /*
  * struct vndbuf allocator
  */
-struct pool     vndbufpl;
+struct pool	vndbufpl;
 
 #define	getvndbuf()	pool_get(&vndbufpl, PR_WAITOK)
 #define	putvndbuf(vbp)	pool_put(&vndbufpl, vbp);
@@ -781,7 +780,7 @@ vndioctl(dev_t dev, u_long cmd, caddr_t addr, int flag, struct proc *p)
 		 * them.
 		 */
 		NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, vio->vnd_file, p);
-		vnd->sc_flags &= ~VNF_READONLY; 
+		vnd->sc_flags &= ~VNF_READONLY;
 		error = vn_open(&nd, FREAD|FWRITE, 0);
 		if (error == EROFS) {
 			vnd->sc_flags |= VNF_READONLY;
@@ -1032,13 +1031,29 @@ vndclear(struct vnd_softc *vnd)
 {
 	struct vnode *vp = vnd->sc_vp;
 	struct proc *p = curproc;		/* XXX */
+	int error;
 
 	DNPRINTF(VDB_FOLLOW, "vndclear(%p): vp %p\n", vnd, vp);
 
 	vnd->sc_flags &= ~VNF_INITED;
 	if (vp == NULL)
 		panic("vndioctl: null vp");
-	(void) vn_close(vp, VNDRW(vnd), vnd->sc_cred, p);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
+	error = VOP_FSYNC(vp, vnd->sc_cred, MNT_WAIT, p);
+#ifdef FFS_SOFTUPDATES
+	if (error == 0 && vp->v_mount && (vp->v_mount->mnt_flag & MNT_SOFTDEP))
+		error = softdep_fsync(vp);
+#endif
+	/* this is inlined version of vn_close() */
+	if (error == 0) {
+		if (VNDRW(vnd) & FWRITE)
+			vp->v_writecount--;
+		error = VOP_CLOSE(vp, VNDRW(vnd), vnd->sc_cred, p);
+	}
+	vput(vp);
+	if (error)
+		printf("%s: vndclear error %d\n", vnd->sc_dev.dv_xname, error);
+
 	crfree(vnd->sc_cred);
 	vnd->sc_vp = NULL;
 	vnd->sc_cred = NULL;
