@@ -43,7 +43,7 @@ CFLAGS+=-I${KRB5SRC}/lib/krb5 -I${KRB5SRC}/lib/kadm5 -I.
 
 DPADD+= ${LIBREADLINE} ${LIBCURSES} ${LIBKADM5SRV} ${LIBKADM5CLNT} \
 	${LIBKRB5} ${LIBCRYPTO} ${LIBDES}
-LDADD+=	-lreadline -lcurses -lkadm5srv -lkadm5clnt \
+LDADD+=	-ledit -lcurses -lkadm5srv -lkadm5clnt \
 	-lkrb5 -lcrypto -ldes
 
 CLEANFILES+=	kadmin-commands.c slc lc-lex.o kadmin-commands.h \
