@@ -21,7 +21,7 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	sdiff script sectok sed sendbug shar showmount skey \
 	skeyaudit skeyinfo skeyinit soelim sort spell spline split \
 	ssh stat strings strip su systat sudo \
-	tail talk tbl tcopy tcpbench tee telnet tftp tic time tip tn3270 \
+	tail talk tbl tcopy tcpbench tee telnet tftp tic time tip \
 	top touch tput tr true tset tsort tty \
 	usbhidaction usbhidctl ul uname unexpand unifdef uniq units \
 	unvis users uudecode uuencode vacation vgrind vi vis vmstat \
