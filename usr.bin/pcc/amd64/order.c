@@ -264,15 +264,22 @@ nspecial(struct optab *q)
 		}
 		break;
 
-	case STASG:
 	case STARG:
 		{
 			static struct rspecial s[] = {
-				{ NEVER, RAX }, { NEVER, RDX },
-				{ NEVER, RCX }, { NEVER, RSI },
-				{ NEVER, RDI }, { NEVER, R08 },
-				{ NEVER, R09 }, { NEVER, R10 },
-				{ NEVER, R11 }, { 0 } };
+				{ NEVER, RDI }, 
+				{ NLEFT, RSI },
+				{ NEVER, RCX }, { 0 } };
+			return s;
+		}
+
+	case STASG:
+		{
+			static struct rspecial s[] = {
+				{ NEVER, RDI }, 
+				{ NRIGHT, RSI }, { NOLEFT, RSI },
+				{ NOLEFT, RCX }, { NORIGHT, RCX },
+				{ NEVER, RCX }, { 0 } };
 			return s;
 		}
 
@@ -328,20 +335,22 @@ setorder(NODE *p)
 int *
 livecall(NODE *p)
 {
-	static int r[] = { R09, R08, RCX, RDX, RSI, RDI, -1 };
+	static int r[NTEMPREG+1];
+	NODE *q;
+	int cr = 0;
+
+	if (optype(p->n_op) != BITYPE)
+		return r[0] = -1, r;
+
+	for (q = p->n_right; q->n_op == CM; q = q->n_left) {
+		if (q->n_right->n_op == ASSIGN &&
+		    q->n_right->n_left->n_op == REG)
+			r[cr++] = regno(q->n_right->n_left);
+	}
+	if (q->n_op == ASSIGN && q->n_left->n_op == REG)
+		r[cr++] = regno(q->n_left);
+	r[cr++] = -1;
 	return r;
-#if 0
-	static int r[] = { EAX, EBX, -1 };
-	int off = 1;
-
-#ifdef TLS
-	if (p->n_left->n_op == ICON &&
-	    strcmp(p->n_left->n_name, "___tls_get_addr@PLT") == 0)
-		off--;
-#endif
-
-	return kflag ? &r[off] : &r[2];
-#endif
 }
 
 /*

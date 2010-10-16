@@ -1,4 +1,4 @@
-/*	$Id: reader.c,v 1.10 2010/09/28 13:41:26 mickey Exp $	*/
+/*	$Id: reader.c,v 1.11 2010/10/16 12:24:52 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -238,7 +238,7 @@ findaof(NODE *p, void *arg)
 	int *aof = arg;
 	int tnr;
 
-	if (p->n_op != ADDROF)
+	if (p->n_op != ADDROF || p->n_left->n_op != TEMP)
 		return;
 	tnr = regno(p->n_left);
 	if (aof[tnr])
@@ -959,7 +959,7 @@ gencode(NODE *p, int cookie)
 		rmove(DECRA(p->n_reg, 1), DECRA(p->n_reg, 0), p->n_type);
 	}
 #if 0
-		/* XXX - kolla upp det här */
+		/* XXX - kolla upp det h{r */
 	   else if (p->n_op == ASSIGN) {
 		/* may need move added if RLEFT/RRIGHT */
 		/* XXX should be handled in sucomp() */

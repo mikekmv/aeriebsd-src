@@ -40,7 +40,6 @@ typedef unsigned int bittype; /* XXX - for basicblock */
 #define	BIT2BYTE(a)	(((a) + 31) / 32)
 #endif
 #include "manifest.h"
-#include "ccconfig.h"
 
 /* cookies, used as arguments to codgen */
 #define FOREFF	01		/* compute for effects only */

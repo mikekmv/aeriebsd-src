@@ -547,7 +547,7 @@ argtyp(TWORD t, union dimfun *df, struct attr *ap)
 		cl = nsse < 8 ? SSE : SSEMEM;
 	} else if (t == LDOUBLE) {
 		cl = X87; /* XXX */
-	} else if (t == STRTY) {
+	} else if (t == STRTY || t == UNIONTY) {
 		/* XXX no SSEOP handling */
 		if ((tsize(t, df, ap) > 2*SZLONG) ||
 		    (attr_find(ap, GCC_ATYP_PACKED) != NULL))
@@ -559,57 +559,52 @@ argtyp(TWORD t, union dimfun *df, struct attr *ap)
 	return cl;
 }
 
-static void
+static NODE *
 argput(NODE *p)
 {
 	NODE *q;
 	int typ, r, ssz;
+
+	if (p->n_op == CM) {
+		p->n_left = argput(p->n_left);
+		p->n_right = argput(p->n_right);
+		return p;
+	}
 
 	/* first arg may be struct return pointer */
 	/* XXX - check if varargs; setup al */
 	switch (typ = argtyp(p->n_type, p->n_df, p->n_ap)) {
 	case INTEGER:
 	case SSE:
-		q = talloc();
-		*q = *p;
 		if (typ == SSE)
 			r = XMM0 + nsse++;
 		else
 			r = argregsi[ngpr++];
-		q = movtoreg(q, r);
-		*p = *q;
-		nfree(q);
+		p = movtoreg(p, r);
 		break;
+
 	case X87:
-		q = talloc();
-		*q = *p;
 		r = nrsp;
 		nrsp += SZLDOUBLE;
-		q = movtomem(q, r, STKREG);
-		*p = *q;
-		nfree(q);
+		p = movtomem(p, r, STKREG);
 		break;
 
 	case INTMEM:
-		q = talloc();
-		*q = *p;
 		r = nrsp;
 		nrsp += SZLONG;
-		q = movtomem(q, r, STKREG);
-		*p = *q;
-		nfree(q);
+		p = movtomem(p, r, STKREG);
 		break;
 
 	case STRREG: /* Struct in registers */
 		/* Cast to long pointer and move to the registers */
+		/* XXX can overrun struct size */
 		ssz = tsize(p->n_type, p->n_df, p->n_ap);
 
 		if (ssz <= SZLONG) {
 			q = cast(p->n_left, LONG+PTR, 0);
+			nfree(p);
 			q = buildtree(UMUL, q, NIL);
-			q = movtoreg(q, argregsi[ngpr++]);
-			*p = *q;
-			nfree(q);
+			p = movtoreg(q, argregsi[ngpr++]);
 		} else if (ssz <= SZLONG*2) {
 			NODE *qt, *q1, *q2, *ql, *qr;
 
@@ -617,25 +612,80 @@ argput(NODE *p)
 			q1 = ccopy(qt);
 			q2 = ccopy(qt);
 			ql = buildtree(ASSIGN, qt, cast(p->n_left,LONG+PTR, 0));
+			nfree(p);
 			qr = movtoreg(buildtree(UMUL, q1, NIL),
 			    argregsi[ngpr++]);
 			ql = buildtree(COMOP, ql, qr);
 			qr = buildtree(UMUL, buildtree(PLUS, q2, bcon(1)), NIL);
 			qr = movtoreg(qr, argregsi[ngpr++]);
-			q = buildtree(COMOP, ql, qr);
-			*p = *q;
-			nfree(q);
+			p = buildtree(COMOP, ql, qr);
 		} else
 			cerror("STRREG");
 		break;
 
-	case STRMEM:
-		/* Struct moved to memory */
+	case STRMEM: {
+		struct symtab s;
+		NODE *l, *t;
+
+		q = buildtree(UMUL, p->n_left, NIL);
+
+		s.stype = p->n_type;
+		s.squal = 0;
+		s.sdf = p->n_df;
+		s.sap = p->n_ap;
+		s.soffset = nrsp;
+		s.sclass = AUTO;
+
+		nrsp += tsize(p->n_type, p->n_df, p->n_ap);
+
+		l = block(REG, NIL, NIL, PTR+STRTY, 0, 0);
+		l->n_lval = 0;
+		regno(l) = STKREG;
+
+		t = block(NAME, NIL, NIL, p->n_type, p->n_df, p->n_ap);
+		t->n_sp = &s;
+		t = stref(block(STREF, l, t, 0, 0, 0));
+
+		t = (buildtree(ASSIGN, t, q));
+		nfree(p);
+		p = t->n_left;
+		nfree(t);
+		break;
+		}
+
 	default:
 		cerror("argument %d", typ);
 	}
+	return p;
 }
 
+/*
+ * Sort arglist so that register assignments ends up last.
+ */
+static int
+argsort(NODE *p)
+{
+	NODE *q;
+	int rv = 0;
+
+	if (p->n_op != CM)
+		return rv;
+	if (p->n_right->n_op == ASSIGN && p->n_right->n_left->n_op == REG) {
+		if (p->n_left->n_op == CM &&
+		    p->n_left->n_right->n_op == STASG) {
+			q = p->n_left->n_right;
+			p->n_left->n_right = p->n_right;
+			p->n_right = q;
+			rv = 1;
+		} else if (p->n_left->n_op == STASG) {
+			q = p->n_left;
+			p->n_left = p->n_right;
+			p->n_right = q;
+			rv = 1;
+		}
+	}
+	return rv | argsort(p->n_left);
+}
 
 /*
  * Called with a function call with arguments as argument.
@@ -656,7 +706,14 @@ funcode(NODE *p)
 		if (ssz > 2*SZLONG)
 			ngpr++;
 	}
-	listf(p->n_right, argput);
+
+	/* Convert just regs to assign insn's */
+	p->n_right = argput(p->n_right);
+
+	/* Must sort arglist so that STASG ends up first */
+	/* This avoids registers being clobbered */
+	while (argsort(p->n_right))
+		;
 
 	/* Check if there are varargs */
 	if (nsse || l->n_df == NULL || l->n_df->dfun == NULL) {

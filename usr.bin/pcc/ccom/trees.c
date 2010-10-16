@@ -1093,7 +1093,34 @@ xbcon(CONSZ val, struct symtab *sp, TWORD type)
 NODE *
 bpsize(NODE *p)
 {
-	return(offcon(psize(p), p->n_type, p->n_df, p->n_ap));
+	int isdyn(struct symtab *sp);
+	struct attr *ap;
+	struct symtab s;
+	NODE *q, *r;
+	TWORD t;
+
+	s.stype = DECREF(p->n_type);
+	s.sdf = p->n_df;
+	if (isdyn(&s)) {
+		q = bcon(1);
+		for (t = s.stype; t > BTMASK; t = DECREF(t)) {
+			if (ISPTR(t))
+				return buildtree(MUL, q, bcon(SZPOINT(t)));
+			if (ISARY(t)) {
+				if (s.sdf->ddim < 0)
+					r = tempnode(-s.sdf->ddim,
+					     INT, 0, MKAP(INT));
+				else
+					r = bcon(s.sdf->ddim/SZCHAR);
+				q = buildtree(MUL, q, r);
+				s.sdf++;
+			}
+		}
+		ap = attr_find(p->n_ap, ATTR_BASETYP);
+		p = buildtree(MUL, q, bcon(ap->atypsz/SZCHAR));
+	} else
+		p = (offcon(psize(p), p->n_type, p->n_df, p->n_ap));
+	return p;
 }
 
 /*
@@ -1308,74 +1335,76 @@ ptmatch(NODE *p)
 
 int tdebug = 0;
 
+
+/*
+ * Satisfy the types of various arithmetic binary ops.
+ *
+ * rules are:
+ *  if assignment, type of LHS
+ *  if any doubles, make double
+ *  else if any float make float
+ *  else if any longlongs, make long long
+ *  else if any longs, make long
+ *  else etcetc.
+ *
+ *  If the op with the highest rank is unsigned, this is the resulting type.
+ *  See:  6.3.1.1 rank order equal of signed and unsigned types
+ *  	  6.3.1.8 Usual arithmetic conversions
+ */
 NODE *
-tymatch(p)  register NODE *p; {
-
-	/* satisfy the types of various arithmetic binary ops */
-
-	/* rules are:
-		if assignment, type of LHS
-		if any doubles, make double
-		else if any float make float
-		else if any longlongs, make long long
-		else if any longs, make long
-		else etcetc.
-		if either operand is unsigned, the result is...
-	*/
-
-	TWORD t1, t2, t, tu;
+tymatch(NODE *p)
+{
+	TWORD tl, tr, t, tu;
+	NODE *l, *r;
 	int o, lu, ru;
 
 	o = p->n_op;
+	r = p->n_right;
+	l = p->n_left;
 
-	t1 = p->n_left->n_type;
-	t2 = p->n_right->n_type;
+	tl = l->n_type;
+	tr = r->n_type;
 
 	lu = ru = 0;
-	if( ISUNSIGNED(t1) ){
+	if (ISUNSIGNED(tl)) {
 		lu = 1;
-		t1 = DEUNSIGN(t1);
-		}
-	if( ISUNSIGNED(t2) ){
+		tl = DEUNSIGN(tl);
+	}
+	if (ISUNSIGNED(tr)) {
 		ru = 1;
-		t2 = DEUNSIGN(t2);
-		}
+		tr = DEUNSIGN(tr);
+	}
 
-	if (Wsign_compare && clogop(o) && t1 == t2 && lu != ru &&
-	    p->n_left->n_op != ICON && p->n_right->n_op != ICON)
+	if (Wsign_compare && clogop(o) && tl == tr && lu != ru &&
+	    l->n_op != ICON && r->n_op != ICON)
 		werror("comparison between signed and unsigned");
 
-#if 0
-	if ((t1 == CHAR || t1 == SHORT) && o!= RETURN)
-		t1 = INT;
-	if (t2 == CHAR || t2 == SHORT)
-		t2 = INT;
-#endif
-
-	if (t1 == LDOUBLE || t2 == LDOUBLE)
+	if (tl == LDOUBLE || tr == LDOUBLE)
 		t = LDOUBLE;
-	else if (t1 == DOUBLE || t2 == DOUBLE)
+	else if (tl == DOUBLE || tr == DOUBLE)
 		t = DOUBLE;
-	else if (t1 == FLOAT || t2 == FLOAT)
+	else if (tl == FLOAT || tr == FLOAT)
 		t = FLOAT;
-	else if (t1==LONGLONG || t2 == LONGLONG)
+	else if (tl==LONGLONG || tr == LONGLONG)
 		t = LONGLONG;
-	else if (t1==LONG || t2==LONG)
+	else if (tl==LONG || tr==LONG)
 		t = LONG;
-	else /* if (t1==INT || t2==INT) */
+	else /* everything else */
 		t = INT;
-#if 0
-	else if (t1==SHORT || t2==SHORT)
-		t = SHORT;
-	else 
-		t = CHAR;
-#endif
 
-	if( casgop(o) ){
-		tu = p->n_left->n_type;
-		t = t1;
+	if (casgop(o)) {
+		tu = l->n_type;
+		t = tl;
 	} else {
-		tu = ((ru|lu) && UNSIGNABLE(t))?ENUNSIGN(t):t;
+		/* Should result be unsigned? */
+		/* This depends on ctype() being called correctly */
+		tu = t;
+		if (UNSIGNABLE(t) && (lu || ru)) {
+			if (tl >= tr && lu)
+				tu = ENUNSIGN(t);
+			if (tr >= tl && ru)
+				tu = ENUNSIGN(t);
+		}
 	}
 
 	/* because expressions have values that are at least as wide
@@ -1383,19 +1412,19 @@ tymatch(p)  register NODE *p; {
 	   are those involving FLOAT/DOUBLE, and those
 	   from LONG to INT and ULONG to UNSIGNED */
 
-	if (t != t1 || (ru && !lu)) {
-		if (Wtruncate && o != CAST && p->n_right->n_op != ICON &&
-		    tsize(t1, 0, MKAP(t2)) > tsize(tu, 0, MKAP(tu)))
+	if (t != tl || (ru && !lu)) {
+		if (Wtruncate && o != CAST && r->n_op != ICON &&
+		    tsize(tl, 0, MKAP(tl)) > tsize(tu, 0, MKAP(tu)))
 			werror("conversion to '%s' from '%s' may alter its value",
-			    tnames[tu], tnames[t1]);
+			    tnames[tu], tnames[tl]);
 		p->n_left = makety( p->n_left, tu, 0, 0, MKAP(tu));
 	}
 
-	if (t != t2 || o==CAST || (lu && !ru)) {
-		if (Wtruncate && o != CAST && p->n_right->n_op != ICON &&
-		    tsize(t2, 0, MKAP(t2)) > tsize(tu, 0, MKAP(tu)))
+	if (t != tr || o==CAST || (lu && !ru)) {
+		if (Wtruncate && o != CAST && r->n_op != ICON &&
+		    tsize(tr, 0, MKAP(tr)) > tsize(tu, 0, MKAP(tu)))
 			werror("conversion to '%s' from '%s' may alter its value",
-			    tnames[tu], tnames[t2]);
+			    tnames[tu], tnames[tr]);
 		p->n_right = makety(p->n_right, tu, 0, 0, MKAP(tu));
 	}
 
@@ -1413,9 +1442,9 @@ tymatch(p)  register NODE *p; {
 #ifdef PCC_DEBUG
 	if (tdebug) {
 		printf("tymatch(%p): ", p);
-		tprint(stdout, t1, 0);
+		tprint(stdout, tl, 0);
 		printf(" %s ", copst(o));
-		tprint(stdout, t2, 0);
+		tprint(stdout, tr, 0);
 		printf(" => ");
 		tprint(stdout, tu, 0);
 		printf("\n");
