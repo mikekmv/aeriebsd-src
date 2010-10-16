@@ -14,7 +14,7 @@ CFLAGS+=-Wall
 #SRCS+= krb5_passwd.c
 #CFLAGS+= -DKRB5
 #DPADD+= ${LIBKRB5} ${LIBASN1} ${LIBDES} ${LIBCRYPTO}
-#LDADD+= -lkrb5 -lasn1 -ldes -lcrypto
+#LDADD+= -lkrb5 -lasn1 -lcrypto
 #.endif
 
 .if (${YP:L} == "yes")

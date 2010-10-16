@@ -41,10 +41,9 @@ kadmin-commands.c kadmin-commands.h:	kadmin-commands.in $(SLC)
 	./$(SLC) $(KRB5SRC)/kadmin/kadmin-commands.in
 CFLAGS+=-I${KRB5SRC}/lib/krb5 -I${KRB5SRC}/lib/kadm5 -I.
 
-DPADD+= ${LIBREADLINE} ${LIBCURSES} ${LIBKADM5SRV} ${LIBKADM5CLNT} \
-	${LIBKRB5} ${LIBCRYPTO} ${LIBDES}
-LDADD+=	-ledit -lcurses -lkadm5srv -lkadm5clnt \
-	-lkrb5 -lcrypto -ldes
+DPADD+= ${LIBEDIT} ${LIBCURSES} ${LIBKADM5SRV} ${LIBKADM5CLNT} \
+	${LIBKRB5} ${LIBCRYPTO}
+LDADD+=	-ledit -lcurses -lkadm5srv -lkadm5clnt -lkrb5 -lcrypto
 
 CLEANFILES+=	kadmin-commands.c slc lc-lex.o kadmin-commands.h \
 		slc-lex.o slc-gram.o

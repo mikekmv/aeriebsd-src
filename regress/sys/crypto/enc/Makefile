@@ -1,7 +1,7 @@
 
 PROG=   des3
-LDADD=-ldes
-DPADD=${LIBDES}
+LDADD=-lcrypto
+DPADD=${LIBCRYPTO}
 
 REGRESS_ROOT_TARGETS=	run-regress-${PROG}
 

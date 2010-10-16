@@ -7,8 +7,8 @@ AFSTOPDIR	= ../..
 PROG	= bos
 BINDIR	= /usr/sbin
 MAN	= bos.8
-LDADD	+= ${LIBARLA} -lkrb5 -lcrypto -lasn1 -ldes -lcurses
-DPADD	+= ${LIBARLA}
+LDADD	+= ${LIBARLA} -lkrb5 -lcrypto -lasn1 -lcurses
+DPADD	+= ${LIBARLA} ${LIBKRB5} ${LIBCRYPTO} ${LIBASN1} ${LIBCURSES}
 
 CFLAGS	+= -I${AFSSRC}/appl/lib
 

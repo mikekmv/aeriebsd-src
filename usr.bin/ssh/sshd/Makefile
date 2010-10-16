@@ -30,8 +30,8 @@ LDADD+= -lgssapi -lkrb5 -lkafs
 DPADD+= ${LIBGSSAPI} ${LIBKRB5}
 .endif
 
-DPADD+=	${LIBCRYPTO} ${LIBUTIL} ${LIBZ} ${LIBDES}
-LDADD+=	-lcrypto -lutil -lz -ldes
+DPADD+=	${LIBCRYPTO} ${LIBUTIL} ${LIBZ}
+LDADD+=	-lcrypto -lutil -lz
 
 .if (${TCP_WRAPPERS:L} == "yes")
 CFLAGS+= -DLIBWRAP

@@ -13,9 +13,7 @@ SRCS+=	${PRINTVER}
 
 CFLAGS+=-I${KRB5SRC}/lib/krb5
 
-DPADD+= ${LIBREADLINE} ${LIBCURSES} ${LIBDES} ${LIBKRB5} \
-	${LIBCRYPTO}
-LDADD+=	-lreadline -lcurses -ldes -lkrb5 \
-	-lcrypto
+DPADD+= ${LIBREADLINE} ${LIBCURSES} ${LIBKRB5} ${LIBCRYPTO}
+LDADD+=	-lreadline -lcurses -lkrb5 -lcrypto
 
 .include <bsd.prog.mk>

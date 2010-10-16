@@ -13,7 +13,7 @@ SRCS+=	mini_inetd.c socket.c tm2time.c
 
 CFLAGS+=-I${KRB5SRC}/lib/krb5 -I${KRB5SRC}/lib/kadm5
 
-DPADD+= ${LIBKADM5SRV} ${LIBKRB5} ${LIBCRYPTO} ${LIBDES}
-LDADD+=	-lkadm5srv -lkrb5 -lcrypto -ldes
+DPADD+= ${LIBKADM5SRV} ${LIBKRB5} ${LIBCRYPTO}
+LDADD+=	-lkadm5srv -lkrb5 -lcrypto
 
 .include <bsd.prog.mk>

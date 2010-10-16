@@ -28,7 +28,7 @@
 #include <sys/ioctl.h>
 #include <sys/sysctl.h>
 #include <crypto/cryptodev.h>
-#include <des.h>
+#include <openssl/des.h>
 #include <err.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -145,7 +145,7 @@ match(unsigned char *a, unsigned char *b, size_t len)
 int
 main(int argc, char **argv)
 {
-	des_key_schedule ks1, ks2, ks3;
+	DES_key_schedule ks1, ks2, ks3;
 	unsigned char iv0[8], iv[8], key[24] = "012345670123456701234567";
 	unsigned char b1[SZ], b2[SZ];
 	int allowed = 0, i, fail = 0;
@@ -173,14 +173,14 @@ main(int argc, char **argv)
 	memset(b2, 0, sizeof(b2));
 
 	/* keysetup for software */
-        des_set_key((void *) key, ks1);
-        des_set_key((void *) (key+8), ks2);
-        des_set_key((void *) (key+16), ks3);
+        DES_set_key((void *) key, &ks1);
+        DES_set_key((void *) (key+8), &ks2);
+        DES_set_key((void *) (key+16), &ks3);
 
 	/* encrypt with software, decrypt with /dev/crypto */
 	memcpy(iv, iv0, sizeof(iv0));
-        des_ede3_cbc_encrypt((void *)b1, (void*)b2, sizeof(b1), ks1, ks2, ks3,
-	    (void*)iv, DES_ENCRYPT);
+        DES_ede3_cbc_encrypt((void *)b1, (void*)b2, sizeof(b1), &ks1, &ks2,
+	    &ks3, (void*)iv, DES_ENCRYPT);
 	memcpy(iv, iv0, sizeof(iv0));
 	if (syscrypt(key, sizeof(key), iv, b2, b2, sizeof(b1), 0) < 0) {
 		warnx("decrypt with /dev/crypto failed");
@@ -199,8 +199,8 @@ main(int argc, char **argv)
 		fail++;
 	}
 	memcpy(iv, iv0, sizeof(iv0));
-        des_ede3_cbc_encrypt((void *)b2, (void*)b2, sizeof(b1), ks1, ks2, ks3,
-	    (void*)iv, DES_DECRYPT);
+        DES_ede3_cbc_encrypt((void *)b2, (void*)b2, sizeof(b1), &ks1, &ks2,
+	    &ks3, (void*)iv, DES_DECRYPT);
 	if (!match(b1, b2, sizeof(b1)))
 		fail++;
 	else

@@ -23,7 +23,7 @@ SRCS+=	parse_bytes.c
 
 CFLAGS+=-I${KRB5SRC}/lib/krb5 -I${KRB5SRC}/kdc
 
-DPADD+=	${LIBKRB5} ${LIBDES} ${LIBCRYPTO} ${LIBUTIL}
-LDADD+=	-lkrb5 -ldes -lcrypto -lutil
+DPADD+=	${LIBKRB5} ${LIBCRYPTO} ${LIBUTIL}
+LDADD+=	-lkrb5 -lcrypto -lutil
 
 .include <bsd.prog.mk>

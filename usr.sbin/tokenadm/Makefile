@@ -2,8 +2,8 @@
 PROG=	tokenadm
 SRCS=	tokenadm.c init.c tokendb.c
 MAN=	tokenadm.8
-LDADD+=	-ldes
-DPADD=	${LIBDES}
+LDADD+=	-lcrypto
+DPADD=	${LIBCRYPTO}
 
 CFLAGS+=-I${.CURDIR}/../../libexec/login_token
 .PATH:	${.CURDIR}/../../libexec/login_token

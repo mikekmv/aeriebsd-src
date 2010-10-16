@@ -10,7 +10,7 @@ CFLAGS+=-Wall -I${.CURDIR}/../login_passwd
 .if (${KERBEROS5:L} == "yes")
 SRCS+=	login_krb5.c
 DPADD+=	${LIBKRB5} ${LIBASN1} ${LIBCRYPTO} ${LIBDES}
-LDADD+=	-lkrb5 -lasn1 -lcrypto -ldes
+LDADD+=	-lkrb5 -lasn1 -lcrypto
 CFLAGS+=-DKRB5
 .endif
 

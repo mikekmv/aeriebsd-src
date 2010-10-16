@@ -49,7 +49,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <des.h>
+#include <openssl/des.h>
 
 #include "token.h"
 #include "tokendb.h"
@@ -61,7 +61,7 @@
  */
 
 typedef	union {
-	des_cblock	cb;
+	DES_cblock	cb;
 	char		ct[9];
 	unsigned long	ul[2];
 } TOKEN_CBlock;
@@ -105,7 +105,7 @@ tokenchallenge(char *user, char *challenge, int size, char *card_type)
 {
 	TOKENDB_Rec tr;
 	TOKEN_CBlock cb;
-	des_key_schedule ks;
+	DES_key_schedule ks;
 	int r, c;
 
 	r = 1;	/* no reduced input mode by default! */
@@ -122,9 +122,9 @@ tokenchallenge(char *user, char *challenge, int size, char *card_type)
 		tr.flags &= ~TOKEN_LOCKED;
 		if (r == 0 && tr.rim[0]) {
 			h2cb(tr.secret, &cb);
-			des_fixup_key_parity(&cb.cb);
-			des_key_sched(&cb.cb, ks);
-			des_ecb_encrypt(&tr.rim, &cb.cb, ks, DES_ENCRYPT);
+			DES_fixup_key_parity(&cb.cb);
+			DES_key_sched(&cb.cb, &ks);
+			DES_ecb_encrypt(&tr.rim, &cb.cb, &ks, DES_ENCRYPT);
 			memcpy(tr.rim, cb.cb, 8);
 			for (r = 0; r < 8; ++r) {
 				if ((tr.rim[r] &= 0xf) > 9)
@@ -165,7 +165,7 @@ tokenverify(char *username, char *challenge, char *response)
 	TOKEN_CBlock cmp_text;
 	TOKEN_CBlock user_seed;
 	TOKEN_CBlock cipher_text;
-	des_key_schedule key_schedule;
+	DES_key_schedule key_schedule;
 
 
 	memset(cmp_text.ct, 0, sizeof(cmp_text.ct));
@@ -198,12 +198,12 @@ tokenverify(char *username, char *challenge, char *response)
 	 * shared secret asap.
 	 */
 
-	des_fixup_key_parity(&user_seed.cb);
-	des_key_sched(&user_seed.cb, key_schedule);
+	DES_fixup_key_parity(&user_seed.cb);
+	DES_key_sched(&user_seed.cb, &key_schedule);
 	memset(user_seed.ct, 0, sizeof(user_seed.ct));
-	des_ecb_encrypt(&tokennumber.cb, &cipher_text.cb, key_schedule,
+	DES_ecb_encrypt(&tokennumber.cb, &cipher_text.cb, &key_schedule,
 	    DES_ENCRYPT);
-	memset(key_schedule, 0, sizeof(key_schedule));
+	memset(&key_schedule, 0, sizeof(key_schedule));
 
 	/*
 	 * The token thinks it's descended from VAXen.  Deal with i386
@@ -257,7 +257,7 @@ tokenuserinit(int flags, char *username, unsigned char *usecret, unsigned mode)
 	TOKEN_CBlock nulls;
 	TOKEN_CBlock checksum;
 	TOKEN_CBlock checktxt;
-	des_key_schedule key_schedule;
+	DES_key_schedule key_schedule;
 
 	memset(&secret.ct, 0, sizeof(secret));
 
@@ -268,9 +268,9 @@ tokenuserinit(int flags, char *username, unsigned char *usecret, unsigned mode)
 	if ( (flags & TOKEN_GENSECRET) )
 		tokenseed(&secret);
 	else
-		memcpy(&secret, usecret, sizeof(des_cblock));
+		memcpy(&secret, usecret, sizeof(DES_cblock));
 
-	des_fixup_key_parity(&secret.cb);
+	DES_fixup_key_parity(&secret.cb);
 
 	/*
 	 * Check if the db record already exists.  If there's no
@@ -312,11 +312,11 @@ tokenuserinit(int flags, char *username, unsigned char *usecret, unsigned mode)
 	    username, secret.cb[0], secret.cb[1], secret.cb[2], secret.cb[3],
 	    secret.cb[4], secret.cb[5], secret.cb[6], secret.cb[7]);
 
-	des_key_sched(&secret.cb, key_schedule);
+	DES_key_sched(&secret.cb, &key_schedule);
 	memset(&secret.ct, 0, sizeof(secret));
 	memset(&nulls, 0, sizeof(nulls));
-	des_ecb_encrypt(&nulls.cb, &checksum.cb, key_schedule, DES_ENCRYPT);
-	memset(key_schedule, 0, sizeof(key_schedule));
+	DES_ecb_encrypt(&nulls.cb, &checksum.cb, &key_schedule, DES_ENCRYPT);
+	memset(&key_schedule, 0, sizeof(key_schedule));
 	HTONL(checksum.ul[0]);
 	snprintf(checktxt.ct, sizeof(checktxt.ct), "%8.8lx", checksum.ul[0]);
 	printf("Hex Checksum: \"%s\"", checktxt.ct);
@@ -338,7 +338,7 @@ h2d(char *cp)
 {
 	int	i;
 
-	for (i=0; i<sizeof(des_cblock); i++, cp++) {
+	for (i=0; i<sizeof(DES_cblock); i++, cp++) {
 		if (*cp >= 'a' && *cp <= 'f')
 			*cp = tt->map[*cp - 'a'];
 	}
@@ -346,7 +346,7 @@ h2d(char *cp)
 
 /*
  * Translate an hex 16 byte ascii representation of an unsigned
- * integer to a des_cblock.
+ * integer to a DES_cblock.
  */
 
 static	void
@@ -362,7 +362,7 @@ h2cb(char *hp, TOKEN_CBlock *cb)
 }
 
 /*
- * Translate a des_cblock to an 16 byte ascii hex representation.
+ * Translate a DES_cblock to an 16 byte ascii hex representation.
  */
 
 static	void

@@ -11,8 +11,8 @@ OS!=		awk '/^OS=/ { print $$2 }' ${.CURDIR}/../../Makefile
 CFLAGS+=	-I${TOPSRC} -I${TOPSRC}/sysdep/openbsd -I${TOPOBJ} -Wall \
 		-DUSE_TRIPLEDES -DUSE_CAST -DUSE_BLOWFISH -DUSE_DES \
 		-DUSE_AES
-LDADD+=		-lcrypto -ldes
-DPADD+=		${LIBCRYPTO} ${LIBDES}
+LDADD+=		-lcrypto
+DPADD+=		${LIBCRYPTO}
 NOMAN=
 DEBUG=		-g
 

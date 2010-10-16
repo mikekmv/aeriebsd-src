@@ -40,10 +40,8 @@ ktutil-commands.c ktutil-commands.h:	ktutil-commands.in $(SLC)
 
 CFLAGS+=-I${KRB5SRC}/lib/krb5 -I${KRB5SRC}/lib/kadm5 -I.
 
-DPADD+=	${LIBREADLINE} ${LIBCURSES} ${LIBKADM5CLNT} ${LIBKRB5} \
-	${LIBCRYPTO} ${LIBDES}
-LDADD+=	-lreadline -lcurses -lkadm5clnt -lkrb5 \
-	-lcrypto -ldes
+DPADD+=	${LIBREADLINE} ${LIBCURSES} ${LIBKADM5CLNT} ${LIBKRB5} ${LIBCRYPTO}
+LDADD+=	-lreadline -lcurses -lkadm5clnt -lkrb5 -lcrypto
 
 CLEANFILES+=	ktutil-commands.c slc slc-lex.o \
 		ktutil-commands.h slc-gram.o stamp_grammar

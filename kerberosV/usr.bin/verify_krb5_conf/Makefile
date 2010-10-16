@@ -11,7 +11,7 @@ SRCS+=	parse_bytes.c
 .PATH:	${KRB5SRC}/lib/krb5
 .PATH:	${ROKENSRC}
 
-DPADD+= ${LIBKRB5} ${LIBDES} ${LIBCRYPTO}
-LDADD+=	-lkrb5 -ldes -lcrypto
+DPADD+= ${LIBKRB5} ${LIBCRYPTO}
+LDADD+=	-lkrb5 -lcrypto
 
 .include <bsd.prog.mk>

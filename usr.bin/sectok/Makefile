@@ -1,8 +1,8 @@
 
 PROG=	sectok
 SRCS=   main.c cmds.c cyberflex.c
-DPADD=	${LIBSECTOK} ${LIBCRYPTO} ${LIBDES}
-LDADD=  -lsectok -lcrypto -ldes
+DPADD=	${LIBSECTOK} ${LIBCRYPTO}
+LDADD=  -lsectok -lcrypto
 
 CFLAGS+=-Wall
 

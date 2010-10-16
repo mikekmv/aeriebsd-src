@@ -27,5 +27,5 @@ DPADD+=  ${LIBGSSAPI} ${LIBKRB5}
 LDADD+=  -lgssapi -lkrb5
 .endif # KERBEROS5
 
-DPADD+=	${LIBCRYPTO} ${LIBZ} ${LIBDES}
-LDADD+=	-lcrypto -lz -ldes
+DPADD+=	${LIBCRYPTO} ${LIBZ}
+LDADD+=	-lcrypto -lz

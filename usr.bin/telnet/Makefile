@@ -44,8 +44,8 @@ SRCS=	authenc.c commands.c main.c network.c ring.c sys_bsd.c telnet.c \
 
 .if (${KERBEROS5:L} == "yes")
 CFLAGS+=-DENCRYPTION -DAUTHENTICATION -DKRB5 -DDES_ENCRYPTION
-DPADD+= ${LIBKRB5} ${LIBASN1} ${LIBCRYPTO} ${LIBDES}
-LDADD+= -lkrb5 -lasn1 -lcrypto -ldes
+DPADD+= ${LIBKRB5} ${LIBASN1} ${LIBCRYPTO}
+LDADD+= -lkrb5 -lasn1 -lcrypto
 SRCS+= kerberos5.c enc_des.c
 .endif
 

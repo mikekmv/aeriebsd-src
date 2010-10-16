@@ -74,8 +74,8 @@ CFLAGS+=	-Wall -Wstrict-prototypes -Wmissing-prototypes \
 #LWRESLIB=      /usr/local/lib/liblwres.a
 #DNSSEC_CFLAGS= -I/usr/local/include -DLWRES
 
-LDADD+=		${LWRESLIB} -lkeynote -lcrypto -ldes -lm
-DPADD+=		${LWRESLIB} ${LIBKEYNOTE} ${LIBCRYPTO} ${LIBDES} ${LIBM}
+LDADD+=		${LWRESLIB} -lkeynote -lcrypto -lm
+DPADD+=		${LWRESLIB} ${LIBKEYNOTE} ${LIBCRYPTO} ${LIBM}
 
 exchange_num.c exchange_num.h: stamp_exchange_num
 

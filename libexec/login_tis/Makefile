@@ -2,8 +2,8 @@
 PROG=	login_tis
 MAN=	login_tis.8
 CFLAGS+=-Wall
-LDADD+=	-ldes
-DPADD+=	${LIBDES}
+LDADD+=	-lcrypto
+DPADD+=	${LIBCRYPTO}
 
 BINOWN=	root
 BINGRP=	auth

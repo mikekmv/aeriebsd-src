@@ -9,8 +9,8 @@ SRCS=	rcp.c util.c
 #.PATH:	${.CURDIR}/../../usr.bin/rsh
 #SRCS+=	krcmd.c kcmd.c
 #CFLAGS+=-DKERBEROS
-#DPADD+=	${LIBKRB} ${LIBDES}
-#LDADD+=	-lkrb -ldes
+#DPADD+=	${LIBKRB}
+#LDADD+=	-lkrb
 #.endif
 
 .include <bsd.prog.mk>

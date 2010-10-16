@@ -12,8 +12,8 @@ SRCS=	alias.c alias_cuseeme.c alias_db.c alias_ftp.c alias_irc.c \
 CFLAGS+=-Wall -DNO_FW_PUNCH -DNOI4B -DNONETGRAPH
 CFLAGS+=-DLOCALNAT -DLOCALRAD
 M4FLAGS=-DLOCALNAT -DLOCALRAD
-LDADD+= -lcrypto -ldes -lutil -lz
-DPADD+=	${LIBDES} ${LIBUTIL} ${LIBZ} ${LIBCRYPTO}
+LDADD+= -lcrypto -lutil -lz
+DPADD+=	${LIBUTIL} ${LIBZ} ${LIBCRYPTO}
 .if defined(NOSUID) || defined(PPP_NOSUID)
 BINMODE=554
 .else

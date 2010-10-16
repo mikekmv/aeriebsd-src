@@ -1,6 +1,6 @@
 
 PROG=	x99token
-LDADD+=	-ldes
-DPADD+= ${LIBDES}
+LDADD+=	-lcrypto
+DPADD+= ${LIBCRYPTO}
 
 .include <bsd.prog.mk>

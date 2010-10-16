@@ -2,8 +2,8 @@
 PROG=	login_token
 SRCS=	login_token.c init.c token.c tokendb.c
 MAN=	login_token.8
-DPADD=	${LIBDES}
-LDADD=	-ldes
+DPADD=	${LIBCRYPTO}
+LDADD=	-lcrypto
 
 TOKENS=	activ crypto snk
 

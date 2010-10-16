@@ -11,7 +11,7 @@ SRCS+=	${PRINTVER}
 
 CFLAGS+=-I${KRB5SRC}/lib/krb5 -I${KRB5SRC}/lib/kadm5
 
-DPADD+=	${LIBKADM5SRV} ${LIBKRB5} ${LIBDES} ${LIBCRYPTO} ${LIBUTIL}
-LDADD+=	-lkadm5srv -lkrb5 -ldes -lcrypto -lutil
+DPADD+=	${LIBKADM5SRV} ${LIBKRB5} ${LIBCRYPTO} ${LIBUTIL}
+LDADD+=	-lkadm5srv -lkrb5 -lcrypto -lutil
 
 .include <bsd.prog.mk>

@@ -13,7 +13,7 @@ SRCS+=	tm2time.c
 
 CFLAGS+=-I${KRB5SRC}/lib/krb5 -I${KRB5SRC}/lib/kadm5
 
-DPADD+= ${LIBKADM5SRV} ${LIBDES} ${LIBCRYPTO}
-LDADD+=	-lkadm5srv -lkrb5 -ldes -lcrypto
+DPADD+= ${LIBKADM5SRV} ${LIBCRYPTO}
+LDADD+=	-lkadm5srv -lkrb5 -lcrypto
 
 .include <bsd.prog.mk>
