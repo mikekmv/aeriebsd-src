@@ -18,7 +18,7 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	printenv printf \
 	quota radioctl rcs rdist rdistd readlink renice rev \
 	rpcgen rpcinfo rs rsh rup ruptime rusers rwall rwho \
-	sdiff script sectok sed sendbug shar showmount skey \
+	sdiff script sed sendbug shar showmount skey \
 	skeyaudit skeyinfo skeyinit soelim sort spell spline split \
 	ssh stat strings strip su systat sudo \
 	tail talk tbl tcopy tcpbench tee telnet tftp tic time tip \

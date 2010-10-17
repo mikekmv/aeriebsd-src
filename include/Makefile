@@ -39,7 +39,7 @@ LDIRS=	altq crypto ddb dev isofs milfs miscfs net netatalk netinet \
 RDIRS=	../lib/libpthread ../lib/libcompat ../lib/libcurses \
 	../lib/libelf ../lib/libform ../lib/libssl ../lib/libmenu \
 	../lib/libocurses ../lib/libossaudio ../lib/libpanel ../lib/librpcsvc \
-	../lib/libskey ../lib/libsectok ../lib/libedit ../lib/libexpat \
+	../lib/libskey ../lib/libedit ../lib/libexpat \
 	../lib/libpcap ../lib/libplot ../lib/libutil ../lib/libusbhid \
 	../lib/libwrap ../lib/libz ../lib/libkeynote ../lib/libevent \
 	../usr.bin/lex ../sys/arch/${MACHINE}
