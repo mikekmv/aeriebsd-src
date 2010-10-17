@@ -37,8 +37,7 @@ LDADD+=	-lcurses
 DPADD=	${LIBCURSES}
 
 SRCS=	authenc.c commands.c main.c network.c ring.c sys_bsd.c telnet.c \
-	terminal.c tn3270.c utilities.c auth.c encrypt.c genget.c getent.c \
-	misc.c
+	terminal.c utilities.c auth.c encrypt.c genget.c getent.c misc.c
 
 .include <bsd.own.mk> # for KERBEROS
 
