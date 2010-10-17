@@ -996,8 +996,6 @@ myxasm(struct interpass *ip, NODE *p)
 void
 targarg(char *w, void *arg)
 {
-cerror("targarg");
-#if 0
 	NODE **ary = arg;
 	NODE *p, *q;
 
@@ -1009,6 +1007,7 @@ cerror("targarg");
 		if (*w == 'k') {
 			q->n_type = INT;
 		} else if (*w != 'w') {
+			cerror("targarg"); /* XXX ??? */
 			if (q->n_type > UCHAR) {
 				regno(q) = regno(q)*2+8;
 				if (*w == 'h')
@@ -1020,7 +1019,6 @@ cerror("targarg");
 	}
 	adrput(stdout, q);
 	tfree(q);
-#endif
 }
 
 /*

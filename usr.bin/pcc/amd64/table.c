@@ -966,7 +966,7 @@ struct optab table[] = {
 
 { STASG,	INAREG|FOREFF,
 	SOREG|SNAME,	TANY,
-	SAREG|SOREG|SNAME,	TPTRTO|TANY,
+	SAREG,		TPTRTO|TANY,
 		NSPECIAL,	RDEST,
 		"ZQ", },
 
@@ -1387,6 +1387,12 @@ struct optab table[] = {
 	SANY,	TSTRUCT,
 		NSPECIAL, 0,
 		"ZF", },
+
+{ ADDROF,	INAREG,
+	SNAME,	TANY,
+	SANY,	TANY,
+		NAREG, RESC1,
+		"	leaq AL,A1\n", },
 
 # define DF(x) FORREW,SANY,TANY,SANY,TANY,REWRITE,x,""
 
