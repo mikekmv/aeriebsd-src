@@ -178,7 +178,7 @@ himem_attach(struct device *parent, struct device *self, void *aux)
 		pmap_extract(pmap_kernel(), va, &bp->hb_pa);
 	}
 
-	sc->sc_size = (avail_end2 - 0x100000000ULL) / DEV_BSIZE;
+	sc->sc_size = (avail_end2 - 0x100000000ULL) >> DEV_BSHIFT;
 	printf(": size %uMB\n", sc->sc_size / 2048);
 
 	/* set a fake disklabel */
@@ -369,11 +369,11 @@ himem_scsi_cmd(struct scsi_xfer *xs)
 		    xs->cmd->opcode == READ_BIG) {
 			bp->hb_dst = (char *)HIMEM_LOW + res;
 			bp->hb_src = (char *)HIMEM_HIGH +
-			    ((bno & PDE_MASK) * DEV_BSIZE);
+			    ((bno & PDE_MASK) << DEV_BSHIFT);
 		} else {
 			bp->hb_src = (char *)HIMEM_LOW + res;
 			bp->hb_dst = (char *)HIMEM_HIGH +
-			    ((bno & PDE_MASK) * DEV_BSIZE);
+			    ((bno & PDE_MASK) << DEV_BSHIFT);
 		}
 
 		bp->hb_len = xs->datalen;
@@ -454,7 +454,8 @@ himem(void *v)
 
 		sc->sc_pdir[HIMEM_PDE] = bp->hb_pa | PG_KW | PG_U | PG_M | PG_V;
 		sc->sc_pdir[HIMEM_PDE+1] = PG_KW | PG_U | PG_M | PG_V | PG_PS |
-		    (0x100000000ULL + (bp->hb_bno & ~PDE_MASK) * DEV_BSIZE);
+		    (0x100000000ULL +
+		     ((uint64_t)(bp->hb_bno & ~PDE_MASK) << DEV_BSHIFT));
 		sc->sc_pdir[HIMEM_PDE+2] = sc->sc_pdir[HIMEM_PDE+1] + 0x200000;
 
 		himem_zefix(sc->sc_pdir, bp->hb_src, bp->hb_dst, bp->hb_len);
