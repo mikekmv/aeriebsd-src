@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1980, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,7 +31,7 @@
 #if 0
 static char sccsid[] = "@(#)support.c	8.1 (Berkeley) 5/31/93";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: support.c,v 1.1.1.1 2008/08/26 14:36:43 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -113,7 +112,7 @@ cchose(CARD h[], int n, int s)
 		}
 	}
 	if (j < 0)
-		errx("cchose internal error %d %d", j, n);
+		errx(1, "cchose internal error %d %d", j, n);
 	return (j);
 }
 
