@@ -1,4 +1,3 @@
-/*	$Id: local.c,v 1.10 2010/10/17 15:51:56 mickey Exp $	*/
 /*
  * Copyright (c) 2008 Michael Shalayeff
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
@@ -386,6 +385,8 @@ clocal(NODE *p)
 		if (l->n_op == ADDROF && l->n_left->n_op == TEMP)
 			break;
 
+		if ((l->n_op == REG || l->n_op == TEMP) && ISPTR(l->n_type))
+			goto delp;
 #ifdef notdef
 		/* if conversion to another pointer type, just remove */
 		/* XXX breaks ADDROF NAME */

@@ -1,4 +1,3 @@
-/*	$Id: local2.c,v 1.12 2010/09/28 13:41:25 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.

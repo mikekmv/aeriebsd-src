@@ -158,6 +158,22 @@ builtin_abs(NODE *f, NODE *a, TWORD rt)
 	return p;
 }
 
+/*
+ * Get size of object, if possible.
+ * Currently does nothing,
+ */
+static NODE *
+builtin_object_size(NODE *f, NODE *a, TWORD rt)
+{
+	int v = icons(a->n_right);
+	if (v < 0 || v > 3)
+		uerror("arg2 must be between 0 and 3");
+	tfree(a->n_left);
+	nfree(a);
+	tfree(f);
+	return xbcon(v < 2 ? -1 : 0, NULL, rt);
+}
+
 #ifndef TARGET_STDARGS
 static NODE *
 builtin_stdarg_start(NODE *f, NODE *a, TWORD rt)
@@ -250,9 +266,12 @@ builtin_unimp(NODE *f, NODE *a, TWORD rt)
 	if (strncmp("__builtin_", n, 10) == 0)
 		n += 10;
 
-	f->n_sp = lookup(n, SNORMAL);
-	f->n_sp->sclass = EXTERN;
-	f->n_type = f->n_sp->stype = INCREF(rt)+(FTN-PTR);
+	f->n_sp = lookup(addname(n), SNORMAL);
+	if (f->n_sp->sclass == SNULL) {
+		f->n_sp->sclass = EXTERN;
+		f->n_sp->stype = INCREF(rt)+(FTN-PTR);
+	}
+	f->n_type = f->n_sp->stype;
 	f = clocal(f);
 	return buildtree(CALL, f, a);
 }
@@ -362,12 +381,13 @@ builtin_nanl(NODE *f, NODE *a, TWORD rt) NANX(long double,LDOUBLE)
 #endif
 #endif
 
-static TWORD memcpyt[] = { VOID|PTR, VOID|PTR, SIZET };
-static TWORD memsett[] = { VOID|PTR, INT, SIZET };
+static TWORD memcpyt[] = { VOID|PTR, VOID|PTR, SIZET, INT };
+static TWORD memsett[] = { VOID|PTR, INT, SIZET, INT };
 static TWORD allocat[] = { SIZET };
 static TWORD expectt[] = { LONG, LONG };
 static TWORD strcmpt[] = { CHAR|PTR, CHAR|PTR };
-static TWORD strncpyt[] = { CHAR|PTR, CHAR|PTR, SIZET };
+static TWORD strcpyt[] = { CHAR|PTR, CHAR|PTR, INT };
+static TWORD strncpyt[] = { CHAR|PTR, CHAR|PTR, SIZET, INT };
 static TWORD strchrt[] = { CHAR|PTR, INT };
 static TWORD nant[] = { CHAR|PTR };
 
@@ -378,6 +398,24 @@ static const struct bitable {
 	TWORD *tp;
 	TWORD rt;
 } bitable[] = {
+	{ "__builtin___memcpy_chk", builtin_unimp, 4, memcpyt, VOID|PTR },
+	{ "__builtin___memmove_chk", builtin_unimp, 4, memcpyt, VOID|PTR },
+	{ "__builtin___memset_chk", builtin_unimp, 4, memsett, VOID|PTR },
+
+	{ "__builtin___strcat_chk", builtin_unimp, 3, strcpyt, CHAR|PTR },
+	{ "__builtin___strcpy_chk", builtin_unimp, 3, strcpyt, CHAR|PTR },
+	{ "__builtin___strncat_chk", builtin_unimp, 4, strncpyt,CHAR|PTR },
+	{ "__builtin___strncpy_chk", builtin_unimp, 4, strncpyt,CHAR|PTR },
+
+	{ "__builtin___printf_chk", builtin_unimp, -1, 0, INT },
+	{ "__builtin___fprintf_chk", builtin_unimp, -1, 0, INT },
+	{ "__builtin___sprintf_chk", builtin_unimp, -1, 0, INT },
+	{ "__builtin___snprintf_chk", builtin_unimp, -1, 0, INT },
+	{ "__builtin___vprintf_chk", builtin_unimp, -1, 0, INT },
+	{ "__builtin___vfprintf_chk", builtin_unimp, -1, 0, INT },
+	{ "__builtin___vsprintf_chk", builtin_unimp, -1, 0, INT },
+	{ "__builtin___vsnprintf_chk", builtin_unimp, -1, 0, INT },
+
 	{ "__builtin_alloca", builtin_alloca, 1, allocat },
 	{ "__builtin_constant_p", builtin_constant_p, 1 },
 	{ "__builtin_abs", builtin_abs, 1 },
@@ -393,6 +431,7 @@ static const struct bitable {
 	{ "__builtin_nanf", builtin_nanf, 1, nant },
 	{ "__builtin_nan", builtin_nan, 1, nant },
 	{ "__builtin_nanl", builtin_nanl, 1, nant },
+	{ "__builtin_object_size", builtin_object_size, 2, memsett, SIZET },
 	{ "__builtin_strcmp", builtin_unimp, 2, strcmpt, INT },
 	{ "__builtin_strchr", builtin_unimp, 2, strchrt, CHAR|PTR },
 	{ "__builtin_strrchr", builtin_unimp, 2, strchrt, CHAR|PTR },

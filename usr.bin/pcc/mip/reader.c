@@ -1,4 +1,3 @@
-/*	$Id: reader.c,v 1.11 2010/10/16 12:24:52 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.

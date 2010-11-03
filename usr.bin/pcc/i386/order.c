@@ -1,4 +1,3 @@
-/*	$Id: order.c,v 1.5 2010/09/28 13:41:25 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
