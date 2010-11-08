@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD$";
+    "$ABSD: checkoff.c,v 1.1 2010/06/23 12:08:36 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,7 +32,7 @@ elf_checkoff(const char *fn, FILE *fp, off_t foff, off_t add)
 
 	if (fstat(fileno(fp), &sb) < 0) {
 		warn("%s: fstat", fn);
-		return NULL;
+		return -1;
 	}
 
 	if (foff >= sb.st_size || add >= sb.st_size ||
