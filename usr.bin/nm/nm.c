@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.9 2009/09/08 17:03:57 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.10 2010/01/09 18:16:13 mickey Exp $";
 #endif
 #endif
 
@@ -672,6 +672,11 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 
 		es.name = name;
 		es.ehdr = &head->elf32;
+		if (head->elf32.e_ehsize < sizeof head->elf32) {
+			warnx("%s: ELF header is too short", name);
+			return 1;
+		}
+
 		if (!(es.shdr = elf32_load_shdrs(name, fp, foff, es.ehdr)))
 			return (1);
 		elf32_fix_shdrs(es.ehdr, es.shdr);
@@ -700,6 +705,10 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 
 		es.name = name;
 		es.ehdr = &head->elf64;
+		if (es.ehdr->e_ehsize < sizeof head->elf64) {
+			warnx("%s: ELF header is too short", name);
+			return 1;
+		}
 		if (!(es.shdr = elf64_load_shdrs(name, fp, foff, es.ehdr)))
 			return (1);
 		elf64_fix_shdrs(es.ehdr, es.shdr);
