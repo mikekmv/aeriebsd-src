@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.10 2010/01/09 18:16:13 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.11 2010/11/08 14:00:44 mickey Exp $";
 #endif
 #endif
 
@@ -294,7 +294,8 @@ process_file(int count, const char *fname)
 	return(retval);
 }
 
-char **nametab;
+char *nametab;
+long namtablen;
 
 /*
  *
@@ -310,7 +311,11 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 		int len;
 
 		i = atol(&arh->ar_name[1]);
-		len = strlen(nametab[i]) + 1;
+		if (i >= namtablen) {
+			warnx("corrupt ar member header");
+			return 1;
+		}
+		len = strlen(&nametab[i]);
 		if (len > *namelen) {
 			p -= (long)*name;
 			if ((*name = realloc(*name, baselen+len)) == NULL)
@@ -318,8 +323,8 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 			*namelen = len;
 			p += (long)*name;
 		}
-		strlcpy(p, nametab[i], len);
-		return 0;
+		strlcpy(p, &nametab[i], len);
+		p += len;
 	} else
 #ifdef AR_EFMT1
 	/*
@@ -484,7 +489,7 @@ show_archive(int count, const char *fname, FILE *fp)
 	off_t last_ar_off, foff, symtaboff;
 	char *name;
 	u_long mmbrlen, symtablen;
-	int rval, baselen, namelen;
+	int i, rval, baselen, namelen;
 
 	baselen = strlen(fname) + 3;
 	namelen = sizeof(ar_head.ar_name);
@@ -529,46 +534,27 @@ show_archive(int count, const char *fname, FILE *fp)
 			/* load the Sys5 long names table */
 		} else if (strncmp(ar_head.ar_name, AR_NAMTAB,
 		    sizeof(AR_NAMTAB) - 1) == 0) {
-			char **nt, *p, *pp;
-			int i;
-		 
-			if (issize || !armap)
-				goto skip;
+			char *p;
 
-			/* XXX leaking p,nametab on multiple <file> args */
-			if (!(p = malloc(mmbrlen + 1))) {
-				warn("%s: alloc nametab", fname);
-				rval = 1;
-				break;
-			}
-					  
-			if (fread(p, mmbrlen, (size_t)1, fp) != 1) {
-				warn("%s: read nametab", fname);
-				rval = 1;
-				break;
-			}
-			p[mmbrlen] = '\0';
-
-			for (pp = p, i = 0; *pp; )
-				if (*pp++ == '\n')
-					i++;
-
-			/* XXX check overflow */
-			if (!(nametab = malloc((i + 1) * sizeof *nametab))) {
-				warn("%s: alloc nametab index", fname);
-				rval = 1;
-				break;
-			}
-
-			for (nt = nametab, pp = p; *p; p++)
-				if (*p == '\n') {
-					*nt++ = pp;
-					if (p[-1] == '/')
-						p[-1] = '\0';
-					*p++ = '\0';
-					pp = p;
-				}
-			*nt = NULL;
+			if ((nametab = malloc(mmbrlen)) == NULL) {
+				warn("%s: nametab", fname);
+ 				rval = 1;
+ 				break;
+ 			}
+ 
+			if (fread(nametab, mmbrlen, (size_t)1, fp) != 1) {
+				warnx("%s: premature EOF", fname);
+ 				rval = 1;
+ 				break;
+ 			}
+ 
+			namtablen = mmbrlen;
+			for (p = nametab, i = mmbrlen; i--; p++)
+				if (*p == '\n')
+					*p = '\0';
+ 
+ 			if (issize || !armap || !symtablen || !symtaboff)
+ 				goto skip;
 		}
 
 		if (!issize && armap && symtablen && symtaboff) {
