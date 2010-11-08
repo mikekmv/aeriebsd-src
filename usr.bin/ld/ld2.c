@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.27 2010/09/13 19:44:55 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.28 2010/09/15 10:37:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -1200,10 +1200,10 @@ uLD(const char *name, char *v, int *size, int flags)
 		errx(1, "%s: no strings attached", name);
 
 	if (sh->sh_offset >= *size || sh->sh_offset + sh->sh_size > *size)
-		errx(1, "%s: corrupt section header #%ld", name, sh - shdr);
+		errx(1, "%s: corrupt section header #%td", name, sh - shdr);
 
 	if (esh->sh_offset >= *size || esh->sh_offset + esh->sh_size > *size)
-		errx(1, "%s: corrupt section header #%ld", name, esh - shdr);
+		errx(1, "%s: corrupt section header #%td", name, esh - shdr);
 
 	if (sh->sh_size / sh->sh_entsize >= INT_MAX)
 		errx(1, "%s: symtab is too big %llu",
@@ -1253,7 +1253,7 @@ uLD(const char *name, char *v, int *size, int flags)
 
 		if (rsh->sh_offset >= *size ||
 		    rsh->sh_offset + rsh->sh_size > *size)
-			errx(1, "%s: corrupt section header #%ld",
+			errx(1, "%s: corrupt section header #%td",
 			    name, rsh - shdr);
 
 		if ((rsh->sh_type == SHT_REL &&
@@ -1263,7 +1263,7 @@ uLD(const char *name, char *v, int *size, int flags)
 			errx(1, "%s: invalid reloc entry size", name);
 
 		if (rsh->sh_size / rsh->sh_entsize >= INT_MAX)
-			errx(1, "%s: too many relocs for section %ld",
+			errx(1, "%s: too many relocs for section %td",
 			    name, sh - shdr);
 
 		/* take a point of the relocs */
@@ -1281,7 +1281,7 @@ uLD(const char *name, char *v, int *size, int flags)
 				     name, i);
 
 			if (ELF_R_SYM(r->r_info) >= nsyms)
-				errx(1, "%s: broken reloc #%d for section %ld",
+				errx(1, "%s: broken reloc #%d for section %td",
 				    name, i, sh - shdr);
 
 			sym = syms[ELF_R_SYM(r->r_info)];
