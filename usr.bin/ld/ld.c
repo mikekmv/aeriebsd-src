@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.20 2010/09/15 10:37:00 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.21 2010/10/11 22:01:06 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -512,7 +512,8 @@ libdir_add(const char *path)
 	return 0;
 }
 
-char **nametab;
+char *nametab;
+long namtablen;
 
 /*
  * search the library for objects resolving
@@ -531,9 +532,9 @@ lib_add(const char *path, FILE *fp)
 	struct ar_hdr ah;
 	off_t off, symoff;
 	struct pathlist *pl;
-	char *p, *nt = NULL;
+	char *p;
 	u_long len, symlen;
-	int nlen, ltrace = trace;
+	int i, nlen, ltrace = trace;
 
 	if (path[0] == '-' && path[1] == 'l') {
 		TAILQ_FOREACH(pl, &libdirs, pl_entry) {
@@ -563,7 +564,6 @@ lib_add(const char *path, FILE *fp)
 	symoff = 0;
 	symlen = 0;
 	nametab = NULL;
-	nt = NULL;
 	while (fread(&ah, sizeof ah, 1, fp) == 1) {
 		if (memcmp(ah.ar_fmag, ARFMAG, sizeof ah.ar_fmag))
 			errx(1, "%s: invalid archive header", path);
@@ -575,42 +575,22 @@ lib_add(const char *path, FILE *fp)
 			errx(1, "broken archive header");
 
 		if (!strncmp(ah.ar_name, AR_NAMTAB, sizeof(AR_NAMTAB) - 1)) {
-			char **pn, *pp;
-			int i;
-
 			/* un-ranliebt archive will do it the hard way */
 			if (!symoff || !symlen)
 				continue;
-			/*
-			 * read the name table first;
-			 * optimise for duplicate libs and cache the names
-			 */
 
-			if (!(nt = malloc(len + 1)))
+			if (!(nametab = malloc(len + 1)))
 				err(1, "namtab malloc");
 
-			if (fread(nt, len, 1, fp) != 1)
+			if (fread(nametab, len, 1, fp) != 1)
 				err(1, "%s: fread", path);
 
-			nt[len] = '\0';
-			for (p = nt, i = 0; *p; )
-				if (*p++ == '\n')
-					i++;
+			nametab[len] = '\0';
+			for (p = nametab, i = len; i--; p++)
+				if (*p == '\n')
+					*p = '\0';
 
-			/* XXX check overflow */
-			if (!(nametab = malloc((i + 1) * sizeof *nametab)))
-				err(1, "nameidx malloc");
-
-			for (pn = nametab, p = pp = nt; *p; p++)
-				if (*p == '\n') {
-					*pn++ = pp;
-					if (p[-1] == '/')
-						p[-1] = '\0';
-					*p++ = '\0';
-					pp = p;
-				}
-			*pn = NULL;
-
+			namtablen = len;
 			if (lib_namtab(path, fp, len, symoff, symlen))
 				exit(1);
 			else
@@ -658,7 +638,6 @@ lib_add(const char *path, FILE *fp)
 
 	if (nametab) {
 		free(nametab);
-		free(nt);
 		nametab = NULL;
 	}
 	fclose(fp);
@@ -756,7 +735,9 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 		int len;
 
 		i = atol(&arh->ar_name[1]);
-		len = strlen(nametab[i]) + 1;
+		if (i >= namtablen)
+			errx(1, "corrupt ar member header");
+		len = strlen(&nametab[i]) + 1;
 		if (len > *namelen) {
 			p -= (long)*name;
 			if ((*name = realloc(*name, baselen+len)) == NULL)
@@ -764,7 +745,7 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 			*namelen = len;
 			p += (long)*name;
 		}
-		strlcpy(p, nametab[i], len);
+		strlcpy(p, &nametab[i], len);
 		return 0;
 	} else
 #ifdef AR_EFMT1
