@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.11 2010/11/08 14:00:44 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.12 2010/11/08 20:41:57 mickey Exp $";
 #endif
 #endif
 
@@ -536,7 +536,7 @@ show_archive(int count, const char *fname, FILE *fp)
 		    sizeof(AR_NAMTAB) - 1) == 0) {
 			char *p;
 
-			if ((nametab = malloc(mmbrlen)) == NULL) {
+			if ((nametab = malloc(mmbrlen + 1)) == NULL) {
 				warn("%s: nametab", fname);
  				rval = 1;
  				break;
@@ -548,11 +548,12 @@ show_archive(int count, const char *fname, FILE *fp)
  				break;
  			}
  
-			namtablen = mmbrlen;
+			nametab[mmbrlen] = '\0';
 			for (p = nametab, i = mmbrlen; i--; p++)
 				if (*p == '\n')
 					*p = '\0';
  
+			namtablen = mmbrlen;
  			if (issize || !armap || !symtablen || !symtaboff)
  				goto skip;
 		}
@@ -691,7 +692,7 @@ show_file(int count, int warn_fmt, const char *name, FILE *fp, off_t foff, union
 
 		es.name = name;
 		es.ehdr = &head->elf64;
-		if (es.ehdr->e_ehsize < sizeof head->elf64) {
+		if (head->elf64.e_ehsize < sizeof head->elf64) {
 			warnx("%s: ELF header is too short", name);
 			return 1;
 		}
