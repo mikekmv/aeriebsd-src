@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: archive.c,v 1.6 2010/06/18 11:24:36 mickey Exp $";
+    "$ABSD: archive.c,v 1.7 2010/09/14 11:56:37 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -130,7 +130,7 @@ get_arobj(FILE *fp)
 {
 	struct ar_hdr *hdr;
 	int i, len, nr;
-	char *p, buf[20];
+	char *p, *q, buf[20];
 
 	nr = fread(hb, sizeof(HDR), 1, fp);
 	if (nr != 1) {
@@ -178,7 +178,9 @@ get_arobj(FILE *fp)
 		i = atol(&hdr->ar_name[1]);
 		/* XXX check overflow */
 		chdr.lname = 0;
-		strlcpy(chdr.name, nametab[i], sizeof(chdr.name));
+		for (p = chdr.name, q = &nametab[i]; *p != '/'; )
+			*p++ = *q++;
+		*p = '\0';
 	} else {
 		chdr.lname = 0;
 		memmove(chdr.name, hdr->ar_name, sizeof(hdr->ar_name));
@@ -247,16 +249,13 @@ put_arobj(CF *cfp, struct stat *sb)
 			lname = 0;
 		} else if (lname >= sizeof(hdr->ar_name) || strchr(name, ' ')) {
 			if (options & AR_S5) {
-				char **nt = nametab;
-				int i = 0;
+				char *p = strstr(nametab, name);
 
-				for (; *nt && strcmp(name, *nt); nt++, i++)
-					;
+				if (!p || p[lname] != '/' ||
+				    (p != nametab && p[-1] != '\n'))
+					errx(1, "corrupt nametab %s/%d\n%s", name, lname, nametab);
 
-				if (!*nt)
-					errx(1, "corrupt nametab");
-
-				(void)snprintf(hb, sizeof hb, HDR0, i,
+				(void)snprintf(hb, sizeof hb, HDR0, p - nametab,
 				    (long)sb->st_mtimespec.tv_sec, uid, gid,
 				    sb->st_mode, sb->st_size, ARFMAG);
 
@@ -294,66 +293,39 @@ put_arobj(CF *cfp, struct stat *sb)
 int
 get_namtab(FILE *afp)
 {
-	char **nt, *p, *pp;
-	int i;
-
-	if (!(p = malloc(chdr.size + 1)))
+	if (!(nametab = malloc(chdr.size + 1)))
 		err(1, "%s: alloc nametab", archive);
 
-	if (fread(p, chdr.size, 1, afp) != 1)
+	if (fread(nametab, chdr.size, 1, afp) != 1)
 		err(1, "%s: read nametab", archive);
-	p[chdr.size] = '\0';
-
-	for (pp = p, i = 0; *pp; )
-		if (*pp++ == '\n')
-			i++;
-
-	/* XXX check overflow */
-	if (!(nametab = malloc((i + 1) * sizeof *nametab)))
-		err(1, "%s: alloc nametab index", archive);
-
-	for (nt = nametab, pp = p; *p; p++)
-		/* also skip the tail padding */
-		if (*p == '\n' && p[-1] != '\0') {
-			*nt++ = pp;
-			if (p[-1] == '/')
-				p[-1] = '\0';
-			*p = '\0';
-			pp = p + 1;
-		}
-	*nt = NULL;
+	nametab[chdr.size] = '\0';
+	if (nametab[chdr.size - 1] == '\n')
+		nametab[chdr.size - 1] = '\0';
 }
 
 int
 put_nametab(CF *cfp)
 {
-	char boo[MAXNAMLEN + 1];
-	char **nt, pad = 0;
-	int i, sz;
+	size_t sz;
+	char pad = 0;
 
 	if (!nametab)
 		return 0;
 
-	for (nt = nametab, sz = 0; *nt; nt++)
-		sz += strlen(*nt) + 2;
-	if (sz & 1) {
+	if ((sz = strlen(nametab)) & 1) {
 		sz++;
 		pad = '\n';
 	}
-
 	(void)snprintf(hb, sizeof hb,
 	    HDR4, AR_NAMTAB, "", "", "", "", (quad_t)sz, ARFMAG);
 
 	if (fwrite(hb, sizeof(HDR), 1, cfp->wfp) != 1)
 		err(1, "write: %s", cfp->wname);
 
-	for (nt = nametab; *nt; nt++) {
-		i = snprintf(boo, sizeof(boo), "%s/\n", *nt);
-		if (i >= sizeof(boo))
-			errx(1, "name too long");
-		if (fwrite(boo, i, 1, cfp->wfp) != 1)
-			err(1, "fwrite: %s", cfp->wname);
-	}
+	if (pad)
+		sz--;
+	if (fwrite(nametab, sz, 1, cfp->wfp) != 1)
+		err(1, "write: %s", cfp->wname);
 
 	if (pad && fwrite(&pad, 1, 1, cfp->wfp) != 1)
 		err(1, "fwrite: %s", cfp->wname);

@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)append.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: append.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
+    "$ABSD: append.c,v 1.5 2010/06/18 11:24:36 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -54,7 +54,7 @@ static const char rcsid[] =
 
 int mknametab(char **);
 
-char **nametab;
+char *nametab;
 
 /*
  * append --
@@ -112,27 +112,27 @@ int
 mknametab(char **argv)
 {
 	struct ar_hdr *hdr;
-	char **av, **nt;
+	char **av, *p;
 	int i, s, t;
 
 	/* first count the needed space */
-	for (i = 0, av = argv; *av; av++)
-		if (strlen(*av) >= sizeof(hdr->ar_name))
-			i++;
+	for (t = 0, av = argv; *av; av++)
+		if ((s = strlen(*av)) >= sizeof(hdr->ar_name))
+			t += s + 2;
 
-	if (!i)
+	if (!t)
 		return 0;
 
-	if (!(nametab = malloc((i + 1) * sizeof(*nametab))))
+	if (!(nametab = malloc(t + 1)))
 		err(1, "malloc: nametab");
 
 	/* and now populate */
-	for (i = 0, t = 0, av = argv, nt = nametab; *av; av++)
+	for (i = 0, av = argv, p = nametab; *av; av++)
 		if ((s = strlen(*av)) >= sizeof(hdr->ar_name)) {
-			*nt++ = *av;
-			t += s + 2;
+			snprintf(p, s + 3, "%s/\n", *av);
+			p += s + 2;
 		}
-	*nt = NULL;
+	*p = '\0';
 
 	return t;
 }

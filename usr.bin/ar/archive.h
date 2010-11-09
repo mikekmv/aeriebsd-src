@@ -81,7 +81,7 @@ typedef struct {
 } CHDR;
 
 /* Header format strings. */
-#define	HDR0	"/%-15d%-12ld%-6u%-6u%-8o%-10qd%2s"
+#define	HDR0	"/%-15td%-12ld%-6u%-6u%-8o%-10qd%2s"
 #define	HDR1	"%s%-13d%-12ld%-6u%-6u%-8o%-10qd%2s"
 #define	HDR2	"%-16.16s%-12ld%-6u%-6u%-8o%-10qd%2s"
 
@@ -119,4 +119,4 @@ extern const char *archive;
 extern const char *posarg, *posname;	/* positioning file name */
 extern const char tname[];		/* temporary file "name" */
 extern CHDR chdr;			/* converted header */
-char **nametab;				/* long name table */
+extern char *nametab;			/* long name table */
