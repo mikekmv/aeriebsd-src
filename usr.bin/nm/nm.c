@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.12 2010/11/08 20:41:57 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.13 2010/11/09 11:59:48 mickey Exp $";
 #endif
 #endif
 
@@ -522,15 +522,6 @@ show_archive(int count, const char *fname, FILE *fp)
 				break;
 			}
 			goto skip;
-		} else if (strncmp(ar_head.ar_name, RANLIBMAG2,
-		    sizeof(RANLIBMAG2) - 1) == 0) {
-			/* if nametab hasn't been seen yet -- doit later */
-			if (!nametab) {
-				symtablen = mmbrlen;
-				symtaboff = last_ar_off;
-				goto skip;
-			}
-
 			/* load the Sys5 long names table */
 		} else if (strncmp(ar_head.ar_name, AR_NAMTAB,
 		    sizeof(AR_NAMTAB) - 1) == 0) {
@@ -552,10 +543,17 @@ show_archive(int count, const char *fname, FILE *fp)
 			for (p = nametab, i = mmbrlen; i--; p++)
 				if (*p == '\n')
 					*p = '\0';
- 
 			namtablen = mmbrlen;
  			if (issize || !armap || !symtablen || !symtaboff)
  				goto skip;
+		} else if (strncmp(ar_head.ar_name, RANLIBMAG2,
+		    sizeof(RANLIBMAG2) - 1) == 0) {
+			/* if nametab hasn't been seen yet -- doit later */
+			if (!nametab) {
+				symtablen = mmbrlen;
+				symtaboff = last_ar_off;
+				goto skip;
+			}
 		}
 
 		if (!issize && armap && symtablen && symtaboff) {
