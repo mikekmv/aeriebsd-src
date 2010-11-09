@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: archive.c,v 1.7 2010/09/14 11:56:37 mickey Exp $";
+    "$ABSD: archive.c,v 1.8 2010/11/09 12:43:26 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -178,7 +178,7 @@ get_arobj(FILE *fp)
 		i = atol(&hdr->ar_name[1]);
 		/* XXX check overflow */
 		chdr.lname = 0;
-		for (p = chdr.name, q = &nametab[i]; *p != '/'; )
+		for (p = chdr.name, q = &nametab[i]; *q != '/'; )
 			*p++ = *q++;
 		*p = '\0';
 	} else {
@@ -253,7 +253,7 @@ put_arobj(CF *cfp, struct stat *sb)
 
 				if (!p || p[lname] != '/' ||
 				    (p != nametab && p[-1] != '\n'))
-					errx(1, "corrupt nametab %s/%d\n%s", name, lname, nametab);
+					errx(1, "corrupt nametab");
 
 				(void)snprintf(hb, sizeof hb, HDR0, p - nametab,
 				    (long)sb->st_mtimespec.tv_sec, uid, gid,
