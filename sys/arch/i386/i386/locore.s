@@ -176,29 +176,6 @@
 	.globl	_C_LABEL(bootapiver), _C_LABEL(bootargc), _C_LABEL(bootargv)
 	.globl	_C_LABEL(lapic_tpr)
 
-#if NLAPIC > 0
-#ifdef __ELF__
-	.align NBPG
-#else
-	.align 12
-#endif
-	.globl _C_LABEL(local_apic), _C_LABEL(lapic_id)
-_C_LABEL(local_apic):
-	.space	LAPIC_ID
-_C_LABEL(lapic_id):
-	.long	0x00000000
-	.space	LAPIC_TPRI-(LAPIC_ID+4)
-_C_LABEL(lapic_tpr):
-	.space	LAPIC_PPRI-LAPIC_TPRI
-_C_LABEL(lapic_ppr):
-	.space	LAPIC_ISR-LAPIC_PPRI
-_C_LABEL(lapic_isr):
-	.space	NBPG-LAPIC_ISR
-#else
-_C_LABEL(lapic_tpr):
-	.long	0
-#endif
-
 _C_LABEL(cpu):		.long	0	# are we 386, 386sx, 486, 586 or 686
 _C_LABEL(cpu_id):	.long	0	# saved from 'cpuid' instruction
 _C_LABEL(cpu_miscinfo):	.long	0	# misc info (apic/brand id) from 'cpuid'
@@ -223,6 +200,29 @@ _C_LABEL(bootdev):	.long	0	# device we booted from
 _C_LABEL(proc0paddr):	.long	0
 _C_LABEL(PTDpaddr):	.long	0	# paddr of PTD, for libkvm
 _C_LABEL(PTDsize):	.long	NBPG	# size of PTD, for libkvm
+
+#if NLAPIC > 0
+#ifdef __ELF__
+	.align NBPG
+#else
+	.align 12
+#endif
+	.globl _C_LABEL(local_apic), _C_LABEL(lapic_id)
+_C_LABEL(local_apic):
+	.space	LAPIC_ID
+_C_LABEL(lapic_id):
+	.long	0x00000000
+	.space	LAPIC_TPRI-(LAPIC_ID+4)
+_C_LABEL(lapic_tpr):
+	.space	LAPIC_PPRI-LAPIC_TPRI
+_C_LABEL(lapic_ppr):
+	.space	LAPIC_ISR-LAPIC_PPRI
+_C_LABEL(lapic_isr):
+	.space	NBPG-LAPIC_ISR
+#else
+_C_LABEL(lapic_tpr):
+	.long	0
+#endif
 
 	.bss
 	.space 512

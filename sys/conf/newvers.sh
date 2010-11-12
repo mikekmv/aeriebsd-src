@@ -75,7 +75,8 @@ const char osrelease[] = "${osr}";
 const char osversion[] = "${id}#${v}";
 const char sccs[] =
     "    @(#)${ost} ${osr}" STATUS " (${id}) #${v}: ${t}\n";
-const char version[] =
+/* the following should correspond to _POSIX2_LINE_MAX */
+const char version[2048] =
     "${ost} ${osr}" STATUS " (${id}) #${v}: ${t}\n    ${u}@${h}:${d}\n";
 eof
 
