@@ -37,13 +37,14 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)savecore.c	8.3 (Berkeley) 1/2/94";
 #else
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: savecore.c,v 1.1.1.1 2008/08/26 14:40:28 root Exp $";
 #endif
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+#include <sys/sysctl.h>
 #include <sys/syslog.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -68,40 +69,24 @@ extern FILE *zopen(const char *fname, const char *mode, int bits);
 #define KREAD(kd, addr, p)\
 	(kvm_read(kd, addr, (char *)(p), sizeof(*(p))) != sizeof(*(p)))
 
-struct nlist current_nl[] = {	/* Namelist for currently running system. */
-#define X_DUMPDEV	0
-	{ "_dumpdev" },
-#define X_DUMPLO	1
-	{ "_dumplo" },
-#define X_TIME		2
+struct nlist dump_nl[] = {	/* Name list for dumped system. */
+#define X_TIME		0
 	{ "_time_second" },
-#define	X_DUMPSIZE	3
+#define	X_DUMPSIZE	1
 	{ "_dumpsize" },
-#define X_VERSION	4
+#define X_VERSION	2
 	{ "_version" },
-#define X_PANICSTR	5
+#define X_PANICSTR	3
 	{ "_panicstr" },
-#define	X_DUMPMAG	6
+#define	X_DUMPMAG	4
 	{ "_dumpmag" },
 	{ NULL },
 };
-int cursyms[] = { X_DUMPDEV, X_DUMPLO, X_VERSION, X_DUMPMAG, -1 };
 int dumpsyms[] = { X_TIME, X_DUMPSIZE, X_VERSION, X_PANICSTR, X_DUMPMAG, -1 };
 
-struct nlist dump_nl[] = {	/* Name list for dumped system. */
-	{ "_dumpdev" },		/* Entries MUST be the same as */
-	{ "_dumplo" },		/*	those in current_nl[].  */
-	{ "_time_second" },
-	{ "_dumpsize" },
-	{ "_version" },
-	{ "_panicstr" },
-	{ "_dumpmag" },
-	{ NULL },
-};
-
 /* Types match kernel declarations. */
-long	dumplo;				/* where dump starts on dumpdev */
-u_long	dumpmag;			/* magic number in dump */
+quad_t	dumplo;				/* where dump starts on dumpdev */
+quad_t	dumpmag;			/* magic number in dump */
 int	dumpsize;			/* amount of memory dumped */
 
 char	*kernel;
@@ -211,50 +196,48 @@ char	*dump_sys;
 void
 kmem_setup(void)
 {
-	kvm_t	*kd_kern;
 	char	errbuf[_POSIX2_LINE_MAX];
-	int	i, hdrsz;
+	int	i, hdrsz, mib[2];
+	size_t	size;
 
 	/*
 	 * Some names we need for the currently running system, others for
 	 * the system that was running when the dump was made.  The values
-	 * obtained from the current system are used to look for things in
-	 * /dev/kmem that cannot be found in the dump_sys namelist, but are
-	 * presumed to be the same (since the disk partitions are probably
-	 * the same!)
+	 * obtained from the current system are presumed to be the same
+	 * (since the disk partitions are probably the same!)
 	 */
-	kd_kern = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, errbuf);
-	if (kd_kern == NULL) {
-		syslog(LOG_ERR, "%s: kvm_openfiles: %s", _PATH_UNIX, errbuf);
-		exit(1);
-	}
-	if (kvm_nlist(kd_kern, current_nl) == -1)
-		syslog(LOG_ERR, "%s: kvm_nlist: %s", _PATH_UNIX,
-			kvm_geterr(kd_kern));
-
-	for (i = 0; cursyms[i] != -1; i++)
-		if (current_nl[cursyms[i]].n_value == 0) {
-			syslog(LOG_ERR, "%s: %s not in namelist",
-			    _PATH_UNIX, current_nl[cursyms[i]].n_name);
-			exit(1);
-		}
-
-	(void)KREAD(kd_kern, current_nl[X_DUMPDEV].n_value, &dumpdev);
-	if (dumpdev == NODEV) {
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_DUMPDEV;
+	size = sizeof(dumpdev);
+	if (sysctl(mib, 2, &dumpdev, &size, NULL, 0) < 0 || dumpdev == NODEV) {
 		syslog(LOG_WARNING, "no core dump (no dumpdev)");
 		exit(1);
 	}
-	(void)KREAD(kd_kern, current_nl[X_DUMPLO].n_value, &dumplo);
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_DUMPLO;
+	size = sizeof(dumplo);
+	if (sysctl(mib, 2, &dumplo, &size, NULL, 0) < 0) {
+		syslog(LOG_WARNING, "no core dump (no dumplo)");
+		exit(1);
+	}
 	dumplo *= DEV_BSIZE;
 	if (verbose)
-		(void)printf("dumplo = %ld (%ld * %d)\n",
+		printf("dumplo = %qd (%qd * %d)\n",
 		    dumplo, dumplo / DEV_BSIZE, DEV_BSIZE);
-	(void) KREAD(kd_kern, current_nl[X_DUMPMAG].n_value, &dumpmag);
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_DUMPMAG;
+	size = sizeof(dumpmag);
+	if (sysctl(mib, 2, &dumpmag, &size, NULL, 0) < 0) {
+		syslog(LOG_WARNING, "no core dump (no dumpmag)");
+		exit(1);
+	}
 
 	if (kernel == NULL) {
-		if (kvm_read(kd_kern, current_nl[X_VERSION].n_value,
-		    vers, sizeof(vers)) == -1) {
-			syslog(LOG_ERR, "%s: kvm_read: version misread", _PATH_UNIX);
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_VERSION;
+		size = sizeof(vers);
+		if (sysctl(mib, 2, &vers, &size, NULL, 0) < 0) {
+			syslog(LOG_ERR, "sysctl: version misread");
 			exit(1);
 		}
 		vers[sizeof(vers) - 1] = '\0';
@@ -290,7 +273,6 @@ kmem_setup(void)
 		exit(1);
 	}
 	dumplo += hdrsz;
-	kvm_close(kd_kern);
 }
 
 void
