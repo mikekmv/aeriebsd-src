@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2002 (c) Wasabi Systems, Inc.
  * All rights reserved.
@@ -64,7 +63,7 @@
 #endif
 
 struct pic softintr_pic = {
-        {0, {NULL}, NULL, 0, "softintr_fakepic", NULL, 0, 0},
+        { "softintr_fakepic" },
         PIC_SOFT,
 #ifdef MULTIPROCESSOR
 	{},

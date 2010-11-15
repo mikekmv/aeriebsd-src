@@ -47,6 +47,10 @@
 #include <machine/psl.h>
 #include <machine/userret.h>
 
+#ifdef COMPAT_OPENBSD
+extern struct emul emul_openbsd_elf64;
+#endif
+
 void syscall(struct trapframe);
 
 /*
@@ -81,6 +85,13 @@ syscall(struct trapframe frame)
 		/*
 		 * Code is first argument, followed by actual args.
 		 */
+		if (callp != sysent
+#ifdef COMPAT_OPENBSD
+		    && p->p_emul != &emul_openbsd_elf64
+#endif
+		    )
+			break;
+
 		code = frame.tf_rdi;
 		argp = &args[1];
 		argoff = 1;

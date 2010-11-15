@@ -1,8 +1,3 @@
-
-/*
- * Copyright-o-rama!
- */
-
 /*
  * Copyright (c) 2001 Wasabi Systems, Inc.
  * All rights reserved.
@@ -121,6 +116,10 @@
 #include <machine/i82489reg.h>
 #endif
 
+#ifdef COMPAT_OPENBSD
+#include <compat/openbsd/openbsd_syscall.h>
+#endif
+
 /*
  * override user-land alignment before including asm.h
  */
@@ -148,22 +147,6 @@
  * Initialization
  */
 	.data
-
-#if NLAPIC > 0 
-	.align  NBPG
-	.globl _C_LABEL(local_apic), _C_LABEL(lapic_id), _C_LABEL(lapic_tpr)
-_C_LABEL(local_apic):
-	.space  LAPIC_ID
-_C_LABEL(lapic_id):
-	.long   0x00000000
-	.space  LAPIC_TPRI-(LAPIC_ID+4)
-_C_LABEL(lapic_tpr):
-	.space  LAPIC_PPRI-LAPIC_TPRI
-_C_LABEL(lapic_ppr):
-	.space  LAPIC_ISR-LAPIC_PPRI 
-_C_LABEL(lapic_isr):
-	.space  NBPG-LAPIC_ISR
-#endif
 
 	.globl	_C_LABEL(cpu_id),_C_LABEL(cpu_vendor), _C_LABEL(cpu_brand_id)
 	.globl	_C_LABEL(cpuid_level),_C_LABEL(cpu_feature)
@@ -226,6 +209,22 @@ tmpstk:
 
 	.globl _C_LABEL(cpu_private)
 	.comm _C_LABEL(cpu_private),NBPG,NBPG
+
+#if NLAPIC > 0 
+	.align  NBPG
+	.globl _C_LABEL(local_apic), _C_LABEL(lapic_id), _C_LABEL(lapic_tpr)
+_C_LABEL(local_apic):
+	.space  LAPIC_ID
+_C_LABEL(lapic_id):
+	.long   0x00000000
+	.space  LAPIC_TPRI-(LAPIC_ID+4)
+_C_LABEL(lapic_tpr):
+	.space  LAPIC_PPRI-LAPIC_TPRI
+_C_LABEL(lapic_ppr):
+	.space  LAPIC_ISR-LAPIC_PPRI 
+_C_LABEL(lapic_isr):
+	.space  NBPG-LAPIC_ISR
+#endif
 
 /*
  * Some hackage to deal with 64bit symbols in 32 bit mode.
@@ -647,6 +646,20 @@ NENTRY(sigcode)
 	syscall
 	.globl	_C_LABEL(esigcode)
 _C_LABEL(esigcode):
+
+#ifdef COMPAT_OPENBSD
+NENTRY(openbsd_sigcode)
+	call	*%rax
+
+	movq	%rsp,%rdi
+	pushq	%rdi			/* fake return address */
+	movq	$OPENBSD_SYS_sigreturn,%rax
+	int	$0x80
+	movq	$OPENBSD_SYS_exit,%rax
+	syscall
+	.globl	_C_LABEL(openbsd_esigcode)
+_C_LABEL(openbsd_esigcode):
+#endif
 
 /*
  * void lgdt(struct region_descriptor *rdp);

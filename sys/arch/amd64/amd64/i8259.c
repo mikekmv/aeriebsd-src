@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2002 (c) Wasabi Systems, Inc.
  * All rights reserved.
@@ -33,7 +32,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*-
  * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
@@ -95,7 +93,7 @@ unsigned i8259_imen;
  * Perhaps this should be made into a real device.
  */
 struct pic i8259_pic = {
-	{0, {NULL}, NULL, 0, "pic0", NULL, 0, 0},
+	{ "pic0" },
 	PIC_I8259,
 #ifdef MULTIPROCESSOR
 	{},

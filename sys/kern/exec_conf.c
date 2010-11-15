@@ -116,10 +116,10 @@ struct execsw execsw[] = {
 	{ sizeof(Elf32_Ehdr), exec_freebsd_elf32_makecmds, &emul_freebsd_elf },
 #endif
 #ifdef COMPAT_OPENBSD
-	{ OPENBSD_AOUT_HDR_SIZE, exec_freebsd_aout_makecmds, &emul_freebsd_aout },	/* freebsd */
 #ifdef _KERN_DO_ELF64
 	{ sizeof(Elf64_Ehdr), openbsd_elf64_makecmds, &emul_openbsd_elf64 },	/* openbsd */
 #else
+	{ OPENBSD_AOUT_HDR_SIZE, exec_freebsd_aout_makecmds, &emul_freebsd_aout },	/* openbsd */
 	{ sizeof(Elf32_Ehdr), openbsd_elf32_makecmds, &emul_openbsd_elf32 },	/* openbsd */
 #endif
 #endif

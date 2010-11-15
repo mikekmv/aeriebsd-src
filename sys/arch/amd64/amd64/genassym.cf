@@ -17,6 +17,10 @@ include <machine/pic.h>
 include <machine/i82093var.h>
 include <machine/mutex.h>
 
+if COMPAT_OPENBSD > 0
+include <machine/openbsd_machdep.h>
+endif
+
 export	SRUN
 export	SONPROC
 
@@ -157,4 +161,3 @@ export	NPDPG
 export	PDIR_SLOT_DIRECT
 
 export	CR4_DEFAULT
-

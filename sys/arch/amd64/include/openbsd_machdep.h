@@ -1,6 +1,9 @@
-/*-
- * Copyright (c) 1992, 1993
+/*
+ * Copyright (c) 1986, 1989, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,29 +29,58 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)exec.h	8.1 (Berkeley) 6/11/93
- *	from: imgact_aout.h,v 1.2 1994/12/30 08:06:19 bde Exp
+ *	from: @(#)signal.h	8.1 (Berkeley) 6/11/93
+ *	from: Id: signal.h,v 1.4 1994/08/21 04:55:30 paul Exp 
+ *
+ *	from: @(#)frame.h	5.2 (Berkeley) 1/18/91
+ *	from: Id: frame.h,v 1.10 1995/03/16 18:11:42 bde Exp 
+ */
+#ifndef _OPENBSD_MACHDEP_H
+#define _OPENBSD_MACHDEP_H
+
+/* sys/i386/include/exec.h */
+#define OPENBSD___LDPGSZ	4096
+
+/*
+ * signal support
  */
 
-#ifndef	_OPENBSD_EXEC_H
-#define	_OPENBSD_EXEC_H
+struct	openbsd_sigcontext {
+	/* plain match trapframe */
+	long	sc_rdi;
+	long	sc_rsi;
+	long	sc_rdx;
+	long	sc_rcx;
+	long	sc_r8;
+	long	sc_r9;
+	long	sc_r10;
+	long	sc_r11;
+	long	sc_r12;
+	long	sc_r13;
+	long	sc_r14;
+	long	sc_r15;
+	long	sc_rbp;
+	long	sc_rbx;
+	long	sc_rax;
+	long	sc_gs;
+	long	sc_fs;
+	long	sc_es;
+	long	sc_ds;
+	long	sc_trapno;
+	long	sc_err;
+	long	sc_rip;
+	long	sc_cs;
+	long	sc_rflags;
+	long	sc_rsp;
+	long	sc_ss;
 
-#define	OPENBSD_AOUT_HDR_SIZE	sizeof(struct exec)
-#define OPENBSD_N_GETMAGIC(ex)	((ex).a_midmag & 0xffff)
-#define OPENBSD_N_GETMID(ex)	(((ex).a_midmag >> 16) & 0x03ff)
+	struct fxsave64 *sc_fpstate;
+	int	sc_onstack;
+	int	sc_mask;
+};
 
-#define OPENBSD_ELF_AUX_ARGSIZ	(sizeof(AuxInfo) * 8)
+#ifdef _KERNEL
+void openbsd_sendsig(sig_t, int, int, u_long, int, union sigval);
+#endif
 
-int openbsd_elf32_probe(struct proc *, struct exec_package *, char *,
-    u_long *, u_int8_t *);
-int openbsd_elf64_probe(struct proc *, struct exec_package *, char *,
-    u_long *, u_int8_t *);
-int openbsd_elf32_makecmds(struct proc *, struct exec_package *);
-int openbsd_elf64_makecmds(struct proc *, struct exec_package *);
-int exec_openbsd_aout_makecmds(struct proc *, struct exec_package *);
-
-extern char openbsd_sigcode[], openbsd_esigcode[];
-
-extern struct emul emul_openbsd_aout, emul_openbsd_elf32, emul_openbsd_elf64;
-
-#endif /* !_OPENBSD_EXEC_H */
+#endif /* _OPENBSD_MACHDEP_H */

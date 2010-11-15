@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2000 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -76,7 +75,7 @@ void lapic_setup(struct pic *, struct cpu_info *, int, int, int);
 extern char idt_allocmap[];
 
 struct pic local_pic = {
-	{0, {NULL}, NULL, 0, "lapic", NULL, 0, 0},
+	{ "lapic" },
 	PIC_LAPIC,
 #ifdef MULTIPROCESSOR
 	{},

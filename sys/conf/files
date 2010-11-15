@@ -941,7 +941,8 @@ file compat/common/kern_resource_43.c	!small_kernel &
 	(compat_bsdos | compat_freebsd | compat_hpux | compat_linux |
 	compat_sunos | compat_svr4 | compat_ultrix)
 file compat/common/kern_sig_43.c	!small_kernel &
-	(compat_bsdos | compat_freebsd | compat_sunos | compat_ultrix)
+	(compat_bsdos | compat_openbsd | compat_freebsd |
+	compat_sunos | compat_ultrix)
 file compat/common/tty_43.c		!small_kernel &
 	(compat_43 | compat_sunos | compat_svr4 | compat_freebsd | compat_osf1)
 file compat/common/uipc_syscalls_43.c	!small_kernel &
@@ -954,7 +955,7 @@ file compat/common/vfs_syscalls_44.c	!small_kernel &
 	(compat_bsdos | compat_freebsd)
 file compat/common/vm_43.c		!small_kernel &
 	(compat_bsdos | compat_freebsd | compat_linux | compat_sunos |
-	compat_svr4 | compat_osf1 | compat_ultrix)
+	compat_openbsd | compat_svr4 | compat_osf1 | compat_ultrix)
 
 # libkern MI components
 file lib/libkern/mcount.c		gprof

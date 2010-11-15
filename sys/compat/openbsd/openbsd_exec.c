@@ -121,6 +121,7 @@ struct emul emul_openbsd_elf64 = {
 };
 #endif
 
+#ifdef _KERN_DO_AOUT
 /*
  * exec_aout_makecmds(): Check if it's an a.out-format executable.
  *
@@ -169,7 +170,9 @@ exec_openbsd_aout_makecmds(p, epp)
 
 	return error;
 }
+#endif
 
+#ifdef _KERN_DO_ELF
 int
 openbsd_elf32_makecmds(struct proc *p, struct exec_package *epp)
 {
@@ -203,3 +206,40 @@ openbsd_elf32_probe(struct proc *p, struct exec_package *epp, char *itp,
 	*pos = ELF32_NO_ADDR;
 	return (0);
 }
+#endif
+
+#ifdef _KERN_DO_ELF64
+int
+openbsd_elf64_makecmds(struct proc *p, struct exec_package *epp)
+{
+	if (!(emul_openbsd_elf64.e_flags & EMUL_ENABLED))
+		return (ENOEXEC);
+	return exec_elf64_makecmds(p, epp);
+}
+
+int
+openbsd_elf64_probe(struct proc *p, struct exec_package *epp, char *itp,
+    u_long *pos, u_int8_t *os)
+{
+	char *bp;
+	size_t len;
+	int error;
+
+	if (!(emul_openbsd_elf64.e_flags & EMUL_ENABLED))
+		return (ENOEXEC);
+
+	if (elf64_os_pt_note(p, epp, epp->ep_hdr, "OpenBSD", 8, 4))
+		return (EINVAL);
+
+	if (itp) {
+		if ((error = emul_find(p, NULL, openbsd_emul_path, itp, &bp, 0)))
+			return (error);
+		if ((error = copystr(bp, itp, MAXPATHLEN, &len)))
+			return (error);
+		free(bp, M_TEMP);
+	}
+	epp->ep_emul = &emul_openbsd_elf64;
+	*pos = ELF64_NO_ADDR;
+	return (0);
+}
+#endif
