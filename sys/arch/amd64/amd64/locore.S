@@ -32,8 +32,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-
 /*-
  * Copyright (c) 1998, 2000 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -62,7 +60,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*-
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -131,10 +128,10 @@
 
 #define SET_CURPROC(proc,cpu)			\
 	movq	CPUVAR(SELF),cpu	;	\
-	movq	proc,CPUVAR(CURPROC)      ;	\
+	movq	proc,CPUVAR(CURPROC)	;	\
 	movq	cpu,P_CPU(proc)
 
-#define GET_CURPCB(reg)			movq	CPUVAR(CURPCB),reg      
+#define GET_CURPCB(reg)			movq	CPUVAR(CURPCB),reg
 #define SET_CURPCB(reg)			movq	reg,CPUVAR(CURPCB)
 
 
@@ -203,27 +200,28 @@ gdt64_end:
 farjmp64:
 	.long	longmode-KERNBASE
 	.word	GSEL(GCODE_SEL, SEL_KPL)
-	
+
+	.bss
 	.space 512
 tmpstk:
 
 	.globl _C_LABEL(cpu_private)
 	.comm _C_LABEL(cpu_private),NBPG,NBPG
 
-#if NLAPIC > 0 
-	.align  NBPG
+#if NLAPIC > 0
+	.align	NBPG
 	.globl _C_LABEL(local_apic), _C_LABEL(lapic_id), _C_LABEL(lapic_tpr)
 _C_LABEL(local_apic):
-	.space  LAPIC_ID
+	.space	LAPIC_ID
 _C_LABEL(lapic_id):
-	.long   0x00000000
-	.space  LAPIC_TPRI-(LAPIC_ID+4)
+	.space	4
+	.space	LAPIC_TPRI-(LAPIC_ID+4)
 _C_LABEL(lapic_tpr):
-	.space  LAPIC_PPRI-LAPIC_TPRI
+	.space	LAPIC_PPRI-LAPIC_TPRI
 _C_LABEL(lapic_ppr):
-	.space  LAPIC_ISR-LAPIC_PPRI 
+	.space	LAPIC_ISR-LAPIC_PPRI
 _C_LABEL(lapic_isr):
-	.space  NBPG-LAPIC_ISR
+	.space	NBPG-LAPIC_ISR
 #endif
 
 /*
@@ -252,11 +250,11 @@ start:	movw	$0x1234,0x472			# warm boot
 
 	movl	16(%esp), %eax
 	testl   %eax,%eax
-	jz      1f
-	addl    $KERNBASE_LO,%eax
-	movl    $RELOC(esym),%ebp
-	movl    %eax,(%ebp)
-	movl    $KERNBASE_HI,4(%ebp)
+	jz	1f
+	addl	$KERNBASE_LO,%eax
+	movl	$RELOC(esym),%ebp
+	movl	%eax,(%ebp)
+	movl	$KERNBASE_HI,4(%ebp)
 1:
 	movl	20(%esp), %eax
 	movl	%eax, RELOC(biosextmem)
@@ -275,14 +273,14 @@ start:	movw	$0x1234,0x472			# warm boot
 	 * machdep.c can then take action if bootinfo_size >= bootinfo[]
 	 * (which would meant that we may have been passed too much data).
 	 */
- 	movl	28(%esp), %eax
+	movl	28(%esp), %eax
 	movl	%eax, %ecx
 	cmpl	RELOC(bootinfo_size), %ecx	/* Too much? */
 	jnc	bi_size_ok
 	movl	RELOC(bootinfo_size), %ecx	/* Only copy this much */
 bi_size_ok:
 	movl	%eax, RELOC(bootinfo_size)	/* Report full amount */
- 
+
 	movl	$RELOC(bootinfo), %edi		/* Destination */
 	movl	32(%esp), %esi			/* Source */
 	rep movsb				/* Copy this many bytes */
@@ -309,7 +307,7 @@ bi_size_ok:
 	movl	$0x80000001, %eax
 	cpuid
 	andl	$CPUID_NXE, %edx	/* other bits may clash */
-	orl     %edx, RELOC(cpu_feature)
+	orl	%edx, RELOC(cpu_feature)
 
 	/* Brand ID is bits 0-7 of %ebx */
 	andl	$255,%ebx
@@ -332,7 +330,7 @@ bi_size_ok:
 /*
  * Virtual address space of kernel:
  *
- * text | data | bss | [syms] | page dir | proc0 kstack | L1 ptp | L2 ptp | L3 
+ * text | data | bss | [syms] | page dir | proc0 kstack | L1 ptp | L2 ptp | L3
  *			      0          1       2      3
  */
 
@@ -361,10 +359,10 @@ bi_size_ok:
 	NDML3_ENTRIES + NDML2_ENTRIES) * NBPG)
 
 #define fillkpt	\
-1:	movl	%eax,(%ebx)	; 	/* store phys addr */ \
-	movl	$0,4(%ebx)	; 	/* upper 32 bits 0 */ \
-	addl	$8,%ebx		; 	/* next pte/pde */ \
-	addl	$NBPG,%eax	; 	/* next phys page */ \
+1:	movl	%eax,(%ebx)	;	/* store phys addr */ \
+	movl	$0,4(%ebx)	;	/* upper 32 bits 0 */ \
+	addl	$8,%ebx		;	/* next pte/pde */ \
+	addl	$NBPG,%eax	;	/* next phys page */ \
 	loop	1b		;  \
 
 
@@ -415,7 +413,7 @@ bi_size_ok:
 	movl	%edx,%ecx
 	subl	%eax,%ecx
 	shrl	$PGSHIFT,%ecx
-	orl     $(PG_V|PG_KR),%eax
+	orl	$(PG_V|PG_KR),%eax
 	fillkpt
 
 	/* Map the data, BSS, and bootstrap tables read-write. */
@@ -432,7 +430,7 @@ bi_size_ok:
 	fillkpt
 
 	/* Set up level 2 pages */
-	leal    (PROC0_PTP2_OFF)(%esi),%ebx
+	leal	(PROC0_PTP2_OFF)(%esi),%ebx
 	leal	(PROC0_PTP1_OFF)(%esi),%eax
 	orl	$(PG_V|PG_KW), %eax
 	movl	$(NKL2_KIMG_ENTRIES+1),%ecx
@@ -441,14 +439,14 @@ bi_size_ok:
 #if L2_SLOT_KERNBASE > 0
 	/* If needed, set up level 2 entries for actual kernel mapping */
 	leal	(PROC0_PTP2_OFF+ L2_SLOT_KERNBASE*8)(%esi),%ebx
-	leal    (PROC0_PTP1_OFF)(%esi),%eax
-	orl     $(PG_V|PG_KW), %eax
-	movl    $(NKL2_KIMG_ENTRIES+1),%ecx
+	leal	(PROC0_PTP1_OFF)(%esi),%eax
+	orl	$(PG_V|PG_KW), %eax
+	movl	$(NKL2_KIMG_ENTRIES+1),%ecx
 	fillkpt
 #endif
 
 	/* Set up level 3 pages */
-	leal    (PROC0_PTP3_OFF)(%esi),%ebx
+	leal	(PROC0_PTP3_OFF)(%esi),%ebx
 	leal	(PROC0_PTP2_OFF)(%esi),%eax
 	orl	$(PG_V|PG_KW), %eax
 	movl	$NKL3_KIMG_ENTRIES,%ecx
@@ -457,21 +455,21 @@ bi_size_ok:
 #if L3_SLOT_KERNBASE > 0
 	/* If needed, set up level 3 entries for actual kernel mapping */
 	leal	(PROC0_PTP3_OFF+ L3_SLOT_KERNBASE*8)(%esi),%ebx
-	leal    (PROC0_PTP2_OFF)(%esi),%eax
-	orl     $(PG_V|PG_KW), %eax
-	movl    $NKL3_KIMG_ENTRIES,%ecx
+	leal	(PROC0_PTP2_OFF)(%esi),%eax
+	orl	$(PG_V|PG_KW), %eax
+	movl	$NKL3_KIMG_ENTRIES,%ecx
 	fillkpt
 #endif
 
 	/* Set up top level entries for identity mapping */
-	leal    (PROC0_PML4_OFF)(%esi),%ebx
+	leal	(PROC0_PML4_OFF)(%esi),%ebx
 	leal	(PROC0_PTP3_OFF)(%esi),%eax
 	orl	$(PG_V|PG_KW), %eax
 	movl	$NKL4_KIMG_ENTRIES,%ecx
 	fillkpt
 
 	/* Set up top level entries for actual kernel mapping */
-	leal    (PROC0_PML4_OFF + L4_SLOT_KERNBASE*8)(%esi),%ebx
+	leal	(PROC0_PML4_OFF + L4_SLOT_KERNBASE*8)(%esi),%ebx
 	leal	(PROC0_PTP3_OFF)(%esi),%eax
 	orl	$(PG_V|PG_KW), %eax
 	movl	$NKL4_KIMG_ENTRIES,%ecx
@@ -527,9 +525,9 @@ bi_size_ok:
 
 	/*
 	 * 2. Set Long Mode Enable in EFER. Also enable the
-	 *    syscall extensions.
+	 *	syscall extensions.
 	 */
-	movl    $MSR_EFER,%ecx
+	movl	$MSR_EFER,%ecx
 	rdmsr
 	xorl	%eax,%eax	/* XXX */
 	orl	$(EFER_LME|EFER_SCE),%eax
@@ -618,7 +616,7 @@ longmode_hi:
 	movq	%rax,_C_LABEL(proc0paddr)(%rip)
 	leaq	(USPACE-FRAMESIZE)(%rax),%rsp
 	movq	%rsi,PCB_CR3(%rax)	# pcb->pcb_cr3
-	xorq	%rbp,%rbp               # mark end of frames
+	xorq	%rbp,%rbp		# mark end of frames
 
 	xorw	%ax,%ax
 	movw	%ax,%gs
@@ -628,7 +626,7 @@ longmode_hi:
 	leaq	TABLESIZE(%rsi),%rdi
 	call	_C_LABEL(init_x86_64)
 
-	call 	_C_LABEL(main)
+	call	_C_LABEL(main)
 
 /*****************************************************************************/
 
@@ -824,8 +822,8 @@ switch_exited:
 
 	/* Load TSS info. */
 #ifdef MULTIPROCESSOR
-	movq    CPUVAR(GDT),%rax
-#else   
+	movq	CPUVAR(GDT),%rax
+#else
 	movq	_C_LABEL(gdtstore)(%rip),%rax
 #endif
 	movl	P_MD_TSS_SEL(%r12),%edx
@@ -1075,16 +1073,16 @@ iret_return:
 
 
 ENTRY(pagezero)
-	movq    $-PAGE_SIZE,%rdx
-	subq    %rdx,%rdi
-	xorq    %rax,%rax
+	movq	$-PAGE_SIZE,%rdx
+	subq	%rdx,%rdi
+	xorq	%rax,%rax
 1:
-	movnti  %rax,(%rdi,%rdx)
-	movnti  %rax,8(%rdi,%rdx)
-	movnti  %rax,16(%rdi,%rdx)
-	movnti  %rax,24(%rdi,%rdx)
-	addq    $32,%rdx
-	jne     1b
+	movnti	%rax,(%rdi,%rdx)
+	movnti	%rax,8(%rdi,%rdx)
+	movnti	%rax,16(%rdi,%rdx)
+	movnti	%rax,24(%rdi,%rdx)
+	addq	$32,%rdx
+	jne	1b
 	sfence
 	ret
 
@@ -1097,7 +1095,7 @@ ENTRY(acpi_acquire_global_lock)
 	btsl	$1, %edx
 	adcl	$0, %edx
 	lock
-	cmpxchgl       %edx, (%rcx)
+	cmpxchgl	%edx, (%rcx)
 	jnz	1b
 	andl	$3, %edx
 	cmpl	$3, %edx
