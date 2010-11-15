@@ -1,5 +1,8 @@
 
 PROG=	kdump
+# here are the sys/ includes used directly from the source
+# tree instead of the installed ones in usr/include but if
+# one followed the path those both shall be the same...
 CFLAGS+=-I${.CURDIR}/../ktrace -I${.CURDIR} -I${.CURDIR}/../../sys
 SRCS=	kdump.c ioctl.c sysctl.c subr.c
 .PATH:	${.CURDIR}/../ktrace
