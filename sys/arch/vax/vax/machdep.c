@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2002, Hugh Graham.
  * Copyright (c) 2002, Miodrag Vallat.
@@ -265,7 +264,7 @@ cpu_startup()
 	}
 }
 
-long	dumpmag = 0x8fca0101;
+int	dumpmag = 0x8fca0101;
 int	dumpsize = 0;
 long	dumplo = 0;
 cpu_kcore_hdr_t cpu_kcore_hdr;

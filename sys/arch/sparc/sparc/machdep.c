@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -718,8 +717,8 @@ haltsys:
 	/*NOTREACHED*/
 }
 
-/* XXX - dumpmag not eplicitly used, savecore may search for it to get here */
-u_long	dumpmag = 0x8fca0101;	/* magic number for savecore */
+/* XXX - dumpmag not explicitly used, savecore may search for it to get here */
+int	dumpmag = 0x8fca0101;	/* magic number for savecore */
 int	dumpsize = 0;		/* also for savecore */
 long	dumplo = 0;
 

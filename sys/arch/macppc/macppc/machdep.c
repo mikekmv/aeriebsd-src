@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 1995, 1996 Wolfgang Solfrank.
  * Copyright (C) 1995, 1996 TooLs GmbH.
@@ -717,7 +716,7 @@ cpu_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp,
 }
 
 
-u_long dumpmag = 0x04959fca;			/* magic number */
+int dumpmag = 0x04959fca;			/* magic number */
 int dumpsize = 0;			/* size of dump in pages */
 long dumplo = -1;			/* blocks */
 

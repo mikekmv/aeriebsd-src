@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1996, 1997, 1998, 2000 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -814,7 +813,7 @@ haltsys:
 /*
  * These variables are needed by /sbin/savecore
  */
-u_int32_t	dumpmag = 0x8fca0101;	/* magic number */
+int	dumpmag = 0x8fca0101;	/* magic number */
 int 	dumpsize = 0;		/* pages */
 long	dumplo = 0; 		/* blocks */
 

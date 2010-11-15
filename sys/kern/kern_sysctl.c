@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -236,7 +235,6 @@ int
 kern_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp,
     size_t newlen, struct proc *p)
 {
-	int error, level, inthostid, stackgap;
 	extern int somaxconn, sominconn;
 	extern int usermount, nosuidcoredump;
 	extern long cp_time[CPUSTATES];
@@ -247,6 +245,8 @@ kern_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp,
 	extern int cryptodevallowsoft;
 #endif
 	extern int maxlocksperuid;
+	int error, level, inthostid, stackgap;
+	quad_t q;
 
 	/* all sysctl names at this level are terminal except a ton of them */
 	if (namelen != 1) {
@@ -533,6 +533,17 @@ kern_sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp,
 	case KERN_CPTIME2:
 		return (sysctl_cptime2(name + 1, namelen -1, oldp, oldlenp,
 		    newp, newlen));
+	case KERN_ROOTDEV:
+		return (sysctl_rdint(oldp, oldlenp, newp, rootdev));
+	case KERN_SWAPDEV:
+		return (sysctl_rdint(oldp, oldlenp, newp, swapdev));
+	case KERN_DUMPDEV:
+		return (sysctl_rdint(oldp, oldlenp, newp, dumpdev));
+	case KERN_DUMPLO:
+		q = dumplo;
+		return (sysctl_rdquad(oldp, oldlenp, newp, q));
+	case KERN_DUMPMAG:
+		return (sysctl_rdint(oldp, oldlenp, newp, dumpmag));
 	default:
 		return (EOPNOTSUPP);
 	}
@@ -766,7 +777,7 @@ sysctl_int_arr(int **valpp, int *name, u_int namelen, void *oldp,
 
 /*
  * Validate parameters and get old / set new parameters
- * for an integer-valued sysctl function.
+ * for a quad-integer-valued sysctl function.
  */
 int
 sysctl_quad(void *oldp, size_t *oldlenp, void *newp, size_t newlen,

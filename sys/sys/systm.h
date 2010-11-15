@@ -94,6 +94,7 @@ extern int physmem;		/* physical memory */
 
 extern dev_t dumpdev;		/* dump device */
 extern long dumplo;		/* offset into dumpdev */
+extern int dumpmag;		/* dump magic for savecore */
 
 extern dev_t rootdev;		/* root device */
 extern struct vnode *rootvp;	/* vnode equivalent to above */

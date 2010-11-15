@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Michael Shalayeff
  * All rights reserved.
@@ -687,7 +686,7 @@ boot(howto)
 	/* NOTREACHED */
 }
 
-u_long	dumpmag = 0x8fca0101;	/* magic number */
+int	dumpmag = 0x8fca0101;	/* magic number */
 int	dumpsize = 0;		/* pages */
 long	dumplo = 0;		/* blocks */
 

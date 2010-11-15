@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1996, 1997, 1998 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -774,7 +773,7 @@ haltsys:
 	/*NOTREACHED*/
 }
 
-u_long	dumpmag = 0x8fca0101;	/* magic number for savecore */
+int	dumpmag = 0x8fca0101;	/* magic number for savecore */
 int	dumpsize = 0;		/* also for savecore */
 long	dumplo = 0;
 

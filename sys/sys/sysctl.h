@@ -182,7 +182,12 @@ struct ctlname {
 #define	KERN_TIMECOUNTER	69	/* node: timecounter */
 #define	KERN_MAXLOCKSPERUID	70	/* int: locks per uid */
 #define	KERN_CPTIME2		71	/* array: cp_time2 */
-#define	KERN_MAXID		72	/* number of valid kern ids */
+#define	KERN_ROOTDEV		72	/* int: rootdev */
+#define	KERN_SWAPDEV		73	/* int: swapdev */
+#define	KERN_DUMPDEV		74	/* int: dumpdev */
+#define	KERN_DUMPLO		75	/* quad: dumplo */
+#define	KERN_DUMPMAG		76	/* int: dumpmag */
+#define	KERN_MAXID		77	/* number of valid kern ids */
 
 #define	CTL_KERN_NAMES { \
 	{ 0, 0 }, \
@@ -257,6 +262,11 @@ struct ctlname {
  	{ "timecounter", CTLTYPE_NODE }, \
  	{ "maxlocksperuid", CTLTYPE_INT }, \
  	{ "cp_time2", CTLTYPE_STRUCT }, \
+ 	{ "rootdev", CTLTYPE_INT }, \
+ 	{ "swapdev", CTLTYPE_INT }, \
+ 	{ "dumpdev", CTLTYPE_INT }, \
+ 	{ "dumplo", CTLTYPE_QUAD }, \
+ 	{ "dumpmag", CTLTYPE_INT }, \
 }
 
 /*
