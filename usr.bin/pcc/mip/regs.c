@@ -961,7 +961,6 @@ setxarg(NODE *p)
 		addalledges(&rw[i]);
 		break;
 
-
 	case 'i':
 	case 'n':
 		break;
@@ -2487,6 +2486,9 @@ temparg(struct interpass *ipole, REGW *w)
 		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
 			comperr("temparg");
 #endif
+		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
+			continue; /* unknown tree */
+
 		if (p->n_right->n_op != OREG)
 			continue; /* arg in register */
 		if (w != &nblock[regno(p->n_left)])

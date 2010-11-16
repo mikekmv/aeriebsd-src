@@ -314,8 +314,10 @@ struct optab table[] = {
 	SAREG,	TWORD,
 	SCREG,	TLDOUBLE,
 		NCREG,	RESC1,
-		"	pushl AL\n	fildl (%rsp)\n	addl $4,%rsp\n", },
-
+		"	subq $4,%rsp\n"
+		"	movl AL,(%rsp)\n"
+		"	fildl (%rsp)\n"
+		"	addq $4,%rsp\n", },
 
 /* unsigned long (in reg) to long double */
 { SCONV,	INCREG,
@@ -997,11 +999,11 @@ struct optab table[] = {
 	SAREG|SCON,	TCHAR|TUCHAR,
 		NAREG*2,	RDEST,
 		"	movb AR,A2\n"
-		"	movzbl A2,A1\n"
+		"	movzbl A2,ZN\n"
 		"	andl $N,AL\n"
-		"	sall $H,A1\n"
-		"	andl $M,A1\n"
-		"	orl A1,AL\n"
+		"	sall $H,ZN\n"
+		"	andl $M,ZN\n"
+		"	orl ZN,AL\n"
 		"F	movb AR,AD\n"
 		"FZE", },
 
@@ -1312,8 +1314,8 @@ struct optab table[] = {
 { OPLOG,	FORCC,
 	SBREG,			TDOUBLE|TFLOAT,
 	SBREG|SNAME|SOREG,	TDOUBLE|TFLOAT,
-		0,	 	RESCC,
-		"	ucomisZg AR,AL\n	jp LC\n", },
+		0,	 	RNOP,
+		"	ucomisZg AR,AL\nZU\n", },
 
 /* x87 */
 { OPLOG,	FORCC,

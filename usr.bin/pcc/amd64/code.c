@@ -150,6 +150,7 @@ defloc(struct symtab *sp)
 /*
  * code for the end of a function
  * deals with struct return here
+ * The return value is in (or pointed to by) RETREG.
  */
 void
 efcode()
@@ -158,40 +159,46 @@ efcode()
 	extern int gotnr;
 	TWORD t;
 	NODE *p, *r, *l;
-	int o;
+	int typ, ssz;
 
 	gotnr = 0;	/* new number for next fun */
 	sp = cftnsp;
 	t = DECREF(sp->stype);
 	if (t != STRTY && t != UNIONTY)
 		return;
-	if (argtyp(t, sp->sdf, sp->sap) != STRMEM)
-		return;
 
-	/* call memcpy() to put return struct at destination */
-#define  cmop(x,y) block(CM, x, y, INT, 0, MKAP(INT))
-	r = tempnode(stroffset, INCREF(t), sp->sdf, sp->sap);
-	l = block(REG, NIL, NIL, INCREF(t), sp->sdf, sp->sap);
-	regno(l) = RAX;
-	o = tsize(t, sp->sdf, sp->sap)/SZCHAR;
-	r = cmop(cmop(r, l), bcon(o));
+	/* XXX should have one routine for this */
+	if ((typ = argtyp(t, sp->sdf, sp->sap)) == STRREG) {
+		/* Cast to long pointer and move to the registers */
+		/* XXX can overrun struct size */
+		/* XXX check carefully for SSE members */
 
-	blevel++; /* Remove prototype at exit of function */
-	sp = lookup(addname("memcpy"), 0);
-	if (sp->stype == UNDEF) {
-		sp->sap = MKAP(VOID);
-		p = block(NAME, NIL, NIL, VOID|FTN|(PTR<<TSHIFT), 0, sp->sap);
-		p->n_sp = sp;
-		defid(p, EXTERN);
-		nfree(p);
-	}
-	blevel--;
+		if ((ssz = tsize(t, sp->sdf, sp->sap)) > SZLONG*2)
+			cerror("efcode1");
 
-	p = doacall(sp, nametree(sp), r);
-	ecomp(p);
-	
-
-	/* RAX contains destination after memcpy() */
+		if (ssz > SZLONG) {
+			p = block(REG, NIL, NIL, LONG+PTR, 0, MKAP(LONG));
+			regno(p) = RAX;
+			p = buildtree(UMUL, buildtree(PLUS, p, bcon(1)), NIL);
+			ecomp(movtoreg(p, RDX));
+		}
+		p = block(REG, NIL, NIL, LONG+PTR, 0, MKAP(LONG));
+		regno(p) = RAX;
+		p = buildtree(UMUL, p, NIL);
+		ecomp(movtoreg(p, RAX));
+	} else if (typ == STRMEM) {
+		r = block(REG, NIL, NIL, INCREF(t), sp->sdf, sp->sap);
+		regno(r) = RAX;
+		r = buildtree(UMUL, r, NIL);
+		l = tempnode(stroffset, INCREF(t), sp->sdf, sp->sap);
+		l = buildtree(UMUL, l, NIL);
+		ecomp(buildtree(ASSIGN, l, r));
+		l = block(REG, NIL, NIL, LONG, 0, MKAP(LONG));
+		regno(l) = RAX;
+		r = tempnode(stroffset, LONG, 0, MKAP(LONG));
+		ecomp(buildtree(ASSIGN, l, r));
+	} else
+		cerror("efcode");
 }
 
 /*
@@ -204,6 +211,7 @@ bfcode(struct symtab **s, int cnt)
 	union arglist *al;
 	struct symtab *sp;
 	NODE *p, *r;
+	TWORD t;
 	int i, rno, typ;
 
 	/* recalculate the arg offset and create TEMP moves */
@@ -305,11 +313,14 @@ bfcode(struct symtab **s, int cnt)
 	al = cftnsp->sdf->dfun;
 
 	for (; al->type != TELLIPSIS; al++) {
-		if (al->type == TNULL)
+		t = al->type;
+		if (t == TNULL)
 			return;
-		if (BTYPE(al->type) == STRTY || BTYPE(al->type) == UNIONTY ||
-		    ISARY(al->type))
+		if (BTYPE(t) == STRTY || BTYPE(t) == UNIONTY)
 			al++;
+		for (; t > BTMASK; t = DECREF(t))
+			if (ISARY(t) || ISFTN(t))
+				al++;
 	}
 
 	/* fix stack offset */
@@ -524,10 +535,12 @@ amd64_builtin_va_arg(NODE *f, NODE *a, TWORD t)
 			f->n_sp = lookup(gpnext, SNORMAL);
 			varneeds |= NEED_GPNEXT;
 		}
-		f->n_type = f->n_sp->stype;
+		f->n_type = f->n_sp->stype = INCREF(dp->n_type) + (FTN-PTR);
+		f->n_ap = dp->n_ap;
+		f->n_df = dp->n_df;
 		f = clocal(f);
 		r = buildtree(CALL, f, ccopy(ap));
-	} else if (ISSOU(dp->n_type)) {
+	} else if (ISSOU(dp->n_type) || dp->n_type == LDOUBLE) {
 		/* put a reference directly to the stack */
 		int sz = tsize(dp->n_type, dp->n_df, dp->n_ap);
 		int al = talign(dp->n_type, dp->n_ap);
@@ -693,6 +706,7 @@ argput(NODE *p)
 	case STRREG: /* Struct in registers */
 		/* Cast to long pointer and move to the registers */
 		/* XXX can overrun struct size */
+		/* XXX check carefully for SSE members */
 		ssz = tsize(p->n_type, p->n_df, p->n_ap);
 
 		if (ssz <= SZLONG) {
@@ -759,17 +773,34 @@ argput(NODE *p)
 static int
 argsort(NODE *p)
 {
-	NODE *q;
+	NODE *q, *r;
 	int rv = 0;
 
-	if (p->n_op != CM)
+	if (p->n_op != CM) {
+		if (p->n_op == ASSIGN && p->n_left->n_op == REG &&
+		    coptype(p->n_right->n_op) != LTYPE) {
+			q = tempnode(0, p->n_type, p->n_df, p->n_ap);
+			r = ccopy(q);
+			p->n_right = buildtree(COMOP,
+			    buildtree(ASSIGN, q, p->n_right), r);
+		}
 		return rv;
+	}
 	if (p->n_right->n_op == CM) {
 		/* fixup for small structs in regs */
 		q = p->n_right->n_left;
 		p->n_right->n_left = p->n_left;
 		p->n_left = p->n_right;
 		p->n_right = q;
+	}
+	if (p->n_right->n_op == ASSIGN && p->n_right->n_left->n_op == REG &&
+	    coptype(p->n_right->n_right->n_op) != LTYPE) {
+		/* move before everything to avoid reg trashing */
+		q = tempnode(0, p->n_right->n_type,
+		    p->n_right->n_df, p->n_right->n_ap);
+		r = ccopy(q);
+		p->n_right->n_right = buildtree(COMOP,
+		    buildtree(ASSIGN, q, p->n_right->n_right), r);
 	}
 	if (p->n_right->n_op == ASSIGN && p->n_right->n_left->n_op == REG) {
 		if (p->n_left->n_op == CM &&
@@ -815,7 +846,6 @@ funcode(NODE *p)
 	/* This avoids registers being clobbered */
 	while (argsort(p->n_right))
 		;
-
 	/* Check if there are varargs */
 	if (nsse || l->n_df == NULL || l->n_df->dfun == NULL) {
 		; /* Need RAX */

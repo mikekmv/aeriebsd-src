@@ -11,8 +11,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -210,6 +208,30 @@ tlsref(NODE *p)
 }
 #endif
 
+static NODE *
+stkblk(TWORD t)
+{
+	int al, tsz, off, noff;
+	struct attr *bt;
+	NODE *p;
+
+	bt = MKAP(BTYPE(t));
+	al = talign(t, bt);
+	tsz = (int)tsize(t, 0, bt);
+
+	noff = autooff + tsz;
+	SETOFF(noff, al);
+	off = -noff;
+	autooff = noff;
+
+	p = block(REG, NIL, NIL, INCREF(t), 0, bt);
+	p->n_lval = 0;
+	p->n_rval = FPREG;
+	p = buildtree(UMUL, buildtree(PLUS, p, bcon(off/SZLDOUBLE)), NIL);
+	return p;
+}
+
+
 /* clocal() is called to do local transformations on
  * an expression tree preparitory to its being
  * written out in intermediate code.
@@ -317,18 +339,6 @@ clocal(NODE *p)
 		nfree(l);
 		break;
 
-	case CALL:
-	case STCALL:
-		if (p->n_type == VOID)
-			break; /* nothing to do */
-		/* have the call at left of a COMOP to avoid arg trashing */
-		r = tempnode(0, p->n_type, p->n_df, p->n_ap);
-		m = regno(r);
-		r = buildtree(ASSIGN, r, p);
-		p = tempnode(m, r->n_type, r->n_df, r->n_ap);
-		p = buildtree(COMOP, r, p);
-		break;
-
 	case UCALL:
 	case USTCALL:
 		/* For now, always clear eax */
@@ -336,6 +346,19 @@ clocal(NODE *p)
 		regno(l) = RAX;
 		p->n_right = clocal(buildtree(ASSIGN, l, bcon(0)));
 		p->n_op -= (UCALL-CALL);
+
+		/* FALLTHROUGH */
+	case CALL:
+	case STCALL:
+		if (p->n_type == VOID)
+			break; /* nothing to do */
+		/* have the call at left of a COMOP to avoid arg trashing */
+		if (p->n_type == LDOUBLE) {
+			r = stkblk(LDOUBLE);
+		} else
+			r = tempnode(0, p->n_type, p->n_df, p->n_ap);
+		l = ccopy(r);
+		p = buildtree(COMOP, buildtree(ASSIGN, r, p), l);
 		break;
 
 	case CBRANCH:
@@ -756,7 +779,7 @@ infld(CONSZ off, int fsz, CONSZ val)
 	if (idebug)
 		printf("infld off %lld, fsz %d, val %lld inbits %d\n",
 		    off, fsz, val, inbits);
-	val &= ((CONSZ)1 << fsz)-1;
+	val &= (((((CONSZ)1 << (fsz-1))-1)<<1)|1);
 	while (fsz + inbits >= SZCHAR) {
 		inval |= (val << inbits);
 		printf("\t.byte %d\n", inval & 255);
@@ -781,6 +804,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 {
 	union { float f; double d; long double l; int i[3]; } u;
 	struct symtab *q;
+	NODE st;
 	TWORD t;
 	int rel = 0;
 
@@ -792,6 +816,14 @@ ninval(CONSZ off, int fsz, NODE *p)
 	}
 
 	t = p->n_type;
+
+	if (kflag && p->n_op == NAME && ISPTR(t) && ISFTN(DECREF(t))) {
+		/* functions as initializers will be NAME here */
+		st = *p;
+		st.n_op = ICON;
+		p = &st;
+	}
+
 	if (t > BTMASK)
 		t = LONG; /* pointer */
 
@@ -811,7 +843,12 @@ ninval(CONSZ off, int fsz, NODE *p)
 			} else {
 				char *name;
 				if ((name = q->soname) == NULL)
-					name = exname(q->sname);
+					name = q->sname;
+				/* Never any PIC stuff in static init */
+				if (strchr(name, '@')) {
+					name = tmpstrdup(name);
+					*strchr(name, '@') = 0;
+				}
 				printf("+%s", name);
 			}
 		}
