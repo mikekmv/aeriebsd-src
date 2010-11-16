@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.28 2010/09/15 10:37:00 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.29 2010/11/08 15:44:35 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -886,7 +886,7 @@ elf_loadrelocs(struct objlist *ol, struct section *os, Elf_Shdr *shdr,
 			if ((si = ELF_R_SYM(rela.r_info)) >= ol->ol_naux)
 				errx(1, "%s: invalid reloc #%d",
 				    ol->ol_path, i);
-			if (rel.r_offset > shbits->sh_size)
+			if (rela.r_offset > shbits->sh_size)
 				errx(1, "%s: reloc #%d offset 0x%llx "
 				    "is out of range", ol->ol_path, i,
 				    (long long)rel.r_offset);
