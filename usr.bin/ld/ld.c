@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.21 2010/10/11 22:01:06 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.22 2010/11/08 20:59:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -737,7 +737,7 @@ mmbr_name(struct ar_hdr *arh, char **name, int baselen, int *namelen, FILE *fp)
 		i = atol(&arh->ar_name[1]);
 		if (i >= namtablen)
 			errx(1, "corrupt ar member header");
-		len = strlen(&nametab[i]) + 1;
+		len = strlen(&nametab[i]);
 		if (len > *namelen) {
 			p -= (long)*name;
 			if ((*name = realloc(*name, baselen+len)) == NULL)
