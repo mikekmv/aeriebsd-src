@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2007 Miodrag Vallat.
  *
@@ -151,7 +150,7 @@ caddr_t allocsys(caddr_t);
 /*
  * These variables are needed by /sbin/savecore
  */
-u_int32_t dumpmag = 0x8fca0101;	/* magic number */
+int dumpmag = 0x8fca0101;	/* magic number */
 u_int dumpsize;			/* pages */
 long dumplo;	 		/* blocks */
 cpu_kcore_hdr_t cpu_kcore_hdr;

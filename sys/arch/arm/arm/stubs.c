@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994-1998 Mark Brinicombe.
  * Copyright (c) 1994 Brini.
@@ -62,7 +61,7 @@ extern dev_t dumpdev;
 /*
  * These variables are needed by /sbin/savecore
  */
-u_int32_t dumpmag = 0x8fca0101;	/* magic number */
+int	dumpmag = 0x8fca0101;	/* magic number */
 int 	dumpsize = 0;		/* pages */
 long	dumplo = 0; 		/* blocks */
 cpu_kcore_hdr_t cpu_kcore_hdr;
