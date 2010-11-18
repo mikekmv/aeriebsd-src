@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.22 2010/11/08 20:59:00 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.23 2010/11/16 20:36:25 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -130,7 +130,7 @@ const struct ldarch ldarchs[] = {
 /*	{ EM_VAX, 0, vax_order, vax_fix }, */
 /*	{ EM_ALPHA, 0, alpha_order, alpha_fix }, */
 	{ EM_386, 0, i386_order, i386_fix },
-/*	{ EM_AMD64, 0, amd64_order, amd64_fix }, */
+	{ EM_AMD64, 0, amd64_order, amd64_fix },
 /*	{ EM_MIPS, 0, mips_order, mips_fix }, */
 /*	{ EM_MIPS64, 0, mips64_order, mips64_fix }, */
 /*	{ EM_PARISC, 0, hppa_order, hppa_fix }, */
