@@ -34,6 +34,9 @@ LFILES=	fcntl.h syslog.h termios.h stdarg.h stdint.h varargs.h
 DIRS=	arpa protocols rpc rpcsvc
 LDIRS=	altq crypto ddb dev isofs milfs miscfs net netatalk netinet \
 	netinet6 netmpls netnatm net80211 netbt nfs scsi sys ufs uvm xfs
+ADIRS=	alpha amd64 arm armish hp300 hppa hppa64 i386 \
+	landisk m68k mac68k macppc mips64 powerpc sgi \
+	sh sparc sparc64 vax zaurus
 
 # Directories with an includes target
 RDIRS=	../lib/libpthread ../lib/libcompat ../lib/libcurses \
@@ -117,7 +120,7 @@ includes:
 	done
 
 copies:
-	@echo copies: ${LDIRS}
+	@echo copies: ${LDIRS} ${ADIRS}
 	@for i in ${LDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i && \
 		${INSTALL} -d -o ${BINOWN} -g ${BINGRP} -m 755 \
@@ -127,35 +130,27 @@ copies:
 	pax -rw -pa -L \
 	    `find ${LDIRS} -follow -type f -name '*.h' \
 	    '!' -path 'dev/microcode/*' -print` ${DESTDIR}/usr/include
-	cd ${DESTDIR}/usr/include && rm -rf ${MACHINE} ${MACHINE_ARCH} machine
-	${INSTALL} -d -o ${BINOWN} -g ${BINGRP} -m 755 \
-		${DESTDIR}/usr/include/${MACHINE}
-	pax -rw -pa -s "|\.\./sys/arch/${MACHINE}/include||" \
-	    ../sys/arch/${MACHINE}/include/*.h \
-	    ${DESTDIR}/usr/include/${MACHINE}
-	if test ${MACHINE} != ${MACHINE_ARCH} -a \
-	    -d ../sys/arch/${MACHINE_ARCH}/include; then \
+	@for i in ${ADIRS}; do \
+		rm -rf ${DESTDIR}/usr/include/$$i && \
 		${INSTALL} -d -o ${BINOWN} -g ${BINGRP} -m 755 \
-	    	    ${DESTDIR}/usr/include/${MACHINE_ARCH}; \
-		pax -rw -pa -s "|\.\./sys/arch/${MACHINE_ARCH}/include||" \
-		    ../sys/arch/${MACHINE_ARCH}/include/*.h \
-		    ${DESTDIR}/usr/include/${MACHINE_ARCH}; \
-	fi
+			${DESTDIR}/usr/include/$$i ; \
+	done
+	cd ../sys/arch; \
+	pax -rw -pa -L -s "|/include||" \
+	    `find ${ADIRS} -follow -type f -name '*.h' \
+	    -path '*/include/*' -print` ${DESTDIR}/usr/include
 	ln -sf ${MACHINE} ${DESTDIR}/usr/include/machine; \
 
 symlinks:
-	@echo symlinks: ${LDIRS}
+	@echo symlinks: ${LDIRS} ${ADIRS}
 	@for i in ${LDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i && \
 		ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
 	done
-	cd ${DESTDIR}/usr/include && rm -rf ${MACHINE} ${MACHINE_ARCH} machine
-	ln -s /sys/arch/${MACHINE}/include ${DESTDIR}/usr/include/${MACHINE}
-	if test ${MACHINE} != ${MACHINE_ARCH} -a \
-	    -d ../sys/arch/${MACHINE_ARCH}/include ; then \
-		ln -s /sys/arch/${MACHINE_ARCH}/include \
-		    ${DESTDIR}/usr/include/${MACHINE_ARCH} ; \
-	fi
+	@for i in ${ADIRS}; do \
+		rm -rf ${DESTDIR}/usr/include/$$i && \
+		ln -s /sys/arch/$$i/include ${DESTDIR}/usr/include/$$i; \
+	done
 	ln -sf ${MACHINE} ${DESTDIR}/usr/include/machine
 
 includes: ${SYS_INCLUDE}
