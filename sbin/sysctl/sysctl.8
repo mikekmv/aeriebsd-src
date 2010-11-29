@@ -28,7 +28,7 @@
 .\"
 .\"	@(#)sysctl.8	8.2 (Berkeley) 5/9/95
 .\"
-.Dd $Mdocdate: March 14 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt SYSCTL 8
 .Os
 .Sh NAME
@@ -192,6 +192,11 @@ not all of the variables are relevant to all architectures.
 .It kern.timecounter.timestepwarnings	integer	yes
 .It kern.timecounter.hardware	string	yes
 .It kern.timecounter.choice	string	no
+.It kern.rootdev	integer	no
+.It kern.swapdev	integer	no
+.It kern.dumpdev	integer	no
+.It kern.dumplo	quad	no
+.It kern.dumpmag	integer	no
 .It vm.vmmeter	struct	no
 .It vm.loadavg	struct	no
 .It vm.psstrings	struct	no
