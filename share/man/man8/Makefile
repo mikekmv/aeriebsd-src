@@ -1,5 +1,5 @@
 
-MAN=	afterboot.8 boot_config.8 compat_aout.8 compat_bsdos.8 \
+MAN=	afterboot.8 boot_config.8 build.8 compat_aout.8 compat_bsdos.8 \
 	compat_freebsd.8 compat_hpux.8 compat_ibcs2.8 \
 	compat_linux.8 compat_osf1.8 compat_sunos.8 \
 	compat_svr4.8 compat_ultrix.8 crash.8 daily.8 dhcp.8 \
