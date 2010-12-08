@@ -1,0 +1,117 @@
+.\"
+.\" Copyright (c) 2010 Konrad Merz
+.\" All rights reserved.
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: July 18 2010 $
+.Dt BUILD 8
+\!\" Originally created by Konrad Merz -- 2010-07-18, kmerz@aeriebsd.org
+.Os
+.Sh NAME
+.Nm build
+.Nd things to do to build the system
+.Sh DESCRIPTION
+.Ss Preamble
+This is a quick guide to build your system from the sources. Please read
+the instructions carefully and completely to gain a system build by your
+own hands. We assume that the fetched sources will be laid at /usr/src
+where they belong to. We further assume that the instructions will be done as
+user root so you can not just build but also install the system. If you
+find yourself in problems with building the system by following this guide
+please write a mail with the solution to your problem to
+.Pp
+.Dl hackers@aeriebsd.org
+.Pp
+In general it is always a good idea to read the manpages of the tools you use
+if you are running in problems. Also search for your problem in the internet
+probably someone else already got a solution for your problem.
+.Ss Checkout Sources
+To build the system you need to fetch the sources, at first. Use the
+.Xr cvs 1
+command to checkout the sources from a anonymous cvs server.
+The checkout command with the main anonymus server can look like this:
+.Pp
+.Dl cvs -q -danoncvs@anoncvs.aeriebsd.org:/cvs checkout -P src
+.Pp
+For a list of anonymus cvs server take a look at:
+.Pp
+.Dl http://aeriebsd.org/anoncvs.html
+.Pp
+Please also read the manpage for further help with
+.Xr cvs 1 .
+.Ss Building Build Tools
+First step of all should be a
+.Pp
+.Dl make obj
+.Pp
+which will help to keep your src/ directory clean. It is highly recommended
+to build and install the build tools before all others. Start by installing
+the makefiles of the checkout sources with:
+.Pp
+.Dl cd share/mk; make install
+.Pp
+This will copy the system makefiles to the default directory where they can be
+found by the building tools.
+Now we come to the compiler. Go to the directory and build the compiler
+.Xr pcc 1
+with its dependencies by typing following to the command line:
+.Pp
+.Dl cd usr.bin/pcc/; make depend; make; make install
+.Pp
+Now proceed in the same way with the following tools in order:
+.Xr xlint 1 ,
+.Xr as 1 ,
+.Xr ld 1 ,
+.Xr nroff 1 ,
+.Xr make 1 ,
+.Xr sh 1 ,
+.Xr sed 1
+and
+.Xr awk 1 .
+.Ss Building the Kernel
+In the next step we will build the kernel of the system. These steps are
+describing how to build a generic kernel for a i386 architecture. For other
+architectures the steps should be similar. At first change to the arch/
+directory of your architecture and execute
+.Xr config 8 .
+.Pp
+.Dl cd sys/arch/i386/config; config GENERIC
+.Pp
+This will generate the directory sys/arch/i386/compile/GENERIC with the
+needed files to compile the kernel. We change to this directory and will
+build the kernel now.
+.Pp
+.Dl cd ../compile/GENERIC; make clean; make depend; make; make install
+.Pp
+Now
+.Xr reboot 8
+your machine to use the new kernel. After rebooting the machine change to
+the src/ directory and finish building your system.
+.Ss Building Rest of the System
+The rest of the system is easy to build. Change into the src/ directory
+and make it.
+.Pp
+.Dl make build
+.Pp
+Now all your system is build up from scratch.
+.Xr reboot 8
+your machine again to start your system with the so created binaries.
+.Sh SEE ALSO
+.Xr cvs 1 ,
+.Xr make 1 ,
+.Xr pcc 1 ,
+.Xr config 1 ,
+.Xr reboot 8
+.Sh HISTORY
+The build manpage first appeared in Aeriebsd.
