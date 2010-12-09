@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.23 2010/11/16 20:36:25 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.24 2010/11/18 13:11:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -242,6 +242,7 @@ main(int argc, char *argv[])
 			break;
 
 		case 'L':	/* add to the library search path */
+		case 'R':
 		case 'Y':
 			libdir_add(optarg);
 			break;
