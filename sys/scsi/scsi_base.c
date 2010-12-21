@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994, 1995, 1997 Charles M. Hannum.  All rights reserved.
  *
@@ -61,8 +60,8 @@ char   *scsi_decode_sense(struct scsi_sense_data *, int);
 #define	DECODE_ASC_ASCQ		2
 #define DECODE_SKSV		3
 
-int			scsi_running = 0;
-struct pool		scsi_xfer_pool;
+int		scsi_initialized;
+struct pool	scsi_xfer_pool;
 
 /*
  * Called when a scsibus is attached to initialize global data.
@@ -70,8 +69,9 @@ struct pool		scsi_xfer_pool;
 void
 scsi_init()
 {
-	if (scsi_running++)
+	if (scsi_initialized)
 		return;
+	scsi_initialized++;
 
 #if defined(SCSI_DELAY) && SCSI_DELAY > 0
 	/* Historical. Older buses may need a moment to stabilize. */
@@ -81,13 +81,6 @@ scsi_init()
 	/* Initialize the scsi_xfer pool. */
 	pool_init(&scsi_xfer_pool, sizeof(struct scsi_xfer), 0,
 	    0, 0, "scxspl", NULL);
-}
-
-void
-scsi_deinit()
-{
-	if (--scsi_running)
-		return;
 }
 
 /*

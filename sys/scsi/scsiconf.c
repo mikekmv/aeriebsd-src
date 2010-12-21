@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1994 Charles Hannum.  All rights reserved.
  *
@@ -27,7 +26,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Originally written by Julian Elischer (julian@tfs.com)
  * for TRW Financial Systems for use under the MACH(2.5) operating system.
@@ -213,10 +211,6 @@ scsibusdetach(struct device *dev, int type)
 	}
 
 	free(sb->sc_link, M_DEVBUF);
-
-	/* Free shared data. */
-	scsi_deinit();
-
 	return (0);
 }
 

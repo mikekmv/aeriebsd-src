@@ -329,7 +329,6 @@ const void *scsi_inqmatch(struct scsi_inquiry_data *, const void *, int,
     workq_add_task(NULL, (_fl), (_f), (_a1), (_a2))
 
 void	scsi_init(void);
-void	scsi_deinit(void);
 struct scsi_xfer *
 	scsi_get_xs(struct scsi_link *, int);
 void	scsi_free_xs(struct scsi_xfer *, int);
