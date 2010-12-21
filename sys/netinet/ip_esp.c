@@ -895,6 +895,7 @@ esp_output(struct mbuf *m, struct tdb *tdb, struct mbuf **mp, int skip,
 	if (mo == NULL) {
 		DPRINTF(("esp_output(): m_inject failed for SA %s/%08x\n",
 		    ipsp_address(tdb->tdb_dst), ntohl(tdb->tdb_spi)));
+		m_freem(m);
 		return ENOBUFS;
 	}
 	pad = mtod(mo, u_char *);
