@@ -128,7 +128,9 @@ eoftn(struct interpass_prolog *ipp)
 		printf("	leave\n");
 		printf("	ret\n");
 	}
+#ifndef MACHOABI
 	printf("\t.size %s,.-%s\n", ipp->ipp_name, ipp->ipp_name);
+#endif
 }
 
 /*
@@ -206,36 +208,13 @@ static void
 fcomp(NODE *p)	
 {
 
-	if (p->n_left->n_op == REG) {
-		if (p->n_su & DORIGHT)
-			expand(p, 0, "	fxch\n");
-		expand(p, 0, "	fucompp\n");	/* emit compare insn  */
-	} else
+	if (p->n_left->n_op != REG)
 		comperr("bad compare %p\n", p);
-	expand(p, 0, "	fnstsw %ax\n"); /* move status reg to ax */
-	
-	switch (p->n_op) {
-	case EQ:
-		expand(p, 0, "	andb $69,%ah\n	xorb $64,%ah\n	je LC\n");
-		break;
-	case NE:
-		expand(p, 0, "	andb $69,%ah\n	xorb $64,%ah\n	jne LC\n");
-		break;
-	case LE:
-		expand(p, 0, "	andb $69,%ah\n	xorb $1,%ah\n	jne LC\n");
-		break;
-	case LT:
-		expand(p, 0, "	andb $69,%ah\n	je LC\n");
-		break;
-	case GT:
-		expand(p, 0, "	andb $1,%ah\n	jne LC\n");
-		break;
-	case GE:
-		expand(p, 0, "	andb $69,%ah\n	jne LC\n");
-		break;
-	default:
-		comperr("fcomp op %d\n", p->n_op);
-	}
+	if ((p->n_su & DORIGHT) == 0)
+		expand(p, 0, "	fxch\n");
+	expand(p, 0, "	fucomip %st(1),%st\n");	/* emit compare insn  */
+	expand(p, 0, "	fstp %st(0)\n");	/* pop fromstack */
+	zzzcode(p, 'U');
 }
 
 int
@@ -496,8 +475,14 @@ zzzcode(NODE *p, int c)
 		static char *fpcb[] = { "jz", "jnz", "jbe", "jc", "jnc", "ja" };
 		if (p->n_op < EQ || p->n_op > GT)
 			comperr("bad fp branch");
+		if (p->n_op == NE || p->n_op == GT || p->n_op == GE)
+			expand(p, 0, "	jp LC\n");
+		else if (p->n_op == EQ)
+			printf("\tjp 1f\n");
 		printf("	%s ", fpcb[p->n_op - EQ]);
 		expand(p, 0, "LC\n");
+		if (p->n_op == EQ)
+			printf("1:\n");
 		break;
 		}
 
@@ -1032,23 +1017,20 @@ myxasm(struct interpass *ip, NODE *p)
 	switch (c = XASMVAL(cw)) {
 	case 'D': reg = RDI; break;
 	case 'S': reg = RSI; break;
+	case 'A': 
 	case 'a': reg = RAX; break;
 	case 'b': reg = RBX; break;
 	case 'c': reg = RCX; break;
 	case 'd': reg = RDX; break;
 
+	case 'x':
+	case 'q':
 	case 't':
 	case 'u':
 		p->n_name = tmpstrdup(p->n_name);
 		w = strchr(p->n_name, c);
 		*w = 'r'; /* now reg */
-		return 1;
-
-	case 'A': 
-		uerror("unsupported xasm constraint 'A'");
-
-	case 'q': /* Handle in MYSETXARG */
-		return 1;
+		return c == 'q' || c == 'x' ? 0 : 1;
 
 	case 'I':
 	case 'J':
@@ -1070,10 +1052,13 @@ myxasm(struct interpass *ip, NODE *p)
 	default:
 		return 0;
 	}
-	p->n_name = tmpstrdup(p->n_name);
-	for (w = p->n_name; *w; w++)
-		;
-	w[-1] = 'r'; /* now reg */
+	/* If there are requested either memory or register, delete memory */
+	w = p->n_name = tmpstrdup(p->n_name);
+	if (*w == '=')
+		w++;
+	*w++ = 'r';
+	*w = 0;
+
 	t = p->n_left->n_type;
 
 	if (t == FLOAT || t == DOUBLE) {
@@ -1156,3 +1141,38 @@ numconv(void *ip, void *p1, void *q1)
 		return 0;
 	}
 }
+
+static struct {
+	char *name; int num;
+} xcr[] = {
+	{ "rax", RAX },
+	{ "rbx", RBX },
+	{ "rcx", RCX },
+	{ "rdx", RDX },
+	{ "rsi", RSI },
+	{ "rdi", RDI },
+	{ "st", 040 },
+	{ "st(0)", 040 },
+	{ "st(1)", 041 },
+	{ "st(2)", 042 },
+	{ "st(3)", 043 },
+	{ "st(4)", 044 },
+	{ "st(5)", 045 },
+	{ "st(6)", 046 },
+	{ "st(7)", 047 },
+	{ NULL, 0 },
+};
+
+/*
+ * Check for other names of the xasm constraints registers.
+ */
+int xasmconstregs(char *s)
+{
+	int i;
+
+	for (i = 0; xcr[i].name; i++)
+		if (strcmp(xcr[i].name, s) == 0)
+			return xcr[i].num;
+	return -1;
+}
+

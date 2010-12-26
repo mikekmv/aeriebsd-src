@@ -1035,11 +1035,13 @@ struct optab table[] = {
 { ASSIGN,	FOREFF|INAREG,
 	SFLD,		TLL,
 	SAREG|SNAME|SOREG|SCON,	TLL,
-		NAREG,	RDEST,
+		NAREG*2,	RDEST,
 		"	movq AR,A1\n"
-		"	andq $N,AL\n"
+		"	movq $N,A2\n"
+		"	andq A2,AL\n"
 		"	salq $H,A1\n"
-		"	andq $M,A1\n"
+		"	movq $M,A2\n"
+		"	andq A2,A1\n"
 		"	orq A1,AL\n"
 		"F	movq AR,AD\n"
 		"FZE", },
@@ -1321,7 +1323,7 @@ struct optab table[] = {
 { OPLOG,	FORCC,
 	SCREG,	TLDOUBLE,
 	SCREG,	TLDOUBLE,
-		NSPECIAL,	0,
+		0,	RNOP,
 		"ZG", },
 
 { OPLOG,	FORCC,
@@ -1490,10 +1492,10 @@ struct optab table[] = {
 		"	negb AL\n", },
 
 { UMINUS,	INBREG,
-	SBREG|SNAME|SOREG,	TDOUBLE|TFLOAT,
-	SBREG,			TDOUBLE|TFLOAT,
-		NBREG,	RESC1,
-		"	xorpZf A1,A1\n	subsZf AL,A1\n", },
+	SBREG,		TDOUBLE|TFLOAT,
+	SBREG,		TDOUBLE|TFLOAT,
+		0,	RLEFT,
+		"	xorpZf LC(%rip),AL\n", },
 
 { UMINUS,	INCREG,
 	SCREG,	TLDOUBLE,

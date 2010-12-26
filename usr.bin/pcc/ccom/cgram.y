@@ -70,10 +70,10 @@
  */
 
 /*
- * At last count, there were 4 shift/reduce and no reduce/reduce conflicts
- * Three are accounted for;
+ * At last count, there were 5 shift/reduce and no reduce/reduce conflicts
+ * Four are accounted for;
  * One is "dangling else"
- * One is in attribute parsing
+ * Two is in attribute parsing
  * One is in ({ }) parsing
  */
 
@@ -630,7 +630,23 @@ struct_declarator: declarator attr_var {
 			if (fldchk(ie))
 				ie = 1;
 			if ($1->n_op == NAME) {
+				/* XXX - tymfix() may alter $1 */
 				tymerge($<nodep>0, tymfix($1));
+				soumemb($1, (char *)$1->n_sp, FIELD | ie);
+				nfree($1);
+			} else
+				uerror("illegal declarator");
+		}
+		|  declarator ':' e attr_spec_list {
+			int ie = con_e($3);
+			if (fldchk(ie))
+				ie = 1;
+			if ($1->n_op == NAME) {
+				/* XXX - tymfix() may alter $1 */
+				tymerge($<nodep>0, tymfix($1));
+				if ($4)
+					$1->n_ap = attr_add($1->n_ap,
+					    gcc_attr_parse($4));
 				soumemb($1, (char *)$1->n_sp, FIELD | ie);
 				nfree($1);
 			} else
@@ -1104,7 +1120,8 @@ term:		   term C_INCOP {  $$ = biop($2, $1, bcon(1)); }
 				$$ = $5;
 			}
 			$$ = biop(ADDROF, $$, NIL);
-			$3 = block(NAME, NIL, NIL, INTPTR, 0, MKAP(INTPTR));
+			$3 = block(NAME, NIL, NIL, ENUNSIGN(INTPTR), 0,
+			    MKAP(ENUNSIGN(INTPTR)));
 			$$ = biop(CAST, $3, $$);
 		}
 		|  C_ICON { $$ = $1; }
@@ -2050,6 +2067,8 @@ eve(NODE *p)
 	case PLUS:
 	case MINUS:
 	case ASSIGN:
+	case EQ:
+	case NE:
 #ifndef NO_COMPLEX
 		p1 = eve(p1);
 		p2 = eve(p2);
@@ -2069,8 +2088,6 @@ eve(NODE *p)
 	case GE:
 	case LT:
 	case LE:
-	case EQ:
-	case NE:
 	case RS:
 	case LS:
 	case RSEQ:

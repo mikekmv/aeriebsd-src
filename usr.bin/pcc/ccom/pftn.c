@@ -1418,6 +1418,8 @@ falloc(struct symtab *p, int w, NODE *pty)
 
 	type = p ? p->stype : pty->n_type;
 
+	if (type == BOOL)
+		type = BOOL_TYPE;
 	if (type < CHAR || type > ULONGLONG) {
 		uerror("illegal field type");
 		type = INT;
@@ -1758,7 +1760,7 @@ typenode(NODE *p)
 	if ((q = tc.saved) == NULL) {
 		TWORD t;
 		if ((t = BTYPE(tc.type)) > LDOUBLE && t != VOID &&
-		    !(t >= FIMAG && t <= LIMAG))
+		    t != BOOL && !(t >= FIMAG && t <= LIMAG))
 			cerror("typenode2 t %x", tc.type);
 		if (t == UNDEF) {
 			t = INT;
@@ -2747,7 +2749,6 @@ sspend()
 {
 	NODE *p, *q;
 	TWORD t;
-	int tmpnr = 0;
 	int lab;
 
 	if (retlab != NOLAB) {
@@ -2758,14 +2759,6 @@ sspend()
 	t = DECREF(cftnsp->stype);
 	if (t == BOOL)
 		t = BOOL_TYPE;
-
-	if (t != VOID && !ISSOU(t)) {
-		p = tempnode(0, t, cftnsp->sdf, cftnsp->sap);
-		tmpnr = regno(p);
-		q = block(REG, NIL, NIL, t, cftnsp->sdf, cftnsp->sap);
-		q->n_rval = RETREG(t);
-		ecomp(buildtree(ASSIGN, p, q));
-	}
 
 	p = block(NAME, NIL, NIL, INT, 0, MKAP(INT));
 	p->n_sp = lookup(stack_chk_canary, SNORMAL);
@@ -2790,13 +2783,6 @@ sspend()
 	ecomp(buildtree(UCALL, p, NIL));
 
 	plabel(lab);
-
-	if (t != VOID && !ISSOU(t)) {
-		p = tempnode(tmpnr, t, cftnsp->sdf, cftnsp->sap);
-		q = block(REG, NIL, NIL, t, cftnsp->sdf, cftnsp->sap);
-		q->n_rval = RETREG(t);
-		ecomp(buildtree(ASSIGN, q, p));
-	}
 }
 
 /*
@@ -3068,6 +3054,14 @@ cxop(int op, NODE *l, NODE *r)
 	q = cxstore(mxtyp);
 
 	switch (op) {
+	case NE:
+	case EQ:
+		tfree(q);
+		p = buildtree(op, comop(p, real_l), real_r);
+		q = buildtree(op, imag_l, imag_r);
+		p = buildtree(op == EQ ? ANDAND : OROR, p, q);
+		return p;
+
 	case PLUS:
 	case MINUS:
 		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, real), 
@@ -3113,6 +3107,8 @@ cxop(int op, NODE *l, NODE *r)
 		tfree(imag_r);
 		tfree(imag_l);
 		break;
+	default:
+		cerror("bad complex op %d", op);
 	}
 	return comop(p, q);
 }

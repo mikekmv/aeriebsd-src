@@ -563,7 +563,7 @@ again:	switch (o = p->n_op) {
 	case UGT:
 		p1 = p->n_left;
 		p2 = p->n_right;
-		if (p2->n_op == ICON && p2->n_lval == 0 &&
+		if (p2->n_op == ICON && p2->n_lval == 0 && *p2->n_name == 0 &&
 		    (dope[p1->n_op] & (FLOFLG|DIVFLG|SIMPFLG|SHFFLG))) {
 #ifdef mach_pdp11 /* XXX all targets? */
 			if ((rv = geninsn(p1, FORCC|QUIET)) != FFAIL)
@@ -1446,7 +1446,7 @@ delnums(NODE *p, void *arg)
 	NODE *r = ip->ip_node->n_left;
 	NODE *q;
 	TWORD t;
-	int cnt;
+	int cnt, num;
 
 	if (p->n_name[0] < '0' || p->n_name[0] > '9')
 		return; /* not numeric */
@@ -1459,18 +1459,20 @@ delnums(NODE *p, void *arg)
 
 	/* Delete number by adding move-to/from-temp.  Later on */
 	/* the temps may be rewritten to other LTYPEs */
-	t = p->n_left->n_type;
-	r = mklnode(TEMP, 0, p2env.epp->ip_tmpnum++, t);
+	num = p2env.epp->ip_tmpnum++;
 
 	/* pre node */
+	t = p->n_left->n_type;
+	r = mklnode(TEMP, 0, num, t);
 	ip2 = ipnode(mkbinode(ASSIGN, tcopy(r), p->n_left, t));
 	DLIST_INSERT_BEFORE(ip, ip2, qelem);
+	p->n_left = r;
 
 	/* post node */
+	t = q->n_left->n_type;
+	r = mklnode(TEMP, 0, num, t);
 	ip2 = ipnode(mkbinode(ASSIGN, q->n_left, tcopy(r), t));
 	DLIST_INSERT_AFTER(ip, ip2, qelem);
-
-	p->n_left = tcopy(r);
 	q->n_left = r;
 
 	p->n_name = tmpstrdup(q->n_name);

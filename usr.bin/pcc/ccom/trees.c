@@ -719,12 +719,25 @@ strargs( p ) register NODE *p;  { /* rewrite structure flavored arguments */
 int
 conval(NODE *p, int o, NODE *q)
 {
+	TWORD tl = p->n_type, tr = q->n_type, td;
 	int i, u;
 	CONSZ val;
 	U_CONSZ v1, v2;
 
 	val = q->n_lval;
-	u = ISUNSIGNED(p->n_type) || ISUNSIGNED(q->n_type);
+
+	/* make both sides same type */
+	if (tl < TMASK && tr < TMASK) {
+		td = tl > tr ? tl : tr;
+		if (td < INT)
+			td = INT;
+		u = ISUNSIGNED(td);
+		if (tl != td)
+			p = makety(p, td, 0, 0, MKAP(td));
+		if (tr != td)
+			q = makety(q, td, 0, 0, MKAP(td));
+	} else
+		u = ISUNSIGNED(tl) || ISUNSIGNED(tr);
 	if( u && (o==LE||o==LT||o==GE||o==GT)) o += (UGE-GE);
 
 	if (p->n_sp != NULL && q->n_sp != NULL)
@@ -733,6 +746,7 @@ conval(NODE *p, int o, NODE *q)
 		return(0);
 	if (p->n_sp != NULL && o != PLUS && o != MINUS)
 		return(0);
+
 	v1 = p->n_lval;
 	v2 = q->n_lval;
 	switch( o ){
@@ -924,6 +938,12 @@ chkpun(NODE *p)
 		return;
 	if (BTYPE(t2) == VOID && (t1 & TMASK))
 		return;
+
+	/* boolean have special syntax */
+	if (t1 == BOOL) {
+		if (!ISARY(t2)) /* Anything scalar */
+			return;
+	}
 
 	if (ISPTR(t1) || ISARY(t1))
 		q = p->n_right;
@@ -2134,6 +2154,26 @@ calc:		if (true < 0) {
 }
 
 /*
+ * Create a node for either TEMP or on-stack storage.
+ */
+static NODE *
+cstknode(TWORD t, union dimfun *df, struct attr *ap)
+{
+	struct symtab *sp;
+
+	/* create a symtab entry suitable for this type */
+	sp = getsymtab("0hej", STEMP);
+	sp->stype = t;
+	sp->sdf = df;
+	sp->sap = ap;
+	sp->sclass = AUTO;
+	sp->soffset = NOOFFSET;
+	oalloc(sp, &autooff);
+	return nametree(sp);
+
+}
+
+/*
  * Massage the output trees to remove C-specific nodes:
  *	COMOPs are split into separate statements.
  *	QUEST/COLON are rewritten to branches.
@@ -2144,9 +2184,10 @@ static void
 rmcops(NODE *p)
 {
 	TWORD type;
-	NODE *q, *r;
-	int o, ty, lbl, lbl2, tval = 0;
+	NODE *q, *r, *tval;
+	int o, ty, lbl, lbl2;
 
+	tval = NIL;
 	o = p->n_op;
 	ty = coptype(o);
 	if (BTYPE(p->n_type) == ENUMTY) { /* fixup enum */
@@ -2175,9 +2216,8 @@ rmcops(NODE *p)
 		q = p->n_right->n_left;
 		comops(q);
 		if (type != VOID) {
-			r = tempnode(0, q->n_type, q->n_df, q->n_ap);
-			tval = regno(r);
-			q = buildtree(ASSIGN, r, q);
+			tval = cstknode(q->n_type, q->n_df, q->n_ap);
+			q = buildtree(ASSIGN, ccopy(tval), q);
 		}
 		rmcops(q);
 		ecode(q); /* Done with assign */
@@ -2187,8 +2227,7 @@ rmcops(NODE *p)
 		q = p->n_right->n_right;
 		comops(q);
 		if (type != VOID) {
-			r = tempnode(tval, q->n_type, q->n_df, q->n_ap);
-			q = buildtree(ASSIGN, r, q);
+			q = buildtree(ASSIGN, ccopy(tval), q);
 		}
 		rmcops(q);
 		ecode(q); /* Done with assign */
@@ -2197,9 +2236,8 @@ rmcops(NODE *p)
 
 		nfree(p->n_right);
 		if (p->n_type != VOID) {
-			r = tempnode(tval, p->n_type, p->n_df, p->n_ap);
-			*p = *r;
-			nfree(r);
+			*p = *tval;
+			nfree(tval);
 		} else {
 			p->n_op = ICON;
 			p->n_lval = 0;
@@ -2226,17 +2264,18 @@ rmcops(NODE *p)
 		r = talloc();
 		*r = *p;
 		andorbr(r, -1, lbl = getlab());
-		q = tempnode(0, p->n_type, p->n_df, p->n_ap);
-		tval = regno(q);
-		r = tempnode(tval, p->n_type, p->n_df, p->n_ap);
-		ecode(buildtree(ASSIGN, q, bcon(1)));
+
+		tval = cstknode(p->n_type, p->n_df, p->n_ap);
+
+		ecode(buildtree(ASSIGN, ccopy(tval), bcon(1)));
 		branch(lbl2 = getlab());
 		plabel( lbl);
-		ecode(buildtree(ASSIGN, r, bcon(0)));
+		ecode(buildtree(ASSIGN, ccopy(tval), bcon(0)));
 		plabel( lbl2);
-		r = tempnode(tval, p->n_type, p->n_df, p->n_ap);
-		*p = *r;
-		nfree(r);
+
+		*p = *tval;
+		nfree(tval);
+
 #endif
 		break;
 	case CBRANCH:
