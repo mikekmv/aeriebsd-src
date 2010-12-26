@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.29 2010/11/08 15:44:35 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.30 2010/11/16 20:39:39 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -919,7 +919,7 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 	struct section *os;
 	Elf_Sym *esym = vs;
 	struct symlist **sidx, *sym;
-	char *name;
+	char *name, *laname;
 
 	if (!is)
 		return 0;
@@ -933,11 +933,13 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 	sidx = ol->ol_aux;
 
 	if (ELF_ST_TYPE(esym->st_info) == STT_SECTION) {
+		if (esym->st_shndx >= ol->ol_nsect)
+			errx(1, "%s: corrupt symbol table", es->name);
+
 		if (!(sym = calloc(1, sizeof *sym)))
 			err(1, "calloc");
 
-		if (esym->st_shndx >= ol->ol_nsect)
-			errx(1, "%s: corrupt symbol table", es->name);
+		ELF_SYM(sym->sl_elfsym) = *esym;
 		sym->sl_sect = ol->ol_sections + esym->st_shndx;
 		sym->sl_name = NULL;
 		sidx[is] = sym;
@@ -947,6 +949,7 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 	if (esym->st_name >= es->stabsz)
 		err(1, "%s: invalid symtab entry #%d", es->name, is);
 	name = es->stab + esym->st_name;
+	laname = NULL;
 if (is && *name == '\0') warnx("#%d is null", is);
 
 	/* skip file names and size defs */
@@ -1001,13 +1004,31 @@ if (is && *name == '\0') warnx("#%d is null", is);
 			err(1, "%s: invalid section index for #%d",
 			    es->name, is);
 		os = ol->ol_sections + esym->st_shndx;
-		if (ELF_ST_BIND(esym->st_info) == STB_LOCAL) {
-			if (asprintf(&name, "%s.%d", name, next++) < 0)
-				err(1, "asprintf");
-/* XXX leaking */
+		if ((sym = sym_isdefined(name, ol->ol_sections))) {
+			if (ELF_ST_BIND(esym->st_info) == STB_LOCAL) {
+				if (asprintf(&name, "%s.%ld", name,
+				    sym->sl_next++) < 0)
+					err(1, "asprintf");
+				laname = name;
+				sym = sym_isdefined(name, ol->ol_sections);
+			} else if (ELF_ST_BIND(ELF_SYM(sym->sl_elfsym).st_info)
+			    == STB_LOCAL) {
+				char *nn;
+				if (asprintf(&nn, "%s.%ld", name,
+				    sym->sl_next++) < 0)
+					err(1, "asprintf");
+				/* discard const */
+				/*
+				 * here we assume that the new name would
+				 * not change the symbol tree order
+				 * (since names like this did not exist)
+				 */
+				laname = (char *)sym->sl_name;
+				sym->sl_name = nn;
+				sym = NULL;
+			}
 		}
-		if ((sym = sym_isdefined(name, ol->ol_sections)) &&
-		    ELF_SYM(sym->sl_elfsym).st_shndx == SHN_COMMON)
+		if (sym && ELF_SYM(sym->sl_elfsym).st_shndx == SHN_COMMON)
 			sym = sym_redef(sym, os, esym);
 		else if (sym)
 			warnx("%s: %s: already defined in %s",
@@ -1017,6 +1038,8 @@ if (is && *name == '\0') warnx("#%d is null", is);
 			sym = sym_define(sym, os, vs);
 		else
 			sym = sym_add(name, os, vs);
+		if (laname)
+			free(laname);
 	}
 
 	sidx[is] = sym;

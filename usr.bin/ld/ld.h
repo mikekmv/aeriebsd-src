@@ -63,6 +63,7 @@ struct symlist {
 	} sl_elfsym;
 	struct section *sl_sect;	/* section where defined */
 	const char *sl_name;
+	long sl_next;			/* uniq local name counter */
 };
 extern struct symlist *sentry;
 
