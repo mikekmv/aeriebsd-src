@@ -122,8 +122,6 @@ typedef long long OFFSZ;
 
 #define FINDMOPS	/* i386 has instructions that modifies memory */
 
-#define	CC_DIV_0	/* division by zero is safe in the compiler */
-
 /* Definitions mostly used in pass2 */
 
 #define BYTEOFF(x)	((x)&07)
@@ -150,7 +148,6 @@ typedef long long OFFSZ;
  * The classes used on amd64 are:
  *	A - integer registers
  *	B - xmm registers
- *	C - x87 registers
  */
 #define	RAX	000
 #define	RDX	001
@@ -186,7 +183,7 @@ typedef long long OFFSZ;
 #define	XMM14	036
 #define	XMM15	037
 
-#define	MAXREGS	050	/* 40 registers */
+#define	MAXREGS	040	/* 32 registers */
 
 #define	RSTATUS	\
 	SAREG|TEMPREG, SAREG|TEMPREG, SAREG|TEMPREG, SAREG|PERMREG,	\
@@ -196,13 +193,10 @@ typedef long long OFFSZ;
 	SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG,	\
 	SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG,	\
 	SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG,	\
-	SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG,	\
-	SCREG, SCREG, SCREG, SCREG,  SCREG, SCREG, SCREG, SCREG,
-
+	SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG, SBREG|TEMPREG,
 
 /* no overlapping registers at all */
 #define	ROVERLAP \
-	{ -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, \
 	{ -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, \
 	{ -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, \
 	{ -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, { -1 }, \
@@ -210,21 +204,19 @@ typedef long long OFFSZ;
 
 
 /* Return a register class based on the type of the node */
-#define PCLASS(p) (p->n_type == FLOAT || p->n_type == DOUBLE ? SBREG : \
-		   p->n_type == LDOUBLE ? SCREG : SAREG)
+#define PCLASS(p) (p->n_type >= FLOAT && p->n_type <= LDOUBLE ? SBREG : SAREG)
 
-#define	NUMCLASS 	3	/* highest number of reg classes used */
+#define	NUMCLASS 	2	/* highest number of reg classes used */
 
 int COLORMAP(int c, int *r);
-#define	GCLASS(x) (x < 16 ? CLASSA : x < 32 ? CLASSB : CLASSC)
+#define	GCLASS(x) (x < 16 ? CLASSA : CLASSB)
 #define DECRA(x,y)	(((x) >> (y*8)) & 255)	/* decode encoded regs */
 #define	ENCRD(x)	(x)		/* Encode dest reg in n_reg */
 #define ENCRA1(x)	((x) << 8)	/* A1 */
 #define ENCRA2(x)	((x) << 16)	/* A2 */
 #define ENCRA(x,y)	((x) << (8+y*8))	/* encode regs in int */
 
-#define	RETREG(x)	(x == FLOAT || x == DOUBLE ? XMM0 : \
-			 x == LDOUBLE ? 32 : RAX)
+#define	RETREG(x)	(x == FLOAT || x == DOUBLE || x == LDOUBLE ? XMM0 : RAX)
 
 /* XXX - to die */
 #define FPREG	RBP	/* frame pointer */
@@ -245,20 +237,33 @@ int COLORMAP(int c, int *r);
 /*
  * i386-specific symbol table flags.
  */
-#define SBEENHERE	SLOCAL1
+#define	SSECTION	SLOCAL1
 #define	STLS		SLOCAL2
+#define	SNOUNDERSCORE	SLOCAL3
+#define SSTDCALL	SLOCAL2	
+#define SDLLINDIRECT	SLOCAL3
+
+/*
+ * i386-specific node flags.
+ */
+#define FSTDCALL	0x01
+
+/*
+ * i386-specific interpass stuff.
+ */
+
+#define TARGET_IPP_MEMBERS			\
+	int ipp_argstacksize;
 
 /*
  * Extended assembler macros.
  */
-int xasmconstregs(char *);
-void targarg(char *w, void *arg, int n);
+void targarg(char *w, void *arg);
 #define	XASM_TARGARG(w, ary)	\
 	(w[1] == 'b' || w[1] == 'h' || w[1] == 'w' || w[1] == 'k' ? \
-	w++, targarg(w, ary, n), 1 : 0)
+	w++, targarg(w, ary), 1 : 0)
 int numconv(void *ip, void *p, void *q);
 #define	XASM_NUMCONV(ip, p, q)	numconv(ip, p, q)
-#define	XASMCONSTREGS(x)	xasmconstregs(x)
 
 /*
  * builtins.
@@ -276,10 +281,10 @@ int numconv(void *ip, void *p, void *q);
 
 #define NODE struct node
 struct node;
-NODE *amd64_builtin_stdarg_start(NODE *f, NODE *a, unsigned int);
-NODE *amd64_builtin_va_arg(NODE *f, NODE *a, unsigned int);
-NODE *amd64_builtin_va_end(NODE *f, NODE *a, unsigned int);
-NODE *amd64_builtin_va_copy(NODE *f, NODE *a, unsigned int);
-NODE *i386_builtin_frame_address(NODE *f, NODE *a, unsigned int);
-NODE *i386_builtin_return_address(NODE *f, NODE *a, unsigned int);
+NODE *amd64_builtin_stdarg_start(NODE *f, NODE *a);
+NODE *amd64_builtin_va_arg(NODE *f, NODE *a);
+NODE *amd64_builtin_va_end(NODE *f, NODE *a);
+NODE *amd64_builtin_va_copy(NODE *f, NODE *a);
+NODE *i386_builtin_frame_address(NODE *f, NODE *a);
+NODE *i386_builtin_return_address(NODE *f, NODE *a);
 #undef NODE

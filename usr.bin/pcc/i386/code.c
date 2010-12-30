@@ -38,7 +38,6 @@ void
 defloc(struct symtab *sp)
 {
 	extern char *nextsect;
-	struct attr *ap;
 	int weak = 0;
 	char *name = NULL;
 #if defined(ELFABI) || defined(PECOFFABI)
@@ -66,23 +65,25 @@ defloc(struct symtab *sp)
 #endif
 #ifdef GCC_COMPAT
 	{
-		if ((ap = attr_find(sp->sap, GCC_ATYP_SECTION)) != NULL)
-			nextsect = ap->sarg(0);
-		if (attr_find(sp->sap, GCC_ATYP_WEAK) != NULL)
+		struct gcc_attrib *ga;
+
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_SECTION)) != NULL)
+			nextsect = ga->a1.sarg;
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_WEAK)) != NULL)
 			weak = 1;
-		if (attr_find(sp->sap, GCC_ATYP_DESTRUCTOR)) {
+		if (gcc_get_attr(sp->ssue, GCC_ATYP_DESTRUCTOR)) {
 			printf("\t.section\t.dtors,\"aw\",@progbits\n");
 			printf("\t.align 4\n\t.long\t%s\n", name);
 			lastloc = -1;
 		}
-		if (attr_find(sp->sap, GCC_ATYP_CONSTRUCTOR)) {
+		if (gcc_get_attr(sp->ssue, GCC_ATYP_CONSTRUCTOR)) {
 			printf("\t.section\t.ctors,\"aw\",@progbits\n");
 			printf("\t.align 4\n\t.long\t%s\n", name);
 			lastloc = -1;
 		}
-		if ((ap = attr_find(sp->sap, GCC_ATYP_VISIBILITY)) &&
-		    strcmp(ap->sarg(0), "default"))
-			printf("\t.%s %s\n", ap->sarg(0), name);
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_VISIBILITY)) &&
+		    strcmp(ga->a1.sarg, "default"))
+			printf("\t.%s %s\n", ga->a1.sarg, name);
 	}
 #endif
 #ifdef ELFABI
@@ -108,7 +109,7 @@ defloc(struct symtab *sp)
 	lastloc = s;
 	while (ISARY(t))
 		t = DECREF(t);
-	al = ISFTN(t) ? ALINT : talign(t, sp->sap);
+	al = ISFTN(t) ? ALINT : talign(t, sp->ssue);
 	if (al > ALCHAR)
 		printf("	.align %d\n", al/ALCHAR);
 	if (weak)
@@ -141,40 +142,40 @@ efcode()
 		return;
 #if defined(os_openbsd)
 	/* struct return for small structs */
-	int sz = tsize(BTYPE(cftnsp->stype), cftnsp->sdf, cftnsp->sap);
+	int sz = tsize(BTYPE(cftnsp->stype), cftnsp->sdf, cftnsp->ssue);
 	if (sz == SZCHAR || sz == SZSHORT || sz == SZINT || sz == SZLONGLONG) {
 		/* Pointer to struct in eax */
 		if (sz == SZLONGLONG) {
-			q = block(OREG, NIL, NIL, INT, 0, MKAP(INT));
+			q = block(OREG, NIL, NIL, INT, 0, MKSUE(INT));
 			q->n_lval = 4;
-			p = block(REG, NIL, NIL, INT, 0, MKAP(INT));
+			p = block(REG, NIL, NIL, INT, 0, MKSUE(INT));
 			p->n_rval = EDX;
 			ecomp(buildtree(ASSIGN, p, q));
 		}
 		if (sz < SZSHORT) sz = CHAR;
 		else if (sz > SZSHORT) sz = INT;
 		else sz = SHORT;
-		q = block(OREG, NIL, NIL, sz, 0, MKAP(sz));
-		p = block(REG, NIL, NIL, sz, 0, MKAP(sz));
+		q = block(OREG, NIL, NIL, sz, 0, MKSUE(sz));
+		p = block(REG, NIL, NIL, sz, 0, MKSUE(sz));
 		ecomp(buildtree(ASSIGN, p, q));
 		return;
 	}
 #endif
 	/* Create struct assignment */
-	q = block(OREG, NIL, NIL, PTR+STRTY, 0, cftnsp->sap);
+	q = block(OREG, NIL, NIL, PTR+STRTY, 0, cftnsp->ssue);
 	q->n_rval = EBP;
 	q->n_lval = 8; /* return buffer offset */
 	q = buildtree(UMUL, q, NIL);
-	p = block(REG, NIL, NIL, PTR+STRTY, 0, cftnsp->sap);
+	p = block(REG, NIL, NIL, PTR+STRTY, 0, cftnsp->ssue);
 	p = buildtree(UMUL, p, NIL);
 	p = buildtree(ASSIGN, q, p);
 	ecomp(p);
 
 	/* put hidden arg in eax on return */
-	q = block(OREG, NIL, NIL, INT, 0, MKAP(INT));
+	q = block(OREG, NIL, NIL, INT, 0, MKSUE(INT));
 	regno(q) = FPREG;
 	q->n_lval = 8;
-	p = block(REG, NIL, NIL, INT, 0, MKAP(INT));
+	p = block(REG, NIL, NIL, INT, 0, MKSUE(INT));
 	regno(p) = EAX;
 	ecomp(buildtree(ASSIGN, p, q));
 }
@@ -196,7 +197,7 @@ bfcode(struct symtab **sp, int cnt)
 		/* Function returns struct, adjust arg offset */
 #if defined(os_openbsd)
 		/* OpenBSD uses non-standard return for small structs */
-		int sz = tsize(BTYPE(cftnsp->stype), cftnsp->sdf, cftnsp->sap);
+		int sz = tsize(BTYPE(cftnsp->stype), cftnsp->sdf, cftnsp->ssue);
 		if (sz != SZCHAR && sz != SZSHORT &&
 		    sz != SZINT && sz != SZLONGLONG)
 #endif
@@ -205,7 +206,7 @@ bfcode(struct symtab **sp, int cnt)
 	}
 
 #ifdef GCC_COMPAT
-	if (attr_find(cftnsp->sap, GCC_ATYP_STDCALL) != NULL)
+	if (gcc_get_attr(cftnsp->ssue, GCC_ATYP_STDCALL) != NULL)
 		cftnsp->sflags |= SSTDCALL;
 #endif
 
@@ -224,7 +225,7 @@ bfcode(struct symtab **sp, int cnt)
 			TWORD t = sp[i]->stype;
 			if (t == STRTY || t == UNIONTY)
 				argstacksize +=
-				    tsize(t, sp[i]->sdf, sp[i]->sap);
+				    tsize(t, sp[i]->sdf, sp[i]->ssue);
 			else
 				argstacksize += szty(t) * SZINT / SZCHAR;
 		}
@@ -249,11 +250,11 @@ bfcode(struct symtab **sp, int cnt)
 #endif
 
 		/* Generate extended assembler for PIC prolog */
-		p = tempnode(0, INT, 0, MKAP(INT));
+		p = tempnode(0, INT, 0, MKSUE(INT));
 		gotnr = regno(p);
-		p = block(XARG, p, NIL, INT, 0, MKAP(INT));
+		p = block(XARG, p, NIL, INT, 0, MKSUE(INT));
 		p->n_name = "=g";
-		p = block(XASM, p, bcon(0), INT, 0, MKAP(INT));
+		p = block(XASM, p, bcon(0), INT, 0, MKSUE(INT));
 
 #if defined(MACHOABI)
 		if ((name = cftnsp->soname) == NULL)
@@ -283,7 +284,7 @@ bfcode(struct symtab **sp, int cnt)
 		if (cqual(sp[i]->stype, sp[i]->squal) & VOL)
 			continue;
 		sp2 = sp[i];
-		n = tempnode(0, sp[i]->stype, sp[i]->sdf, sp[i]->sap);
+		n = tempnode(0, sp[i]->stype, sp[i]->sdf, sp[i]->ssue);
 		n = buildtree(ASSIGN, n, nametree(sp2));
 		sp[i]->soffset = regno(n->n_left);
 		sp[i]->sflags |= STNODE;
@@ -367,7 +368,7 @@ funcode(NODE *p)
 		if (r->n_right->n_op != STARG)
 			r->n_right = block(FUNARG, r->n_right, NIL,
 			    r->n_right->n_type, r->n_right->n_df,
-			    r->n_right->n_ap);
+			    r->n_right->n_sue);
 	}
 	if (r->n_op != STARG) {
 		l = talloc();
@@ -380,15 +381,15 @@ funcode(NODE *p)
 		return p;
 #if defined(ELFABI)
 	/* Create an ASSIGN node for ebx */
-	l = block(REG, NIL, NIL, INT, 0, MKAP(INT));
+	l = block(REG, NIL, NIL, INT, 0, MKSUE(INT));
 	l->n_rval = EBX;
-	l = buildtree(ASSIGN, l, tempnode(gotnr, INT, 0, MKAP(INT)));
+	l = buildtree(ASSIGN, l, tempnode(gotnr, INT, 0, MKSUE(INT)));
 	if (p->n_right->n_op != CM) {
-		p->n_right = block(CM, l, p->n_right, INT, 0, MKAP(INT));
+		p->n_right = block(CM, l, p->n_right, INT, 0, MKSUE(INT));
 	} else {
 		for (r = p->n_right; r->n_left->n_op == CM; r = r->n_left)
 			;
-		r->n_left = block(CM, l, r->n_left, INT, 0, MKAP(INT));
+		r->n_left = block(CM, l, r->n_left, INT, 0, MKSUE(INT));
 	}
 #endif
 	return p;

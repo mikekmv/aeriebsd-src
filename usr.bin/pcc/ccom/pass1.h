@@ -46,6 +46,7 @@ typedef unsigned int bittype; /* XXX - for basicblock */
 #endif
 #include "manifest.h"
 
+#include "protos.h"
 #include "ccconfig.h"
 
 /*
@@ -65,15 +66,15 @@ typedef unsigned int bittype; /* XXX - for basicblock */
 #define MOU		11
 #define UNAME		12
 #define TYPEDEF		13
-/* #define FORTRAN		14 */
+#define FORTRAN		14
 #define ENAME		15
 #define MOE		16
-/* #define UFORTRAN 	17 */
+#define UFORTRAN 	17
 #define USTATIC		18
 
 	/* field size is ORed in */
-#define FIELD		0200
-#define FLDSIZ		0177
+#define FIELD		0100
+#define FLDSIZ		077
 extern	char *scnames(int);
 
 /*
@@ -115,9 +116,6 @@ struct gcc_attr_pack;
  * Dimension/prototype information.
  * 	ddim > 0 holds the dimension of an array.
  *	ddim < 0 is a dynamic array and refers to a tempnode.
- *	...unless:
- *		ddim == NOOFFSET, an array without dimenston, "[]"
- *		ddim == -1, dynamic array while building before defid.
  */
 union dimfun {
 	int	ddim;		/* Dimension of an array */
@@ -125,12 +123,27 @@ union dimfun {
 };
 
 /*
+ * Struct/union/enum definition.
+ * The first element (size) is used for other types as well.
+ */
+struct suedef {
+	int	suesize;	/* Size of the struct */
+	int	suealign;	/* Alignment of this struct */
+	struct	symtab *suem;	/* the list of elements in struct/unions */
+	struct	suedef *suep;	/* parent, if any */
+#ifdef GCC_COMPAT
+	struct	gcc_attr_pack *suega;
+#endif
+};
+#define GETSUE(x, y)	for (x = y; x->suep; x = x->suep)
+
+/*
  * Argument list member info when storing prototypes.
  */
 union arglist {
 	TWORD type;
 	union dimfun *df;
-	struct attr *sap;
+	struct suedef *sue;
 };
 #define TNULL		INCREF(FARG) /* pointer to FARG -- impossible type */
 #define TELLIPSIS 	INCREF(INCREF(FARG))
@@ -149,18 +162,11 @@ struct	symtab {
 	TWORD	stype;		/* type word */
 	TWORD	squal;		/* qualifier word */
 	union	dimfun *sdf;	/* ptr to the dimension/prototype array */
-	struct	attr *sap;	/* the base type attribute list */
+	struct	suedef *ssue;	/* ptr to the definition table */
 };
 
-struct attr2 {
-	struct attr *next;
-	int atype;
-	union aarg aa[2];
-};
-
-#define	ISSOU(ty)   ((ty) == STRTY || (ty) == UNIONTY)
-#define	MKAP(type)  ((struct attr *)&btattr[type])
-extern const struct attr2 btattr[];
+#define	MKSUE(type)  &btdims[type]
+extern struct suedef btdims[];
 
 /*
  * External definitions
@@ -217,13 +223,13 @@ extern char *pragma_renamed;
 /* declarations of various functions */
 extern	NODE
 	*buildtree(int, NODE *, NODE *r),
-	*mkty(unsigned, union dimfun *, struct attr *),
+	*mkty(unsigned, union dimfun *, struct suedef *),
 	*rstruct(char *, int),
 	*dclstruct(struct rstack *),
 	*strend(int gtype, char *),
 	*tymerge(NODE *, NODE *),
 	*stref(NODE *),
-	*offcon(OFFSZ, TWORD, union dimfun *, struct attr *),
+	*offcon(OFFSZ, TWORD, union dimfun *, struct suedef *),
 	*bcon(int),
 	*xbcon(CONSZ, struct symtab *, TWORD),
 	*bpsize(NODE *),
@@ -232,18 +238,18 @@ extern	NODE
 	*oconvert(NODE *),
 	*ptmatch(NODE *),
 	*tymatch(NODE *),
-	*makety(NODE *, TWORD, TWORD, union dimfun *, struct attr *),
-	*block(int, NODE *, NODE *, TWORD, union dimfun *, struct attr *),
+	*makety(NODE *, TWORD, TWORD, union dimfun *, struct suedef *),
+	*block(int, NODE *, NODE *, TWORD, union dimfun *, struct suedef *),
 	*doszof(NODE *),
 	*talloc(void),
 	*optim(NODE *),
 	*clocal(NODE *),
 	*ccopy(NODE *),
-	*tempnode(int, TWORD, union dimfun *, struct attr *),
+	*tempnode(int, TWORD, union dimfun *, struct suedef *),
 	*eve(NODE *),
 	*doacall(struct symtab *, NODE *, NODE *);
 NODE	*intprom(NODE *);
-OFFSZ	tsize(TWORD, union dimfun *, struct attr *),
+OFFSZ	tsize(TWORD, union dimfun *, struct suedef *),
 	psize(NODE *);
 NODE *	typenode(NODE *new);
 void	spalloc(NODE *, NODE *, OFFSZ);
@@ -254,7 +260,7 @@ NODE	*bdty(int op, ...);
 extern struct rstack *rpole;
 
 int oalloc(struct symtab *, int *);
-void deflabel(char *, NODE *);
+void deflabel(char *);
 void gotolabel(char *);
 unsigned int esccon(char **);
 void inline_start(struct symtab *);
@@ -276,7 +282,7 @@ char *addname(char *);
 void symclear(int);
 struct symtab *hide(struct symtab *);
 void soumemb(NODE *, char *, int);
-int talign(unsigned int, struct attr *);
+int talign(unsigned int, struct suedef *);
 void bfcode(struct symtab **, int);
 int chkftn(union arglist *, union arglist *);
 void branch(int);
@@ -328,7 +334,6 @@ int nncon(NODE *);
 void cunput(char);
 NODE *nametree(struct symtab *sp);
 void *inlalloc(int size);
-void *blkalloc(int size);
 void pass1_lastchance(struct interpass *);
 void fldty(struct symtab *p);
 int getlab(void);
@@ -341,30 +346,10 @@ NODE *cxelem(int op, NODE *p);
 NODE *cxconj(NODE *p);
 NODE *cxret(NODE *p, NODE *q);
 NODE *cast(NODE *p, TWORD t, TWORD q);
-NODE *ccast(NODE *p, TWORD t, TWORD u, union dimfun *df, struct attr *sue);
-int andable(NODE *);
-int conval(NODE *, int, NODE *);
-int ispow2(CONSZ);
-void defid(NODE *q, int class);
-void efcode(void);
-void ecomp(NODE *p);
-void cendarg(void);
-int fldal(unsigned int);
-int upoff(int size, int alignment, int *poff);
-void nidcl(NODE *p, int class);
-void eprint(NODE *, int, int *, int *);
-int uclass(int class);
-int notlval(NODE *);
-void ecode(NODE *p);
-void bccode(void);
-void ftnend(void);
-void dclargs(void);
-int suemeq(struct attr *s1, struct attr *s2);
-struct symtab *strmemb(struct attr *ap);
-int yylex(void);
-void yyerror(char *);
+NODE *ccast(NODE *p, TWORD t, TWORD u, union dimfun *df, struct suedef *sue);
 
 NODE *builtin_check(NODE *f, NODE *a);
+
 
 #ifdef SOFTFLOAT
 typedef struct softfloat SF;
@@ -414,16 +399,9 @@ CONSZ soft_val(SF);
 #define FLOAT_LT(x1,x2)		(x1) < (x2)
 #endif
 
-enum {	ATTR_NONE,
-
-	/* PCC used attributes */
-	ATTR_COMPLEX,	/* Internal definition of complex */
-	ATTR_BASETYP,	/* Internal; see below */
-	ATTR_QUALTYP,	/* Internal; const/volatile, see below */
-	ATTR_STRUCT,	/* Internal; element list */
-#define	ATTR_MAX ATTR_STRUCT
-
 #ifdef GCC_COMPAT
+enum {	GCC_ATYP_NONE,
+
 	/* type attributes */
 	GCC_ATYP_ALIGNED,
 	GCC_ATYP_PACKED,
@@ -461,51 +439,38 @@ enum {	ATTR_NONE,
 	GCC_ATYP_WEAKREF,
 	GCC_ATYP_ALLOCSZ,
 	GCC_ATYP_ALW_INL,
-	GCC_ATYP_TLSMODEL,
 
 	/* other stuff */
 	GCC_ATYP_BOUNDED,	/* OpenBSD extra boundary checks */
+	ATTR_COMPLEX,		/* Internal definition of complex */
 
 	GCC_ATYP_MAX
-#endif
 };
 
+union gcc_aarg {
+	int iarg;
+	char *sarg;
+};
 
-/*
- * ATTR_BASETYP has the following layout:
- * aa[0].iarg has size
- * aa[1].iarg has alignment
- * ATTR_QUALTYP has the following layout:
- * aa[0].iarg has CON/VOL + FUN/ARY/PTR
- * Not defined yet...
- * aa[3].iarg is dimension for arrays (XXX future)
- * aa[3].varg is function defs for functions.
- */
-#define	atypsz	aa[0].iarg
-#define	aalign	aa[1].iarg
+struct gcc_attrib {
+	int atype;
+	union gcc_aarg a1, a2, a3;
+};
 
-/*
- * ATTR_STRUCT member list.
- */
-#define amlist  aa[0].varg
-#define	strattr(x)	(attr_find(x, ATTR_STRUCT))
+struct gcc_attr_pack {
+	int num;
+	struct gcc_attrib ga[];
+};
 
-#define	iarg(x)	aa[x].iarg
-#define	sarg(x)	aa[x].sarg
-#define	varg(x)	aa[x].varg
+typedef struct gcc_attr_pack gcc_ap_t;
 
 void gcc_init(void);
 int gcc_keyword(char *, NODE **);
-struct attr *gcc_attr_parse(NODE *);
-void gcc_tcattrfix(NODE *);
+gcc_ap_t *gcc_attr_parse(NODE *);
+void gcc_tcattrfix(NODE *, NODE *);
 struct gcc_attrib *gcc_get_attr(struct suedef *, int);
-void dump_attr(struct attr *gap);
-
-struct attr *attr_add(struct attr *orig, struct attr *new);
-struct attr *attr_new(int, int);
-struct attr *attr_find(struct attr *, int);
-struct attr *attr_copy(struct attr *src, struct attr *dst, int nelem);
-struct attr *attr_dup(struct attr *ap, int n);
+void dump_attr(gcc_ap_t *gap);
+#endif
 
 #ifdef STABS
 void stabs_init(void);
@@ -517,7 +482,7 @@ void stabs_lbrac(int);
 void stabs_func(struct symtab *);
 void stabs_newsym(struct symtab *);
 void stabs_chgsym(struct symtab *);
-void stabs_struct(struct symtab *, struct attr *);
+void stabs_struct(struct symtab *, struct suedef *);
 #endif
 
 #ifndef CHARCAST
@@ -577,7 +542,6 @@ void stabs_struct(struct symtab *, struct attr *);
 #define ATTRIB		(MAXOP+30)
 #define XREAL		(MAXOP+31)
 #define XIMAG		(MAXOP+32)
-#define TYMERGE		(MAXOP+33)
 
 
 /*
@@ -596,7 +560,7 @@ void stabs_struct(struct symtab *, struct attr *);
 #define	ISFTY(x)	((x) >= FLOAT && (x) <= LDOUBLE)
 #define	ISCTY(x)	((x) >= FCOMPLEX && (x) <= LCOMPLEX)
 #define	ISITY(x)	((x) >= FIMAG && (x) <= LIMAG)
-#define ANYCX(p) (p->n_type == STRTY && attr_find(p->n_ap, ATTR_COMPLEX))
+#define ANYCX(p) (p->n_type == STRTY && gcc_get_attr(p->n_sue, ATTR_COMPLEX))
 
 #define coptype(o)	(cdope(o)&TYFLG)
 #define clogop(o)	(cdope(o)&LOGFLG)

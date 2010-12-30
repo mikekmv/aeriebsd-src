@@ -166,7 +166,7 @@ inline_end()
 	if (sdebug)printip(&cifun->shead);
 	isinlining = 0;
 
-	if (attr_find(cifun->sp->sap, GCC_ATYP_GNU_INLINE)) {
+	if (gcc_get_attr(cifun->sp->ssue, GCC_ATYP_GNU_INLINE)) {
 		if (cifun->sp->sclass == EXTDEF)
 			cifun->sp->sclass = 0;
 		else
@@ -341,14 +341,14 @@ mnode(int *n, NODE *p)
 
 	if (p->n_op == CM) {
 		q = p->n_right;
-		q = tempnode(num, q->n_type, q->n_df, q->n_ap);
+		q = tempnode(num, q->n_type, q->n_df, q->n_sue);
 		n--;
 		p->n_right = buildtree(ASSIGN, q, p->n_right);
 		p->n_left = mnode(n, p->n_left);
 		p->n_op = COMOP;
 	} else {
 		p = pconvert(p);
-		q = tempnode(num, p->n_type, p->n_df, p->n_ap);
+		q = tempnode(num, p->n_type, p->n_df, p->n_sue);
 		p = buildtree(ASSIGN, q, p);
 	}
 	return p;
@@ -379,14 +379,14 @@ inlinetree(struct symtab *sp, NODE *f, NODE *ap)
 	OFFSZ stkoff;
 	NODE *p, *rp;
 
-	if (is == NULL || nerrors) {
+	if (is == NULL) {
 		inline_ref(sp); /* prototype of not yet declared inline ftn */
 		return NIL;
 	}
 
 	SDEBUG(("inlinetree(%p,%p) OK %d\n", f, ap, is->flags & CANINL));
 
-	gainl = attr_find(sp->sap, GCC_ATYP_ALW_INL) != NULL;
+	gainl = gcc_get_attr(sp->ssue, GCC_ATYP_ALW_INL) != NULL;
 
 	if ((is->flags & CANINL) == 0 && gainl)
 		werror("cannot inline but always_inline");
@@ -479,10 +479,10 @@ inlinetree(struct symtab *sp, NODE *f, NODE *ap)
 	branch(l2);
 	plabel(l0);
 
-	rp = block(GOTO, bcon(l1), NIL, INT, 0, MKAP(INT));
+	rp = block(GOTO, bcon(l1), NIL, INT, 0, MKSUE(INT));
 	if (is->retval)
 		p = tempnode(is->retval + toff, DECREF(sp->stype),
-		    sp->sdf, sp->sap);
+		    sp->sdf, sp->ssue);
 	else
 		p = bcon(0);
 	rp = buildtree(COMOP, rp, p);

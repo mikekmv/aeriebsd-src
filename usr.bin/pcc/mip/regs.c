@@ -940,10 +940,6 @@ setxarg(NODE *p)
 	if (XASMISOUT(cw))
 		ut = 1;
 
-#ifdef MYSETXARG
-	MYSETXARG;
-#endif
-
 	switch (XASMVAL(cw)) {
 	case 'm':
 	case 'g':
@@ -964,6 +960,7 @@ setxarg(NODE *p)
 		}
 		addalledges(&rw[i]);
 		break;
+
 
 	case 'i':
 	case 'n':
@@ -2490,9 +2487,6 @@ temparg(struct interpass *ipole, REGW *w)
 		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
 			comperr("temparg");
 #endif
-		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
-			continue; /* unknown tree */
-
 		if (p->n_right->n_op != OREG)
 			continue; /* arg in register */
 		if (w != &nblock[regno(p->n_left)])
@@ -2612,13 +2606,8 @@ if (p->n_reg == -1) goto foo;
 	} else {
 foo:		fprintf(fp, "REG ");
 		if (p->n_reg != -1) {
-			for (i = 0; i < n+1; i++) {
-				int r = DECRA(p->n_reg, i);
-				if (r >= MAXREGS)
-					fprintf(fp, "<badreg> ");
-				else
-					fprintf(fp, "%s ", rnames[r]);
-			}
+			for (i = 0; i < n+1; i++)
+				fprintf(fp, "%s ", rnames[DECRA(p->n_reg, i)]);
 		} else
 			fprintf(fp, "<undef>");
 	}

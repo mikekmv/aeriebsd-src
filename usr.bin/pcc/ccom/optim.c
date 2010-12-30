@@ -82,7 +82,7 @@ short revrel[] ={ EQ, NE, GE, GT, LE, LT, UGE, UGT, ULE, ULT };
 NODE *
 optim(NODE *p)
 {
-	struct attr *ap;
+	struct suedef *sue;
 	int o, ty;
 	NODE *sp, *q;
 	int i;
@@ -122,27 +122,21 @@ again:	o = p->n_op;
 		/* paint over the type of the left hand side with the type of the top */
 		p->n_left->n_type = p->n_type;
 		p->n_left->n_df = p->n_df;
-		p->n_left->n_ap = p->n_ap;
+		p->n_left->n_sue = p->n_sue;
 		q = p->n_left;
 		nfree(p);
 		return q;
 
 	case UMUL:
-		if (LO(p) == ADDROF) {
-			q = p->n_left->n_left;
-			nfree(p->n_left);
-			nfree(p);
-			return q;
-		}
 		if( LO(p) != ICON ) break;
 		LO(p) = NAME;
 		goto setuleft;
 
 	case RS:
-		ap = attr_find(p->n_ap, ATTR_BASETYP);
+		GETSUE(sue, p->n_sue);
 
 		if (LO(p) == RS && RCON(p->n_left) && RCON(p) &&
-		    (RV(p) + RV(p->n_left)) < ap->atypsz) {
+		    (RV(p) + RV(p->n_left)) < sue->suesize) {
 			/* two right-shift  by constants */
 			RV(p) += RV(p->n_left);
 			p->n_left = zapleft(p->n_left);
@@ -171,9 +165,8 @@ again:	o = p->n_op;
 			} else
 #endif
 			/* avoid larger shifts than type size */
-			if (RV(p) >= ap->atypsz) {
-				RV(p) = RV(p) % 
-				    attr_find(p->n_ap, ATTR_BASETYP)->atypsz;
+			if (RV(p) >= sue->suesize) {
+				RV(p) = RV(p) % p->n_sue->suesize;
 				werror("shift larger than type");
 			}
 			if (RV(p) == 0)
@@ -182,7 +175,7 @@ again:	o = p->n_op;
 		break;
 
 	case LS:
-		ap = attr_find(p->n_ap, ATTR_BASETYP);
+		GETSUE(sue, p->n_sue);
 
 		if (LO(p) == LS && RCON(p->n_left) && RCON(p)) {
 			/* two left-shift  by constants */
@@ -210,9 +203,8 @@ again:	o = p->n_op;
 			} else
 #endif
 			/* avoid larger shifts than type size */
-			if (RV(p) >= ap->atypsz) {
-				RV(p) = RV(p) %
-				    attr_find(p->n_ap, ATTR_BASETYP)->atypsz;
+			if (RV(p) >= sue->suesize) {
+				RV(p) = RV(p) % p->n_sue->suesize;
 				werror("shift larger than type");
 			}
 			if (RV(p) == 0)  
@@ -269,7 +261,7 @@ again:	o = p->n_op;
 			zapright:
 			nfree(p->n_right);
 			q = makety(p->n_left, p->n_type, p->n_qual,
-			    p->n_df, p->n_ap);
+			    p->n_df, p->n_sue);
 			nfree(p);
 			return clocal(q);
 			}
@@ -308,8 +300,8 @@ again:	o = p->n_op;
 			p->n_op = RS;
 			RV(p) = i;
 			q = p->n_right;
-			if(tsize(q->n_type, q->n_df, q->n_ap) > SZINT)
-				p->n_right = makety(q, INT, 0, 0, MKAP(INT));
+			if(tsize(q->n_type, q->n_df, q->n_sue) > SZINT)
+				p->n_right = makety(q, INT, 0, 0, MKSUE(INT));
 
 			break;
 		}

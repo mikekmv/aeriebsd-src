@@ -1,3 +1,4 @@
+/*	$Id: reader.c,v 1.15 2010/12/30 00:40:32 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -64,7 +65,7 @@
  * allowed to recurse back into pass2_compile().
  */
 
-# include "pass2.h"
+#include "pass2.h"
 
 #include <string.h>
 #include <stdarg.h>
@@ -202,13 +203,10 @@ stkarg(int tnr, int *soff)
 		p = ip->ip_node;
 		if (p->n_op == XASM)
 			continue; /* XXX - hack for x86 PIC */
-#ifdef notdef
+#ifdef PCC_DEBUG
 		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
 			comperr("temparg");
 #endif
-		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
-			continue; /* unknown tree */
-
 		if (p->n_right->n_op != OREG && p->n_right->n_op != UMUL)
 			continue; /* arg in register */
 		if (tnr != regno(p->n_left))
@@ -240,7 +238,7 @@ findaof(NODE *p, void *arg)
 	int *aof = arg;
 	int tnr;
 
-	if (p->n_op != ADDROF || p->n_left->n_op != TEMP)
+	if (p->n_op != ADDROF)
 		return;
 	tnr = regno(p->n_left);
 	if (aof[tnr])
@@ -563,7 +561,7 @@ again:	switch (o = p->n_op) {
 	case UGT:
 		p1 = p->n_left;
 		p2 = p->n_right;
-		if (p2->n_op == ICON && p2->n_lval == 0 && *p2->n_name == 0 &&
+		if (p2->n_op == ICON && p2->n_lval == 0 &&
 		    (dope[p1->n_op] & (FLOFLG|DIVFLG|SIMPFLG|SHFFLG))) {
 #ifdef mach_pdp11 /* XXX all targets? */
 			if ((rv = geninsn(p1, FORCC|QUIET)) != FFAIL)
@@ -961,7 +959,7 @@ gencode(NODE *p, int cookie)
 		rmove(DECRA(p->n_reg, 1), DECRA(p->n_reg, 0), p->n_type);
 	}
 #if 0
-		/* XXX - kolla upp det h{r */
+		/* XXX - kolla upp det här */
 	   else if (p->n_op == ASSIGN) {
 		/* may need move added if RLEFT/RRIGHT */
 		/* XXX should be handled in sucomp() */
@@ -1446,7 +1444,7 @@ delnums(NODE *p, void *arg)
 	NODE *r = ip->ip_node->n_left;
 	NODE *q;
 	TWORD t;
-	int cnt, num;
+	int cnt;
 
 	if (p->n_name[0] < '0' || p->n_name[0] > '9')
 		return; /* not numeric */
@@ -1459,20 +1457,18 @@ delnums(NODE *p, void *arg)
 
 	/* Delete number by adding move-to/from-temp.  Later on */
 	/* the temps may be rewritten to other LTYPEs */
-	num = p2env.epp->ip_tmpnum++;
+	t = p->n_left->n_type;
+	r = mklnode(TEMP, 0, p2env.epp->ip_tmpnum++, t);
 
 	/* pre node */
-	t = p->n_left->n_type;
-	r = mklnode(TEMP, 0, num, t);
 	ip2 = ipnode(mkbinode(ASSIGN, tcopy(r), p->n_left, t));
 	DLIST_INSERT_BEFORE(ip, ip2, qelem);
-	p->n_left = r;
 
 	/* post node */
-	t = q->n_left->n_type;
-	r = mklnode(TEMP, 0, num, t);
 	ip2 = ipnode(mkbinode(ASSIGN, q->n_left, tcopy(r), t));
 	DLIST_INSERT_AFTER(ip, ip2, qelem);
+
+	p->n_left = tcopy(r);
 	q->n_left = r;
 
 	p->n_name = tmpstrdup(q->n_name);

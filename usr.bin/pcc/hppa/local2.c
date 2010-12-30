@@ -34,7 +34,7 @@
 void acon(NODE *p);
 void prtprolog(struct interpass_prolog *, int);
 int countargs(NODE *p, int *);
-void fixcalls(NODE *p, void *);
+void fixcalls(NODE *p, void *arg);
 
 static int stkpos;
 int p2calls;

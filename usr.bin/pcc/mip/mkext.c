@@ -234,19 +234,6 @@ main(int argc, char *argv[])
 	fprintf(fc, "-1 };\n");
 	fprintf(fh, "#define NPERMREG %d\n", j+1);
 	fprintf(fc, "bittype validregs[] = {\n");
-
-if (bitsz == 64) {
-	for (j = 0; j < MAXREGS; j += bitsz) {
-		long cbit = 0;
-		for (i = 0; i < bitsz; i++) {
-			if (i+j == MAXREGS)
-				break;
-			if (rstatus[i+j] & INREGS)
-				cbit |= ((long)1 << i);
-		}
-		fprintf(fc, "\t0x%lx,\n", cbit);
-	}
-} else {
 	for (j = 0; j < MAXREGS; j += bitsz) {
 		int cbit = 0;
 		for (i = 0; i < bitsz; i++) {
@@ -257,8 +244,6 @@ if (bitsz == 64) {
 		}
 		fprintf(fc, "\t0x%08x,\n", cbit);
 	}
-}
-
 	fprintf(fc, "};\n");
 	fprintf(fh, "extern bittype validregs[];\n");
 
@@ -400,7 +385,7 @@ if (bitsz == 64) {
 	fprintf(fc, "};\n");
 
 	fprintf(fc, "int\ninterferes(int reg1, int reg2)\n{\n");
-	fprintf(fc, "return (TESTBIT(ovlarr[reg1], reg2)) != 0;\n}\n");
+	fprintf(fc, "return TESTBIT(ovlarr[reg1], reg2);\n}\n");
 	fclose(fc);
 	fprintf(fh, "#endif /* _EXTERNAL_H_ */\n");
 	fclose(fh);

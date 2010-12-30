@@ -366,21 +366,41 @@ starg(NODE *p)
 static void
 fcomp(NODE *p)  
 {
-	static char *fpcb[] = { "jz", "jnz", "jbe", "jc", "jnc", "ja" };
 
-	if ((p->n_su & DORIGHT) == 0)
-		expand(p, 0, "  fxch\n");
-	expand(p, 0, "  fucomip %st(1),%st\n");	/* emit compare insn  */
-	expand(p, 0, "  fstp %st(0)\n");	/* pop fromstack */
-
-	if (p->n_op == NE || p->n_op == GT || p->n_op == GE)
-		expand(p, 0, "  jp LC\n");
-	else if (p->n_op == EQ)
-		printf("\tjp 1f\n");
-	printf("	%s ", fpcb[p->n_op - EQ]);
-	expand(p, 0, "LC\n");
-	if (p->n_op == EQ)
-		printf("1:\n");
+	if (p->n_left->n_op == REG) {
+		if (p->n_su & DORIGHT)
+			expand(p, 0, "	fxch\n");
+		expand(p, 0, "	fucompp\n");	/* emit compare insn  */
+	} else if (p->n_left->n_type == DOUBLE)
+		expand(p, 0, "	fcompl AL\n");	/* emit compare insn  */
+	else if (p->n_left->n_type == FLOAT)
+		expand(p, 0, "	fcomps AL\n");	/* emit compare insn  */
+	else
+		comperr("bad compare %p\n", p);
+	expand(p, 0, "	fnstsw %ax\n");	/* move status reg to ax */
+	
+	switch (p->n_op) {
+	case EQ:
+		expand(p, 0, "	andb $69,%ah\n	xorb $64,%ah\n	je LC\n");
+		break;
+	case NE:
+		expand(p, 0, "	andb $69,%ah\n	xorb $64,%ah\n	jne LC\n");
+		break;
+	case LE:
+		expand(p, 0, "	andb $69,%ah\n	xorb $1,%ah\n	jne LC\n");
+		break;
+	case LT:
+		expand(p, 0, "	andb $69,%ah\n	je LC\n");
+		break;
+	case GT:
+		expand(p, 0, "	andb $1,%ah\n	jne LC\n");
+		break;
+	case GE:
+		expand(p, 0, "	andb $69,%ah\n	jne LC\n");
+		break;
+	default:
+		comperr("fcomp op %d\n", p->n_op);
+	}
 }
 
 /*
@@ -481,10 +501,8 @@ zzzcode(NODE *p, int c)
 		break;
 
 	case 'C':  /* remove from stack after subroutine call */
-#ifdef notyet
 		if (p->n_left->n_flags & FSTDCALL)
 			break;
-#endif
 		pr = p->n_qual;
 		if (p->n_op == STCALL || p->n_op == USTCALL)
 			pr += 4;
@@ -589,6 +607,7 @@ zzzcode(NODE *p, int c)
 		 * XXX should not need esi/edi if not rep movsX.
 		 * XXX can save one insn if src ptr in reg.
 		 */
+		expand(p, INAREG, "	movl AR,%esi\n");
 		switch (p->n_stsize) {
 		case 1:
 			expand(p, INAREG, "	movb (%esi),%cl\n");
@@ -1346,8 +1365,11 @@ myxasm(struct interpass *ip, NODE *p)
 		return 1;
 
 	case 'A': reg = EAXEDX; break;
-	case 'q': /* Handle in MYSETXARG */
-		return 1;
+	case 'q': /* XXX let it be CLASSA as for now */
+		p->n_name = tmpstrdup(p->n_name);
+		w = strchr(p->n_name, 'q');
+		*w = 'r';
+		return 0;
 
 	case 'I':
 	case 'J':

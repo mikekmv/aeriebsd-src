@@ -136,9 +136,9 @@
 /*
  * Pack and unpack field descriptors (size and offset)
  */
-#define PKFIELD(s,o)	(((o)<<7)| (s))
-#define UPKFSZ(v)	((v)&0177)
-#define UPKFOFF(v)	((v)>>7)
+#define PKFIELD(s,o)	(((o)<<6)| (s))
+#define UPKFSZ(v)	((v)&077)
+#define UPKFOFF(v)	((v)>>6)
 
 /*
  * Operator information
@@ -356,8 +356,7 @@ NODE *listarg(NODE *p, int n, int *cnt);
 void cerror(char *s, ...);
 void werror(char *s, ...);
 void uerror(char *s, ...);
-void mkdope(void);
-void tcheck(void);
+
 
 extern	int nerrors;		/* number of errors seen so far */
 extern	int warniserr;		/* treat warnings as errors */

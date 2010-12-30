@@ -345,8 +345,6 @@ int numconv(void *ip, void *p, void *q);
 #define	XASM_NUMCONV(ip, p, q)	numconv(ip, p, q)
 int xasmconstregs(char *);
 #define	XASMCONSTREGS(x) xasmconstregs(x)
-#define	MYSETXARG if (XASMVAL(cw) == 'q') {	\
-	cw = 'r'; addalledges(&ablock[ESI]); addalledges(&ablock[EDI]); }
 
 /*
  * builtins.
@@ -357,8 +355,8 @@ int xasmconstregs(char *);
 
 #define NODE struct node
 struct node;
-NODE *i386_builtin_frame_address(NODE *f, NODE *a, unsigned int);
-NODE *i386_builtin_return_address(NODE *f, NODE *a, unsigned int);
+NODE *i386_builtin_frame_address(NODE *f, NODE *a);
+NODE *i386_builtin_return_address(NODE *f, NODE *a);
 #undef NODE
 
 #if defined(MACHOABI)

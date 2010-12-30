@@ -1,3 +1,4 @@
+/*	$Id: local.c,v 1.14 2010/12/30 00:40:30 mickey Exp $	*/
 /*
  * Copyright (c) 2008 Michael Shalayeff
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
@@ -11,6 +12,8 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -68,7 +71,7 @@ picsymtab(char *p, char *s, char *s2)
 {
 	struct symtab *sp = IALLOC(sizeof(struct symtab));
 	size_t len = strlen(p) + strlen(s) + strlen(s2) + 1;
-
+	
 	sp->sname = sp->soname = IALLOC(len);
 	strlcpy(sp->soname, p, len);
 	strlcat(sp->soname, s, len);
@@ -80,37 +83,27 @@ picsymtab(char *p, char *s, char *s2)
 
 int gotnr; /* tempnum for GOT register */
 int argstacksize;
-static int ininval;
 
 /*
- * Create a reference for an extern variable or function.
+ * Create a reference for an extern variable.
  */
 static NODE *
 picext(NODE *p)
 {
 	NODE *q;
 	struct symtab *sp;
-	char *c, *g;
+	char *c;
 
-	if (p->n_sp->sflags & SBEENHERE)
-		return p;
-
-	c = p->n_sp->soname ? p->n_sp->soname : exname(p->n_sp->sname);
-#ifdef notdef
-	g = ISFTN(p->n_sp->stype) ? "@PLT" : "@GOTPCREL";
-#endif
-	g = "@GOTPCREL";
-	sp = picsymtab("", c, g);
-	sp->sflags = SBEENHERE;
-	q = block(NAME, NIL, NIL, INCREF(p->n_type), p->n_df, p->n_ap);
+	c = p->n_sp->soname ? p->n_sp->soname : p->n_sp->sname;
+	sp = picsymtab("", c, "@GOTPCREL(%rip)");
+	q = block(NAME, NIL, NIL, INCREF(p->n_type), p->n_df, p->n_sue);
 	q->n_sp = sp;
-	q = block(UMUL, q, 0, p->n_type, p->n_df, p->n_ap);
+	q = block(UMUL, q, 0, p->n_type, p->n_df, p->n_sue);
 	q->n_sp = sp;
 	nfree(p);
 	return q;
 }
 
-#ifdef notdef
 /*
  * Create a reference for a static variable.
  */
@@ -124,163 +117,90 @@ picstatic(NODE *p)
 		snprintf(c = buf, 32, LABFMT, (int)p->n_sp->soffset);
 	else
 		c = p->n_sp->soname ? p->n_sp->soname : p->n_sp->sname;
-	sp = picsymtab("", c, "");
+	sp = picsymtab("", c, "(%rip)");
 	sp->sclass = STATIC;
 	sp->stype = p->n_sp->stype;
 	p->n_sp = sp;
 	return p;
 }
-#endif
 
-static NODE *
-cmop(NODE *l, NODE *r)
-{
-	return block(CM, l, r, INT, 0, MKAP(INT));
-}
-
-static NODE *
-mkx(char *s, NODE *p)
-{
-	p = block(XARG, p, NIL, INT, 0, MKAP(INT));
-	p->n_name = s;
-	return p;
-}
-
-static char *
-mk3str(char *s1, char *s2, char *s3)
-{
-	int len = strlen(s1) + strlen(s2) + strlen(s3) + 1;
-	char *sd;
-
-	sd = tmpalloc(len);
-	strlcpy(sd, s1, len);
-	strlcat(sd, s2, len);
-	strlcat(sd, s3, len);
-	return sd;
-}
-
+#ifdef TLS
 /*
  * Create a reference for a TLS variable.
- * This is the "General dynamic" version.
  */
 static NODE *
 tlspic(NODE *p)
 {
-	NODE *q, *r, *s;
-	char *s1, *s2;
+	NODE *q, *r;
+	struct symtab *sp, *sp2;
 
 	/*
-	 * .byte   0x66
-	 * leaq x@TLSGD(%rip),%rdi
-	 * .word   0x6666
-	 * rex64
-	 * call __tls_get_addr@PLT
+	 * creates:
+	 *   leal var@TLSGD(%ebx),%eax
+	 *   call ___tls_get_addr@PLT
 	 */
 
-	/* Need the .byte stuff around.  Why? */
-	/* Use inline assembler */
-	q = mkx("%rdx", bcon(0));
-	q = cmop(q, mkx("%rcx", bcon(0)));
-	q = cmop(q, mkx("%rsi", bcon(0)));
-	q = cmop(q, mkx("%rdi", bcon(0)));
-	q = cmop(q, mkx("%r8", bcon(0)));
-	q = cmop(q, mkx("%r9", bcon(0)));
-	q = cmop(q, mkx("%r10", bcon(0)));
-	q = cmop(q, mkx("%r11", bcon(0)));
+	/* calc address of var@TLSGD */
+	q = tempnode(gotnr, PTR|VOID, 0, MKSUE(VOID));
+	sp = picsymtab("", p->n_sp->soname, "@TLSGD");
+	r = xbcon(0, sp, INT);
+	q = buildtree(PLUS, q, r);
 
-	s = ccopy(r = tempnode(0, INCREF(p->n_type), p->n_df, p->n_ap));
-	r = mkx("=a", r);
-	r = block(XASM, r, q, INT, 0, MKAP(INT));
+	/* assign to %eax */
+	r = block(REG, NIL, NIL, PTR|VOID, 0, MKSUE(VOID));
+	r->n_rval = EAX;
+	q = buildtree(ASSIGN, r, q);
 
-	/* Create the magic string */
-	s1 = ".byte 0x66\n\tleaq ";
-	s2 = "@TLSGD(%%rip),%%rdi\n"
-	    "\t.word 0x6666\n\trex64\n\tcall __tls_get_addr@PLT";
-	if (p->n_sp->soname == NULL)
-		p->n_sp->soname = p->n_sp->sname;
-	r->n_name = mk3str(s1, p->n_sp->soname, s2);
+	/* call ___tls_get_addr */
+	sp2 = lookup("___tls_get_addr@PLT", 0);
+	sp2->stype = EXTERN|INT|FTN;
+	r = nametree(sp2);
+	r = buildtree(ADDROF, r, NIL);
+	r = block(UCALL, r, NIL, INT, 0, MKSUE(INT));
 
-	r = block(COMOP, r, s, INCREF(p->n_type), p->n_df, p->n_ap);
-	r = buildtree(UMUL, r, NIL);
-	tfree(p);
-	return r;
+	/* fusion both parts together */
+	q = buildtree(COMOP, q, r);
+	q = block(UMUL, q, 0, p->n_type, p->n_df, p->n_sue);
+	q->n_sp = p->n_sp; /* for init */
+
+	nfree(p);
+	return q;
 }
 
-/*
- * The "initial exec" tls model.
- */
 static NODE *
-tlsinitialexec(NODE *p)
+tlsnonpic(NODE *p)
 {
-	NODE *q, *r, *s;
-	char *s1, *s2;
+	NODE *q, *r;
+	struct symtab *sp, *sp2;
+	int ext = p->n_sp->sclass;
 
-	/*
-	 * movq %fs:0,%rax
-	 * addq x@GOTTPOFF(%rip),%rax
-	 */
+	sp = picsymtab("", p->n_sp->soname,
+	    ext == EXTERN ? "@INDNTPOFF" : "@NTPOFF");
+	q = xbcon(0, sp, INT);
+	if (ext == EXTERN)
+		q = block(UMUL, q, NIL, PTR|VOID, 0, MKSUE(VOID));
 
-	q = bcon(0);
-	q->n_type = STRTY;
+	sp2 = lookup("%gs:0", 0);
+	sp2->stype = EXTERN|INT;
+	r = nametree(sp2);
 
-	s = ccopy(r = tempnode(0, INCREF(p->n_type), p->n_df, p->n_ap));
-	r = mkx("=r", r);
-	r = block(XASM, r, q, INT, 0, MKAP(INT));
+	q = buildtree(PLUS, q, r);
+	q = block(UMUL, q, 0, p->n_type, p->n_df, p->n_sue);
+	q->n_sp = p->n_sp; /* for init */
 
-	s1 = "movq %%fs:0,%0\n\taddq ";
-	s2 = "@GOTTPOFF(%%rip),%0";
-	if (p->n_sp->soname == NULL)
-		p->n_sp->soname = p->n_sp->sname;
-	r->n_name = mk3str(s1, p->n_sp->soname, s2);
-
-	r = block(COMOP, r, s, INCREF(p->n_type), p->n_df, p->n_ap);
-	r = buildtree(UMUL, r, NIL);
-	tfree(p);
-	return r;
+	nfree(p);
+	return q;
 }
 
 static NODE *
 tlsref(NODE *p)
 {
-	struct symtab *sp = p->n_sp;
-	struct attr *ga;
-	char *c;
-
-	if ((ga = attr_find(sp->sap, GCC_ATYP_TLSMODEL)) != NULL) {
-		c = ga->sarg(0);
-		if (strcmp(c, "initial-exec") == 0)
-			return tlsinitialexec(p);
-		else if (strcmp(c, "global-dynamic") == 0)
-			;
-		else
-			werror("unsupported tls model '%s'", c);
-	}
-	return tlspic(p);
+	if (kflag)
+		return (tlspic(p));
+	else
+		return (tlsnonpic(p));
 }
-
-static NODE *
-stkblk(TWORD t)
-{
-	int al, tsz, off, noff;
-	struct attr *bt;
-	NODE *p;
-
-	bt = MKAP(BTYPE(t));
-	al = talign(t, bt);
-	tsz = (int)tsize(t, 0, bt);
-
-	noff = autooff + tsz;
-	SETOFF(noff, al);
-	off = -noff;
-	autooff = noff;
-
-	p = block(REG, NIL, NIL, INCREF(t), 0, bt);
-	p->n_lval = 0;
-	p->n_rval = FPREG;
-	p = buildtree(UMUL, buildtree(PLUS, p, bcon(off/SZLDOUBLE)), NIL);
-	return p;
-}
-
+#endif
 
 /* clocal() is called to do local transformations on
  * an expression tree preparitory to its being
@@ -337,16 +257,12 @@ clocal(NODE *p)
 				break;
 			}
 #endif
-#ifdef notdef
 			if (kflag == 0) {
 				if (q->slevel == 0)
 					break;
 				p->n_lval = 0;
-			} else if (blevel > 0) {
-				if (!ISFTN(q->stype))
-					p = picstatic(p);
-			}
-#endif
+			} else if (blevel > 0)
+				p = picstatic(p);
 			break;
 
 		case REGISTER:
@@ -357,10 +273,12 @@ clocal(NODE *p)
 
 		case EXTERN:
 		case EXTDEF:
+#ifdef TLS
 			if (q->sflags & STLS) {
 				p = tlsref(p);
 				break;
 			}
+#endif
 			if (kflag == 0)
 				break;
 			if (blevel > 0)
@@ -369,7 +287,6 @@ clocal(NODE *p)
 		}
 		break;
 
-#if 0
 	case ADDROF:
 		if (kflag == 0 || blevel == 0)
 			break;
@@ -387,28 +304,26 @@ clocal(NODE *p)
 		p = p->n_left;
 		nfree(l);
 		break;
-#endif
 
-	case UCALL:
-	case USTCALL:
-		/* For now, always clear eax */
-		l = block(REG, NIL, NIL, INT, 0, MKAP(INT));
-		regno(l) = RAX;
-		p->n_right = clocal(buildtree(ASSIGN, l, bcon(0)));
-		p->n_op -= (UCALL-CALL);
-
-		/* FALLTHROUGH */
 	case CALL:
 	case STCALL:
 		if (p->n_type == VOID)
 			break; /* nothing to do */
 		/* have the call at left of a COMOP to avoid arg trashing */
-		if (p->n_type == LDOUBLE) {
-			r = stkblk(LDOUBLE);
-		} else
-			r = tempnode(0, p->n_type, p->n_df, p->n_ap);
-		l = ccopy(r);
-		p = buildtree(COMOP, buildtree(ASSIGN, r, p), l);
+		r = tempnode(0, p->n_type, p->n_df, p->n_sue);
+		m = regno(r);
+		r = buildtree(ASSIGN, r, p);
+		p = tempnode(m, r->n_type, r->n_df, r->n_sue);
+		p = buildtree(COMOP, r, p);
+		break;
+
+	case UCALL:
+	case USTCALL:
+		/* For now, always clear eax */
+		l = block(REG, NIL, NIL, INT, 0, MKSUE(INT));
+		regno(l) = RAX;
+		p->n_right = clocal(buildtree(ASSIGN, l, bcon(0)));
+		p->n_op -= (UCALL-CALL);
 		break;
 
 	case CBRANCH:
@@ -447,7 +362,7 @@ clocal(NODE *p)
 		if (l->n_type < LONG) {
 			/* float etc? */
 			p->n_left = block(SCONV, l, NIL,
-			    UNSIGNED, 0, MKAP(UNSIGNED));
+			    UNSIGNED, 0, MKSUE(UNSIGNED));
 			break;
 		}
 		/* if left is SCONV, cannot remove */
@@ -458,20 +373,15 @@ clocal(NODE *p)
 		if (l->n_op == ADDROF && l->n_left->n_op == TEMP)
 			break;
 
-		if ((l->n_op == REG || l->n_op == TEMP) && ISPTR(l->n_type))
-			goto delp;
-#ifdef notdef
 		/* if conversion to another pointer type, just remove */
-		/* XXX breaks ADDROF NAME */
 		if (p->n_type > BTMASK && l->n_type > BTMASK)
 			goto delp;
-#endif
 		break;
 
 	delp:	l->n_type = p->n_type;
 		l->n_qual = p->n_qual;
 		l->n_df = p->n_df;
-		l->n_ap = p->n_ap;
+		l->n_sue = p->n_sue;
 		nfree(p);
 		p = l;
 		break;
@@ -493,7 +403,7 @@ clocal(NODE *p)
 			if (l->n_type < INT) {
 				p->n_left = block(SCONV, l, NIL,
 				    ISUNSIGNED(l->n_type) ? UNSIGNED : INT,
-				    l->n_df, l->n_ap);
+				    l->n_df, l->n_sue);
 				break;
 			}
 		}
@@ -504,7 +414,7 @@ clocal(NODE *p)
 		}
 
 		if ((p->n_type & TMASK) == 0 && (l->n_type & TMASK) == 0 &&
-		    btattr[p->n_type].atypsz == btattr[l->n_type].atypsz) {
+		    btdims[p->n_type].suesize == btdims[l->n_type].suesize) {
 			if (p->n_type != FLOAT && p->n_type != DOUBLE &&
 			    l->n_type != FLOAT && l->n_type != DOUBLE &&
 			    l->n_type != LDOUBLE && p->n_type != LDOUBLE) {
@@ -533,8 +443,7 @@ clocal(NODE *p)
 			if (!ISPTR(m)) /* Pointers don't need to be conv'd */
 			    switch (m) {
 			case BOOL:
-				l->n_lval = nncon(l) ? (l->n_lval != 0) : 1;
-				l->n_sp = NULL;
+				l->n_lval = l->n_lval != 0;
 				break;
 			case CHAR:
 				l->n_lval = (char)val;
@@ -574,18 +483,15 @@ clocal(NODE *p)
 				cerror("unknown type %d", m);
 			}
 			l->n_type = m;
-			l->n_ap = MKAP(m);
+			l->n_sue = MKSUE(m);
 			nfree(p);
 			return l;
 		} else if (l->n_op == FCON) {
-			if (p->n_type == BOOL)
-				l->n_lval = l->n_dcon != 0.0;
-			else
-				l->n_lval = l->n_dcon;
+			l->n_lval = l->n_dcon;
 			l->n_sp = NULL;
 			l->n_op = ICON;
 			l->n_type = m;
-			l->n_ap = MKAP(m);
+			l->n_sue = MKSUE(m);
 			nfree(p);
 			return clocal(l);
 		}
@@ -598,7 +504,7 @@ clocal(NODE *p)
 		    p->n_type == SHORT || p->n_type == USHORT) &&
 		    (l->n_type == FLOAT || l->n_type == DOUBLE ||
 		    l->n_type == LDOUBLE)) {
-			p = block(SCONV, p, NIL, p->n_type, p->n_df, p->n_ap);
+			p = block(SCONV, p, NIL, p->n_type, p->n_df, p->n_sue);
 			p->n_left->n_type = INT;
 			return p;
 		}
@@ -611,9 +517,9 @@ clocal(NODE *p)
 		if (o == MOD && p->n_type != CHAR && p->n_type != SHORT)
 			break;
 		/* make it an int division by inserting conversions */
-		p->n_left = block(SCONV, p->n_left, NIL, INT, 0, MKAP(INT));
-		p->n_right = block(SCONV, p->n_right, NIL, INT, 0, MKAP(INT));
-		p = block(SCONV, p, NIL, p->n_type, 0, MKAP(p->n_type));
+		p->n_left = block(SCONV, p->n_left, NIL, INT, 0, MKSUE(INT));
+		p->n_right = block(SCONV, p->n_right, NIL, INT, 0, MKSUE(INT));
+		p = block(SCONV, p, NIL, p->n_type, 0, MKSUE(p->n_type));
 		p->n_left->n_type = INT;
 		break;
 
@@ -628,7 +534,7 @@ clocal(NODE *p)
 		/* put return value in return reg */
 		p->n_op = ASSIGN;
 		p->n_right = p->n_left;
-		p->n_left = block(REG, NIL, NIL, p->n_type, 0, MKAP(INT));
+		p->n_left = block(REG, NIL, NIL, p->n_type, 0, MKSUE(INT));
 		p->n_left->n_rval = p->n_left->n_type == BOOL ? 
 		    RETREG(CHAR) : RETREG(p->n_type);
 		break;
@@ -639,7 +545,26 @@ clocal(NODE *p)
 		if (p->n_right->n_type == CHAR || p->n_right->n_type == UCHAR)
 			break;
 		p->n_right = block(SCONV, p->n_right, NIL,
-		    CHAR, 0, MKAP(CHAR));
+		    CHAR, 0, MKSUE(CHAR));
+		break;
+
+	case STASG: /* Early conversion to memcpy */
+		l = buildtree(ADDROF, p->n_left, NIL);
+		r = p->n_right;
+		o = tsize(p->n_type, p->n_df, p->n_sue)/SZCHAR;
+#define  cmop(x,y) block(CM, x, y, INT, 0, MKSUE(INT))
+		r = cmop(cmop(l, r), bcon(o));
+
+		q = lookup(addname("memcpy"), 0);
+		if (q->stype == UNDEF) {
+			p->n_op = NAME;
+			p->n_sp = q;
+			p->n_type = FTN|INT;
+			defid(p, EXTERN);
+		}
+		nfree(p);
+		p = doacall(q, nametree(q), r);
+
 		break;
 	}
 #ifdef PCC_DEBUG
@@ -651,39 +576,68 @@ clocal(NODE *p)
 	return(p);
 }
 
+/*
+ * Change CALL references to either direct (static) or PLT.
+ */
+static void
+fixnames(NODE *p, void *arg)
+{
+	struct symtab *sp;
+	NODE *q;
+	char *c;
+
+	if ((cdope(p->n_op) & CALLFLG) == 0)
+		return;
+	if (p->n_left->n_op != UMUL || p->n_left->n_left->n_op != NAME)
+		return;
+	q = p->n_left->n_left;
+
+
+	sp = q->n_sp;
+
+	if (sp == NULL)
+		return;	/* nothing to do */
+	if (sp->sclass == STATIC && !ISFTN(sp->stype))
+		return; /* function pointer */
+
+	if (sp->sclass != STATIC && sp->sclass != EXTERN &&
+	    sp->sclass != EXTDEF)
+		cerror("fixnames");
+
+	if ((c = strstr(sp->soname, "@GOT")) == NULL)
+		cerror("fixnames2");
+	if (sp->sclass == STATIC) {
+		*c = 0;
+	} else
+		memcpy(c, "@PLT", sizeof("@PLT"));
+
+	
+	*p->n_left = *q;
+	p->n_left->n_op = ICON;
+	nfree(q);
+}
+
 void
 myp2tree(NODE *p)
 {
-	struct symtab *sp, sps;
-	static int dblxor, fltxor;
+	struct symtab *sp;
 
-	if (p->n_op == UMINUS && (p->n_type == FLOAT || p->n_type == DOUBLE)) {
-		/* Store xor code for sign change */
-		if (dblxor == 0) {
-			dblxor = getlab();
-			fltxor = getlab();
-			sps.stype = LDOUBLE;
-			sps.squal = CON >> TSHIFT;
-			sps.sflags = sps.sclass = 0;
-			sps.sname = sps.soname = "";
-			sps.slevel = 1;
-			sps.sap = MKAP(LDOUBLE); /* alignment */
-			sps.soffset = dblxor;
-			defloc(&sps);
-			printf("\t.long 0,0x80000000,0,0\n");
-			printf(LABFMT ":\n", fltxor);
-			printf("\t.long 0x80000000,0,0,0\n");
-		}
-		p->n_label = p->n_type == FLOAT ? fltxor : dblxor;
-		return;
-	}
+	if (kflag)
+		walkf(p, fixnames, 0); /* XXX walkf not needed */
 	if (p->n_op != FCON)
 		return;
 
-	/* XXX should let float constants follow */
+#if 0
+	/* put floating constants in memory */
+	setloc1(RDATA);
+	defalign(ALLDOUBLE);
+	deflab1(i = getlab());
+	ninval(0, btdims[p->n_type].suesize, p);
+#endif
+
 	sp = IALLOC(sizeof(struct symtab));
 	sp->sclass = STATIC;
-	sp->sap = MKAP(p->n_type);
+	sp->ssue = MKSUE(p->n_type);
 	sp->slevel = 1; /* fake numeric label */
 	sp->soffset = getlab();
 	sp->sflags = 0;
@@ -691,24 +645,18 @@ myp2tree(NODE *p)
 	sp->squal = (CON >> TSHIFT);
 
 	defloc(sp);
-	ninval(0, tsize(sp->stype, sp->sdf, sp->sap), p);
+	ninval(0, sp->ssue->suesize, p);
 
 	p->n_op = NAME;
 	p->n_lval = 0;
 	p->n_sp = sp;
 }
 
-/*
- * Convert ADDROF NAME to ICON?
- */
+/*ARGSUSED*/
 int
 andable(NODE *p)
 {
-	if (ininval)
-		return 1;
-	if (p->n_sp->sclass == STATIC || p->n_sp->sclass == USTATIC)
-		return 0;
-	return 1;
+	return(1);	/* all names can have & taken on them */
 }
 
 /*
@@ -742,13 +690,13 @@ cisreg(TWORD t)
  * indirections must be fullword.
  */
 NODE *
-offcon(OFFSZ off, TWORD t, union dimfun *d, struct attr *ap)
+offcon(OFFSZ off, TWORD t, union dimfun *d, struct suedef *sue)
 {
 	register NODE *p;
 
 	if (xdebug)
 		printf("offcon: OFFSZ %lld type %x dim %p siz %d\n",
-		    off, t, d, (int)tsize(t, d, ap));
+		    off, t, d, sue->suesize);
 
 	p = bcon(0);
 	p->n_lval = off/SZCHAR;	/* Default */
@@ -765,18 +713,17 @@ spalloc(NODE *t, NODE *p, OFFSZ off)
 {
 	NODE *sp;
 
-	p = buildtree(MUL, p, bcon(off/SZCHAR));
-	p = buildtree(PLUS, p, bcon(30));
-	p = buildtree(AND, p, xbcon(-16, NULL, LONG));
+cerror("spalloc");
+	p = buildtree(MUL, p, bcon(off/SZCHAR)); /* XXX word alignment? */
 
 	/* sub the size from sp */
-	sp = block(REG, NIL, NIL, p->n_type, 0, MKAP(LONG));
+	sp = block(REG, NIL, NIL, p->n_type, 0, MKSUE(INT));
 	sp->n_lval = 0;
 	sp->n_rval = STKREG;
 	ecomp(buildtree(MINUSEQ, sp, p));
 
 	/* save the address of sp */
-	sp = block(REG, NIL, NIL, PTR+LONG, t->n_df, t->n_ap);
+	sp = block(REG, NIL, NIL, PTR+INT, t->n_df, t->n_sue);
 	sp->n_lval = 0;
 	sp->n_rval = STKREG;
 	t->n_type = sp->n_type;
@@ -836,11 +783,7 @@ zbits(OFFSZ off, int fsz)
 		}
 	}
 	if (fsz >= SZCHAR) {
-#ifdef MACHOABI
-		printf("\t.space %d\n", fsz/SZCHAR);
-#else
 		printf("\t.zero %d\n", fsz/SZCHAR);
-#endif
 		fsz -= (fsz/SZCHAR) * SZCHAR;
 	}
 	if (fsz) {
@@ -858,7 +801,7 @@ infld(CONSZ off, int fsz, CONSZ val)
 	if (idebug)
 		printf("infld off %lld, fsz %d, val %lld inbits %d\n",
 		    off, fsz, val, inbits);
-	val &= (((((CONSZ)1 << (fsz-1))-1)<<1)|1);
+	val &= ((CONSZ)1 << fsz)-1;
 	while (fsz + inbits >= SZCHAR) {
 		inval |= (val << inbits);
 		printf("\t.byte %d\n", inval & 255);
@@ -883,32 +826,28 @@ ninval(CONSZ off, int fsz, NODE *p)
 {
 	union { float f; double d; long double l; int i[3]; } u;
 	struct symtab *q;
-	NODE st, *op = NIL;
+	char *c;
 	TWORD t;
 
-	if (coptype(p->n_op) != LTYPE) {
-		ininval = 1;
-		op = p = optim(ccopy(p));
-		ininval = 0;
-	}
-
-	while (p->n_op == PCONV)
-		p = p->n_left;
-
 	t = p->n_type;
-
-	if (kflag && p->n_op == NAME && ISPTR(t) && ISFTN(DECREF(t))) {
-		/* functions as initializers will be NAME here */
-		if (op == NIL) {
-			st = *p;
-			p = &st;
-		}
-		p->n_op = ICON;
-	}
-
 	if (t > BTMASK)
 		t = LONG; /* pointer */
 
+	while (p->n_op == SCONV || p->n_op == PCONV) {
+		NODE *l = p->n_left;
+		l->n_type = p->n_type;
+		p = l;
+	}
+
+	if (kflag && (p->n_op == PLUS || p->n_op == UMUL)) {
+		if (p->n_op == UMUL)
+			p = p->n_left;
+		p = p->n_right;
+		q = p->n_sp;
+
+		if ((c = strstr(q->soname, "@GOT")) != NULL)
+			*c = 0; /* ignore GOT ref here */
+	}
 	if (p->n_op != ICON && p->n_op != FCON)
 		cerror("ninval: init node not constant");
 
@@ -925,12 +864,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 			} else {
 				char *name;
 				if ((name = q->soname) == NULL)
-					name = q->sname;
-				/* Never any PIC stuff in static init */
-				if (strchr(name, '@')) {
-					name = tmpstrdup(name);
-					*strchr(name, '@') = 0;
-				}
+					name = exname(q->sname);
 				printf("+%s", name);
 			}
 		}
@@ -977,34 +911,13 @@ ninval(CONSZ off, int fsz, NODE *p)
 	default:
 		cerror("ninval");
 	}
-	if (op)
-		tfree(op);
 }
 
 /* make a name look like an external name in the local machine */
 char *
 exname(char *p)
 {
-#ifdef MACHOABI
-
-#define NCHNAM	256
-	static char text[NCHNAM+1];
-	int i;
-
-	if (p == NULL)
-		return "";
-
-	text[0] = '_';
-	for (i=1; *p && i<NCHNAM; ++i)
-		text[i] = *p++;
-
-	text[i] = '\0';
-	text[NCHNAM] = '\0';  /* truncate */
-
-	return (text);
-#else
 	return (p == NULL ? "" : p);
-#endif
 }
 
 /*
@@ -1035,8 +948,6 @@ extdec(struct symtab *q)
 {
 }
 
-int tbss;
-
 /* make a common declaration for id, if reasonable */
 void
 defzero(struct symtab *sp)
@@ -1044,24 +955,25 @@ defzero(struct symtab *sp)
 	int off;
 	char *name;
 
+#ifdef TLS
 	if (sp->sflags & STLS) {
 		if (sp->sclass == EXTERN)
 			sp->sclass = EXTDEF;
-		tbss = 1;
 		simpleinit(sp, bcon(0));
 		return;
 	}
+#endif
 
 	if ((name = sp->soname) == NULL)
 		name = exname(sp->sname);
-	off = tsize(sp->stype, sp->sdf, sp->sap);
+	off = tsize(sp->stype, sp->sdf, sp->ssue);
 	off = (off+(SZCHAR-1))/SZCHAR;
 #ifdef GCC_COMPAT
 	{
-		struct attr *ga;
-		if ((ga = attr_find(sp->sap, GCC_ATYP_VISIBILITY)) &&
-		    strcmp(ga->sarg(0), "default"))
-			printf("\t.%s %s\n", ga->sarg(0), name);
+		struct gcc_attrib *ga;
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_VISIBILITY)) &&
+		    strcmp(ga->a1.sarg, "default"))
+			printf("\t.%s %s\n", ga->a1.sarg, name);
 	}
 #endif
 	printf("	.%scomm ", sp->sclass == STATIC ? "l" : "");
@@ -1090,7 +1002,9 @@ section2string(char *name, int len)
 }
 
 char *nextsect;
+#ifdef TLS
 static int gottls;
+#endif
 static char *alias;
 static int constructor;
 static int destructor;
@@ -1101,10 +1015,12 @@ static int destructor;
 int
 mypragma(char **ary)
 {
+#ifdef TLS
 	if (strcmp(ary[1], "tls") == 0 && ary[2] == NULL) {
 		gottls = 1;
 		return 1;
 	}
+#endif
 	if (strcmp(ary[1], "constructor") == 0 || strcmp(ary[1], "init") == 0) {
 		constructor = 1;
 		return 1;
@@ -1131,20 +1047,20 @@ mypragma(char **ary)
 void
 fixdef(struct symtab *sp)
 {
-	struct attr *ga;
-
+	struct gcc_attrib *ga;
+#ifdef TLS
 	/* may have sanity checks here */
 	if (gottls)
 		sp->sflags |= STLS;
 	gottls = 0;
-
+#endif
 #ifdef HAVE_WEAKREF
 	/* not many as'es have this directive */
-	if ((ga = gcc_get_attr(sp->sap, GCC_ATYP_WEAKREF)) != NULL) {
+	if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_WEAKREF)) != NULL) {
 		char *wr = ga->a1.sarg;
 		char *sn = sp->soname ? sp->soname : sp->sname;
 		if (wr == NULL) {
-			if ((ga = gcc_get_attr(sp->sap, GCC_ATYP_ALIAS))) {
+			if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_ALIAS))) {
 				wr = ga->a1.sarg;
 			}
 		}
@@ -1154,12 +1070,12 @@ fixdef(struct symtab *sp)
 			printf("\t.weakref %s,%s\n", sn, wr);
 	} else
 #endif
-	       if ((ga = attr_find(sp->sap, GCC_ATYP_ALIAS)) != NULL) {
-		char *an = ga->sarg(0);
+	       if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_ALIAS)) != NULL) {
+		char *an = ga->a1.sarg;
 		char *sn = sp->soname ? sp->soname : sp->sname;
 		char *v;
 
-		v = attr_find(sp->sap, GCC_ATYP_WEAK) ? "weak" : "globl";
+		v = gcc_get_attr(sp->ssue, GCC_ATYP_WEAK) ? "weak" : "globl";
 		printf("\t.%s %s\n", v, sn);
 		printf("\t.set %s,%s\n", sn, an);
 	}
@@ -1175,13 +1091,14 @@ fixdef(struct symtab *sp)
 		p->n_op = NAME;
 		p->n_sp =
 		  (struct symtab *)(constructor ? "constructor" : "destructor");
-		sp->sap = attr_add(sp->sap, gcc_attr_parse(p));
+		sp->ssue = sueget(sp->ssue);
+		sp->ssue->suega = gcc_attr_parse(p);
 		constructor = destructor = 0;
 	}
 }
 
 NODE *
-i386_builtin_return_address(NODE *f, NODE *a, TWORD t)
+i386_builtin_return_address(NODE *f, NODE *a)
 {
 	int nframes;
 
@@ -1193,13 +1110,13 @@ i386_builtin_return_address(NODE *f, NODE *a, TWORD t)
 	tfree(f);
 	tfree(a);
 
-	f = block(REG, NIL, NIL, PTR+VOID, 0, MKAP(VOID));
+	f = block(REG, NIL, NIL, PTR+VOID, 0, MKSUE(VOID));
 	regno(f) = FPREG;
 
 	while (nframes--)
-		f = block(UMUL, f, NIL, PTR+VOID, 0, MKAP(VOID));
+		f = block(UMUL, f, NIL, PTR+VOID, 0, MKSUE(VOID));
 
-	f = block(PLUS, f, bcon(4), INCREF(PTR+VOID), 0, MKAP(VOID));
+	f = block(PLUS, f, bcon(4), INCREF(PTR+VOID), 0, MKSUE(VOID));
 	f = buildtree(UMUL, f, NIL);
 
 	return f;
@@ -1209,7 +1126,7 @@ bad:
 }
 
 NODE *
-i386_builtin_frame_address(NODE *f, NODE *a, TWORD t)
+i386_builtin_frame_address(NODE *f, NODE *a)
 {
 	int nframes;
 
@@ -1221,11 +1138,11 @@ i386_builtin_frame_address(NODE *f, NODE *a, TWORD t)
 	tfree(f);
 	tfree(a);
 
-	f = block(REG, NIL, NIL, PTR+VOID, 0, MKAP(VOID));
+	f = block(REG, NIL, NIL, PTR+VOID, 0, MKSUE(VOID));
 	regno(f) = FPREG;
 
 	while (nframes--)
-		f = block(UMUL, f, NIL, PTR+VOID, 0, MKAP(VOID));
+		f = block(UMUL, f, NIL, PTR+VOID, 0, MKSUE(VOID));
 
 	return f;
 bad:

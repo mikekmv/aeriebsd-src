@@ -126,6 +126,8 @@ static struct instk {
 
 static struct symtab *csym;
 
+#define ISSOU(ty) (ty == STRTY || ty == UNIONTY)
+
 #ifdef PCC_DEBUG
 static void prtstk(struct instk *in);
 #endif
@@ -222,7 +224,7 @@ beginit(struct symtab *sp)
 
 #ifdef PCC_DEBUG
 	if (idebug)
-		printf("beginit(%p), sclass %s\n", sp, scnames(sp->sclass));
+		printf("beginit(), sclass %s\n", scnames(sp->sclass));
 #endif
 
 	if (pstk) {
@@ -245,20 +247,17 @@ beginit(struct symtab *sp)
 
 	numents = 0; /* no entries in array list */
 	if (ISARY(sp->stype)) {
-		basesz = tsize(DECREF(sp->stype), sp->sdf+1, sp->sap);
+		basesz = tsize(DECREF(sp->stype), sp->sdf+1, sp->ssue);
 		if (basesz == 0) {
 			uerror("array has incomplete type");
 			basesz = SZINT;
 		}
 	} else
-		basesz = tsize(DECREF(sp->stype), sp->sdf, sp->sap);
+		basesz = tsize(DECREF(sp->stype), sp->sdf, sp->ssue);
 	SLIST_INIT(&lpole);
 
 	/* first element */
-	if (ISSOU(sp->stype)) {
-		is->in_lnk = strmemb(sp->sap);
-	} else
-		is->in_lnk = NULL;
+	is->in_lnk = ISSOU(sp->stype) ? sp->ssue->suem : NULL;
 	is->in_n = 0;
 	is->in_t = sp->stype;
 	is->in_sym = sp;
@@ -306,7 +305,7 @@ stkpush(void)
 	is->in_n = 0;
 	if (pstk == NULL) {
 		/* stack empty */
-		is->in_lnk = ISSOU(sp->stype) ? strmemb(sp->sap) : NULL;
+		is->in_lnk = ISSOU(sp->stype) ? sp->ssue->suem : NULL;
 		is->in_t = sp->stype;
 		is->in_sym = sp;
 		is->in_df = sp->sdf;
@@ -315,13 +314,13 @@ stkpush(void)
 		if (sq == NULL) {
 			uerror("excess of initializing elements");
 		} else {
-			is->in_lnk = ISSOU(sq->stype) ? strmemb(sq->sap) : NULL;
+			is->in_lnk = ISSOU(sq->stype) ? sq->ssue->suem : 0;
 			is->in_t = sq->stype;
 			is->in_sym = sq;
 			is->in_df = sq->sdf;
 		}
 	} else if (ISARY(t)) {
-		is->in_lnk = ISSOU(DECREF(t)) ? strmemb(pstk->in_sym->sap) : 0;
+		is->in_lnk = ISSOU(DECREF(t)) ? pstk->in_sym->ssue->suem : 0;
 		is->in_t = DECREF(t);
 		is->in_sym = sp;
 		if (pstk->in_df->ddim != NOOFFSET && pstk->in_df->ddim &&
@@ -329,7 +328,8 @@ stkpush(void)
 			werror("excess of initializing elements");
 			pstk->in_n--;
 		}
-		is->in_df = pstk->in_df+1;
+		if (ISARY(is->in_t))
+			is->in_df = pstk->in_df+1;
 	} else
 		uerror("too many left braces");
 	is->in_prev = pstk;
@@ -418,11 +418,7 @@ findoff(void)
 			OFFSZ o;
 			while (ISARY(t))
 				t = DECREF(t);
-			if (ISPTR(t)) {
-				o = SZPOINT(t); /* XXX use tsize() */
-			} else {
-				o = tsize(t, is->in_sym->sdf, is->in_sym->sap);
-			}
+			o = ISPTR(t) ? SZPOINT(t) : is->in_sym->ssue->suesize;
 			off += o * acalc(is, 1);
 			while (is->in_prev && ISARY(is->in_prev->in_t)) {
 				if (is->in_prev->in_prev &&
@@ -525,14 +521,14 @@ scalinit(NODE *p)
 		stkpush();
 		/* If we are doing auto struct init */
 		if (ISSOU(pstk->in_t) && ISSOU(p->n_type) &&
-		    suemeq(pstk->in_sym->sap, p->n_ap))
+		    pstk->in_sym->ssue->suem == p->n_sue->suem)
 			break;
 	}
 
 	if (ISSOU(pstk->in_t) == 0) {
 		/* let buildtree do typechecking (and casting) */
-		q = block(NAME, NIL,NIL, pstk->in_t, pstk->in_df,
-		    pstk->in_sym->sap);
+		q = block(NAME, NIL,NIL, pstk->in_t, pstk->in_sym->sdf,
+		    pstk->in_sym->ssue);
 		p = buildtree(ASSIGN, q, p);
 		nfree(p->n_left);
 		q = optim(p->n_right);
@@ -547,7 +543,7 @@ scalinit(NODE *p)
 		fsz = -(pstk->in_sym->sclass & FLDSIZ);
 	else
 		fsz = (int)tsize(pstk->in_t, pstk->in_sym->sdf,
-		    pstk->in_sym->sap);
+		    pstk->in_sym->ssue);
 
 	nsetval(woff, fsz, q);
 
@@ -588,11 +584,11 @@ insbf(OFFSZ off, int fsz, int val)
 	sym.stype = typ;
 	sym.squal = 0;
 	sym.sdf = 0;
-	sym.sap = MKAP(typ);
+	sym.ssue = MKSUE(typ);
 	sym.soffset = (int)off;
 	sym.sclass = (char)(typ == INT ? FIELD | fsz : MOU);
 	r = xbcon(0, &sym, typ);
-	p = block(STREF, p, r, INT, 0, MKAP(INT));
+	p = block(STREF, p, r, INT, 0, MKSUE(INT));
 	ecode(buildtree(ASSIGN, stref(p), bcon(val)));
 }
 
@@ -649,7 +645,7 @@ endinit(void)
 			oalloc(csym, &autooff);
 		}
 	} else
-		tbit = tsize(csym->stype, csym->sdf, csym->sap);
+		tbit = tsize(csym->stype, csym->sdf, csym->ssue);
 
 	/* Traverse all entries and print'em out */
 	lastoff = 0;
@@ -678,11 +674,11 @@ endinit(void)
 				sym.stype = n->n_type;
 				sym.squal = n->n_qual;
 				sym.sdf = n->n_df;
-				sym.sap = n->n_ap;
+				sym.ssue = n->n_sue;
 				sym.soffset = (int)(ll->begsz + il->off);
 				sym.sclass = (char)(fsz < 0 ? FIELD | -fsz : 0);
 				r = xbcon(0, &sym, INT);
-				p = block(STREF, p, r, INT, 0, MKAP(INT));
+				p = block(STREF, p, r, INT, 0, MKSUE(INT));
 				ecomp(buildtree(ASSIGN, stref(p), il->n));
 				if (fsz < 0)
 					fsz = -fsz;
@@ -850,7 +846,7 @@ desinit(NODE *p)
 		pstk = pstk->in_prev; /* Empty stack */
 
 	if (ISSOU(pstk->in_t))
-		pstk->in_lnk = strmemb(pstk->in_sym->sap);
+		pstk->in_lnk = pstk->in_sym->ssue->suem;
 
 	mkstack(p);	/* Setup for assignment */
 
@@ -928,8 +924,10 @@ asginit(NODE *p)
 				pstk->in_fl = 1; /* simulate ilbrace */
 
 			strcvt(p);
+			if (ISARY(csym->stype) && csym->sdf->ddim == NOOFFSET)
+				asginit(bcon(0)); /* Null-term arrays */
 			if (g == 0)
-				irbrace(); /* will fill with zeroes */
+				irbrace();
 			return;
 		} else
 			pstk = is; /* no array of char */
@@ -955,12 +953,11 @@ prtstk(struct instk *in)
 		printf("%p) '%s' ", in, in->in_sym->sname);
 		tprint(stdout, in->in_t, 0);
 		printf(" %s ", scnames(in->in_sym->sclass));
-		if (in->in_df /* && in->in_df->ddim */)
+		if (in->in_df && in->in_df->ddim)
 		    printf("arydim=%d ", in->in_df->ddim);
 		printf("ninit=%d ", in->in_n);
 		if (BTYPE(in->in_t) == STRTY || ISARY(in->in_t))
-			printf("stsize=%d ",
-			    (int)tsize(in->in_t, in->in_df, in->in_sym->sap));
+			printf("stsize=%d ", in->in_sym->ssue->suesize);
 		if (in->in_fl) printf("{ ");
 		printf("soff=%d ", in->in_sym->soffset);
 		if (in->in_t == STRTY) {
@@ -1007,6 +1004,7 @@ simpleinit(struct symtab *sp, NODE *p)
 	case EXTDEF:
 		q = nt;
 #ifndef NO_COMPLEX
+#define ANYCX(p) (p->n_type == STRTY && gcc_get_attr(p->n_sue, ATTR_COMPLEX))
 		if (ANYCX(q) || ANYCX(p)) {
 			r = cxop(ASSIGN, q, p);
 			/* XXX must unwind the code generated here */
@@ -1016,7 +1014,7 @@ simpleinit(struct symtab *sp, NODE *p)
 			tfree(r);
 			defloc(sp);
 			r = p->n_left->n_right;
-			sz = (int)tsize(r->n_type, r->n_df, r->n_ap);
+			sz = (int)tsize(r->n_type, r->n_df, r->n_sue);
 			ninval(0, sz, r);
 			ninval(0, sz, p->n_right->n_right);
 			tfree(p);
@@ -1027,7 +1025,7 @@ simpleinit(struct symtab *sp, NODE *p)
 		defloc(sp);
 		q = p->n_right;
 		t = q->n_type;
-		sz = (int)tsize(t, q->n_df, q->n_ap);
+		sz = (int)tsize(t, q->n_df, q->n_sue);
 		ninval(0, sz, q);
 		tfree(p);
 		break;

@@ -89,7 +89,7 @@ extern void yyset_lineno (int);
 			}
 "asm"			{ return(C_ASM); }
 "auto"			{ 	return resw(AUTO, C_CLASS); }
-"_Bool"			{ 	return resw(BOOL, C_TYPE); }
+"_Bool"			{ 	return resw(BOOL_TYPE, C_TYPE); }
 "break"			{ return(C_BREAK); }
 "case"			{ return(C_CASE); }
 "char"			{ 	return resw(CHAR, C_TYPE); }
@@ -243,12 +243,11 @@ resw(TWORD t, int rv)
 		return rv;
 
 	case C_QUALIFIER:
-		yylval.nodep = block(QUALIFIER, NIL, NIL, 0, 0, 0);
-		yylval.nodep->n_qual = t;
+		yylval.nodep = block(QUALIFIER, NIL, NIL, t, 0, 0);
 		return rv;
 
 	case C_TYPE:
-		yylval.nodep = mkty(t, 0, MKAP(t));
+		yylval.nodep = mkty(t, 0, MKSUE(t));
 		notype=1;
 		return(rv);
 
@@ -301,7 +300,7 @@ f2(char *str)
 	if (imag)
 		tw += (FIMAG-FLOAT);
 #endif
-	p = block(FCON, NIL, NIL, tw, 0, MKAP(tw));
+	p = block(FCON, NIL, NIL, tw, 0, MKSUE(tw));
 	p->n_dcon = dc;
 	return p;
 }
@@ -619,12 +618,6 @@ pragma()
 		pragma_aligned = ary[2] ? atoi(ary[2]) : 1;
 	} else if (strcmp(ary[1], "rename") == 0) {
 		pragma_renamed = newstring(ary[2], strlen(ary[2]));
-	} else if (strcmp(ary[1], "weak") == 0) {
-		struct symtab *sp = lookup(addname(ary[2]), SNORMAL);
-		sp->sap =
-		    attr_add(sp->sap, gcc_attr_parse(bdty(NAME, "weak")));
-		if (ary[3])
-			uerror("too many arguments to #pragma weak");
 	} else if (mypragma(ary)) {
 		return;
 	} else {

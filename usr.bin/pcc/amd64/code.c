@@ -31,7 +31,7 @@
 
 static int nsse, ngpr, nrsp, rsaoff;
 static int thissse, thisgpr, thisrsp;
-enum { INTEGER = 1, INTMEM, SSE, SSEMEM, X87, STRREG, STRMEM, STRCPX };
+enum { INTEGER = 1, INTMEM, SSE, SSEMEM, X87, STRREG, STRMEM };
 static const int argregsi[] = { RDI, RSI, RDX, RCX, R08, R09 };
 /*
  * The Register Save Area looks something like this.
@@ -54,14 +54,7 @@ static const int argregsi[] = { RDI, RSI, RDX, RCX, R08, R09 };
 int lastloc = -1;
 static int stroffset;
 
-static int varneeds;
-#define	NEED_GPNEXT	001
-#define	NEED_FPNEXT	002
-#define	NEED_1REGREF	004
-#define	NEED_2REGREF	010
-#define	NEED_MEMREF	020
-
-static int argtyp(TWORD t, union dimfun *df, struct attr *ap);
+static int argtyp(TWORD t, union dimfun *df, struct suedef *sue);
 static NODE *movtomem(NODE *p, int off, int reg);
 static NODE *movtoreg(NODE *p, int rno);
 
@@ -74,7 +67,6 @@ defloc(struct symtab *sp)
 {
 	extern char *nextsect;
 	static char *loctbl[] = { "text", "data", "section .rodata" };
-	extern int tbss;
 	int weak = 0;
 	char *name;
 	TWORD t;
@@ -84,52 +76,38 @@ defloc(struct symtab *sp)
 		lastloc = -1;
 		return;
 	}
-	if (kflag) {
-#ifdef MACHOABI
-		loctbl[DATA] = "section .data.rel.rw,\"aw\"";
-		loctbl[RDATA] = "section .data.rel.ro,\"aw\"";
-#else
-		loctbl[DATA] = "section .data.rel.rw,\"aw\",@progbits";
-		loctbl[RDATA] = "section .data.rel.ro,\"aw\",@progbits";
-#endif
-	}
 	t = sp->stype;
 	s = ISFTN(t) ? PROG : ISCON(cqual(t, sp->squal)) ? RDATA : DATA;
 	if ((name = sp->soname) == NULL)
 		name = exname(sp->sname);
-
+#ifdef TLS
 	if (sp->sflags & STLS) {
 		if (s != DATA)
 			cerror("non-data symbol in tls section");
-		if (tbss)
-			nextsect = ".tbss,\"awT\",@nobits";
-		else
-			nextsect = ".tdata,\"awT\",@progbits";
-		tbss = 0;
-		lastloc = -1;
+		nextsect = ".tdata";
 	}
-
+#endif
 #ifdef GCC_COMPAT
 	{
-		struct attr *ga;
+		struct gcc_attrib *ga;
 
-		if ((ga = attr_find(sp->sap, GCC_ATYP_SECTION)) != NULL)
-			nextsect = ga->sarg(0);
-		if ((ga = attr_find(sp->sap, GCC_ATYP_WEAK)) != NULL)
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_SECTION)) != NULL)
+			nextsect = ga->a1.sarg;
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_WEAK)) != NULL)
 			weak = 1;
-		if (attr_find(sp->sap, GCC_ATYP_DESTRUCTOR)) {
+		if (gcc_get_attr(sp->ssue, GCC_ATYP_DESTRUCTOR)) {
 			printf("\t.section\t.dtors,\"aw\",@progbits\n");
 			printf("\t.align 8\n\t.quad\t%s\n", name);
 			lastloc = -1;
 		}
-		if (attr_find(sp->sap, GCC_ATYP_CONSTRUCTOR)) {
+		if (gcc_get_attr(sp->ssue, GCC_ATYP_CONSTRUCTOR)) {
 			printf("\t.section\t.ctors,\"aw\",@progbits\n");
 			printf("\t.align 8\n\t.quad\t%s\n", name);
 			lastloc = -1;
 		}
-		if ((ga = attr_find(sp->sap, GCC_ATYP_VISIBILITY)) &&
-		    strcmp(ga->sarg(0), "default"))
-			printf("\t.%s %s\n", ga->sarg(0), name);
+		if ((ga = gcc_get_attr(sp->ssue, GCC_ATYP_VISIBILITY)) &&
+		    strcmp(ga->a1.sarg, "default"))
+			printf("\t.%s %s\n", ga->a1.sarg, name);
 	}
 #endif
 
@@ -142,17 +120,15 @@ defloc(struct symtab *sp)
 	lastloc = s;
 	while (ISARY(t))
 		t = DECREF(t);
-	s = ISFTN(t) ? ALINT : talign(t, sp->sap);
+	s = ISFTN(t) ? ALINT : talign(t, sp->ssue);
 	if (s > ALCHAR)
 		printf("	.align %d\n", s/ALCHAR);
 	if (weak)
 		printf("        .weak %s\n", name);
 	else if (sp->sclass == EXTDEF) {
 		printf("\t.globl %s\n", name);
-#ifndef MACHOABI
 		printf("\t.type %s,@%s\n", name,
 		    ISFTN(t)? "function" : "object");
-#endif
 	}
 	if (sp->slevel == 0)
 		printf("%s:\n", name);
@@ -163,7 +139,6 @@ defloc(struct symtab *sp)
 /*
  * code for the end of a function
  * deals with struct return here
- * The return value is in (or pointed to by) RETREG.
  */
 void
 efcode()
@@ -172,53 +147,43 @@ efcode()
 	extern int gotnr;
 	TWORD t;
 	NODE *p, *r, *l;
-	int typ, ssz, rno;
+	int o;
 
 	gotnr = 0;	/* new number for next fun */
 	sp = cftnsp;
 	t = DECREF(sp->stype);
 	if (t != STRTY && t != UNIONTY)
 		return;
+	if (argtyp(t, sp->sdf, sp->ssue) != STRMEM)
+		return;
 
-	/* XXX should have one routine for this */
-	if ((typ = argtyp(t, sp->sdf, sp->sap)) == STRREG || typ == STRCPX) {
-		/* Cast to long pointer and move to the registers */
-		/* XXX can overrun struct size */
-		/* XXX check carefully for SSE members */
+	/* call memcpy() to put return struct at destination */
+#define  cmop(x,y) block(CM, x, y, INT, 0, MKSUE(INT))
+	r = tempnode(stroffset, INCREF(t), sp->sdf, sp->ssue);
+	l = block(REG, NIL, NIL, INCREF(t), sp->sdf, sp->ssue);
+	regno(l) = RAX;
+	o = tsize(t, sp->sdf, sp->ssue)/SZCHAR;
+	r = cmop(cmop(r, l), bcon(o));
 
-		if ((ssz = tsize(t, sp->sdf, sp->sap)) > SZLONG*2)
-			cerror("efcode1");
+	blevel++; /* Remove prototype at exit of function */
+	sp = lookup(addname("memcpy"), 0);
+	if (sp->stype == UNDEF) {
+		sp->ssue = MKSUE(VOID);
+		p = talloc();
+		p->n_op = NAME;
+		p->n_sp = sp;
+		p->n_sue = sp->ssue;
+		p->n_type = VOID|FTN|(PTR<<TSHIFT);
+		defid(p, EXTERN);
+		nfree(p);
+	}
+	blevel--;
 
-		if (typ == STRCPX) {
-			t = DOUBLE;
-			rno = XMM0;
-		} else {
-			t = LONG;
-			rno = RAX;
-		}
-		if (ssz > SZLONG) {
-			p = block(REG, NIL, NIL, INCREF(t), 0, MKAP(t));
-			regno(p) = RAX;
-			p = buildtree(UMUL, buildtree(PLUS, p, bcon(1)), NIL);
-			ecomp(movtoreg(p, rno+1));
-		}
-		p = block(REG, NIL, NIL, INCREF(t), 0, MKAP(t));
-		regno(p) = RAX;
-		p = buildtree(UMUL, p, NIL);
-		ecomp(movtoreg(p, rno));
-	} else if (typ == STRMEM) {
-		r = block(REG, NIL, NIL, INCREF(t), sp->sdf, sp->sap);
-		regno(r) = RAX;
-		r = buildtree(UMUL, r, NIL);
-		l = tempnode(stroffset, INCREF(t), sp->sdf, sp->sap);
-		l = buildtree(UMUL, l, NIL);
-		ecomp(buildtree(ASSIGN, l, r));
-		l = block(REG, NIL, NIL, LONG, 0, MKAP(LONG));
-		regno(l) = RAX;
-		r = tempnode(stroffset, LONG, 0, MKAP(LONG));
-		ecomp(buildtree(ASSIGN, l, r));
-	} else
-		cerror("efcode");
+	p = doacall(sp, nametree(sp), r);
+	ecomp(p);
+	
+
+	/* RAX contains destination after memcpy() */
 }
 
 /*
@@ -231,7 +196,6 @@ bfcode(struct symtab **s, int cnt)
 	union arglist *al;
 	struct symtab *sp;
 	NODE *p, *r;
-	TWORD t;
 	int i, rno, typ;
 
 	/* recalculate the arg offset and create TEMP moves */
@@ -240,10 +204,10 @@ bfcode(struct symtab **s, int cnt)
 	nrsp = ARGINIT;
 	if (cftnsp->stype == STRTY+FTN || cftnsp->stype == UNIONTY+FTN) {
 		sp = cftnsp;
-		if (argtyp(DECREF(sp->stype), sp->sdf, sp->sap) == STRMEM) {
-			r = block(REG, NIL, NIL, LONG, 0, MKAP(LONG));
+		if (argtyp(DECREF(sp->stype), sp->sdf, sp->ssue) == STRMEM) {
+			r = block(REG, NIL, NIL, LONG, 0, MKSUE(LONG));
 			regno(r) = argregsi[ngpr++];
-			p = tempnode(0, r->n_type, r->n_df, r->n_ap);
+			p = tempnode(0, r->n_type, r->n_df, r->n_sue);
 			stroffset = regno(p);
 			ecomp(buildtree(ASSIGN, p, r));
 		}
@@ -255,38 +219,26 @@ bfcode(struct symtab **s, int cnt)
 		if (sp == NULL)
 			continue; /* XXX when happens this? */
 
-		switch (typ = argtyp(sp->stype, sp->sdf, sp->sap)) {
+		switch (typ = argtyp(sp->stype, sp->sdf, sp->ssue)) {
 		case INTEGER:
 		case SSE:
 			if (typ == SSE)
 				rno = XMM0 + nsse++;
 			else
 				rno = argregsi[ngpr++];
-			r = block(REG, NIL, NIL, sp->stype, sp->sdf, sp->sap);
+			r = block(REG, NIL, NIL, sp->stype, sp->sdf, sp->ssue);
 			regno(r) = rno;
-			p = tempnode(0, sp->stype, sp->sdf, sp->sap);
+			p = tempnode(0, sp->stype, sp->sdf, sp->ssue);
 			sp->soffset = regno(p);
 			sp->sflags |= STNODE;
 			ecomp(buildtree(ASSIGN, p, r));
-			break;
-
-		case SSEMEM:
-			sp->soffset = nrsp;
-			nrsp += SZDOUBLE;
-			if (xtemps) {
-				p = tempnode(0, sp->stype, sp->sdf, sp->sap);
-				p = buildtree(ASSIGN, p, nametree(sp));
-				sp->soffset = regno(p->n_left);
-				sp->sflags |= STNODE;
-				ecomp(p);
-			}
 			break;
 
 		case INTMEM:
 			sp->soffset = nrsp;
 			nrsp += SZLONG;
 			if (xtemps) {
-				p = tempnode(0, sp->stype, sp->sdf, sp->sap);
+				p = tempnode(0, sp->stype, sp->sdf, sp->ssue);
 				p = buildtree(ASSIGN, p, nametree(sp));
 				sp->soffset = regno(p->n_left);
 				sp->sflags |= STNODE;
@@ -296,35 +248,21 @@ bfcode(struct symtab **s, int cnt)
 
 		case STRMEM: /* Struct in memory */
 			sp->soffset = nrsp;
-			nrsp += tsize(sp->stype, sp->sdf, sp->sap);
+			nrsp += tsize(sp->stype, sp->sdf, sp->ssue);
 			break;
 
-		case X87: /* long double args */
-			sp->soffset = nrsp;
-			nrsp += SZLDOUBLE;
-			break;
-
-		case STRCPX:
 		case STRREG: /* Struct in register */
 			/* Allocate space on stack for the struct */
 			/* For simplicity always fetch two longwords */
 			autooff += (2*SZLONG);
 
-			if (typ == STRCPX) {
-				t = DOUBLE;
-				rno = XMM0 + nsse++;
-			} else {
-				t = LONG;
-				rno = argregsi[ngpr++];
-			}
-			r = block(REG, NIL, NIL, t, 0, MKAP(t));
-			regno(r) = rno;
+			r = block(REG, NIL, NIL, LONG, 0, MKSUE(LONG));
+			regno(r) = argregsi[ngpr++];
 			ecomp(movtomem(r, -autooff, FPREG));
 
-			if (tsize(sp->stype, sp->sdf, sp->sap) > SZLONG) {
-				r = block(REG, NIL, NIL, t, 0, MKAP(t));
-				regno(r) = (typ == STRCPX ?
-				    XMM0 + nsse++ : argregsi[ngpr++]);
+			if (tsize(sp->stype, sp->sdf, sp->ssue) > SZLONG) {
+				r = block(REG, NIL, NIL, LONG, 0, MKSUE(LONG));
+				regno(r) = argregsi[ngpr++];
 				ecomp(movtomem(r, -autooff+SZLONG, FPREG));
 			}
 
@@ -342,14 +280,11 @@ bfcode(struct symtab **s, int cnt)
 	al = cftnsp->sdf->dfun;
 
 	for (; al->type != TELLIPSIS; al++) {
-		t = al->type;
-		if (t == TNULL)
+		if (al->type == TNULL)
 			return;
-		if (BTYPE(t) == STRTY || BTYPE(t) == UNIONTY)
+		if (BTYPE(al->type) == STRTY || BTYPE(al->type) == UNIONTY ||
+		    ISARY(al->type))
 			al++;
-		for (; t > BTMASK; t = DECREF(t))
-			if (ISARY(t) || ISFTN(t))
-				al++;
 	}
 
 	/* fix stack offset */
@@ -358,16 +293,16 @@ bfcode(struct symtab **s, int cnt)
 	/* Save reg arguments in the reg save area */
 	p = NIL;
 	for (i = ngpr; i < 6; i++) {
-		r = block(REG, NIL, NIL, LONG, 0, MKAP(LONG));
+		r = block(REG, NIL, NIL, LONG, 0, MKSUE(LONG));
 		regno(r) = argregsi[i];
 		r = movtomem(r, -RSALONGOFF(i)-autooff, FPREG);
-		p = (p == NIL ? r : block(COMOP, p, r, INT, 0, MKAP(INT)));
+		p = (p == NIL ? r : block(COMOP, p, r, INT, 0, MKSUE(INT)));
 	}
 	for (i = nsse; i < 8; i++) {
-		r = block(REG, NIL, NIL, DOUBLE, 0, MKAP(DOUBLE));
+		r = block(REG, NIL, NIL, DOUBLE, 0, MKSUE(DOUBLE));
 		regno(r) = i + XMM0;
 		r = movtomem(r, -RSADBLOFF(i)-autooff, FPREG);
-		p = (p == NIL ? r : block(COMOP, p, r, INT, 0, MKAP(INT)));
+		p = (p == NIL ? r : block(COMOP, p, r, INT, 0, MKSUE(INT)));
 	}
 	autooff += RSASZ;
 	rsaoff = autooff;
@@ -393,73 +328,10 @@ bccode()
 void
 ejobcode(int flag )
 {
-	if (flag)
-		return;
-
-#ifdef MACHOAPI
-#define PT(x)
-#else
-#define	PT(x) printf(".type __pcc_" x ",@function\n")
-#endif
-
-	/* printout varargs routines if used */
-	if (varneeds & NEED_GPNEXT) {
-		printf(".text\n.align 4\n");
-		PT("gpnext");
-		printf("__pcc_gpnext:\n");
-		printf("cmpl $48,(%%rdi)\njae 1f\n");
-		printf("movl (%%rdi),%%eax\naddq 16(%%rdi),%%rax\n");
-		printf("movq (%%rax),%%rax\naddl $8,(%%rdi)\nret\n");
-		printf("1:movq 8(%%rdi),%%rax\nmovq (%%rax),%%rax\n");
-		printf("addq $8,8(%%rdi)\nret\n");
-	}
-	if (varneeds & NEED_FPNEXT) {
-		printf(".text\n.align 4\n");
-		PT("fpnext");
-		printf("__pcc_fpnext:\n");
-		printf("cmpl $176,4(%%rdi)\njae 1f\n");
-		printf("movl 4(%%rdi),%%eax\naddq 16(%%rdi),%%rax\n");
-		printf("movsd (%%rax),%%xmm0\naddl $16,4(%%rdi)\nret\n");
-		printf("1:movq 8(%%rdi),%%rax\nmovsd (%%rax),%%xmm0\n");
-		printf("addq $8,8(%%rdi)\nret\n");
-	}
-	if (varneeds & NEED_1REGREF) {
-		printf(".text\n.align 4\n");
-		PT("1regref");
-		printf("__pcc_1regref:\n");
-		printf("cmpl $48,(%%rdi)\njae 1f\n");
-		printf("movl (%%rdi),%%eax\naddq 16(%%rdi),%%rax\n");
-		printf("addl $8,(%%rdi)\nret\n");
-		printf("1:movq 8(%%rdi),%%rax\n");
-		printf("addq $8,8(%%rdi)\nret\n");
-	}
-	if (varneeds & NEED_2REGREF) {
-		printf(".text\n.align 4\n");
-		PT("2regref");
-		printf("__pcc_2regref:\n");
-		printf("cmpl $40,(%%rdi)\njae 1f\n");
-		printf("movl (%%rdi),%%eax\naddq 16(%%rdi),%%rax\n");
-		printf("addl $16,(%%rdi)\nret\n");
-		printf("1:movq 8(%%rdi),%%rax\n");
-		printf("addq $16,8(%%rdi)\nret\n");
-	}
-	if (varneeds & NEED_MEMREF) {
-		printf(".text\n.align 4\n");
-		PT("memref");
-		printf("__pcc_memref:\n");
-		printf("movq 8(%%rdi),%%rax\n");
-		printf("addq %%rsi,8(%%rdi)\nret\n");
-	}
-		
-
 #define _MKSTR(x) #x
 #define MKSTR(x) _MKSTR(x)
 #define OS MKSTR(TARGOS)
-#ifdef MACHOABI
-	printf("\t.ident \"PCC: %s (%s)\"\n", PACKAGE_STRING, OS);
-#else
         printf("\t.ident \"PCC: %s (%s)\"\n\t.end\n", PACKAGE_STRING, OS);
-#endif
 }
 
 /*
@@ -473,22 +345,13 @@ ejobcode(int flag )
  *	void *overflow_arg_area;
  *	void *reg_save_area;
  * } __builtin_va_list[1];
- *
- * There are a number of asm routines printed out if varargs are used:
- *	long __pcc_gpnext(va)	- get a gpreg value
- *	long __pcc_fpnext(va)	- get a fpreg value
- *	void *__pcc_1regref(va)	- get reference to a onereg struct 
- *	void *__pcc_2regref(va)	- get reference to a tworeg struct 
- *	void *__pcc_memref(va,sz)	- get reference to a large struct 
  */
 
 static char *gp_offset, *fp_offset, *overflow_arg_area, *reg_save_area;
-static char *gpnext, *fpnext, *_1regref, *_2regref, *memref;
 
 void
 bjobcode()
 {
-	struct symtab *sp;
 	struct rstack *rp;
 	NODE *p, *q;
 	char *c;
@@ -499,33 +362,22 @@ bjobcode()
 	reg_save_area = addname("reg_save_area");
 
 	rp = bstruct(NULL, STNAME, NULL);
-	p = block(NAME, NIL, NIL, UNSIGNED, 0, MKAP(UNSIGNED));
+	p = block(NAME, NIL, NIL, UNSIGNED, 0, MKSUE(UNSIGNED));
 	soumemb(p, gp_offset, 0);
 	soumemb(p, fp_offset, 0);
 	p->n_type = VOID+PTR;
-	p->n_ap = MKAP(VOID);
+	p->n_sue = MKSUE(VOID);
 	soumemb(p, overflow_arg_area, 0);
 	soumemb(p, reg_save_area, 0);
 	nfree(p);
 	q = dclstruct(rp);
 	c = addname("__builtin_va_list");
-	p = block(LB, bdty(NAME, c), bcon(1), INT, 0, MKAP(INT));
+	p = block(LB, bdty(NAME, c), bcon(1), INT, 0, MKSUE(INT));
 	p = tymerge(q, p);
 	p->n_sp = lookup(c, 0);
 	defid(p, TYPEDEF);
 	nfree(q);
 	nfree(p);
-
-	/* for the static varargs functions */
-#define	MKN(vn, rn, tp) \
-	{ vn = addname(rn); sp = lookup(vn, SNORMAL); \
-	  sp->sclass = USTATIC; sp->stype = tp; }
-
-	MKN(gpnext, "__pcc_gpnext", FTN|LONG);
-	MKN(fpnext, "__pcc_fpnext", FTN|DOUBLE);
-	MKN(_1regref, "__pcc_1regref", FTN|VOID|(PTR<<TSHIFT));
-	MKN(_2regref, "__pcc_2regref", FTN|VOID|(PTR<<TSHIFT));
-	MKN(memref, "__pcc_memref", FTN|VOID|(PTR<<TSHIFT));
 }
 
 static NODE *
@@ -533,13 +385,13 @@ mkstkref(int off, TWORD typ)
 {
 	NODE *p;
 
-	p = block(REG, NIL, NIL, PTR|typ, 0, MKAP(LONG));
+	p = block(REG, NIL, NIL, PTR|typ, 0, MKSUE(LONG));
 	regno(p) = FPREG;
 	return buildtree(PLUS, p, bcon(off/SZCHAR));
 }
 
 NODE *
-amd64_builtin_stdarg_start(NODE *f, NODE *a, TWORD t)
+amd64_builtin_stdarg_start(NODE *f, NODE *a)
 {
 	NODE *p, *r;
 
@@ -562,63 +414,73 @@ amd64_builtin_stdarg_start(NODE *f, NODE *a, TWORD t)
 	return r;
 }
 
-NODE *
-amd64_builtin_va_arg(NODE *f, NODE *a, TWORD t)
+/*
+ * Create a tree that should be like the expression
+ *	((long *)(l->gp_offset >= 48 ?
+ *	    l->overflow_arg_area += 8, l->overflow_arg_area :
+ *	    l->gp_offset += 8, l->reg_save_area + l->gp_offset))[-1]
+ * ...or similar for floats.
+ */
+static NODE *
+bva(NODE *ap, TWORD dt, char *ot, int addto, int max)
 {
-	NODE *ap, *r, *dp;
+	NODE *cm1, *cm2, *gpo, *ofa, *l1, *qc;
+	TWORD nt;
+
+	ofa = structref(ccopy(ap), STREF, overflow_arg_area);
+	l1 = buildtree(PLUSEQ, ccopy(ofa), bcon(addto));
+	cm1 = buildtree(COMOP, l1, ofa);
+
+	gpo = structref(ccopy(ap), STREF, ot);
+	l1 = buildtree(PLUSEQ, ccopy(gpo), bcon(addto));
+	cm2 = buildtree(COMOP, l1, buildtree(PLUS, ccopy(gpo),
+	    structref(ccopy(ap), STREF, reg_save_area)));
+	qc = buildtree(QUEST,
+	    buildtree(GE, gpo, bcon(max)),
+	    buildtree(COLON, cm1, cm2));
+
+	nt = (dt == DOUBLE ? DOUBLE : LONG);
+	l1 = block(NAME, NIL, NIL, nt|PTR, 0, MKSUE(nt));
+	l1 = buildtree(CAST, l1, qc);
+	qc = l1->n_right;
+	nfree(l1->n_left);
+	nfree(l1);
+
+	/* qc has now a real type, for indexing */
+	addto = dt == DOUBLE ? 2 : 1;
+	qc = buildtree(UMUL, buildtree(PLUS, qc, bcon(-addto)), NIL);
+
+	l1 = block(NAME, NIL, NIL, dt, 0, MKSUE(BTYPE(dt)));
+	l1 = buildtree(CAST, l1, qc);
+	qc = l1->n_right;
+	nfree(l1->n_left);
+	nfree(l1);
+
+	return qc;
+}
+
+NODE *
+amd64_builtin_va_arg(NODE *f, NODE *a)
+{
+	NODE *ap, *r;
+	TWORD dt;
 
 	ap = a->n_left;
-	dp = a->n_right;
-	if (dp->n_type <= ULONGLONG || ISPTR(dp->n_type) ||
-	    dp->n_type == FLOAT || dp->n_type == DOUBLE) {
+	dt = a->n_right->n_type;
+	if (dt <= ULONGLONG || ISPTR(dt)) {
 		/* type might be in general register */
-		if (dp->n_type == FLOAT || dp->n_type == DOUBLE) {
-			f->n_sp = lookup(fpnext, SNORMAL);
-			varneeds |= NEED_FPNEXT;
-		} else {
-			f->n_sp = lookup(gpnext, SNORMAL);
-			varneeds |= NEED_GPNEXT;
-		}
-		f->n_type = f->n_sp->stype = INCREF(dp->n_type) + (FTN-PTR);
-		f->n_ap = dp->n_ap;
-		f->n_df = dp->n_df;
-		f = clocal(f);
-		r = buildtree(CALL, f, ccopy(ap));
-	} else if (ISSOU(dp->n_type) || dp->n_type == LDOUBLE) {
-		/* put a reference directly to the stack */
-		int sz = tsize(dp->n_type, dp->n_df, dp->n_ap);
-		int al = talign(dp->n_type, dp->n_ap);
-		if (al < ALLONG)
-			al = ALLONG;
-		if (sz <= SZLONG*2 && al == ALLONG) {
-			if (sz <= SZLONG) {
-				f->n_sp = lookup(_1regref, SNORMAL);
-				varneeds |= NEED_1REGREF;
-			} else {
-				f->n_sp = lookup(_2regref, SNORMAL);
-				varneeds |= NEED_2REGREF;
-			}
-			f->n_type = f->n_sp->stype;
-			f = clocal(f);
-			r = buildtree(CALL, f, ccopy(ap));
-			r = ccast(r, INCREF(dp->n_type), 0, dp->n_df, dp->n_ap);
-			r = buildtree(UMUL, r, NIL);
-		} else {
-			f->n_sp = lookup(memref, SNORMAL);
-			varneeds |= NEED_MEMREF;
-			f->n_type = f->n_sp->stype;
-			f = clocal(f);
-			SETOFF(sz, al);
-			r = buildtree(CALL, f,
-			    buildtree(CM, ccopy(ap), bcon(sz/SZCHAR)));
-			r = ccast(r, INCREF(dp->n_type), 0, dp->n_df, dp->n_ap);
-			r = buildtree(UMUL, r, NIL);
-		}
+		r = bva(ap, dt, gp_offset, 8, 48);
+	} else if (dt == FLOAT || dt == DOUBLE) {
+		/* Float are promoted to double here */
+		if (dt == FLOAT)
+			dt = DOUBLE;
+		r = bva(ap, dt, fp_offset, 16, RSASZ/SZCHAR);
 	} else {
 		uerror("amd64_builtin_va_arg not supported type");
 		goto bad;
 	}
 	tfree(a);
+	tfree(f);
 	return r;
 bad:
 	uerror("bad argument to __builtin_va_arg");
@@ -626,7 +488,7 @@ bad:
 }
 
 NODE *
-amd64_builtin_va_end(NODE *f, NODE *a, TWORD t)
+amd64_builtin_va_end(NODE *f, NODE *a)
 {
 	tfree(f);
 	tfree(a);
@@ -634,21 +496,14 @@ amd64_builtin_va_end(NODE *f, NODE *a, TWORD t)
 }
 
 NODE *
-amd64_builtin_va_copy(NODE *f, NODE *a, TWORD t)
-{
-	tfree(f);
-	f = buildtree(ASSIGN, buildtree(UMUL, a->n_left, NIL),
-	    buildtree(UMUL, a->n_right, NIL));
-	nfree(a);
-	return f;
-}
+amd64_builtin_va_copy(NODE *f, NODE *a) { cerror("amd64_builtin_va_copy"); return NULL; }
 
 static NODE *
 movtoreg(NODE *p, int rno)
 {
 	NODE *r;
 
-	r = block(REG, NIL, NIL, p->n_type, p->n_df, p->n_ap);
+	r = block(REG, NIL, NIL, p->n_type, p->n_df, p->n_sue);
 	regno(r) = rno;
 	return clocal(buildtree(ASSIGN, r, p));
 }  
@@ -660,9 +515,8 @@ movtomem(NODE *p, int off, int reg)
 	NODE *r, *l;
 
 	s.stype = p->n_type;
-	s.squal = 0;
 	s.sdf = p->n_df;
-	s.sap = p->n_ap;
+	s.ssue = p->n_sue;
 	s.soffset = off;
 	s.sclass = AUTO;
 
@@ -670,7 +524,7 @@ movtomem(NODE *p, int off, int reg)
 	l->n_lval = 0;
 	regno(l) = reg;
 
-	r = block(NAME, NIL, NIL, p->n_type, p->n_df, p->n_ap);
+	r = block(NAME, NIL, NIL, p->n_type, p->n_df, p->n_sue);
 	r->n_sp = &s;
 	r = stref(block(STREF, l, r, 0, 0, 0));
 
@@ -682,23 +536,20 @@ movtomem(NODE *p, int off, int reg)
  * AMD64 parameter classification.
  */
 static int
-argtyp(TWORD t, union dimfun *df, struct attr *ap)
+argtyp(TWORD t, union dimfun *df, struct suedef *sue)
 {
 	int cl = 0;
 
-	if (t <= ULONG || ISPTR(t) || t == BOOL) {
+	if (t <= ULONG || ISPTR(t)) {
 		cl = ngpr < 6 ? INTEGER : INTMEM;
 	} else if (t == FLOAT || t == DOUBLE) {
 		cl = nsse < 8 ? SSE : SSEMEM;
 	} else if (t == LDOUBLE) {
 		cl = X87; /* XXX */
-	} else if (t == STRTY || t == UNIONTY) {
-		int sz = tsize(t, df, ap);
-
-		if (sz <= 2*SZLONG && attr_find(ap, ATTR_COMPLEX) != NULL) {
-			cl = nsse < 7 ? STRCPX : STRMEM;
-		} else if (sz > 2*SZLONG || ((sz+SZLONG)/SZLONG)+ngpr > 6 ||
-		    attr_find(ap, GCC_ATYP_PACKED) != NULL)
+	} else if (t == STRTY) {
+		/* XXX no SSEOP handling */
+		if ((tsize(t, df, sue) > 2*SZLONG) ||
+		    (gcc_get_attr(sue, GCC_ATYP_PACKED) != NULL))
 			cl = STRMEM;
 		else
 			cl = STRREG;
@@ -707,179 +558,77 @@ argtyp(TWORD t, union dimfun *df, struct attr *ap)
 	return cl;
 }
 
-/*
- * Do the "hard work" in assigning correct destination for arguments.
- * Also convert arguments < INT to inte (default argument promotions).
- * XXX - should be dome elsewhere.
- */
-static NODE *
+static void
 argput(NODE *p)
 {
 	NODE *q;
-	TWORD ty;
 	int typ, r, ssz;
-
-	if (p->n_op == CM) {
-		p->n_left = argput(p->n_left);
-		p->n_right = argput(p->n_right);
-		return p;
-	}
 
 	/* first arg may be struct return pointer */
 	/* XXX - check if varargs; setup al */
-	switch (typ = argtyp(p->n_type, p->n_df, p->n_ap)) {
+	switch (typ = argtyp(p->n_type, p->n_df, p->n_sue)) {
 	case INTEGER:
 	case SSE:
+		q = talloc();
+		*q = *p;
 		if (typ == SSE)
 			r = XMM0 + nsse++;
 		else
 			r = argregsi[ngpr++];
-		if (p->n_type < INT || p->n_type == BOOL)
-			p = cast(p, INT, 0);
-		p = movtoreg(p, r);
+		q = movtoreg(q, r);
+		*p = *q;
+		nfree(q);
 		break;
-
 	case X87:
-		r = nrsp;
-		nrsp += SZLDOUBLE;
-		p = movtomem(p, r, STKREG);
-		break;
-
-	case SSEMEM:
-		r = nrsp;
-		nrsp += SZDOUBLE;
-		p = movtomem(p, r, STKREG);
+		cerror("no long double yet");
 		break;
 
 	case INTMEM:
+		q = talloc();
+		*q = *p;
 		r = nrsp;
 		nrsp += SZLONG;
-		p = movtomem(p, r, STKREG);
+		q = movtomem(q, r, STKREG);
+		*p = *q;
+		nfree(q);
 		break;
 
-	case STRCPX:
 	case STRREG: /* Struct in registers */
 		/* Cast to long pointer and move to the registers */
-		/* XXX can overrun struct size */
-		/* XXX check carefully for SSE members */
-		ssz = tsize(p->n_type, p->n_df, p->n_ap);
+		ssz = tsize(p->n_type, p->n_df, p->n_sue);
 
-		if (typ == STRCPX) {
-			ty = DOUBLE;
-			r = XMM0 + nsse++;
-		} else {
-			ty = LONG;
-			r = argregsi[ngpr++];
-		}
 		if (ssz <= SZLONG) {
-			q = cast(p->n_left, INCREF(ty), 0);
-			nfree(p);
+			q = cast(p->n_left, LONG+PTR, 0);
 			q = buildtree(UMUL, q, NIL);
-			p = movtoreg(q, r);
+			q = movtoreg(q, argregsi[ngpr++]);
+			*p = *q;
+			nfree(q);
 		} else if (ssz <= SZLONG*2) {
-			NODE *ql, *qr;
+			NODE *qt, *q1, *q2, *ql, *qr;
 
-			qr = cast(ccopy(p->n_left), INCREF(ty), 0);
-			qr = movtoreg(buildtree(UMUL, qr, NIL), r);
-
-			ql = cast(p->n_left, INCREF(ty), 0);
-			ql = buildtree(UMUL, buildtree(PLUS, ql, bcon(1)), NIL);
-			r = (typ == STRCPX ? XMM0 + nsse++ : argregsi[ngpr++]);
-			ql = movtoreg(ql, r);
-
-			nfree(p);
-			p = buildtree(CM, ql, qr);
+			qt = tempnode(0, LONG+PTR, 0, MKSUE(LONG));
+			q1 = ccopy(qt);
+			q2 = ccopy(qt);
+			ql = buildtree(ASSIGN, qt, cast(p->n_left,LONG+PTR, 0));
+			qr = movtoreg(buildtree(UMUL, q1, NIL),
+			    argregsi[ngpr++]);
+			ql = buildtree(COMOP, ql, qr);
+			qr = buildtree(UMUL, buildtree(PLUS, q2, bcon(1)), NIL);
+			qr = movtoreg(qr, argregsi[ngpr++]);
+			q = buildtree(COMOP, ql, qr);
+			*p = *q;
+			nfree(q);
 		} else
 			cerror("STRREG");
 		break;
 
-	case STRMEM: {
-		struct symtab s;
-		NODE *l, *t;
-
-		q = buildtree(UMUL, p->n_left, NIL);
-
-		s.stype = p->n_type;
-		s.squal = 0;
-		s.sdf = p->n_df;
-		s.sap = p->n_ap;
-		s.soffset = nrsp;
-		s.sclass = AUTO;
-
-		nrsp += tsize(p->n_type, p->n_df, p->n_ap);
-
-		l = block(REG, NIL, NIL, PTR+STRTY, 0, 0);
-		l->n_lval = 0;
-		regno(l) = STKREG;
-
-		t = block(NAME, NIL, NIL, p->n_type, p->n_df, p->n_ap);
-		t->n_sp = &s;
-		t = stref(block(STREF, l, t, 0, 0, 0));
-
-		t = (buildtree(ASSIGN, t, q));
-		nfree(p);
-		p = t->n_left;
-		nfree(t);
-		break;
-		}
-
+	case STRMEM:
+		/* Struct moved to memory */
 	default:
 		cerror("argument %d", typ);
 	}
-	return p;
 }
 
-/*
- * Sort arglist so that register assignments ends up last.
- */
-static int
-argsort(NODE *p)
-{
-	NODE *q, *r;
-	int rv = 0;
-
-	if (p->n_op != CM) {
-		if (p->n_op == ASSIGN && p->n_left->n_op == REG &&
-		    coptype(p->n_right->n_op) != LTYPE) {
-			q = tempnode(0, p->n_type, p->n_df, p->n_ap);
-			r = ccopy(q);
-			p->n_right = buildtree(COMOP,
-			    buildtree(ASSIGN, q, p->n_right), r);
-		}
-		return rv;
-	}
-	if (p->n_right->n_op == CM) {
-		/* fixup for small structs in regs */
-		q = p->n_right->n_left;
-		p->n_right->n_left = p->n_left;
-		p->n_left = p->n_right;
-		p->n_right = q;
-	}
-	if (p->n_right->n_op == ASSIGN && p->n_right->n_left->n_op == REG &&
-	    coptype(p->n_right->n_right->n_op) != LTYPE) {
-		/* move before everything to avoid reg trashing */
-		q = tempnode(0, p->n_right->n_type,
-		    p->n_right->n_df, p->n_right->n_ap);
-		r = ccopy(q);
-		p->n_right->n_right = buildtree(COMOP,
-		    buildtree(ASSIGN, q, p->n_right->n_right), r);
-	}
-	if (p->n_right->n_op == ASSIGN && p->n_right->n_left->n_op == REG) {
-		if (p->n_left->n_op == CM &&
-		    p->n_left->n_right->n_op == STASG) {
-			q = p->n_left->n_right;
-			p->n_left->n_right = p->n_right;
-			p->n_right = q;
-			rv = 1;
-		} else if (p->n_left->n_op == STASG) {
-			q = p->n_left;
-			p->n_left = p->n_right;
-			p->n_right = q;
-			rv = 1;
-		}
-	}
-	return rv | argsort(p->n_left);
-}
 
 /*
  * Called with a function call with arguments as argument.
@@ -890,25 +639,18 @@ NODE *
 funcode(NODE *p)
 {
 	NODE *l, *r;
-	TWORD t;
 
 	nsse = ngpr = nrsp = 0;
 	/* Check if hidden arg needed */
 	/* If so, add it in pass2 */
 	if ((l = p->n_left)->n_type == INCREF(FTN)+STRTY ||
 	    l->n_type == INCREF(FTN)+UNIONTY) {
-		int ssz = tsize(BTYPE(l->n_type), l->n_df, l->n_ap);
+		int ssz = tsize(BTYPE(l->n_type), l->n_df, l->n_sue);
 		if (ssz > 2*SZLONG)
 			ngpr++;
 	}
+	listf(p->n_right, argput);
 
-	/* Convert just regs to assign insn's */
-	p->n_right = argput(p->n_right);
-
-	/* Must sort arglist so that STASG ends up first */
-	/* This avoids registers being clobbered */
-	while (argsort(p->n_right))
-		;
 	/* Check if there are varargs */
 	if (nsse || l->n_df == NULL || l->n_df->dfun == NULL) {
 		; /* Need RAX */
@@ -916,24 +658,23 @@ funcode(NODE *p)
 		union arglist *al = l->n_df->dfun;
 
 		for (; al->type != TELLIPSIS; al++) {
-			if ((t = al->type) == TNULL)
+			if (al->type == TNULL)
 				return p; /* No need */
-			if (BTYPE(t) == STRTY || BTYPE(t) == UNIONTY)
+			if (BTYPE(al->type) == STRTY ||
+			    BTYPE(al->type) == UNIONTY ||
+			    ISARY(al->type))
 				al++;
-			for (; t > BTMASK; t = DECREF(t))
-				if (ISARY(t) || ISFTN(t))
-					al++;
 		}
 	}
 
 	/* Always emit number of SSE regs used */
 	l = movtoreg(bcon(nsse), RAX);
 	if (p->n_right->n_op != CM) {
-		p->n_right = block(CM, l, p->n_right, INT, 0, MKAP(INT));
+		p->n_right = block(CM, l, p->n_right, INT, 0, MKSUE(INT));
 	} else {
 		for (r = p->n_right; r->n_left->n_op == CM; r = r->n_left)
 			;
-		r->n_left = block(CM, l, r->n_left, INT, 0, MKAP(INT));
+		r->n_left = block(CM, l, r->n_left, INT, 0, MKSUE(INT));
 	}
 	return p;
 }
