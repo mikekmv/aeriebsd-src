@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 2002 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -89,7 +88,7 @@ struct cfdriver elansc_cd = {
 	NULL, "elansc", DV_DULL
 };
 
-static int cpuspeed;
+int elan_cpuspeed;
 
 int
 elansc_match(struct device *parent, void *match, void *aux)
@@ -323,7 +322,7 @@ elansc_update_cpuspeed(void)
 
 	cpuctl = bus_space_read_1(elansc->sc_memt, elansc->sc_memh,
 	    MMCR_CPUCTL);
-	cpuspeed = elansc_mhz[cpuctl & CPUCTL_CPU_CLK_SPD_MASK];
+	elan_cpuspeed = elansc_mhz[cpuctl & CPUCTL_CPU_CLK_SPD_MASK];
 }
 
 void
@@ -353,7 +352,7 @@ elansc_setperf(int level)
 int
 elansc_cpuspeed(int *freq)
 {
-	*freq = cpuspeed;
+	*freq = elan_cpuspeed;
 	return (0);
 }
 
