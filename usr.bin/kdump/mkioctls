@@ -33,7 +33,7 @@
 ${CC:-cc} -E -nostdinc -idirafter $DESTDIR/usr/include -dM ${1+"$@"} | awk '
 BEGIN {
 	print "#ifndef lint"
-	print "static const char rcsid[] = \"$ABSD$\";"
+	print "static const char rcsid[] = \"$ABSD: mkioctls,v 1.3 2010/06/05 11:33:16 mickey Exp $\";"
 	print "#endif /* not lint */"
 	print
 	print "#include <sys/param.h>"
@@ -79,7 +79,6 @@ BEGIN {
 	print "#include <crypto/cryptodev.h>"
 	print "#include <dev/biovar.h>"
 	print "#include <dev/ramdisk.h>"
-	print "#include <dev/rndioctl.h>"
 	print "#include <dev/systrace.h>"
 	print "#include <dev/wscons/wsconsio.h>"
 	print "#include <dev/vndioctl.h>"

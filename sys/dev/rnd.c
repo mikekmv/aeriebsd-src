@@ -1,8 +1,7 @@
-
 /*
  * rnd.c -- A strong random number generator
  *
- * Copyright (c) 1996, 1997, 2000-2002 Michael Shalayeff.
+ * Copyright (c) 1996, 1997, 2000-2011 Michael Shalayeff.
  * Copyright (c) 2008 Damien Miller.
  *
  * Version 1.89, last modified 19-Sep-99
@@ -143,7 +142,7 @@
  * are hashed into the pool plain and blindly, increasing the counter.
  *
  * add_timer_randomness() uses the random driver itselves timing,
- * measuring extract_entropy() and rndioctl() execution times.
+ * measuring extract_entropy().
  *
  * add_mouse_randomness() uses the mouse interrupt timing, as well as
  * the reported position of the mouse from the hardware.
@@ -237,7 +236,6 @@
  */
 
 #include <sys/param.h>
-#include <sys/endian.h>
 #include <sys/systm.h>
 #include <sys/conf.h>
 #include <sys/disk.h>
@@ -256,7 +254,6 @@
 #include <crypto/arc4.h>
 
 #include <dev/rndvar.h>
-#include <dev/rndioctl.h>
 
 #ifdef	RNDEBUG
 int	rnd_debug = 0x0000;
@@ -316,7 +313,7 @@ int	rnd_debug = 0x0000;
 /*
  * Stirring polynomials over GF(2) for various pool sizes. Used in
  * add_entropy_words() below.
- * 
+ *
  * The polynomial terms are chosen to be evenly spaced (minimum RMS
  * distance from evenly spaced; except for the last tap, which is 1 to
  * get the twisting happening as fast as possible.
@@ -1003,7 +1000,7 @@ randomread(dev_t dev, struct uio *uio, int ioflag)
 {
 	int		ret = 0;
 	int		i;
-	u_int32_t 	*buf;
+	u_int32_t	*buf;
 
 	if (uio->uio_resid == 0)
 		return 0;
@@ -1180,10 +1177,6 @@ randomwrite(dev_t dev, struct uio *uio, int flags)
 int
 randomioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 {
-	int	ret = 0;
-	u_int	cnt;
-
-	add_timer_randomness((u_long)p ^ (u_long)data ^ cmd);
 
 	switch (cmd) {
 	case FIOASYNC:
@@ -1194,56 +1187,9 @@ randomioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 		/* Handled in the upper FS layer. */
 		break;
 
-	case RNDGETENTCNT:
-		mtx_enter(&rndlock);
-		*(u_int *)data = random_state.entropy_count;
-		mtx_leave(&rndlock);
-		break;
-	case RNDADDTOENTCNT:
-		if (suser(p, 0) != 0)
-			ret = EPERM;
-		else {
-			cnt = *(u_int *)data;
-			mtx_enter(&rndlock);
-			random_state.entropy_count += cnt;
-			if (random_state.entropy_count > POOLBITS)
-				random_state.entropy_count = POOLBITS;
-			mtx_leave(&rndlock);
-		}
-		break;
-	case RNDZAPENTCNT:
-		if (suser(p, 0) != 0)
-			ret = EPERM;
-		else {
-			mtx_enter(&rndlock);
-			random_state.entropy_count = 0;
-			mtx_leave(&rndlock);
-		}
-		break;
-	case RNDSTIRARC4:
-		if (suser(p, 0) != 0)
-			ret = EPERM;
-		else if (random_state.entropy_count < 64)
-			ret = EAGAIN;
-		else {
-			mtx_enter(&rndlock);
-			arc4random_initialized = 0;
-			mtx_leave(&rndlock);
-		}
-		break;
-	case RNDCLRSTATS:
-		if (suser(p, 0) != 0)
-			ret = EPERM;
-		else {
-			mtx_enter(&rndlock);
-			bzero(&rndstats, sizeof(rndstats));
-			mtx_leave(&rndlock);
-		}
-		break;
 	default:
-		ret = ENOTTY;
+		return ENOTTY;
 	}
 
-	add_timer_randomness((u_long)p ^ (u_long)data ^ cmd);
-	return ret;
+	return 0;
 }

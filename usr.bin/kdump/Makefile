@@ -15,7 +15,6 @@ ioctl.c: ${.CURDIR}/Makefile ${.CURDIR}/mkioctls
 	    ${DESTDIR}/usr/include/crypto/cryptodev.h \
 	    ${DESTDIR}/usr/include/dev/biovar.h \
 	    ${DESTDIR}/usr/include/dev/ramdisk.h \
-	    ${DESTDIR}/usr/include/dev/rndioctl.h \
 	    ${DESTDIR}/usr/include/dev/systrace.h \
 	    ${DESTDIR}/usr/include/dev/wscons/wsconsio.h \
 	    ${DESTDIR}/usr/include/dev/vndioctl.h \
