@@ -2245,9 +2245,7 @@ ohci_abort_xfer(usbd_xfer_handle xfer, usbd_status status)
 	for (; p->xfer == xfer; p = n) {
 		hit |= headp == p->physaddr;
 		n = p->nexttd;
-		if (OHCI_TD_GET_CC(letoh32(p->td.td_flags)) ==
-		    OHCI_CC_NOT_ACCESSED)
-			ohci_free_std(sc, p);
+		ohci_free_std(sc, p);
 	}
 	/* Zap headp register if hardware pointed inside the xfer. */
 	if (hit) {
