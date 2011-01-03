@@ -103,7 +103,7 @@ struct	sigacts {
 #define	SA_CANTMASK	0x40		/* non-maskable, catchable */
 
 #ifdef	SIGPROP
-int sigprop[NSIG + 1] = {
+const int sigprop[NSIG + 1] = {
 	0,			/* unused */
 	SA_KILL,		/* SIGHUP */
 	SA_KILL,		/* SIGINT */
