@@ -1,4 +1,3 @@
-
 /*
  * ppp_tty.c - Point-to-Point Protocol (PPP) driver for asynchronous
  * 	       tty devices.
@@ -1073,7 +1072,7 @@ pppdumpb(b, l)
 {
     char buf[3*MAX_DUMP_BYTES+4];
     char *bp = buf;
-    static char digits[] = "0123456789abcdef";
+    static const char digits[16] = "0123456789abcdef";
 
     while (l--) {
 	if (bp >= buf + sizeof(buf) - 3) {

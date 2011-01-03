@@ -1,4 +1,3 @@
-
 /*
  * if_ppp.c - Point-to-Point Protocol (PPP) Asynchronous driver.
  *
@@ -1568,7 +1567,7 @@ pppdumpm(m0)
     char buf[3*MAX_DUMP_BYTES+4];
     char *bp = buf;
     struct mbuf *m;
-    static char digits[] = "0123456789abcdef";
+    static const char digits[16] = "0123456789abcdef";
 
     for (m = m0; m; m = m->m_next) {
 	int l = m->m_len;

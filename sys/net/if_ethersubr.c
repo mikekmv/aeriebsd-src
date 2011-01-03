@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
@@ -794,11 +793,11 @@ done:
 /*
  * Convert Ethernet address to printable (loggable) representation.
  */
-static char digits[] = "0123456789abcdef";
 char *
 ether_sprintf(ap)
 	u_char *ap;
 {
+	static const char digits[16] = "0123456789abcdef";
 	int i;
 	static char etherbuf[ETHER_ADDR_LEN * 3];
 	char *cp = etherbuf;

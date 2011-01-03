@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
@@ -1970,12 +1969,12 @@ in6ifa_ifplocaladdr(const struct ifnet *ifp, const struct in6_addr *addr)
 /*
  * Convert IP6 address to printable (loggable) representation.
  */
-static char digits[] = "0123456789abcdef";
-static int ip6round = 0;
 char *
 ip6_sprintf(struct in6_addr *addr)
 {
+	static const char digits[16] = "0123456789abcdef";
 	static char ip6buf[8][48];
+	static int ip6round;
 	int i;
 	char *cp;
 	u_short *a = (u_short *)addr;
