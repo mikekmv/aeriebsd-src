@@ -1,0 +1,226 @@
+.\"
+.\" Copyright (C) Caldera International Inc. 2001-2002.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code and documentation must retain the above
+.\" copyright notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\" notice, this list of conditions and the following disclaimer in the
+.\" documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\" must display the following acknowledgement:
+.\" This product includes software developed or owned by Caldera
+.\" International, Inc.
+.\" 4. Neither the name of Caldera International, Inc. nor the names of other
+.\" contributors may be used to endorse or promote products derived from
+.\" this software without specific prior written permission.
+.\"
+.\" USE OF THE SOFTWARE PROVIDED FOR UNDER THIS LICENSE BY CALDERA
+.\" INTERNATIONAL, INC. AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL CALDERA INTERNATIONAL, INC. BE LIABLE FOR ANY DIRECT,
+.\" INDIRECT INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+.\" (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+.\" SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+.\" STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+.\" IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+.\" POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\"
+.\" Copyright (c) 1991
+.\" The Regents of the University of California. All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\" notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\" notice, this list of conditions and the following disclaimer in the
+.\" documentation and/or other materials provided with the distribution.
+.\" 3. Neither the name of the University nor the names of its contributors
+.\" may be used to endorse or promote products derived from this software
+.\" without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.Dd August 9, 1991
+.Dt NROFF 1
+.Os
+.Sh NAME
+.Nm nroff
+.Nd text formatting
+.Sh SYNOPSIS
+.Nm nroff
+.Op option
+.Ar ...
+.Op file
+.Ar ...
+.Sh DESCRIPTION
+.Nm Nroff
+formats text in the named
+.Ar files
+for typewriter-like devices.  See also
+.Xr troff 1  .
+The full capabilities of
+.Nm nroff
+are described in the
+.%T "Nroff/Troff User's Manual" .
+.Pp
+If no
+.Ar file
+argument is present, the standard input is read.
+An argument consisting of a single minus
+.Fl
+is taken to be a file name corresponding to the standard input.
+.Pp
+The options, which may appear in any order so long as they appear
+.Ar before
+the files, are:
+.Bl -tag -width indent
+.It Fl o Ns Ar list 
+Print only pages whose page numbers appear in the comma-separated
+.Ar list
+of numbers and ranges.  A range
+.Ar N\-M
+means pages
+.Ar N
+through
+.Ar M  ;
+an initial
+.Ar \-N
+means from the beginning to page
+.Ar N  ;
+and a final
+.Ar N\-
+means from
+.Ar N
+to the end.
+.It Fl n Ns Ar N 
+Number first generated page
+.Ar N  .
+.It Fl s Ns Ar N 
+Stop every
+.Ar N
+pages.
+.Nm Nroff
+will halt prior to every
+.Ar N
+pages (default
+.Ar N Ns =1) 
+to allow paper loading or changing, and will resume upon receipt of a newline.
+.It Fl m Ns Ar name 
+Prepend the macro file
+.Pa /usr/share/tmac/tmac.name
+to the input
+.Ar files  .
+.It Fl r Ns Ar aN 
+Set register
+.Ar a
+(one-character) to
+.Ar N  .
+.It Fl i
+Read standard input after the input files are exhausted.
+.It Fl q
+Invoke the simultaneous input-output mode of the
+.Ar rd
+request.
+.It Fl T Ns Ar name 
+Prepare output for specified terminal.  Known
+.Ar names
+are:
+.Pp
+.Bl -tag -width xeroxxx -compact
+.It Cm 37
+for the Teletype Corporation Model 37 terminal,
+.It Cm crt
+the default; linked to lpr and tn300, for the GE TermiNet 300 (or any
+terminal without reverse-line or half-line capability),
+.It Cm 300
+for the DTC 300,
+.It Cm 302
+for the DTC 302S and the DTC 300S,
+.It Cm 382
+for the DTC 382,
+.It Cm 450
+for the DTC 450 and the IPSI 1622,
+.It Cm 833
+for the AJ 832/833,
+.It Cm epson
+for the Epson FX80,
+.It Cm itoh
+for the C:ITOH Prowriter
+.It Cm nec
+for the NEC-55?0/77?0 Spinwriter, with the Courier-72/Manifold
+thimble,
+.It Cm nec-t
+for the NEC-55?0/77?0 Spinwriter, with the Tech-Math/Times-Roman
+thimble,
+.It Cm nec25-t
+for the NEC-5525/7725 Spinwriter, with the Tech-Math/Times-Roman
+thimble,
+.It Cm qume
+for the Qume Sprint 5 or 9,
+.It Cm x-ecs
+for the Xerox/Diablo 1730/630, extended character set,
+.It Cm xerox
+for the Xerox 17?0 or the Diablo 16?0.
+Most of these also have versions for 12 pitch.
+See
+.Pa /usr/libdata/term/README
+for more information.
+.El
+.It Fl e
+Produce equally-spaced words in adjusted lines, using full terminal resolution.
+.It Fl h
+Use output tabs during horizontal spacing
+to speed output and reduce output character count.
+Tab settings are assumed to be every 8 nominal character widths.
+.El
+.Sh FILES
+.Bl -tag -width /usr/share/tmac/tmac.* -compact
+.It Pa /tmp/ta*
+Temporary file.
+.It Pa /usr/share/tmac/tmac.*
+Standard macro files
+.It Pa /usr/share/tabset/*
+Terminal driving tables for
+.Nm nroff .
+.El
+.Sh SEE ALSO
+.Xr col 1 ,
+.Xr eqn 1 ,
+.Xr tbl 1 ,
+.Xr troff 1 ,
+.Xr mandoc 7 ,
+.Xr ms 7
+.Rs
+.%A J. F. Ossanna
+.%T "Nroff/Troff user's manual"
+.Re
+.Rs
+.%A B. W. Kernighan
+.%T A TROFF Tutorial
+.Re
+.Sh HISTORY
+An
+.Nm nroff
+command appeared in
+.At v6 .
+The version described here appeared in
+.At v7 .
