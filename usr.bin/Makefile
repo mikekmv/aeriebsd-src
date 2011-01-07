@@ -13,7 +13,7 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	locate lock logger login logname look lorder \
 	m4 mail make man manhtml mesg mg midiplay mixerctl mkdep mklocale \
 	mkstr mktemp modstat more msgs \
-	nc netstat newsyslog nfsstat nice nm nohup oldrdist \
+	nc netstat newsyslog nfsstat nice nm nohup nroff oldrdist \
 	pagesize passwd paste patch pcc pctr pkill plot pmdb pr \
 	printenv printf \
 	quota radioctl rcs rdist rdistd readlink renice rev \
@@ -22,7 +22,7 @@ SUBDIR= apply apropos ar arch asa asn1_compile at aucat audioctl awk \
 	skeyaudit skeyinfo skeyinit soelim sort spell spline split \
 	ssh stat strings strip su systat sudo \
 	tail talk tbl tcopy tcpbench tee telnet tftp tic time tip \
-	top touch tput tr true tset tsort tty \
+	top touch tput tr troff true tset tsort tty \
 	usbhidaction usbhidctl ul uname unexpand unifdef uniq units \
 	unvis users uudecode uuencode vacation vgrind vi vis vmstat \
 	w wall wc what whatis which who whois write \
