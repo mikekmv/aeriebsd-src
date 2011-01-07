@@ -237,8 +237,8 @@ struct contab {
 };
 
 struct d {
-	filep op; int dnl,dimac,ditrap,ditf,alss,blss,nls,mkline,
-	maxl,hnl,curd;
+	filep op;
+	int dnl,dimac,ditrap,ditf,alss,blss,nls,mkline,maxl,hnl,curd;
 };
 
 struct v {
@@ -600,6 +600,16 @@ void collect(void);
 int rdtty(void);
 int chget(int);
 int alph(int);
+void report(void);
+void ptesc(void);
+void ptps(void);
+void ptout0(int);
+void ptout(int);
+int getcw(int);
+void xbits(int i);
+int getfz(int, int);
+void acctg(void);
+int findps(int);
 
 
 void

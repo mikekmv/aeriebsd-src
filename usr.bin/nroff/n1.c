@@ -72,7 +72,7 @@ static const char copyright[] =
 static char sccsid[] = "@(#)n1.c	4.13 (Berkeley) 4/18/91";
 static char sccsid[] = "@(#)n9.c	4.3 (Berkeley) 4/18/91";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n1.c,v 1.1 2011/01/05 23:31:20 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -319,6 +319,7 @@ kcatch(void)
 }
 
 #ifndef NROFF
+void
 acctg(void)
 {
 	static char *acct_file = _PATH_TRACCT;
@@ -783,13 +784,14 @@ again:
 	if ((i == 0) && !init)
 		goto again;
 g4:
-	if ((copyf == 0) && ((i & ~BMASK) == 0) && ((i & CMASK) < 0370))
+	if ((copyf == 0) && ((i & ~BMASK) == 0) && ((i & CMASK) < 0370)) {
 #ifndef NROFF
 		if (spbits && (i>31) && ((codetab[i-32] & 0200)))
 			i |= spbits;
 		else
 #endif
 			i |= chbits;
+	}
 	if ((i & CMASK) == eschar)
 		i = (i & ~CMASK) | ESC;
 	return (i);

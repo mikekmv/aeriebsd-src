@@ -65,7 +65,7 @@
 #if 0
 static char sccsid[] = "@(#)n7.c	4.6 (Berkeley) 5/2/91";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: n7.c,v 1.1 2011/01/05 23:31:20 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -100,7 +100,10 @@ int gettch(void);
 void
 tbreak(void)
 {
-	int *i, j, pad, res;
+	int *i, j, pad;
+#ifdef NROFF
+	int res;
+#endif
 
 	trap = 0;
 	if (nb)
