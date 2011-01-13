@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.24 2010/11/18 13:11:00 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.25 2010/12/09 16:00:44 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -692,7 +692,7 @@ lib_namtab(const char *path, FILE *fp, u_long len, off_t symoff, u_long symlen)
 			if (!sym_isundef(p))
 				continue;
 
-			foff = ntohl(offs[i]);
+			foff = betoh32(offs[i]);
 			if (fseeko(fp, foff, SEEK_SET) < 0)
 				err(1, "fseeko: %s", path);
 			if (fread(&mh, sizeof mh, 1, fp) != 1)

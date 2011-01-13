@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: i386.c,v 1.10 2010/07/23 15:51:29 mickey Exp $";
+static const char rcsid[] = "$ABSD: i386.c,v 1.11 2010/08/17 13:36:35 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -77,6 +77,7 @@ const struct ldorder i386_order[] = {
 	{ ldo_section,	ELF_SBSS, SHT_NOBITS, SHF_ALLOC | SHF_WRITE },
 	{ ldo_section,	ELF_BSS, SHT_NOBITS, SHF_ALLOC | SHF_WRITE },
 	{ ldo_symbol,	"end", N_ABS },
+	{ ldo_symbol,	"_end", N_ABS },
 	{ ldo_shstr,	ELF_SHSTRTAB, SHT_STRTAB, 0, LD_CONTAINS },
 	  /* section headers go here */
 	{ ldo_symtab,	ELF_SYMTAB, SHT_SYMTAB, 0, LD_CONTAINS | LD_SYMTAB },
