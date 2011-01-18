@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009,2010 Michael Shalayeff
+ * Copyright (c) 2009-2011 Michael Shalayeff
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -197,6 +197,8 @@ extern const struct ldorder
     sh_order[], sparc_order[], sparc64_order[], vax_order[];
 int     amd64_fix(off_t, struct section *, char *, int);
 int     amd64_fixone(char *, uint64_t, uint64_t, uint);
+int     arm_fix(off_t, struct section *, char *, int);
+int     arm_fixone(char *, uint64_t, uint64_t, uint);
 int     i386_fix(off_t, struct section *, char *, int);
 int     i386_fixone(char *, uint64_t, uint64_t, uint);
 

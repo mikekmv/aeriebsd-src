@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009,2010 Michael Shalayeff
+ * Copyright (c) 2009-2011 Michael Shalayeff
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.27 2011/01/18 10:32:39 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.28 2011/01/18 14:45:23 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -140,7 +140,7 @@ const struct ldarch ldarchs[] = {
 /*	{ EM_SPARC, 0, sparc_order, sparc_fix }, */
 /*	{ EM_SPARC64, 0, sparc64_order, sparc64_fix }, */
 /*	{ EM_SH, 0, sh_order, sh_fix }, */
-/*	{ EM_ARM, 0, arm_order, arm_fix }, */
+	{ EM_ARM, 0, arm_order, arm_fix },
 /*	{ EM_68K, 0, m68k_order, m68k_fix }, */
 };
 const int ldnarch = sizeof(ldarchs)/sizeof(ldarchs[0]);
