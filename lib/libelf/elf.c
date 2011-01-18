@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.26 2010/06/09 11:41:08 mickey Exp $";
+    "$ABSD: elf.c,v 1.27 2010/06/16 11:14:30 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -566,14 +566,12 @@ elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
 		if (!strcmp(es->shstr + shdr->sh_name, symtab)) {
 			if (shdr->sh_entsize < sizeof sbuf) {
 				warn("%s: invalid symtab section", es->name);
-				free(es->stab);
 				return (1);
 			}
 
 			symsize = shdr->sh_size;
 			if (fseeko(fp, foff + shdr->sh_offset, SEEK_SET)) {
 				warn("%s: fseeko", es->name);
-				free(es->stab);
 				return (1);
 			}
 
@@ -581,14 +579,12 @@ elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
 			for (is = 0; is < es->nsyms; is++) {
 				if (fread(&sbuf, sizeof sbuf, 1, fp) != 1) {
 					warn("%s: read symbol", es->name);
-					free(es->stab);
 					return (1);
 				}
 				if (shdr->sh_entsize > sizeof sbuf &&
 				    fseeko(fp, shdr->sh_entsize - sizeof sbuf,
 				    SEEK_CUR)) {
 					warn("%s: fseeko", es->name);
-					free(es->stab);
 					return (1);
 				}
 
@@ -596,10 +592,8 @@ elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
 				if (sbuf.st_name >= es->stabsz)
 					continue;
 
-				if ((*func)(es, is, &sbuf, arg)) {
-					free(es->stab);
+				if ((*func)(es, is, &sbuf, arg))
 					return 1;
-				}
 			}
 		}
 	}
