@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.30 2010/11/16 20:39:39 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.31 2010/12/26 17:35:51 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -458,7 +458,7 @@ elf_note(struct ldorder *neworder)
  * defined at the command line
  */
 struct symlist *
-elf_absadd(const char *name)
+elf_absadd(const char *name, int bind)
 {
 	struct symlist *sym;
 	Elf_Sym asym;
@@ -466,7 +466,7 @@ elf_absadd(const char *name)
 	asym.st_name = 0;
 	asym.st_value = 0;
 	asym.st_size = 0;
-	asym.st_info = ELF_ST_INFO(STB_GLOBAL, STT_NOTYPE);
+	asym.st_info = ELF_ST_INFO(bind, STT_NOTYPE);
 	asym.st_other = 0;
 	asym.st_shndx = SHN_ABS;
 	if ((sym = sym_isundef(name)))
@@ -960,8 +960,13 @@ if (is && *name == '\0') warnx("#%d is null", is);
 	case SHN_UNDEF:
 		if (!(sym = sym_isdefined(name, sysobj.ol_sections)) &&
 		    !(sym = sym_isundef(name))) {
-			sym = sym_undef(name);
-			sym->sl_sect = ol->ol_sections;
+			/* weak undef is a weak abs with NULL addr */
+			if (ELF_ST_BIND(esym->st_info) == STB_WEAK)
+				sym = elf_absadd(name, STB_WEAK);
+			else {
+				sym = sym_undef(name);
+				sym->sl_sect = ol->ol_sections;
+			}
 		}
 		break;
 
@@ -1028,7 +1033,11 @@ if (is && *name == '\0') warnx("#%d is null", is);
 				sym = NULL;
 			}
 		}
-		if (sym && ELF_SYM(sym->sl_elfsym).st_shndx == SHN_COMMON)
+
+		if (sym &&
+		    ELF_ST_BIND(ELF_SYM(sym->sl_elfsym).st_info) == STB_WEAK)
+			sym = sym_redef(sym, os, esym);
+		else if (sym && ELF_SYM(sym->sl_elfsym).st_shndx == SHN_COMMON)
 			sym = sym_redef(sym, os, esym);
 		else if (sym)
 			warnx("%s: %s: already defined in %s",

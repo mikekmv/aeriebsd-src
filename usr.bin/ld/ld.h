@@ -208,8 +208,8 @@ int uLD32(const char *, char *, int *, int);
 int uLD64(const char *, char *, int *, int);
 int elf32_note(struct ldorder *);
 int elf64_note(struct ldorder *);
-struct symlist *elf32_absadd(const char *);
-struct symlist *elf64_absadd(const char *);
+struct symlist *elf32_absadd(const char *, int);
+struct symlist *elf64_absadd(const char *, int);
 int elf32_symadd(struct elf_symtab *, int, void *, void *);
 int elf64_symadd(struct elf_symtab *, int, void *, void *);
 int elf32_loadrelocs(struct objlist *, struct section *, Elf32_Shdr *,

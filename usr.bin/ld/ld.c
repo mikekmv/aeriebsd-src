@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.25 2010/12/09 16:00:44 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.26 2011/01/13 10:22:15 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -942,8 +942,8 @@ ldorder(const struct ldarch *lda)
 			}
 			neworder = order_clone(lda, order);
 			neworder->ldo_wurst = elfclass == ELFCLASS32?
-			    elf32_absadd(neworder->ldo_name) :
-			    elf64_absadd(neworder->ldo_name);
+			    elf32_absadd(neworder->ldo_name, STB_GLOBAL) :
+			    elf64_absadd(neworder->ldo_name, STB_GLOBAL);
 			TAILQ_INSERT_TAIL(&headorder, neworder, ldo_entry);
 			break;
 
