@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.26 2011/01/13 10:22:15 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.27 2011/01/18 10:32:39 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -528,7 +528,6 @@ long namtablen;
 int
 lib_add(const char *path, FILE *fp)
 {
-	char pathbuf[MAXPATHLEN];
 	char armag[SARMAG];
 	struct ar_hdr ah;
 	off_t off, symoff;
@@ -539,15 +538,15 @@ lib_add(const char *path, FILE *fp)
 
 	if (path[0] == '-' && path[1] == 'l') {
 		TAILQ_FOREACH(pl, &libdirs, pl_entry) {
-			snprintf(pathbuf, sizeof pathbuf, "%slib%s.a",
-			    pl->pl_path, path+2);
+			if (asprintf(&p, "%slib%s.a", pl->pl_path, path+2) < 0)
+				err(1, "asprintf");
 			if (ltrace) {
-				printf("%s (%s)\n", path, pathbuf);
+				printf("%s (%s)\n", path, p);
 				ltrace = 0;
 			}
-			if (access(pathbuf, F_OK) < 0)
+			if (access(p, F_OK) < 0)
 				continue;
-			path = pathbuf;
+			path = p;
 			break;
 		}
 	}
@@ -816,9 +815,7 @@ obj_add(const char *path, const char *name, FILE *fp, off_t foff,
 
 	if ((ol = calloc(1, sizeof *ol)) == NULL)
 		err(1, "calloc");
-
-	if ((ol->ol_path = strdup(path)) == NULL)
-		err(1, "strdup");
+	ol->ol_path = path;
 
 	ofoff = 0;
 	ol->ol_off = foff;
