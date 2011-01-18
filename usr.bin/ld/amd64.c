@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: amd64.c,v 1.1 2010/11/18 13:11:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -217,8 +217,19 @@ amd64_fixone(char *p, uint64_t val, uint64_t addend, uint type)
 		v64 = htole64(v64);
 		memcpy(p, &v64, sizeof v64);
 		break;
-	case R_X86_64_32:
 	case R_X86_64_32S:
+		memcpy(&v32, p, sizeof v32);
+		v64 = letoh32(v32);
+		if (v64 & 0x80000000)
+			v64 |= 0xffffffff00000000ULL;
+		v64 += val + addend;
+		if ((v64 & 0x80000000) ^ (v32 & 0x80000000))
+			errx(1, "reloc type 32S botch");
+		v32 = (uint32_t)v64;
+		v32 = htole32(v32);
+		memcpy(p, &v32, sizeof v32);
+		break;
+	case R_X86_64_32:
 	case R_X86_64_PC32:
 		/* it may be unaligned so copy out */
 		memcpy(&v32, p, sizeof v32);
