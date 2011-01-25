@@ -17,10 +17,7 @@ DPADD+=	${LIBUTIL} ${LIBRPCSVC}
 CFLAGS+=-DDAEMON -DOPTDB -I${.CURDIR}/../common -I.
 #CFLAGS=-DDAEMON -I${.CURDIR}/../common  -DDEBUG -g
 
-all:	ypserv
 beforedepend:	${HDRS}
-ypv1.c: ypv1.h
-
 
 ypv1.c: ypv1.x
 	rpcgen -C -c ${.CURDIR}/ypv1.x -o ypv1.c
