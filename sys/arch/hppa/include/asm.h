@@ -1,4 +1,3 @@
-
 /* 
  * Copyright (c) 1990,1991,1994 The University of Utah and
  * the Computer Systems Laboratory (CSL).  All rights reserved.
@@ -248,6 +247,6 @@ tf4	.reg	%fr8
 #define ALTENTRY(x) ! .export x, entry ! .label  x
 #define EXIT(x) ! .exit ! .procend ! .size   x, .-x
 
-#define	BSS(n,s)	! .data ! .label n ! .comm s
+#define	BSS(n,s)	! .data ! .label n ! .comm s ! .size n, .-n
 
 #endif /* _MACHINE_ASM_H_ */
