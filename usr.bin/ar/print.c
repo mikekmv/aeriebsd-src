@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)print.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: print.c,v 1.3 2009/05/26 12:42:44 mickey Exp $";
+    "$ABSD: print.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -45,6 +45,7 @@ static const char rcsid[] =
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <ar.h>
 
 #include "archive.h"
 
@@ -56,6 +57,7 @@ static const char rcsid[] =
 int
 print(char **argv)
 {
+	off_t size;
 	CF cf;
 	FILE *afp;
 	char *file;
@@ -66,6 +68,14 @@ print(char **argv)
 	/* Read from an archive, write to stdout; pad on read. */
 	SETCF(afp, archive, stdout, "stdout", 0);
 	for (all = !*argv; get_arobj(afp);) {
+		if (!strncmp(chdr.name, AR_NAMTAB, sizeof(AR_NAMTAB) - 1)) {
+			size = ftello(afp);
+			get_namtab(afp);
+			(void)fseeko(afp, size, SEEK_SET);
+			skip_arobj(afp);
+			continue;
+		}
+
 		if (all)
 			file = chdr.name;
 		else if (!(file = files(argv))) {

@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)delete.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: delete.c,v 1.4 2009/05/26 20:39:07 mickey Exp $";
+    "$ABSD: delete.c,v 1.5 2009/07/30 12:16:13 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -69,6 +69,14 @@ delete(char **argv)
 	/* Read and write to an archive; pad on both. */
 	SETCF(afp, archive, tfp, tname, 0);
 	while (get_arobj(afp)) {
+		if (!strncmp(chdr.name, AR_NAMTAB, sizeof(AR_NAMTAB) - 1)) {
+			size = ftello(afp);
+			get_namtab(afp);
+			(void)fseeko(afp, size, SEEK_SET);
+			skip_arobj(afp);
+			continue;
+		}
+
 		if (*argv && (file = files(argv))) {
 			if (options & AR_V)
 				(void)printf("d - %s\n", file);

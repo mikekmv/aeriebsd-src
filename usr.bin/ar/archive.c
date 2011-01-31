@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: archive.c,v 1.9 2010/11/09 14:00:55 mickey Exp $";
+    "$ABSD: archive.c,v 1.10 2011/01/31 11:45:59 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -187,7 +187,9 @@ get_arobj(FILE *fp)
 
 		/* Strip trailing spaces, null terminate. */
 		for (p = chdr.name + sizeof(hdr->ar_name) - 1; *p == ' '; --p);
-		*++p = '\0';
+		if (p > chdr.name + 1 && *p == '/')
+			p--;
+		p[1] = '\0';
 	}
 
 	return (1);
