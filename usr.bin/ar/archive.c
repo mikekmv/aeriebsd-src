@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: archive.c,v 1.8 2010/11/09 12:43:26 mickey Exp $";
+    "$ABSD: archive.c,v 1.9 2010/11/09 14:00:55 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -371,9 +371,11 @@ copy_ar(CF *cfp, off_t size)
 off_t
 skip_arobj(FILE *fp)
 {
+	int pad;
 
-	if (fseeko(fp, chdr.size, SEEK_CUR) == -1)
+	pad = chdr.size & 1;
+	if (fseeko(fp, chdr.size + pad, SEEK_CUR) == -1)
 		err(1, "fseeko: %s", archive);
 
-	return chdr.size + sizeof(struct ar_hdr);
+	return chdr.size + pad + sizeof(struct ar_hdr);
 }
