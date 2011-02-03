@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: syms.c,v 1.9 2010/07/23 15:51:29 mickey Exp $";
+static const char rcsid[] = "$ABSD: syms.c,v 1.10 2010/09/15 10:37:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -147,6 +147,28 @@ sym_isdefined(const char *name, struct section *os)
 	}
 
 	return sym;
+}
+
+/*
+ * remove the symbol and all its gedoens from
+ * the global symbol table of defined symbols
+ * (used by the relocs optimisations)
+ */
+void
+sym_remove(struct symlist *sym)
+{
+	struct xreflist *xl;
+
+	if (sym->sl_sect)
+		TAILQ_REMOVE(&sym->sl_sect->os_syms, sym, sl_entry);
+	SPLAY_REMOVE(symtree, &defsyms, sym);
+	free((char *)sym->sl_name);	/* it was const */
+	/* only when cref is set */
+	while (!TAILQ_EMPTY(&sym->sl_xref)) {
+		xl = TAILQ_FIRST(&sym->sl_xref);
+		TAILQ_REMOVE(&sym->sl_xref, xl, xl_entry);
+		free(xl);
+	}
 }
 
 /*

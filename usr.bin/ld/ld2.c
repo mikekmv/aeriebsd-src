@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.32 2011/01/18 10:32:39 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.33 2011/02/03 23:22:24 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -57,6 +57,7 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.32 2011/01/18 10:32:39 mickey Exp 
 #define	elf_fix_shdrs	elf32_fix_shdrs
 #define	elf_symload	elf32_symload
 #define	elf_loadrelocs	elf32_loadrelocs
+#define	elf_addreloc	elf32_addreloc
 #define	elf_absadd	elf32_absadd
 #define	elf_symadd	elf32_symadd
 #define	elf_objadd	elf32_objadd
@@ -90,6 +91,7 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.32 2011/01/18 10:32:39 mickey Exp 
 #define	elf_fix_shdrs	elf64_fix_shdrs
 #define	elf_symload	elf64_symload
 #define	elf_loadrelocs	elf64_loadrelocs
+#define	elf_addreloc	elf64_addreloc
 #define	elf_absadd	elf64_absadd
 #define	elf_symadd	elf64_symadd
 #define	elf_objadd	elf64_objadd
@@ -116,6 +118,8 @@ int elf_symwrite(const struct ldorder *, const struct section *,
     struct symlist *, void *);
 Elf_Off elf_prefer(Elf_Off, struct ldorder *, uint64_t);
 int elf_seek(FILE *, off_t, uint64_t);
+int elf_addreloc(struct objlist *, struct section *, struct relist *,
+    Elf_Rel *, uint64_t);
 
 /*
  * map all the objects into the loading order;
@@ -471,6 +475,7 @@ ldorder_obj(struct objlist *ol, void *v)
 		/*
 		 * fuzzy match on section names;
 		 * this means .rodata will also pull .rodata.str
+		 * and .bss will pull .bss.emergency_buffer ...
 		 */
 		if (strncmp(os->os_name, neworder->ldo_name,
 		    strlen(neworder->ldo_name)))
@@ -796,20 +801,16 @@ int
 elf_loadrelocs(struct objlist *ol, struct section *os, Elf_Shdr *shdr,
     FILE *fp, off_t foff)
 {
-	Elf_Ehdr *eh = &ELF_HDR(ol->ol_hdr);
-	Elf_Shdr *shbits = os->os_sect;
-	struct symlist **sidx;
 	off_t off;
+	Elf_Ehdr *eh = &ELF_HDR(ol->ol_hdr);
 	struct relist *r;
-	Elf_Rel rel;
-	Elf_RelA rela;
 	int i, n, sz;
 
 	off = ftello(fp);
 	if (fseeko(fp, foff + shdr->sh_offset, SEEK_SET) < 0)
 		err(1, "fseeko: %s", ol->ol_path);
 
-	sz = shdr->sh_type == SHT_REL? sizeof rel : sizeof rela;
+	sz = shdr->sh_type == SHT_REL? sizeof(Elf_Rel) : sizeof(Elf_RelA);
 	if (sz > shdr->sh_entsize)
 		errx(1, "%s: corrupt elf header", ol->ol_path);
 	sz = shdr->sh_entsize - sz;
@@ -819,11 +820,10 @@ elf_loadrelocs(struct objlist *ol, struct section *os, Elf_Shdr *shdr,
 
 	os->os_rels = r;
 	os->os_nrls = n;
-	sidx = ol->ol_aux;
 	if (shdr->sh_type == SHT_REL) {
-		for (i = 0; i < n; i++, r++) {
-			int si;
+		Elf_Rel rel;
 
+		for (i = 0; i < n; i++, r++) {
 			if (fread(&rel, sizeof rel, 1, fp) != 1)
 				err(1, "fread: %s", ol->ol_path);
 
@@ -831,39 +831,22 @@ elf_loadrelocs(struct objlist *ol, struct section *os, Elf_Shdr *shdr,
 				err(1, "fseeko: %s", ol->ol_path);
 
 			elf_fix_rel(eh, &rel);
-			if ((si = ELF_R_SYM(rel.r_info)) >= ol->ol_naux)
-				errx(1, "%s: invalid reloc #%d",
-				    ol->ol_path, i);
-			if (rel.r_offset > shbits->sh_size)
-				errx(1, "%s: reloc #%d offset 0x%llx "
-				    "is out of range", ol->ol_path, i,
-				    (long long)rel.r_offset);
-			r->rl_sym = sidx[si];
-			r->rl_addend = 0;
-			r->rl_addr = rel.r_offset;
-			r->rl_type = ELF_R_TYPE(rel.r_info);
+			elf_addreloc(ol, os, r, &rel, 0);
 		}
 	} else {
-		for (i = 0; i < n; i++, r++) {
-			int si;
+		Elf_RelA rela;
 
+		for (i = 0; i < n; i++, r++) {
 			if (fread(&rela, sizeof rela, 1, fp) != 1)
 				err(1, "fread: %s", ol->ol_path);
 
 			if (sz && fseeko(fp, sz, SEEK_CUR))
 				err(1, "fseeko: %s", ol->ol_path);
 
-			if ((si = ELF_R_SYM(rela.r_info)) >= ol->ol_naux)
-				errx(1, "%s: invalid reloc #%d",
-				    ol->ol_path, i);
-			if (rela.r_offset > shbits->sh_size)
-				errx(1, "%s: reloc #%d offset 0x%llx "
-				    "is out of range", ol->ol_path, i,
-				    (long long)rel.r_offset);
-			r->rl_sym = sidx[si];
-			r->rl_addr = rela.r_offset;
-			r->rl_addend = rela.r_addend;
-			r->rl_type = ELF_R_TYPE(rela.r_info);
+			elf_fix_rela(eh, &rela);
+			/* we assume that r_addend is added last */
+			elf_addreloc(ol, os, r,
+			    (Elf_Rel *)&rela, rela.r_addend);
 		}
 	}
 
@@ -873,6 +856,57 @@ elf_loadrelocs(struct objlist *ol, struct section *os, Elf_Shdr *shdr,
 	/* we gotta sort them by addr as they come unsorted */
 	qsort(os->os_rels, os->os_nrls, sizeof *os->os_rels, rel_addrcmp);
 
+	return 0;
+}
+
+int
+elf_addreloc(struct objlist *ol, struct section *os, struct relist *r,
+    Elf_Rel *rel, uint64_t addend)
+{
+	struct symlist *sym, **sidx = ol->ol_aux;
+	Elf_Shdr *shbits = os->os_sect;
+	Elf_Sym *esym;
+	const char *snam;
+	int si;
+
+	if ((si = ELF_R_SYM(rel->r_info)) >= ol->ol_naux)
+		errx(1, "%s: invalid reloc #%ld",
+		    ol->ol_path, r - os->os_rels);
+	if (rel->r_offset > shbits->sh_size)
+		errx(1, "%s: reloc #%ld offset 0x%llx is out of range",
+		    ol->ol_path, r - os->os_rels, (long long)rel->r_offset);
+
+	sym = sidx[si];
+	esym = &ELF_SYM(sym->sl_elfsym);
+
+#if 0
+	/*
+	 * replace local compiler-generated symbols
+	 * with section-relative and remove from the symtab
+	 */
+	snam = sym->sl_name;
+	if (ELF_ST_BIND(esym->st_info) == STB_LOCAL && *snam &&
+	    (Xflag == 2 || (*snam == 'L') ||
+	     (snam[0] == '.' && snam[1] == 'L'))) {
+		int j;
+		for (j = 1; j < ol->ol_nsect; j++)
+			if (ELF_ST_TYPE(ELF_SYM(sidx[j]->sl_elfsym).st_info) == STT_SECTION &&
+			    ELF_SYM(sidx[j]->sl_elfsym).st_shndx == esym->st_shndx)
+				break;
+		if (j == ol->ol_nsect)
+			errx(1, "%s: reloc for local symbol "
+			    "\"%s\" without section %d",
+			    ol->ol_path, snam, esym->st_shndx);
+		addend += esym->st_value;
+		sym_remove(sym);
+		sidx[si = j] = sym = sidx[j];
+	}
+#endif
+
+	r->rl_sym = sym;
+	r->rl_addr = rel->r_offset;
+	r->rl_addend = addend;
+	r->rl_type = ELF_R_TYPE(rel->r_info);
 	return 0;
 }
 

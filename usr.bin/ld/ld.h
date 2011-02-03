@@ -240,6 +240,7 @@ struct symlist *sym_define(struct symlist *, struct section *, void *);
 struct symlist *sym_redef(struct symlist *, struct section *, void *);
 struct symlist *sym_add(const char *, struct section *, void *);
 struct symlist *sym_isdefined(const char *, struct section *);
+void sym_remove(struct symlist *);
 void sym_scan(const struct ldorder *, ordprint_t, symprint_t, void *);
 int sym_undcheck(void);
 int rel_addrcmp(const void *, const void *);
