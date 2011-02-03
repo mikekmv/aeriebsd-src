@@ -94,14 +94,16 @@ struct section {
 
 	off_t os_off;			/* source section offset */
 	struct objlist *os_obj;		/* back-ref to the object */
+	const char *os_name;		/* section name */
 	void *os_sect;			/* elf section descriptor */
 	struct relist *os_rels;		/* array of relocations */
 	struct relist *os_rp;		/* current rel pointer */
 	int os_nrls;			/* number of relocations */
 	int os_no;			/* elf section number */
 	int os_flags;
-#define	SECTION_LOADED	0x0001
-#define	SECTION_64	0x0002
+#define	SECTION_ORDER	0x10000000	/* pulled into some order */
+#define	SECTION_LOADED	0x20000000	/* been loaded */
+#define	SECTION_64	0x80000000
 };
 
 /*
@@ -137,7 +139,7 @@ struct ldarch {
 	int	la_mach;
 	int	la_flags;
 #define	LDARCH_BE	0x0001
-#define	LDARCH_64	SECTION_64	/* 0x002 */
+#define	LDARCH_64	SECTION_64	/* 0x80000000 */
 	const struct ldorder *la_order;
 	int	(*la_fix)(off_t, struct section *, char *, int);
 };
@@ -208,8 +210,6 @@ int obj_foreach(int (*)(struct objlist *, void *), void *);
 /* ld2.c */
 int uLD32(const char *, char *, int *, int);
 int uLD64(const char *, char *, int *, int);
-int elf32_note(struct ldorder *);
-int elf64_note(struct ldorder *);
 struct symlist *elf32_absadd(const char *, int);
 struct symlist *elf64_absadd(const char *, int);
 int elf32_symadd(struct elf_symtab *, int, void *, void *);

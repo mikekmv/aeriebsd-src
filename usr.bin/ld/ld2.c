@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.31 2010/12/26 17:35:51 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld2.c,v 1.32 2011/01/18 10:32:39 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -38,7 +38,6 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.31 2010/12/26 17:35:51 mickey Exp 
 #define	ELF_HDR(h)	((h).elf32)
 #define	ELF_SYM(h)	((h).sym32)
 #define	uLD		uLD32
-#define	ldnote		ldnote32
 #define	ldorder_obj	ld32order_obj
 #define	ldmap		ldmap32
 #define	ldload		ldload32
@@ -58,7 +57,6 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.31 2010/12/26 17:35:51 mickey Exp 
 #define	elf_fix_shdrs	elf32_fix_shdrs
 #define	elf_symload	elf32_symload
 #define	elf_loadrelocs	elf32_loadrelocs
-#define	elf_note	elf32_note
 #define	elf_absadd	elf32_absadd
 #define	elf_symadd	elf32_symadd
 #define	elf_objadd	elf32_objadd
@@ -73,7 +71,6 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.31 2010/12/26 17:35:51 mickey Exp 
 #define	ELF_HDR(h)	((h).elf64)
 #define	ELF_SYM(h)	((h).sym64)
 #define	uLD		uLD64
-#define	ldnote		ldnote64
 #define	ldorder_obj	ld64order_obj
 #define	ldmap		ldmap64
 #define	ldload		ldload64
@@ -93,7 +90,6 @@ static const char rcsid[] = "$ABSD: ld2.c,v 1.31 2010/12/26 17:35:51 mickey Exp 
 #define	elf_fix_shdrs	elf64_fix_shdrs
 #define	elf_symload	elf64_symload
 #define	elf_loadrelocs	elf64_loadrelocs
-#define	elf_note	elf64_note
 #define	elf_absadd	elf64_absadd
 #define	elf_symadd	elf64_symadd
 #define	elf_objadd	elf64_objadd
@@ -120,19 +116,6 @@ int elf_symwrite(const struct ldorder *, const struct section *,
     struct symlist *, void *);
 Elf_Off elf_prefer(Elf_Off, struct ldorder *, uint64_t);
 int elf_seek(FILE *, off_t, uint64_t);
-
-/*
- * template note section
- */
-struct {
-	Elf_Note en;
-	char name[16];
-	int desc;
-} ldnote = {
-	{ sizeof ldnote.name, sizeof ldnote.desc, 1 },
-	LD_NOTE,
-	0
-};
 
 /*
  * map all the objects into the loading order;
@@ -442,18 +425,6 @@ elf_prefer(Elf_Off off, struct ldorder *ord, uint64_t point)
 }
 
 /*
- * setup the note section using predefined content
- */
-int
-elf_note(struct ldorder *neworder)
-{
-	neworder->ldo_wurst = &ldnote;
-	neworder->ldo_wsize = ALIGN(sizeof ldnote);
-
-	return 0;
-}
-
-/*
  * add an absolute symbol most likely
  * defined at the command line
  */
@@ -486,7 +457,6 @@ ldorder_obj(struct objlist *ol, void *v)
 	struct ldorder *neworder = v;
 	Elf_Shdr *shdr = ol->ol_sects;
 	struct section *os = ol->ol_sections;
-	const char *sname;
 	int i, n;
 
 	/* skip empty objects */
@@ -502,8 +472,7 @@ ldorder_obj(struct objlist *ol, void *v)
 		 * fuzzy match on section names;
 		 * this means .rodata will also pull .rodata.str
 		 */
-		sname = ol->ol_snames + shdr->sh_name;
-		if (strncmp(sname, neworder->ldo_name,
+		if (strncmp(os->os_name, neworder->ldo_name,
 		    strlen(neworder->ldo_name)))
 			continue;
 
@@ -516,6 +485,7 @@ TODO
 		 * we will pin on their vectors way more easily.
 		 */
 		TAILQ_INSERT_TAIL(&neworder->ldo_seclst, os, os_entry);
+		os->os_flags |= SECTION_ORDER;
 	}
 
 	return 0;
@@ -1101,6 +1071,7 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 		os->os_sect = &shdr[i];
 		os->os_obj = ol;
 		os->os_off = foff + shdr[i].sh_offset;
+		os->os_flags = shdr[i].sh_flags;
 		TAILQ_INIT(&os->os_syms);
 	}
 
@@ -1117,13 +1088,20 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 	free(es.stab);
 
 	/* scan thru the section list looking for progbits and relocs */
-	for (i = 1, os = ol->ol_sections; i < n; shdr++, os++, i++) {
+	for (i = 0, os = ol->ol_sections; i < n; shdr++, os++, i++) {
+		os->os_name = ol->ol_snames + shdr->sh_name;
+		if (shdr->sh_type == SHT_NULL)
+			continue;
+
 		if (shdr->sh_type == SHT_NOBITS) {
-			if (ol->ol_bss) {
-				warnx("%s: too many NOBITS", ol->ol_name);
-				errors++;
-			} else
-				ol->ol_bss = os;
+			if (!strcmp(os->os_name, ELF_BSS)) {
+				if (ol->ol_bss) {
+					warnx("%s: too many .bss sections",
+					    ol->ol_name);
+					errors++;
+				} else
+					ol->ol_bss = os;
+			}
 			continue;
 		}
 

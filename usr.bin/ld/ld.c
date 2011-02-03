@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.28 2011/01/18 14:45:23 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.29 2011/01/18 19:50:35 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -154,6 +154,7 @@ int lib_namtab(const char *, FILE *, u_long, off_t, u_long);
 int lib_symdef(const char *, FILE *, u_long);
 int mmbr_name(struct ar_hdr *, char **, int, int *, FILE *);
 struct headorder *ldorder(const struct ldarch *);
+int order_check(struct objlist *, void *);
 int uLD(const char *, const char *);
 
 int
@@ -952,12 +953,6 @@ ldorder(const struct ldarch *lda)
 			break;
 
 		case ldo_note:
-			neworder = order_clone(lda, order);
-			if (elfclass == ELFCLASS32)
-				elf32_note(neworder);
-			else
-				elf64_note(neworder);
-			TAILQ_INSERT_TAIL(&headorder, neworder, ldo_entry);
 			break;
 
 		case ldo_symtab:
@@ -974,6 +969,9 @@ ldorder(const struct ldarch *lda)
 		}
 	}
 
+	/* check for disordered sctions */
+	obj_foreach(order_check, NULL);
+
 	n = 1;
 	TAILQ_FOREACH(order, &headorder, ldo_entry)
 		n += strlen(order->ldo_name) + 1;
@@ -983,6 +981,25 @@ ldorder(const struct ldarch *lda)
 	sysobj.ol_snames = ssorder->ldo_wurst;
 
 	return &headorder;
+}
+
+int
+order_check(struct objlist *ol, void *v)
+{
+	struct section *os = ol->ol_sections;
+	int i, n;
+
+        n = ol->ol_nsect;
+	for (i = 1, os++; i < n; i++, os++) {
+		if (os->os_flags & SECTION_ORDER)
+			continue;
+
+		if (os->os_flags & SHF_ALLOC)
+			warnx("%s: section \"%s\" not loaded",
+			    ol->ol_name, os->os_name);
+	}
+
+	return 0;
 }
 
 /*
