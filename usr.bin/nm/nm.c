@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.13 2010/11/09 11:59:48 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.14 2010/11/09 12:42:58 mickey Exp $";
 #endif
 #endif
 
@@ -532,8 +532,9 @@ show_archive(int count, const char *fname, FILE *fp)
  				rval = 1;
  				break;
  			}
- 
-			if (fread(nametab, mmbrlen, (size_t)1, fp) != 1) {
+			nametab[mmbrlen] = '\0';
+
+			if (fread(nametab, mmbrlen, 1, fp) != 1) {
 				warnx("%s: premature EOF", fname);
  				rval = 1;
  				break;
@@ -595,7 +596,8 @@ show_archive(int count, const char *fname, FILE *fp)
 		/*
 		 * skip to next archive object
 		 */
-skip:		if (fseeko(fp, last_ar_off + mmbrlen, SEEK_SET) < 0) {
+#define	even(x)	(((x) + 1) & ~1)
+skip:		if (fseeko(fp, last_ar_off + even(mmbrlen), SEEK_SET) < 0) {
 			warn("%s", fname);
 			rval = 1;
 			break;
