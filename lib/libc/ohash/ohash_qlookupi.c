@@ -14,7 +14,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: ohash_qlookupi.c,v 1.1.1.1 2008/08/26 14:38:32 root Exp $";
 #endif
 
 #include "ohash_int.h"
@@ -22,7 +22,7 @@ static const char rcsid[] = "$ABSD$";
 unsigned int
 ohash_qlookupi(struct ohash *h, const char *s, const char **e)
 {
-	u_int32_t hv;
+	uint32_t hv;
 
 	hv = ohash_interval(s, e);
 	return ohash_lookup_interval(h, s, *e, hv);
