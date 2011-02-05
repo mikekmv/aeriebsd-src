@@ -38,7 +38,7 @@ static const char copyright[] =
 #ifndef lint
 /*static char sccsid[] = "from: @(#)strip.c	5.8 (Berkeley) 11/6/91";*/
 static char const rcsid[] =
-    "$ABSD: strip.c,v 1.5 2009/07/30 12:01:11 mickey Exp $";
+    "$ABSD: strip.c,v 1.6 2010/06/16 11:13:04 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -128,6 +128,9 @@ main(int argc, char *argv[])
 			char *shstr;
 
 			elf32_fix_header(&eh.elf32);
+			if (eh.elf32.e_ehsize < sizeof eh.elf32)
+				errx("%s: ELF header is too short", file);
+
 			if (sfcn == s_stab)
 				errx(1, "not implemented");
 
@@ -162,6 +165,9 @@ main(int argc, char *argv[])
 			char *shstr;
 
 			elf64_fix_header(&eh.elf64);
+			if (eh.elf64.e_ehsize < sizeof eh.elf64)
+				errx("%s: ELF header is too short", file);
+
 			if (sfcn == s_stab)
 				errx(1, "not implemented");
 
@@ -212,7 +218,7 @@ main(int argc, char *argv[])
 		if (fclose(fp)) {
 			ERROR(errno);
 		}
-		if (newsize  && truncate(fn, newsize)) {
+		if (newsize && truncate(fn, newsize)) {
 			ERROR(errno);
 		}
 	}
