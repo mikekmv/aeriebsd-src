@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.27 2010/06/16 11:14:30 mickey Exp $";
+    "$ABSD: elf.c,v 1.28 2011/01/18 20:10:07 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -99,10 +99,6 @@ static const char rcsid[] =
 int elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
     int (*func)(struct elf_symtab *, int, void *, void *), void *arg,
     const char *, const char *);
-
-#define	ELF_SDATA	".sdata"
-#define	ELF_SBSS	".sbss"
-#define	ELF_PLT		".plt"
 
 #ifndef	SHN_MIPS_ACOMMON
 #define	SHN_MIPS_ACOMMON	SHN_LOPROC + 0
