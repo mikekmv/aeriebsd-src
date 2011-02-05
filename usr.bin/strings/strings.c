@@ -40,7 +40,7 @@ static const char copyright[] =
 static const char sccsid[] = "@(#)strings.c	8.2 (Berkeley) 1/28/94";
 #endif
 static const char rcsid[] =
-    "$ABSD: strings.c,v 1.4 2009/03/20 16:32:03 mickey Exp $";
+    "$ABSD: strings.c,v 1.5 2009/07/30 12:15:05 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -208,6 +208,11 @@ strings(const char *file)
 			int i;
 
 			elf32_fix_header(elf32);
+			if (elf32->e_ehsize < sizeof *elf32) {
+				warnx("%s: ELF header is too short", file);
+				return 1;
+			}
+
 			if ((phdr = elf32_load_phdrs(file, stdin, 0, elf32))) {
 				elf32_fix_phdrs(elf32, phdr);
 				for (i = elf32->e_phnum; i--; phdr++) {
@@ -235,6 +240,11 @@ strings(const char *file)
 			int i;
 
 			elf64_fix_header(elf64);
+			if (elf64->e_ehsize < sizeof *elf64) {
+				warnx("%s: ELF header is too short", file);
+				return 1;
+			}
+
 			if ((phdr = elf64_load_phdrs(file, stdin, 0, elf64))) {
 				elf64_fix_phdrs(elf64, phdr);
 				for (i = elf64->e_phnum; i--; phdr++) {
