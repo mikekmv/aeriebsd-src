@@ -443,7 +443,7 @@ dopatsubst(const char *argv[], int argc)
 	if (argv[3][0] == '\0') {
 		const char *s;
 		size_t len;
-		if (argv[4] && argc > 4) 
+		if (argc > 4 && argv[4])
 			len = strlen(argv[4]);
 		else
 			len = 0;
@@ -488,13 +488,20 @@ doregexp(const char *argv[], int argc)
 		warnx("Too few arguments to regexp");
 		return;
 	}
+	/* special gnu case */
+	if (argv[3][0] == '\0' && mimic_gnu) {
+		if (argc == 4 || argv[4] == NULL)
+			return;
+		else
+			pbstr(argv[4]);
+	}
 	error = regcomp(&re, mimic_gnu ? twiddle(argv[3]) : argv[3], 
 	    REG_EXTENDED);
 	if (error != 0)
 		exit_regerror(error, &re);
 	
 	pmatch = xalloc(sizeof(regmatch_t) * (re.re_nsub+1), NULL);
-	if (argv[4] == NULL || argc == 4)
+	if (argc == 4 || argv[4] == NULL)
 		do_regexpindex(argv[2], &re, pmatch);
 	else
 		do_regexp(argv[2], &re, argv[4], pmatch);

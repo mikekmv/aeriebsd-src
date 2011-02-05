@@ -56,7 +56,6 @@ extern void doesyscmd(const char *);
 extern void getdivfile(const char *);
 extern void doformat(const char *[], int);
  
-
 /* look.c */
 
 #define FLAG_UNTRACED 0
@@ -171,4 +170,5 @@ extern char scommt[MAXCCHARS+1];/* start character for comment */
 extern int  synch_lines;	/* line synchronisation directives */
 
 extern int mimic_gnu;		/* behaves like gnu-m4 */
+extern int prefix_builtins;	/* prefix builtin macros with m4_ */
 

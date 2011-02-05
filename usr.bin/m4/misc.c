@@ -339,7 +339,7 @@ xstrdup(const char *s)
 void
 usage()
 {
-	fprintf(stderr, "usage: m4 [-gs] [-Dname[=value]] [-d flags] "
+	fprintf(stderr, "usage: m4 [-gPs] [-Dname[=value]] [-d flags] "
 			"[-I dirname] [-o filename]\n"
 			"\t[-t macro] [-Uname] [file ...]\n");
 	exit(1);
