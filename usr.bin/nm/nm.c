@@ -42,7 +42,7 @@ static const char copyright[] =
 #if 0
 static const char sccsid[] = "@(#)nm.c	8.1 (Berkeley) 6/6/93";
 #else
-static const char rcsid[] = "$ABSD: nm.c,v 1.14 2010/11/09 12:42:58 mickey Exp $";
+static const char rcsid[] = "$ABSD: nm.c,v 1.15 2011/02/03 23:16:36 mickey Exp $";
 #endif
 #endif
 
@@ -389,15 +389,10 @@ show_symtab(off_t off, u_long len, const char *name, FILE *fp)
 	num = betoh32(*symtab);
 	strtab = (char *)(symtab + num + 1);
 	for (ps = symtab + 1; num--; ps++, strtab += strlen(strtab) + 1) {
-		if (fseeko(fp, betoh32(*ps), SEEK_SET)) {
-			warn("%s: fseeko", name);
-			rval = 1;
-			break;
-		}
-
-		if (fread(&ar_head, sizeof(ar_head), 1, fp) != 1 ||
+		if (pread(fileno(fp), &ar_head, sizeof ar_head,
+		    betoh32(*ps)) != sizeof ar_head ||
 		    memcmp(ar_head.ar_fmag, ARFMAG, sizeof(ar_head.ar_fmag))) {
-			warnx("%s: member fseeko", name);
+			warnx("%s: member pread", name);
 			rval = 1;
 			break;
 		}
@@ -564,7 +559,6 @@ show_archive(int count, const char *fname, FILE *fp)
 			} else {
 				symtaboff = 0;
 				symtablen = 0;
-				goto skip;
 			}
 		}
 
