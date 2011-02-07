@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)archive.c	8.3 (Berkeley) 4/2/94";
 #else
 static const char rcsid[] =
-    "$ABSD: archive.c,v 1.10 2011/01/31 11:45:59 mickey Exp $";
+    "$ABSD: archive.c,v 1.11 2011/01/31 13:33:06 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -346,7 +346,7 @@ put_nametab(CF *cfp)
 void
 copy_ar(CF *cfp, off_t size)
 {
-	char buf[MAXBSIZE];
+	char buf[MAXBSIZE], pad = 0;
 	off_t sz;
 	int nr, nw, off;
 
@@ -357,12 +357,18 @@ copy_ar(CF *cfp, off_t size)
 		sz -= nr;
 		for (off = 0; off < nr; nr -= off, off += nw)
 			if ((nw = fwrite(buf + off, 1, nr, cfp->wfp)) <= 0)
-				err(1, "write: %s", cfp->wname);
+				err(1, "fwrite: %s", cfp->wname);
 	}
 	if (sz) {
 		if (nr == 0)
 			badfmt();
-		err(1, "read: %s", cfp->rname);
+		err(1, "fread: %s", cfp->rname);
+	}
+	if ((size & 1)) {
+		if (fwrite(&pad, 1, 1, cfp->wfp) <= 0)
+			err(1, "fwrite: %s", cfp->wname);
+		if (fseek(cfp->rfp, 1, SEEK_CUR) < 0)
+			err(1, "fseek: %s", cfp->rname);
 	}
 }
 
