@@ -387,12 +387,9 @@ reaper(void)
 
 	for (;;) {
 		mtx_enter(&deadproc_mutex);
-		p = LIST_FIRST(&deadproc);
-		if (p == NULL) {
+		while (!(p = LIST_FIRST(&deadproc)))
 			/* No work for us; go to sleep until someone exits. */
 			msleep(&deadproc, &deadproc_mutex, PVM, "reaper", 0);
-			continue;
-		}
 
 		/* Remove us from the deadproc list. */
 		LIST_REMOVE(p, p_hash);
