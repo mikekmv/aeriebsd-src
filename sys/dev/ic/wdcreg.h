@@ -174,6 +174,7 @@
 #define ATAPI_IDENTIFY_DEVICE	0xa1
 #define ATAPI_SOFT_RESET	0x08
 #define ATAPI_DEVICE_RESET	0x08 /* ATA/ATAPI-5 name for soft reset */
+#define ATAPI_DSM		0x06 /* data set management */
 #define ATAPI_SLEEP		0xe6
 #define ATAPI_STANDBY_IMMEDIATE	0xe0
 #define ATAPI_SMART		0xB0 /* SMART operations */
