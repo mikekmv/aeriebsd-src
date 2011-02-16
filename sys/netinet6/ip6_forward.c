@@ -343,19 +343,6 @@ ip6_forward(struct mbuf *m, int srcrt)
 	}
 #endif /* IPSEC */
 
-	if (m->m_pkthdr.len > IN6_LINKMTU(rt->rt_ifp)) {
-		in6_ifstat_inc(rt->rt_ifp, ifs6_in_toobig);
-		if (mcopy) {
-			u_long mtu;
-
-			mtu = IN6_LINKMTU(rt->rt_ifp);
-
-			icmp6_error(mcopy, ICMP6_PACKET_TOO_BIG, 0, mtu);
-		}
-		m_freem(m);
-		goto freert;
-	}
-
 	if (rt->rt_flags & RTF_GATEWAY)
 		dst = (struct sockaddr_in6 *)rt->rt_gateway;
 
@@ -447,6 +434,19 @@ ip6_forward(struct mbuf *m, int srcrt)
 
 	ip6 = mtod(m, struct ip6_hdr *);
 #endif 
+	/* Check the size after pf_test6 to give pf a chance to refragment. */
+	if (m->m_pkthdr.len > IN6_LINKMTU(rt->rt_ifp)) {
+		in6_ifstat_inc(rt->rt_ifp, ifs6_in_toobig);
+		if (mcopy) {
+			u_long mtu;
+
+			mtu = IN6_LINKMTU(rt->rt_ifp);
+
+			icmp6_error(mcopy, ICMP6_PACKET_TOO_BIG, 0, mtu);
+		}
+		m_freem(m);
+		goto freert;
+	}
 
 	error = nd6_output(rt->rt_ifp, origifp, m, dst, rt);
 	if (error) {
