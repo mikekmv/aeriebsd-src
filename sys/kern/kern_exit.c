@@ -389,8 +389,7 @@ reaper(void)
 		p = LIST_FIRST(&deadproc);
 		if (p == NULL) {
 			/* No work for us; go to sleep until someone exits. */
-			mtx_leave(&deadproc_mutex);
-			(void) tsleep(&deadproc, PVM, "reaper", 0);
+			msleep(&deadproc, &deadproc_mutex, PVM, "reaper", 0);
 			continue;
 		}
 
