@@ -197,7 +197,7 @@ void uvm_map_unreference_amap(struct vm_map_entry *, int);
 int uvm_map_spacefits(struct vm_map *, vaddr_t *, vsize_t,
     struct vm_map_entry *, voff_t, vsize_t);
 
-struct vm_map_entry	*uvm_mapent_alloc(struct vm_map *);
+struct vm_map_entry	*uvm_mapent_alloc(struct vm_map *, int);
 void			uvm_mapent_free(struct vm_map_entry *);
 
 
@@ -383,11 +383,14 @@ _uvm_tree_sanity(struct vm_map *map, const char *name)
  */
 
 struct vm_map_entry *
-uvm_mapent_alloc(struct vm_map *map)
+uvm_mapent_alloc(struct vm_map *map, int flags)
 {
 	struct vm_map_entry *me, *ne;
 	int s, i;
 	UVMHIST_FUNC("uvm_mapent_alloc"); UVMHIST_CALLED(maphist);
+
+	flags = flags & UVM_FLAG_NOWAIT? PR_NOWAIT : PR_WAITOK;
+	flags |= PR_ZERO;
 
 	if (map->flags & VM_MAP_INTRSAFE || cold) {
 		s = splvm();
@@ -416,17 +419,17 @@ uvm_mapent_alloc(struct vm_map *map)
 		me->flags = UVM_MAP_STATIC;
 	} else if (map == kernel_map) {
 		splassert(IPL_NONE);
-		me = pool_get(&uvm_map_entry_kmem_pool, PR_WAITOK);
-		me->flags = UVM_MAP_KMEM;
+		me = pool_get(&uvm_map_entry_kmem_pool, flags);
+		if (me)
+			me->flags = UVM_MAP_KMEM;
 	} else {
 		splassert(IPL_NONE);
-		me = pool_get(&uvm_map_entry_pool, PR_WAITOK);
-		me->flags = 0;
+		me = pool_get(&uvm_map_entry_pool, flags);
 	}
 
 	UVMHIST_LOG(maphist, "<- new entry=%p [kentry=%ld]", me,
 	    ((map->flags & VM_MAP_INTRSAFE) != 0 || map == kernel_map), 0, 0);
-	return(me);
+	return (me);
 }
 
 /*
@@ -592,7 +595,7 @@ uvm_map_clip_start(struct vm_map *map, struct vm_map_entry *entry,
 	 * starting address.
 	 */
 
-	new_entry = uvm_mapent_alloc(map);
+	new_entry = uvm_mapent_alloc(map, 0);
 	uvm_mapent_copy(entry, new_entry); /* entry -> new_entry */
 
 	new_entry->end = start; 
@@ -644,7 +647,7 @@ uvm_map_clip_end(struct vm_map *map, struct vm_map_entry *entry, vaddr_t end)
 	 *	AFTER the specified entry
 	 */
 
-	new_entry = uvm_mapent_alloc(map);
+	new_entry = uvm_mapent_alloc(map, 0);
 	uvm_mapent_copy(entry, new_entry); /* entry -> new_entry */
 
 	new_entry->start = entry->end = end;
@@ -742,7 +745,7 @@ uvm_map_p(struct vm_map *map, vaddr_t *startp, vsize_t size,
 	 */
 
 	if (vm_map_lock_try(map) == FALSE) {
-		if (flags & UVM_FLAG_TRYLOCK)
+		if (flags & (UVM_FLAG_TRYLOCK | UVM_FLAG_NOWAIT))
 			return (EFAULT);
 		vm_map_lock(map); /* could sleep here */
 	}
@@ -879,7 +882,11 @@ step3:
 	 * step 3: allocate new entry and link it in
 	 */
 
-	new_entry = uvm_mapent_alloc(map);
+	new_entry = uvm_mapent_alloc(map, flags);
+	if (!new_entry) {
+		vm_map_unlock(map);
+		return ENOMEM;
+	}
 	new_entry->start = *startp;
 	new_entry->end = new_entry->start + size;
 	new_entry->object.uvm_obj = uobj;
@@ -1178,6 +1185,7 @@ uvm_map_hint(struct proc *p, vm_prot_t prot)
  * => caller must at least have read-locked map
  * => returns NULL on failure, or pointer to prev. map entry if success
  * => note this is a cross between the old vm_map_findspace and vm_map_find
+ * => this function is assumed that it does not sleep
  */
 
 struct vm_map_entry *
@@ -1945,7 +1953,7 @@ uvm_map_extract(struct vm_map *srcmap, vaddr_t start, vsize_t len,
 		oldoffset = (entry->start + fudge) - start;
 
 		/* allocate a new map entry */
-		newentry = uvm_mapent_alloc(dstmap);
+		newentry = uvm_mapent_alloc(dstmap, UVM_FLAG_NOWAIT);
 		if (newentry == NULL) {
 			error = ENOMEM;
 			goto bad;
@@ -3424,7 +3432,7 @@ uvmspace_fork(struct vmspace *vm1)
 				/* XXXCDC: WAITOK??? */
 			}
 
-			new_entry = uvm_mapent_alloc(new_map);
+			new_entry = uvm_mapent_alloc(new_map, 0);
 			/* old_entry -> new_entry */
 			uvm_mapent_copy(old_entry, new_entry);
 
@@ -3471,7 +3479,7 @@ uvmspace_fork(struct vmspace *vm1)
 			 * (note that new references are read-only).
 			 */
 
-			new_entry = uvm_mapent_alloc(new_map);
+			new_entry = uvm_mapent_alloc(new_map, 0);
 			/* old_entry -> new_entry */
 			uvm_mapent_copy(old_entry, new_entry);
 

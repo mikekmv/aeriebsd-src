@@ -137,8 +137,8 @@ ReStart:
 	size = npages << PAGE_SHIFT;
 	kva = 0;			/* let system choose VA */
 
-	if (uvm_map(pager_map, &kva, size, NULL, 
-	      UVM_UNKNOWN_OFFSET, 0, UVM_FLAG_NOMERGE) != 0) {
+	if (uvm_map(pager_map, &kva, size, NULL, UVM_UNKNOWN_OFFSET, 0,
+	    UVM_MAPFLAG(0,0,0,0,UVM_FLAG_NOWAIT|UVM_FLAG_NOMERGE)) != 0) {
 		if (curproc == uvm.pagedaemon_proc) {
 			simple_lock(&pager_map_wanted_lock);
 			if (emerginuse) {

@@ -339,15 +339,24 @@ uvm_km_kmemalloc(struct vm_map *map, struct uvm_object *obj, vsize_t size,
 	vaddr_t kva, loopva;
 	voff_t offset;
 	struct vm_page *pg;
+	int mapflags;
 	UVMHIST_FUNC("uvm_km_kmemalloc"); UVMHIST_CALLED(maphist);
 
 	UVMHIST_LOG(maphist,"  (map=%p, obj=%p, size=0x%lx, flags=%d)",
 		    map, obj, size, flags);
 	KASSERT(vm_map_pmap(map) == pmap_kernel());
+	/*
+	 * we cannot yet make pmap_enter() not sleep
+	 * and thus demand that we are called with NOWAIT in that case
+	 */
+	KASSERT(!((flags & UVM_KMF_NOWAIT) && obj));
 
 	/*
 	 * setup for call
 	 */
+
+	mapflags = flags & UVM_KMF_NOWAIT? UVM_FLAG_NOWAIT : 0;
+	mapflags |= flags & UVM_KMF_TRYLOCK;
 
 	size = round_page(size);
 	kva = vm_map_min(map);	/* hint */
@@ -357,8 +366,8 @@ uvm_km_kmemalloc(struct vm_map *map, struct uvm_object *obj, vsize_t size,
 	 */
 
 	if (__predict_false(uvm_map(map, &kva, size, obj, UVM_UNKNOWN_OFFSET,
-	      0, UVM_MAPFLAG(UVM_PROT_RW, UVM_PROT_RW, UVM_INH_NONE,
-			  UVM_ADV_RANDOM, (flags & UVM_KMF_TRYLOCK))) != 0)) {
+	    0, UVM_MAPFLAG(UVM_PROT_RW, UVM_PROT_RW, UVM_INH_NONE,
+	    UVM_ADV_RANDOM, mapflags)) != 0)) {
 		UVMHIST_LOG(maphist, "<- done (no VM)",0,0,0,0);
 		return(0);
 	}
@@ -412,6 +421,9 @@ uvm_km_kmemalloc(struct vm_map *map, struct uvm_object *obj, vsize_t size,
 		/*
 		 * map it in: note that we call pmap_enter with the map and
 		 * object unlocked in case we are kmem_map.
+		 *
+		 * pager mappings that must not sleep here will incidently
+		 * be installed using pmap_kenter_pa() and thus not sleep!
 		 */
 
 		if (obj == NULL) {
