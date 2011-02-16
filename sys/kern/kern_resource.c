@@ -330,8 +330,16 @@ calcru(struct proc *p, struct timeval *up, struct timeval *sp,
     struct timeval *ip)
 {
 	u_quad_t st, ut, it;
-	int freq;
-	int s;
+	long rss;
+	int s, freq;
+
+	/* calculate memory stats */
+	rss = vm_resident_count(p->p_vmspace);
+	if (p->p_stats->p_ru.ru_maxrss < rss)
+		p->p_stats->p_ru.ru_maxrss = rss;
+	p->p_stats->p_ru.ru_ixrss = p->p_vmspace->vm_tsize;
+	p->p_stats->p_ru.ru_idrss = p->p_vmspace->vm_dsize;
+	p->p_stats->p_ru.ru_isrss = p->p_vmspace->vm_ssize;
 
 	s = splstatclock();
 	st = p->p_sticks;

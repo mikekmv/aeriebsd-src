@@ -272,8 +272,9 @@ exit1(struct proc *p, int rv, int flags)
 	 */
 	if (!(p->p_flag & P_IGNEXITRV))
 		p->p_xstat = rv;
+	calcru(p, &p->p_stats->p_ru.ru_utime,
+	    &p->p_stats->p_ru.ru_stime, NULL);
 	*p->p_ru = p->p_stats->p_ru;
-	calcru(p, &p->p_ru->ru_utime, &p->p_ru->ru_stime, NULL);
 	ruadd(p->p_ru, &p->p_stats->p_cru);
 
 	/*
