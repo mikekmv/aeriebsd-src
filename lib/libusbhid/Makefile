@@ -1,6 +1,5 @@
 
 LIB=	usbhid
-WANTLINT=
 MAN=	usbhid.3
 
 MLINKS=	usbhid.3 hid_dispose_report_desc.3 \

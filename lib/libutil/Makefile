@@ -1,6 +1,5 @@
 
 LIB=	util
-WANTLINT=
 CFLAGS+=-DLIBC_SCCS
 
 HDRS=	util.h

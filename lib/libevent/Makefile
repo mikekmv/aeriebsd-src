@@ -1,6 +1,5 @@
 
 LIB=	event
-WANTLINT=
 SRCS=	buffer.c evbuffer.c evdns.c event.c event_tagging.c kqueue.c \
 	log.c poll.c select.c signal.c
 HDRS=	event.h evdns.h

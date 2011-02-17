@@ -3,7 +3,6 @@ KRB5DIR	= ${.CURDIR}/../../kerberosV
 .include <${.CURDIR}/../libkrb5/Makefile.common.inc>
 
 LIB=	gssapi
-WANTLINT=
 
 DIR_GSSAPI=	${KRB5SRC}/lib/gssapi
 GENDIR=		${.CURDIR}/generated

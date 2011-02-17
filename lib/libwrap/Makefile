@@ -1,6 +1,5 @@
 
 LIB=	wrap
-WANTLINT=
 SRCS=	hosts_access.c options.c shell_cmd.c rfc931.c eval.c \
 	hosts_ctl.c refuse.c percent_x.c clean_exit.c \
 	fix_options.c socket.c update.c misc.c \

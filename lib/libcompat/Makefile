@@ -1,6 +1,5 @@
 
 LIB=	compat
-WANTLINT=
 CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
 AINC=	-I${.CURDIR}/../libc/arch/${MACHINE_ARCH}
 .if defined(DESTDIR)

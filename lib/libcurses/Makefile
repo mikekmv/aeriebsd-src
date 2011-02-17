@@ -12,7 +12,6 @@ AWK?=	/usr/bin/awk
 .PATH:	${.CURDIR}/base ${.CURDIR}/tinfo ${.CURDIR}/trace ${.CURDIR}/tty
 
 LIB=    curses
-WANTLINT=
 SRCS=	codes.c comp_captab.c expanded.c fallback.c lib_gen.c lib_keyname.c \
 	names.c unctrl.c
 # base

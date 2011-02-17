@@ -1,6 +1,5 @@
 
 LIB=rthread
-WANTLINT=
 LINTFLAGS=-z
 LIBCSRCDIR=	${.CURDIR}/../libc
 

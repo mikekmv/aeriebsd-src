@@ -1,6 +1,5 @@
 
 LIB=	ossaudio
-WANTLINT=
 MAN=	ossaudio.3
 
 SRCS=	ossaudio.c

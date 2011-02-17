@@ -1,6 +1,5 @@
 
 LIB=	ssl
-WANTLINT=
 
 SSLEAYDIST= src
 

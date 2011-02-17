@@ -1,6 +1,5 @@
 
 LIB=	crypto
-WANTLINT=
 
 SSLEAYDIST=	src
 SSL_SRC=	${.CURDIR}/../${SSLEAYDIST}
@@ -295,10 +294,11 @@ includes: ${.CURDIR}/obj_mac.h
 	done;
 
 # generated
-CFLAGS+= -I${.OBJDIR}
+CPPFLAGS+=-I${.CURDIR}
+.PATH: ${.CURDIR}
 
-GENERATED=obj_mac.h obj_dat.h
-CLEANFILES=${GENERATED} obj_mac.num.tmp
+#GENERATED=${.CURDIR}/obj_mac.h ${.CURDIR}/obj_dat.h
+#CLEANFILES=${GENERATED} obj_mac.num.tmp
 SSL_OBJECTS=${SSL_SRC}/crypto/objects
 
 #obj_mac.h: ${SSL_OBJECTS}/objects.h ${SSL_OBJECTS}/obj_mac.num ${SSL_OBJECTS}/objects.txt
@@ -345,14 +345,14 @@ des_enc.po:
 #	ripemd rmd-586 \
 #	sha sha1-586
 #.for dir f in ${SSLASM}
-#SRCS+=	${f}.S
-#GENERATED+=${f}.S
+#SRCS+=	${.CURDIR}/${f}.S
+#GENERATED+=${.CURDIR}/${f}.S
 #${f}.S: ${LCRYPTO_SRC}/${dir}/asm/${f}.pl ${LCRYPTO_SRC}/perlasm/x86unix.pl
 #	/usr/bin/perl -I${LCRYPTO_SRC}/perlasm -I${LCRYPTO_SRC}/${dir}/asm \
 #		${LCRYPTO_SRC}/${dir}/asm/${f}.pl openbsd-elf 386 > ${.TARGET}
 #.endfor
-#SRCS+=	x86cpuid.S
-#GENERATED+=x86cpuid.S
+#SRCS+=	${.CURDIR}/x86cpuid.S
+#GENERATED+=${.CURDIR}/x86cpuid.S
 #x86cpuid.S: ${LCRYPTO_SRC}/x86cpuid.pl
 #	/usr/bin/perl -I${LCRYPTO_SRC}/perlasm \
 #		${LCRYPTO_SRC}/x86cpuid.pl openbsd-elf 386 > ${.TARGET}
@@ -371,13 +371,13 @@ des_enc.po:
 #	rc4 rc4-x86_64 \
 #	sha sha1-x86_64
 #.for dir f in ${SSLASM}
-#SRCS+=	${f}.S
-#GENERATED+=${f}.S
+#SRCS+=	${.CURDIR}/${f}.S
+#GENERATED+=${.CURDIR}/${f}.S
 #${f}.S: ${LCRYPTO_SRC}/${dir}/asm/${f}.pl
 #	(cd ${LCRYPTO_SRC}/${dir} ; /usr/bin/perl ./asm/${f}.pl) > ${.TARGET}
 #.endfor
-#SRCS+=	x86_64cpuid.S
-#GENERATED+=x86_64cpuid.S
+#SRCS+=	${.CURDIR}/x86_64cpuid.S
+#GENERATED+=${.CURDIR}/x86_64cpuid.S
 #x86_64cpuid.S: ${LCRYPTO_SRC}/x86_64cpuid.pl
 #	(cd ${LCRYPTO_SRC}/${dir} ; /usr/bin/perl ./x86_64cpuid.pl) > ${.TARGET}
 #.else

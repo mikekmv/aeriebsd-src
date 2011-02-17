@@ -3,7 +3,6 @@ LIB=	elf
 SRCS=	elf32.c elf64.c checkoff.c
 CFLAGS+=-Wall
 CLEANFILES+=elf32.c elf64.c
-WANTLINT=
 MAN=	elf_size.3
 MLINKS=	elf_size.3 elf_fix_header.3 elf_size.3 elf_fix_note.3 \
 	elf_size.3 elf_load_shdrs.3 elf_size.3 elf_save_shdrs.3 \

@@ -1,6 +1,5 @@
 
 LIB=	pcap
-WANTLINT=
 MAN=	pcap.3
 MLINKS=	pcap.3 pcap_open_live.3 pcap.3 pcap_open_offline.3 \
         pcap.3 pcap_dump_open.3 pcap.3 pcap_lookupdev.3 pcap.3 \

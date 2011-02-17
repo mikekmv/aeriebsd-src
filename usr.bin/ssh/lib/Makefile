@@ -2,7 +2,6 @@
 .PATH:		${.CURDIR}/..
 
 LIB=	ssh
-WANTLINT=
 SRCS=	authfd.c authfile.c bufaux.c bufbn.c buffer.c canohost.c channels.c \
 	cipher.c cipher-3des1.c cipher-bf1.c cipher-ctr.c \
 	cleanup.c compat.c compress.c crc32.c deattack.c fatal.c \

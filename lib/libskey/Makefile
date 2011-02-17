@@ -1,6 +1,5 @@
 
 LIB=	skey
-WANTLINT=
 SRCS=	skeylogin.c skeysubr.c put.c
 HDRS=	skey.h
 MAN+=	skey.3 skey.5

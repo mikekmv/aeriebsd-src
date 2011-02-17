@@ -1,6 +1,5 @@
 
 LIB=	l
-WANTLINT=
 SRCS=	libmain.c libyywrap.c
 NOPIC=
 

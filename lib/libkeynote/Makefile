@@ -1,6 +1,5 @@
 
 LIB=	keynote
-WANTLINT=
 MAN=	keynote.3 keynote.4 keynote.5
 MLINKS=	keynote.3 kn_init.3 keynote.3 kn_add_assertion.3 \
         keynote.3 kn_remove_assertion.3 keynote.3 kn_add_action.3 \

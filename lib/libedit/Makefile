@@ -1,7 +1,6 @@
 #	@(#)Makefile	8.1 (Berkeley) 6/4/93
 
 LIB=	edit
-WANTLINT=
 USE_SHLIBDIR=	yes
 
 OSRCS=	chared.c common.c el.c emacs.c fcns.c help.c hist.c key.c map.c \
