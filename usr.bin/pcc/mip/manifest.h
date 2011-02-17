@@ -75,7 +75,7 @@
 #define	LDOUBLE		14
 #define	STRTY		15
 #define	UNIONTY		16
-/* #define	ENUMTY		17 */
+#define	XTYPE		17	/* Extended target-specific type */
 /* #define	MOETY		18 */	/* member of enum */
 #define	VOID		19
 
@@ -136,9 +136,9 @@
 /*
  * Pack and unpack field descriptors (size and offset)
  */
-#define PKFIELD(s,o)	(((o)<<6)| (s))
-#define UPKFSZ(v)	((v)&077)
-#define UPKFOFF(v)	((v)>>6)
+#define PKFIELD(s,o)	(((o)<<7)| (s))
+#define UPKFSZ(v)	((v)&0177)
+#define UPKFOFF(v)	((v)>>7)
 
 /*
  * Operator information
@@ -178,9 +178,6 @@ extern int bdebug, tdebug, edebug;
 extern int ddebug, xdebug, f2debug;
 extern int iTflag, oTflag, kflag;
 extern int sflag, nflag, gflag, pflag;
-extern int Wstrict_prototypes, Wmissing_prototypes, Wimplicit_int,
-	Wimplicit_function_declaration, Wpointer_sign, Wshadow,
-	Wsign_compare, Wunknown_pragmas, Wunreachable_code, Wtruncate;
 extern int funsigned_char;
 extern int sspflag;
 extern int xssaflag, xtailcallflag, xtemps, xdeljumps, xdce;
@@ -356,8 +353,26 @@ NODE *listarg(NODE *p, int n, int *cnt);
 void cerror(char *s, ...);
 void werror(char *s, ...);
 void uerror(char *s, ...);
-
+void mkdope(void);
+void tcheck(void);
 
 extern	int nerrors;		/* number of errors seen so far */
 extern	int warniserr;		/* treat warnings as errors */
+
+/* gcc warning stuff */
+#define	Wtruncate			0
+#define	Wstrict_prototypes		1
+#define	Wmissing_prototypes		2
+#define	Wimplicit_int			3
+#define	Wimplicit_function_declaration	4
+#define	Wshadow				5
+#define	Wpointer_sign			6
+#define	Wsign_compare			7
+#define	Wunknown_pragmas		8
+#define	Wunreachable_code		9
+#define	NUMW				10
+
+void warner(int type, ...);
+void Wflags(char *str);
+
 #endif

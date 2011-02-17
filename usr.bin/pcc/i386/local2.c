@@ -326,6 +326,55 @@ bfext(NODE *p)
 	printf("\n");
 }
 
+/* long long bitfield assign */
+static void
+llbf(NODE *p)
+{
+	NODE *q;
+	char buf[50];
+	CONSZ m, n;
+	int o, s;
+	int ml, mh, nl, nh;
+
+	q = p->n_left;
+	o = UPKFOFF(q->n_rval);
+	s = UPKFSZ(q->n_rval);
+	m = (CONSZ)1 << (s-1);
+	m--;
+	m = (m << 1) | 1;
+	m <<= o;
+	n = ~m;
+
+	ml = m & 0xffffffff;
+	nl = n & 0xffffffff;
+	mh = (m >> 32) & 0xffffffff;
+	nh = (n >> 32) & 0xffffffff;
+
+#define	S(...)	snprintf(buf, sizeof buf, __VA_ARGS__); expand(p, 0, buf)
+
+	if (o < 32) { /* lower 32 buts */
+		S("	andl $0x%x,AL\n", nl);
+		S("	movl AR,A1\n");
+		S("	sall $%d,A1\n", o);
+		S("	andl $0x%x,A1\n", ml);
+		S("	orl A1,AL\n");
+	}
+	if ((o+s) >= 32) { /* upper 32 bits */
+		S("	andl $0x%x,UL\n", nh);
+		S("	movl UR,A1\n");
+		S("	sall $%d,A1\n", o);
+		S("	movl AR,U1\n");
+		S("	shrl $%d,U1\n", 32-o);
+		S("	orl U1,A1\n");
+		S("	andl $0x%x,A1\n", mh);
+		S("	orl A1,UL\n");
+	}
+#undef S
+//	fwalk(p, e2print, 0);
+
+	
+}
+
 /*
  * Push a structure on stack as argument.
  * the scratch registers are already free here
@@ -366,41 +415,21 @@ starg(NODE *p)
 static void
 fcomp(NODE *p)  
 {
+	static char *fpcb[] = { "jz", "jnz", "jbe", "jc", "jnc", "ja" };
 
-	if (p->n_left->n_op == REG) {
-		if (p->n_su & DORIGHT)
-			expand(p, 0, "	fxch\n");
-		expand(p, 0, "	fucompp\n");	/* emit compare insn  */
-	} else if (p->n_left->n_type == DOUBLE)
-		expand(p, 0, "	fcompl AL\n");	/* emit compare insn  */
-	else if (p->n_left->n_type == FLOAT)
-		expand(p, 0, "	fcomps AL\n");	/* emit compare insn  */
-	else
-		comperr("bad compare %p\n", p);
-	expand(p, 0, "	fnstsw %ax\n");	/* move status reg to ax */
-	
-	switch (p->n_op) {
-	case EQ:
-		expand(p, 0, "	andb $69,%ah\n	xorb $64,%ah\n	je LC\n");
-		break;
-	case NE:
-		expand(p, 0, "	andb $69,%ah\n	xorb $64,%ah\n	jne LC\n");
-		break;
-	case LE:
-		expand(p, 0, "	andb $69,%ah\n	xorb $1,%ah\n	jne LC\n");
-		break;
-	case LT:
-		expand(p, 0, "	andb $69,%ah\n	je LC\n");
-		break;
-	case GT:
-		expand(p, 0, "	andb $1,%ah\n	jne LC\n");
-		break;
-	case GE:
-		expand(p, 0, "	andb $69,%ah\n	jne LC\n");
-		break;
-	default:
-		comperr("fcomp op %d\n", p->n_op);
-	}
+	if ((p->n_su & DORIGHT) == 0)
+		expand(p, 0, "  fxch\n");
+	expand(p, 0, "  fucomip %st(1),%st\n");	/* emit compare insn  */
+	expand(p, 0, "  fstp %st(0)\n");	/* pop fromstack */
+
+	if (p->n_op == NE || p->n_op == GT || p->n_op == GE)
+		expand(p, 0, "  jp LC\n");
+	else if (p->n_op == EQ)
+		printf("\tjp 1f\n");
+	printf("	%s ", fpcb[p->n_op - EQ]);
+	expand(p, 0, "LC\n");
+	if (p->n_op == EQ)
+		printf("1:\n");
 }
 
 /*
@@ -465,6 +494,29 @@ fcast(NODE *p)
 	printf("	add $%d,%%esp\n", sz);
 }
 
+static void
+llshft(NODE *p)
+{
+	char *d[3];
+
+	if (p->n_op == LS) {
+		d[0] = "l", d[1] = "%eax", d[2] = "%edx";
+	} else
+		d[0] = "r", d[1] = "%edx", d[2] = "%eax";
+
+	printf("\tsh%sdl %s,%s\n",d[0], d[1], d[2]);
+	printf("\ts%s%sl %%cl,%s\n", p->n_op == RS &&
+	    p->n_left->n_type == ULONGLONG ? "h" : "a", d[0], d[1]);
+	printf("\ttestb $32,%%cl\n");
+	printf("\tje 1f\n");
+	printf("\tmovl %s,%s\n", d[1], d[2]);
+	if (p->n_op == RS && p->n_left->n_type == LONGLONG)
+		printf("\tsarl $31,%%edx\n");
+	else
+		printf("\txorl %s,%s\n",d[1],d[1]);
+	printf("1:\n");
+}
+
 void
 zzzcode(NODE *p, int c)
 {
@@ -501,8 +553,10 @@ zzzcode(NODE *p, int c)
 		break;
 
 	case 'C':  /* remove from stack after subroutine call */
+#ifdef notyet
 		if (p->n_left->n_flags & FSTDCALL)
 			break;
+#endif
 		pr = p->n_qual;
 		if (p->n_op == STCALL || p->n_op == USTCALL)
 			pr += 4;
@@ -548,6 +602,10 @@ zzzcode(NODE *p, int c)
 		rmove(regno(p), DECRA(p->n_reg, 0), LONGLONG);
 		break;
 
+	case 'L': /* long long bitfield assign */
+		llbf(p);
+		break;
+
 	case 'M': /* Output sconv move, if needed */
 		l = getlr(p, 'L');
 		/* XXX fixneed: regnum */
@@ -569,19 +627,22 @@ zzzcode(NODE *p, int c)
 	case 'O': /* print out emulated ops */
 		pr = 16;
 		if (p->n_op == RS || p->n_op == LS) {
-			expand(p, INAREG, "\tpushl AR\n");
-			pr = 12;
-		} else
-			expand(p, INCREG, "\tpushl UR\n\tpushl AR\n");
+			llshft(p);
+			break;
+		} else if (p->n_op == MUL) {
+			printf("\timull %%ecx, %%edx\n");
+			printf("\timull %%eax, %%esi\n");
+			printf("\taddl %%edx, %%esi\n");
+			printf("\tmull %%ecx\n");
+			printf("\taddl %%esi, %%edx\n");
+			break;
+		}
+		expand(p, INCREG, "\tpushl UR\n\tpushl AR\n");
 		expand(p, INCREG, "\tpushl UL\n\tpushl AL\n");
 		if (p->n_op == DIV && p->n_type == ULONGLONG) ch = "udiv";
 		else if (p->n_op == DIV) ch = "div";
-		else if (p->n_op == MUL) ch = "mul";
 		else if (p->n_op == MOD && p->n_type == ULONGLONG) ch = "umod";
 		else if (p->n_op == MOD) ch = "mod";
-		else if (p->n_op == RS && p->n_type == ULONGLONG) ch = "lshr";
-		else if (p->n_op == RS) ch = "ashr";
-		else if (p->n_op == LS) ch = "ashl";
 		else ch = 0, comperr("ZO");
 #ifdef ELFABI
 		printf("\tcall " EXPREFIX "__%sdi3%s\n\taddl $%d,%s\n",
@@ -607,7 +668,6 @@ zzzcode(NODE *p, int c)
 		 * XXX should not need esi/edi if not rep movsX.
 		 * XXX can save one insn if src ptr in reg.
 		 */
-		expand(p, INAREG, "	movl AR,%esi\n");
 		switch (p->n_stsize) {
 		case 1:
 			expand(p, INAREG, "	movb (%esi),%cl\n");
@@ -943,6 +1003,13 @@ fixcalls(NODE *p, void *arg)
 	case USTCALL:
 		if (p->n_stsize+p2autooff > stkpos)
 			stkpos = p->n_stsize+p2autooff;
+		break;
+	case LS:
+	case RS:
+		if (p->n_type != LONGLONG && p->n_type != ULONGLONG)
+			break;
+		if (p->n_right->n_op == ICON) /* constants must be char */
+			p->n_right->n_type = CHAR;
 		break;
 	}
 }
@@ -1365,11 +1432,24 @@ myxasm(struct interpass *ip, NODE *p)
 		return 1;
 
 	case 'A': reg = EAXEDX; break;
-	case 'q': /* XXX let it be CLASSA as for now */
-		p->n_name = tmpstrdup(p->n_name);
-		w = strchr(p->n_name, 'q');
-		*w = 'r';
-		return 0;
+	case 'q': {
+		/* Set edges in MYSETXARG */
+		if (p->n_left->n_op == REG || p->n_left->n_op == TEMP)
+			return 1;
+		t = p->n_left->n_type;
+		if (in && ut)
+			in = tcopy(in);
+		p->n_left = mklnode(TEMP, 0, p2env.epp->ip_tmpnum++, t);
+		if (ut) {
+			ip2 = ipnode(mkbinode(ASSIGN, ut, tcopy(p->n_left), t));
+			DLIST_INSERT_AFTER(ip, ip2, qelem);
+		}
+		if (in) {
+			ip2 = ipnode(mkbinode(ASSIGN, tcopy(p->n_left), in, t));
+			DLIST_INSERT_BEFORE(ip, ip2, qelem);
+		}
+		return 1;
+	}
 
 	case 'I':
 	case 'J':
@@ -1391,10 +1471,13 @@ myxasm(struct interpass *ip, NODE *p)
 	default:
 		return 0;
 	}
-	p->n_name = tmpstrdup(p->n_name);
-	for (w = p->n_name; *w; w++)
-		;
-	w[-1] = 'r'; /* now reg */
+	/* If there are requested either memory or register, delete memory */
+	w = p->n_name = tmpstrdup(p->n_name);
+	if (*w == '=')
+		w++;
+	*w++ = 'r';
+	*w = 0;
+
 	t = p->n_left->n_type;
 	if (reg == EAXEDX) {
 		p->n_label = CLASSC;

@@ -160,9 +160,8 @@ nspecial(struct optab *q)
 	case STASG:
 		{
 			static struct rspecial s[] = {
-				{ NEVER, ESI }, { NEVER, EDI },
-				{ NORIGHT, ESI }, { NORIGHT, EDI },
-				{ NOLEFT, ESI }, { NOLEFT, EDI },
+				{ NEVER, EDI },
+				{ NRIGHT, ESI }, { NOLEFT, ESI },
 				{ NOLEFT, ECX }, { NORIGHT, ECX },
 				{ NEVER, ECX }, { 0 } };
 			return s;
@@ -250,8 +249,8 @@ nspecial(struct optab *q)
 			return s;
 		} else if (q->lshape & SCREG) {
 			static struct rspecial s[] = {
-				{ NEVER, EAX }, { NEVER, EDX },
-				{ NEVER, ECX }, { NRES, EAXEDX }, { 0 } };
+				{ NLEFT, EAXEDX }, { NRIGHT, ECXESI },
+				{ NEVER, ESI }, { NRES, EAXEDX }, { 0 } };
 			return s;
 		}
 		break;
@@ -263,8 +262,8 @@ nspecial(struct optab *q)
 			return s;
 		} else if (q->visit & INCREG) {
 			static struct rspecial s[] = {
-				{ NEVER, EAX }, { NEVER, EDX },
-				{ NEVER, ECX }, { NRES, EAXEDX }, { 0 } };
+				{ NLEFT, EAXEDX }, { NRIGHT, CL },
+				{ NRES, EAXEDX }, { 0 } };
 			return s;
 		}
 		break;

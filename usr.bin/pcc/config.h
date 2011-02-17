@@ -5,3 +5,5 @@
 #define VERSSTR "pcc 0.9.9"
 
 #define YYTEXT_POINTER 1
+
+#define WCHAR_SIZE 4

@@ -137,6 +137,7 @@ typedef long long OFFSZ;
 #define ENUMSIZE(high,low) INT	/* enums are always stored in full int */
 
 #define FINDMOPS	/* i386 has instructions that modifies memory */
+#define	CC_DIV_0	/* division by zero is safe in the compiler */
 
 /* Definitions mostly used in pass2 */
 
@@ -345,6 +346,8 @@ int numconv(void *ip, void *p, void *q);
 #define	XASM_NUMCONV(ip, p, q)	numconv(ip, p, q)
 int xasmconstregs(char *);
 #define	XASMCONSTREGS(x) xasmconstregs(x)
+#define	MYSETXARG if (XASMVAL(cw) == 'q') {	\
+	c = 'r'; addalledges(&ablock[ESI]); addalledges(&ablock[EDI]); }
 
 /*
  * builtins.
@@ -355,8 +358,8 @@ int xasmconstregs(char *);
 
 #define NODE struct node
 struct node;
-NODE *i386_builtin_frame_address(NODE *f, NODE *a);
-NODE *i386_builtin_return_address(NODE *f, NODE *a);
+NODE *i386_builtin_frame_address(NODE *f, NODE *a, unsigned int);
+NODE *i386_builtin_return_address(NODE *f, NODE *a, unsigned int);
 #undef NODE
 
 #if defined(MACHOABI)

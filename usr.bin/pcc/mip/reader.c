@@ -1,4 +1,4 @@
-/*	$Id: reader.c,v 1.15 2010/12/30 00:40:32 mickey Exp $	*/
+/*	$Id: reader.c,v 1.16 2011/02/17 16:12:57 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -65,7 +65,7 @@
  * allowed to recurse back into pass2_compile().
  */
 
-#include "pass2.h"
+# include "pass2.h"
 
 #include <string.h>
 #include <stdarg.h>
@@ -203,10 +203,13 @@ stkarg(int tnr, int *soff)
 		p = ip->ip_node;
 		if (p->n_op == XASM)
 			continue; /* XXX - hack for x86 PIC */
-#ifdef PCC_DEBUG
+#ifdef notdef
 		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
 			comperr("temparg");
 #endif
+		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
+			continue; /* unknown tree */
+
 		if (p->n_right->n_op != OREG && p->n_right->n_op != UMUL)
 			continue; /* arg in register */
 		if (tnr != regno(p->n_left))
@@ -238,7 +241,7 @@ findaof(NODE *p, void *arg)
 	int *aof = arg;
 	int tnr;
 
-	if (p->n_op != ADDROF)
+	if (p->n_op != ADDROF || p->n_left->n_op != TEMP)
 		return;
 	tnr = regno(p->n_left);
 	if (aof[tnr])
@@ -561,7 +564,7 @@ again:	switch (o = p->n_op) {
 	case UGT:
 		p1 = p->n_left;
 		p2 = p->n_right;
-		if (p2->n_op == ICON && p2->n_lval == 0 &&
+		if (p2->n_op == ICON && p2->n_lval == 0 && *p2->n_name == 0 &&
 		    (dope[p1->n_op] & (FLOFLG|DIVFLG|SIMPFLG|SHFFLG))) {
 #ifdef mach_pdp11 /* XXX all targets? */
 			if ((rv = geninsn(p1, FORCC|QUIET)) != FFAIL)
@@ -959,7 +962,7 @@ gencode(NODE *p, int cookie)
 		rmove(DECRA(p->n_reg, 1), DECRA(p->n_reg, 0), p->n_type);
 	}
 #if 0
-		/* XXX - kolla upp det här */
+		/* XXX - kolla upp det h{r */
 	   else if (p->n_op == ASSIGN) {
 		/* may need move added if RLEFT/RRIGHT */
 		/* XXX should be handled in sucomp() */
@@ -1444,7 +1447,7 @@ delnums(NODE *p, void *arg)
 	NODE *r = ip->ip_node->n_left;
 	NODE *q;
 	TWORD t;
-	int cnt;
+	int cnt, num;
 
 	if (p->n_name[0] < '0' || p->n_name[0] > '9')
 		return; /* not numeric */
@@ -1457,18 +1460,20 @@ delnums(NODE *p, void *arg)
 
 	/* Delete number by adding move-to/from-temp.  Later on */
 	/* the temps may be rewritten to other LTYPEs */
-	t = p->n_left->n_type;
-	r = mklnode(TEMP, 0, p2env.epp->ip_tmpnum++, t);
+	num = p2env.epp->ip_tmpnum++;
 
 	/* pre node */
+	t = p->n_left->n_type;
+	r = mklnode(TEMP, 0, num, t);
 	ip2 = ipnode(mkbinode(ASSIGN, tcopy(r), p->n_left, t));
 	DLIST_INSERT_BEFORE(ip, ip2, qelem);
+	p->n_left = r;
 
 	/* post node */
+	t = q->n_left->n_type;
+	r = mklnode(TEMP, 0, num, t);
 	ip2 = ipnode(mkbinode(ASSIGN, q->n_left, tcopy(r), t));
 	DLIST_INSERT_AFTER(ip, ip2, qelem);
-
-	p->n_left = tcopy(r);
 	q->n_left = r;
 
 	p->n_name = tmpstrdup(q->n_name);
@@ -1486,7 +1491,7 @@ ltypify(NODE *p, void *arg)
 	struct interpass *ip2;
 	TWORD t = p->n_left->n_type;
 	NODE *q, *r;
-	int cw, ooff;
+	int cw, ooff, ww;
 	char *c;
 
 again:
@@ -1494,7 +1499,7 @@ again:
 		return;	/* handled by target-specific code */
 
 	cw = xasmcode(p->n_name);
-	switch (XASMVAL(cw)) {
+	switch (ww = XASMVAL(cw)) {
 	case 'p':
 		/* pointer */
 		/* just make register of it */
@@ -1503,6 +1508,11 @@ again:
 		*c = 'r';
 		/* FALLTHROUGH */
 	case 'g':  /* general; any operand */
+		if (ww == 'g' && p->n_left->n_op == ICON) {
+			/* should only be input */
+			p->n_name = "i";
+			break;
+		}
 	case 'r': /* general reg */
 		/* set register class */
 		p->n_label = gclass(p->n_left->n_type);
@@ -1597,7 +1607,7 @@ fixxasm(struct p2env *p2e)
 int
 xasmcode(char *s)
 {
-	int cw = 0;
+	int cw = 0, nm = 0;
 
 	while (*s) {
 		switch ((int)*s) {
@@ -1608,8 +1618,12 @@ xasmcode(char *s)
 			if ((*s >= 'a' && *s <= 'z') ||
 			    (*s >= 'A' && *s <= 'Z') ||
 			    (*s >= '0' && *s <= '9')) {
-				cw |= *s;
-				return cw;
+				if (nm == 0)
+					cw |= *s;
+				else
+					cw |= (*s << ((nm + 1) * 8));
+				nm++;
+				break;
 			}
 			uerror("bad xasm constraint %c", *s);
 		}

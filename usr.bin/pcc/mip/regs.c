@@ -928,7 +928,7 @@ setxarg(NODE *p)
 {
 	int i, ut = 0, in = 0;
 	REGW *rw;
-	int cw;
+	int c, cw;
 
 	if (p->n_op == ICON && p->n_type == STRTY)
 		return;
@@ -940,7 +940,13 @@ setxarg(NODE *p)
 	if (XASMISOUT(cw))
 		ut = 1;
 
-	switch (XASMVAL(cw)) {
+	c = XASMVAL(cw);
+
+#ifdef MYSETXARG
+	MYSETXARG;
+#endif
+
+	switch (c) {
 	case 'm':
 	case 'g':
 		/* must find all TEMPs/REGs and set them live */
@@ -961,13 +967,15 @@ setxarg(NODE *p)
 		addalledges(&rw[i]);
 		break;
 
-
 	case 'i':
 	case 'n':
 		break;
 	default:
 		comperr("bad ixarg %s", p->n_name);
 	}
+#ifdef MYSETXARG
+	MYSETXARG;
+#endif
 }
 
 /*
@@ -2487,6 +2495,9 @@ temparg(struct interpass *ipole, REGW *w)
 		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
 			comperr("temparg");
 #endif
+		if (p->n_op != ASSIGN || p->n_left->n_op != TEMP)
+			continue; /* unknown tree */
+
 		if (p->n_right->n_op != OREG)
 			continue; /* arg in register */
 		if (w != &nblock[regno(p->n_left)])
@@ -2606,8 +2617,13 @@ if (p->n_reg == -1) goto foo;
 	} else {
 foo:		fprintf(fp, "REG ");
 		if (p->n_reg != -1) {
-			for (i = 0; i < n+1; i++)
-				fprintf(fp, "%s ", rnames[DECRA(p->n_reg, i)]);
+			for (i = 0; i < n+1; i++) {
+				int r = DECRA(p->n_reg, i);
+				if (r >= MAXREGS)
+					fprintf(fp, "<badreg> ");
+				else
+					fprintf(fp, "%s ", rnames[r]);
+			}
 		} else
 			fprintf(fp, "<undef>");
 	}
@@ -2680,8 +2696,10 @@ ngenregs(struct p2env *p2e)
 		nblock = tmpalloc(tbits * sizeof(REGW));
 
 		nblock -= tempmin;
+#ifdef HAVE_C99_FORMAT
 		RDEBUG(("nblock %p num %d size %zu\n",
 		    nblock, tbits, (size_t)(tbits * sizeof(REGW))));
+#endif
 	}
 	live = tmpalloc(BIT2BYTE(xbits));
 

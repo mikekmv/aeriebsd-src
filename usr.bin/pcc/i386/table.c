@@ -759,9 +759,9 @@ struct optab table[] = {
  */
 /* (u)longlong left shift is emulated */
 { LS,	INCREG,
-	SCREG|SNAME|SOREG|SCON, TLL,
-	SAREG|SNAME|SOREG|SCON, TINT, /* will be int */
-		NSPECIAL|NCREG|NCSL|NCSR,	RESC1,
+	SCREG,	TLL,
+	SHCH,	TCHAR|TUCHAR,
+		NSPECIAL,	RLEFT,
 		"ZO", },
 
 /* r/m <<= r */
@@ -806,9 +806,9 @@ struct optab table[] = {
 
 /* (u)longlong right shift is emulated */
 { RS,	INCREG,
-	SCREG|SNAME|SOREG|SCON, TLL,
-	SAREG|SNAME|SOREG|SCON, TINT, /* will be int */
-		NSPECIAL|NCREG|NCSL|NCSR,	RESC1,
+	SCREG,	TLL,
+	SHCH,	TCHAR|TUCHAR,
+		NSPECIAL,	RLEFT,
 		"ZO", },
 
 { RS,	INAREG|FOREFF,
@@ -1039,6 +1039,14 @@ struct optab table[] = {
 		"F	movl AR,AD\n"
 		"FZE", },
 
+
+{ ASSIGN,	FOREFF|INCREG,
+	SFLD,	TLL,
+	SCREG,	TLL,
+		NCREG,	RDEST,
+		"ZL", },
+
+
 { ASSIGN,	INDREG|FOREFF,
 	SHFL,	TFLOAT|TDOUBLE|TLDOUBLE,
 	SHFL,	TFLOAT|TDOUBLE|TLDOUBLE,
@@ -1050,7 +1058,7 @@ struct optab table[] = {
 	SNAME|SOREG,	TLDOUBLE,
 	SHFL,	TFLOAT|TDOUBLE|TLDOUBLE,
 		0,	RDEST,
-		"	fst AL\n", },
+		"	fstpt AL\n	fldt AL\n", }, /* XXX */
 
 { ASSIGN,	FOREFF,
 	SNAME|SOREG,	TLDOUBLE,
@@ -1112,7 +1120,7 @@ struct optab table[] = {
 
 { STASG,	INAREG|FOREFF,
 	SOREG|SNAME,	TANY,
-	SAREG|SOREG|SNAME,	TPTRTO|TANY,
+	SAREG,		TPTRTO|TANY,
 		NSPECIAL,	RDEST,
 		"ZQ", },
 
@@ -1195,9 +1203,9 @@ struct optab table[] = {
 
 /* (u)longlong mul is emulated */
 { MUL,	INCREG,
-	SCREG|SNAME|SOREG|SCON, TLL,
-	SCREG|SNAME|SOREG|SCON, TLL,
-		NSPECIAL|NCREG|NCSL|NCSR,	RESC1,
+	SCREG,	TLL,
+	SCREG,	TLL,
+		NSPECIAL,	RLEFT,
 		"ZO", },
 
 { MUL,	INAREG,
@@ -1313,23 +1321,8 @@ struct optab table[] = {
 { OPLOG,	FORCC,
 	SDREG,	TLDOUBLE|TDOUBLE|TFLOAT,
 	SDREG,	TLDOUBLE|TDOUBLE|TFLOAT,
-		NSPECIAL, 	0,
+		0, 	RNOP,
 		"ZG", },
-
-{ OPLOG,	FORCC,
-	SOREG|SNAME,	TDOUBLE|TFLOAT,
-	SDREG,	TLDOUBLE|TDOUBLE|TFLOAT,
-		NSPECIAL, 	0,
-		"ZG", },
-
-#if 0
-/* Ppro and later only */
-{ OPLOG,	FORCC,
-	SDREG,	TLDOUBLE|TDOUBLE|TFLOAT,
-	SDREG,	TLDOUBLE|TDOUBLE|TFLOAT,
-		0, 	RESCC,
-		"ZA	fucomip %st,%st(1)\n", },
-#endif
 
 { OPLOG,	FORCC,
 	SANY,	TANY,

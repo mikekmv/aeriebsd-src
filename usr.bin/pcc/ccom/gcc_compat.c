@@ -66,6 +66,8 @@ static struct kw {
 /* 20 */{ "__PRETTY_FUNCTION__", NULL, 0 },
 /* 21 */{ "__alignof__", NULL, C_ALIGNOF },
 /* 22 */{ "__typeof", NULL, C_TYPEOF },
+/* 23 */{ "__alignof", NULL, C_ALIGNOF },
+/* 24 */{ "__restrict__", NULL, -1 },
 	{ NULL, NULL, 0 },
 };
 
@@ -107,7 +109,7 @@ gcc_init()
 	for (i = 0; i < 4; i++) {
 		struct symtab *sp;
 		t = ctype(g77t[i]);
-		p = block(NAME, NIL, NIL, t, NULL, MKSUE(t));
+		p = block(NAME, NIL, NIL, t, NULL, MKAP(t));
 		sp = lookup(addname(g77n[i]), 0);
 		p->n_sp = sp;
 		defid(p, TYPEDEF);
@@ -147,10 +149,11 @@ gcc_keyword(char *str, NODE **n)
 	switch (i) {
 	case 1:  /* __signed */
 	case 14: /* __signed__ */
-		*n = mkty((TWORD)SIGNED, 0, MKSUE(SIGNED));
+		*n = mkty((TWORD)SIGNED, 0, MKAP(SIGNED));
 		return C_TYPE;
 	case 3: /* __const */
 		*n = block(QUALIFIER, NIL, NIL, CON, 0, 0);
+		(*n)->n_qual = CON;
 		return C_QUALIFIER;
 	case 6: /* __thread */
 		snprintf(tlbuf, TLLEN, TS, lineno);
@@ -169,6 +172,7 @@ gcc_keyword(char *str, NODE **n)
 	case 8: /* __volatile */
 	case 9: /* __volatile__ */
 		*n = block(QUALIFIER, NIL, NIL, VOL, 0, 0);
+		(*n)->n_qual = VOL;
 		return C_QUALIFIER;
 	case 15: /* __attribute__ */
 	case 16: /* __attribute */
@@ -218,7 +222,11 @@ struct atax {
 	int typ;
 	char *name;
 } atax[GCC_ATYP_MAX] = {
-	CS(GCC_ATYP_NONE)	{ 0, NULL },
+	CS(ATTR_NONE)		{ 0, NULL },
+	CS(ATTR_COMPLEX)	{ 0, NULL },
+	CS(ATTR_BASETYP)	{ 0, NULL },
+	CS(ATTR_QUALTYP)	{ 0, NULL },
+	CS(ATTR_STRUCT)		{ 0, NULL },
 	CS(GCC_ATYP_ALIGNED)	{ A_0ARG|A_1ARG, "aligned" },
 	CS(GCC_ATYP_PACKED)	{ A_0ARG|A_1ARG, "packed" },
 	CS(GCC_ATYP_SECTION)	{ A_1ARG|A1_STR, "section" },
@@ -251,9 +259,10 @@ struct atax {
 	CS(GCC_ATYP_WEAKREF)	{ A_0ARG|A_1ARG|A1_STR, "weakref" },
 	CS(GCC_ATYP_ALLOCSZ)	{ A_1ARG|A_2ARG, "alloc_size" },
 	CS(GCC_ATYP_ALW_INL)	{ A_0ARG, "always_inline" },
+	CS(GCC_ATYP_TLSMODEL)	{ A_1ARG|A1_STR, "tls_model" },
+	CS(GCC_ATYP_ALIASWEAK)	{ A_1ARG|A1_STR, "aliasweak" },
 
 	CS(GCC_ATYP_BOUNDED)	{ A_3ARG|A_MANY|A1_NAME, "bounded" },
-	CS(ATTR_COMPLEX)	{ 0, NULL },
 };
 
 #if SZPOINT(CHAR) == SZLONGLONG
@@ -273,6 +282,13 @@ struct atax mods[] = {
 	{ LONGLONG, "DI" },
 	{ FLOAT, "SF" },
 	{ DOUBLE, "DF" },
+	{ LDOUBLE, "XF" },
+	{ FCOMPLEX, "SC" },
+	{ COMPLEX, "DC" },
+	{ LCOMPLEX, "XC" },
+#ifdef TARGET_MODS
+	TARGET_MODS
+#endif
 };
 #define	ATSZ	(sizeof(mods)/sizeof(mods[0]))
 
@@ -295,13 +311,16 @@ amatch(char *s, struct atax *at, int mx)
 }
 
 static void
-setaarg(int str, union gcc_aarg *aa, NODE *p)
+setaarg(int str, union aarg *aa, NODE *p)
 {
 	if (str) {
 		if (((str & (A1_STR|A2_STR|A3_STR)) && p->n_op != STRING) ||
 		    ((str & (A1_NAME|A2_NAME|A3_NAME)) && p->n_op != NAME))
 			uerror("bad arg to attribute");
-		aa->sarg = p->n_op == STRING ? p->n_name : (char *)p->n_sp;
+		if (p->n_op == STRING) {
+			aa->sarg = newstring(p->n_name, strlen(p->n_name)+1);
+		} else
+			aa->sarg = (char *)p->n_sp;
 		nfree(p);
 	} else
 		aa->iarg = (int)icons(eve(p));
@@ -310,23 +329,26 @@ setaarg(int str, union gcc_aarg *aa, NODE *p)
 /*
  * Parse attributes from an argument list.
  */
-static void
-gcc_attribs(NODE *p, void *arg)
+static struct attr *
+gcc_attribs(NODE *p)
 {
 	NODE *q, *r;
-	gcc_ap_t *gap = arg;
+	struct attr *ap;
 	char *name = NULL, *c;
-	int num, cw, attr, narg, i;
+	int cw, attr, narg, i;
 
 	if (p->n_op == NAME) {
 		name = (char *)p->n_sp;
 	} else if (p->n_op == CALL || p->n_op == UCALL) {
 		name = (char *)p->n_left->n_sp;
+	} else if (p->n_op == ICON && p->n_type == STRTY) {
+		return NULL;
 	} else
 		cerror("bad variable attribute");
 
 	if ((attr = amatch(name, atax, GCC_ATYP_MAX)) == 0) {
 		werror("unsupported attribute '%s'", name);
+		ap = NULL;
 		goto out;
 	}
 	narg = 0;
@@ -337,10 +359,9 @@ gcc_attribs(NODE *p, void *arg)
 	cw = atax[attr].typ;
 	if (!(cw & A_MANY) && ((narg > 3) || ((cw & (1 << narg)) == 0))) {
 		uerror("wrong attribute arg count");
-		return;
+		return NULL;
 	}
-	num = gap->num;
-	gap->ga[num].atype = attr;
+	ap = attr_new(attr, 3); /* XXX should be narg */
 	q = p->n_right;
 
 	switch (narg) {
@@ -354,19 +375,19 @@ gcc_attribs(NODE *p, void *arg)
 		}
 		/* FALLTHROUGH */
 	case 3:
-		setaarg(cw & (A3_NAME|A3_STR), &gap->ga[num].a3, q->n_right);
+		setaarg(cw & (A3_NAME|A3_STR), &ap->aa[2], q->n_right);
 		r = q;
 		q = q->n_left;
 		nfree(r);
 		/* FALLTHROUGH */
 	case 2:
-		setaarg(cw & (A2_NAME|A2_STR), &gap->ga[num].a2, q->n_right);
+		setaarg(cw & (A2_NAME|A2_STR), &ap->aa[1], q->n_right);
 		r = q;
 		q = q->n_left;
 		nfree(r);
 		/* FALLTHROUGH */
 	case 1:
-		setaarg(cw & (A1_NAME|A1_STR), &gap->ga[num].a1, q);
+		setaarg(cw & (A1_NAME|A1_STR), &ap->aa[0], q);
 		p->n_op = UCALL;
 		/* FALLTHROUGH */
 	case 0:
@@ -377,169 +398,176 @@ gcc_attribs(NODE *p, void *arg)
 	switch (attr) {
 	case GCC_ATYP_ALIGNED:
 		if (narg == 0)
-			gap->ga[num].a1.iarg = ALMAX;
+			ap->aa[0].iarg = ALMAX;
 		else
-			gap->ga[num].a1.iarg *= SZCHAR;
+			ap->aa[0].iarg *= SZCHAR;
 		break;
 	case GCC_ATYP_PACKED:
 		if (narg == 0)
-			gap->ga[num].a1.iarg = 1; /* bitwise align */
+			ap->aa[0].iarg = 1; /* bitwise align */
 		else
-			gap->ga[num].a1.iarg *= SZCHAR;
+			ap->aa[0].iarg *= SZCHAR;
 		break;
 
 	case GCC_ATYP_MODE:
-		if ((i = amatch(gap->ga[num].a1.sarg, mods, ATSZ)) == 0)
-			werror("unknown mode arg %s", gap->ga[num].a1.sarg);
-		gap->ga[num].a1.iarg = mods[i].typ;
+		if ((i = amatch(ap->aa[0].sarg, mods, ATSZ)) == 0)
+			werror("unknown mode arg %s", ap->aa[0].sarg);
+		ap->aa[0].iarg = ctype(mods[i].typ);
 		break;
 
 	case GCC_ATYP_VISIBILITY:
-		c = gap->ga[num].a1.sarg;
+		c = ap->aa[0].sarg;
 		if (strcmp(c, "default") && strcmp(c, "hidden") &&
 		    strcmp(c, "internal") && strcmp(c, "protected"))
 			werror("unknown visibility %s", c);
+		break;
+
+	case GCC_ATYP_TLSMODEL:
+		c = ap->aa[0].sarg;
+		if (strcmp(c, "global-dynamic") && strcmp(c, "local-dynamic") &&
+		    strcmp(c, "initial-exec") && strcmp(c, "local-exec"))
+			werror("unknown tls model %s", c);
 		break;
 
 	default:
 		break;
 	}
 out:
-	gap->num++;
+	return ap;
 }
 
 /*
- * Extract type attributes from a node tree and create a gcc_attr_pack
- * struct based on its contents.
+ * Extract attributes from a node tree and return attribute entries 
+ * based on its contents.
  */
-gcc_ap_t *
+struct attr *
 gcc_attr_parse(NODE *p)
 {
-	gcc_ap_t *gap;
-	NODE *q, *r;
-	int i, sz;
+	struct attr *b, *c;
 
-	/* count number of elems and build tower to the left */
-	for (q = p, i = 1; q->n_op == CM; q = q->n_left, i++)
-		if (q->n_right->n_op == CM)
-			r = q->n_right, q->n_right = q->n_left, q->n_left = r;
+	if (p == NIL)
+		return NULL;
 
-	/* get memory for struct */
-	sz = sizeof(struct gcc_attr_pack) + sizeof(struct gcc_attrib) * i;
-	if (blevel == 0)
-		gap = memset(permalloc(sz), 0, sz);
-	else
-		gap = tmpcalloc(sz);
-
-	flist(p, gcc_attribs, gap);
-	if (gap->num != i)
-		cerror("attribute sync error");
-
-	tfree(p);
-	return gap;
+	if (p->n_op != CM) {
+		b = gcc_attribs(p);
+		tfree(p);
+	} else {
+		b = gcc_attr_parse(p->n_left);
+		c = gcc_attr_parse(p->n_right);
+		nfree(p);
+		b = b ? attr_add(b, c) : c;
+	}
+	return b;
 }
 
 /*
  * Fixup struct/unions depending on attributes.
  */
 void
-gcc_tcattrfix(NODE *p, NODE *q)
+gcc_tcattrfix(NODE *p)
 {
 	struct symtab *sp;
-	struct suedef *sue;
-	gcc_ap_t *gap;
-	int align = 0;
-	int i, sz, coff, csz;
+	struct attr *ap;
+	int sz, coff, csz, al;
 
-	gap = gcc_attr_parse(q);
-	sue = p->n_sue;
-	if (sue->suega) {
-		if (p->n_sp == NULL)
-			cerror("gcc_tcattrfix");
+	if ((ap = attr_find(p->n_ap, GCC_ATYP_PACKED)) == NULL)
+		return; /* nothing to fix */
+
+	al = ap->iarg(0);
+
+	/* Must repack struct */
+	coff = csz = 0;
+	for (sp = strmemb(ap); sp; sp = sp->snext) {
+		if (sp->sclass & FIELD)
+			sz = sp->sclass&FLDSIZ;
+		else
+			sz = (int)tsize(sp->stype, sp->sdf, sp->sap);
+		SETOFF(sz, al);
+		sp->soffset = coff;
+		coff += sz;
+		if (coff > csz)
+			csz = coff;
+		if (p->n_type == UNIONTY)
+			coff = 0;
 	}
+	SETOFF(csz, al); /* Roundup to whatever */
 
-	/* must know about align first */
-	for (i = 0; i < gap->num; i++)
-		if (gap->ga[i].atype == GCC_ATYP_ALIGNED)
-			align = gap->ga[i].a1.iarg;
-
-	/* Check following attributes */
-	for (i = 0; i < gap->num; i++) {
-		switch (gap->ga[i].atype) {
-		case GCC_ATYP_PACKED:
-			/* Must repack struct */
-			/* XXX - aligned types inside? */
-			coff = csz = 0;
-			for (sp = sue->suem; sp; sp = sp->snext) {
-				if (sp->sclass & FIELD)
-					sz = sp->sclass&FLDSIZ;
-				else
-					sz = (int)tsize(sp->stype, sp->sdf, sp->ssue);
-				SETOFF(sz, gap->ga[i].a1.iarg);
-				sp->soffset = coff;
-				coff += sz;
-				if (coff > csz)
-					csz = coff;
-				if (p->n_type == UNIONTY)
-					coff = 0;
-			}
-			SETOFF(csz, SZCHAR);
-			sue->suesize = csz;
-			sue->suealign = gap->ga[i].a1.iarg;
-			break;
-
-		case GCC_ATYP_ALIGNED:
-			break;
-
-		default:
-			werror("unsupported attribute %d", gap->ga[i].atype);
-		}
-	}
-	if (align) {
-		sue->suealign = align;
-		SETOFF(sue->suesize, sue->suealign);
-	}
-	sue->suega = gap;
+	ap = attr_find(p->n_ap, ATTR_BASETYP);
+	ap->atypsz = csz;
+	ap->aalign = al;
 }
 
 /*
- * Search for a specific attribute type.
+ * gcc-specific pragmas.
  */
-struct gcc_attrib *
-gcc_get_attr(struct suedef *sue, int typ)
+int
+pragmas_gcc(char *t)
 {
-	gcc_ap_t *gap;
-	int i;
+	int ign, warn, err, i, u;
+	extern bittype warnary[], werrary[];
+	extern char *flagstr[], *pragstore;
 
-	if (sue == NULL)
-		return NULL;
-
-	if ((gap = sue->suega) == NULL)
-		return NULL;
-
-	for (i = 0; i < gap->num; i++)
-		if (gap->ga[i].atype == typ)
-			return &gap->ga[i];
-	if (sue->suep)
-		return gcc_get_attr(sue->suep, typ);
-	return NULL;
+	if (strcmp((t = pragtok(NULL)), "diagnostic") == 0) {
+		ign = warn = err = 0;
+		if (strcmp((t = pragtok(NULL)), "ignored") == 0)
+			ign = 1;
+		else if (strcmp(t, "warning") == 0)
+			warn = 1;
+		else if (strcmp(t, "error") == 0)
+			err = 1;
+		else
+			return 1;
+		if (eat('\"') || eat('-'))
+			return 1;
+		for (t = pragstore; *t && *t != '\"'; t++)
+			;
+		u = *t;
+		*t = 0;
+		for (i = 0; i < NUMW; i++) {
+			if (strcmp(flagstr[i], pragstore+1) != 0)
+				continue;
+			if (err) {
+				BITSET(warnary, i);
+				BITSET(werrary, i);
+			} else if (warn) {
+				BITSET(warnary, i);
+				BITCLEAR(werrary, i);
+			} else {
+				BITCLEAR(warnary, i);
+				BITCLEAR(werrary, i);
+			}
+			return 0;
+		}
+		*t = u;
+	} else if (strcmp(t, "poison") == 0) {
+		/* currently ignore */;
+	} else if (strcmp(t, "visibility") == 0) {
+		/* currently ignore */;
+	} else
+		werror("gcc pragma unsupported");
+	return 0;
 }
 
 #ifdef PCC_DEBUG
 void
-dump_attr(gcc_ap_t *gap)
+dump_attr(struct attr *ap)
 {
-	int i;
-
-	printf("GCC attributes\n");
-	if (gap == NULL)
-		return;
-	for (i = 0; i < gap->num; i++) {
-		printf("%s: ", atax[gap->ga[i].atype].name);
-		printf("%d %d %d", gap->ga[i].a1.iarg,
-		    gap->ga[i].a2.iarg, gap->ga[i].a3.iarg);
-		printf("\n");
+	printf("attributes; ");
+	for (; ap; ap = ap->next) {
+		if (ap->atype >= GCC_ATYP_MAX) {
+			printf("bad type %d, ", ap->atype);
+		} else if (atax[ap->atype].name == 0) {
+			char *c = ap->atype == ATTR_COMPLEX ? "complex" :
+			    ap->atype == ATTR_BASETYP ? "basetyp" :
+			    ap->atype == ATTR_STRUCT ? "struct" : "badtype";
+			printf("%s, ", c);
+		} else {
+			printf("%s: ", atax[ap->atype].name);
+			printf("%d %d %d, ", ap->iarg(0),
+			    ap->iarg(1), ap->iarg(2));
+		}
 	}
+	printf("\n");
 }
 #endif
 #endif

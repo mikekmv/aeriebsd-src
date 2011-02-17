@@ -69,6 +69,7 @@
 #endif
 
 #include "ccconfig.h"
+#include "macdefs.h"
 /* C command */
 
 #define	MKS(x) _MKS(x)
@@ -87,7 +88,7 @@
 #endif
 
 #ifndef LIBEXECDIR
-#define LIBEXECDIR	"/usr/libexec"
+#define LIBEXECDIR	"/usr/libexec/"
 #endif
 
 #ifndef PREPROCESSOR
@@ -144,6 +145,7 @@ char	*clist[MAXFIL];
 char    *olist[MAXFIL];
 char	*llist[MAXLIB];
 char	*aslist[MAXAV];
+char	*cpplist[MAXAV];
 char	alist[20];
 char	*xlist[100];
 int	xnum;
@@ -155,9 +157,6 @@ int	nm;
 int	nf;
 int	nw;
 int	sspflag;
-int	Cflag;
-int	Pflag;
-int	Vflag;
 int	dflag;
 int	pflag;
 int	sflag;
@@ -178,15 +177,15 @@ int	exfail;
 int	Xflag;
 int	Wallflag;
 int	Wflag;
-int	nostartfiles, Bstatic = 1, shared;
+int	nostartfiles, Bstatic, shared;
 int	nostdinc, nostdlib;
 int	onlyas;
 int	pthreads;
 int	xcflag;
 int 	ascpp;
 
-char	*passp = LIBEXECDIR "/" PREPROCESSOR;
-char	*pass0 = LIBEXECDIR "/" COMPILER;
+char	*passp = LIBEXECDIR PREPROCESSOR;
+char	*pass0 = LIBEXECDIR COMPILER;
 char	*as = ASSEMBLER;
 char	*ld = LINKER;
 char	*Bflag;
@@ -213,7 +212,7 @@ char *startfiles_S[] = STARTFILES_S;
 char *endfiles_S[] = ENDFILES_S;
 #endif
 #ifdef MULTITARGET
-char *mach = MACHINE_ARCH;
+char *mach = DEFMACH;
 struct cppmd {
 	char *mach;
 	char *cppmdadd[MAXCPPMDARGS];
@@ -237,10 +236,13 @@ char *libclibs_profile[] = { "-lc_p", NULL };
 #define STARTLABEL "__start"
 #endif
 char *incdir = STDINC;
-char *altincdir = STDINC "pcc/";
+char *altincdir = INCLUDEDIR "pcc/";
 char *libdir = LIBDIR;
 char *pccincdir = PCCINCDIR;
 char *pcclibdir = PCCLIBDIR;
+#ifdef mach_amd64
+int amd64_i386;
+#endif
 
 /* handle gcc warning emulations */
 struct Wflags {
@@ -267,6 +269,52 @@ struct Wflags {
 
 #define	SZWFL	(sizeof(Wflags)/sizeof(Wflags[0]))
 
+#ifndef USHORT
+/* copied from mip/manifest.h */
+#define	USHORT		5
+#define	INT		6
+#define	UNSIGNED	7
+#endif
+#define	WCHAR_SIZE 4
+
+/*
+ * Wide char defines.
+ */
+#if WCHAR_TYPE == USHORT
+#define	WCT "short unsigned int"
+#define WCM "65535U"
+#if WCHAR_SIZE != 2
+#error WCHAR_TYPE vs. WCHAR_SIZE mismatch
+#endif
+#elif WCHAR_TYPE == INT
+#define WCT "int"
+#define WCM "2147483647"
+#if WCHAR_SIZE != 4
+#error WCHAR_TYPE vs. WCHAR_SIZE mismatch
+#endif
+#elif WCHAR_TYPE == UNSIGNED
+#define WCT "unsigned int"
+#define WCM "4294967295U"
+#if WCHAR_SIZE != 4
+#error WCHAR_TYPE vs. WCHAR_SIZE mismatch
+#endif
+#else
+#error WCHAR_TYPE not defined or invalid
+#endif
+
+#ifdef GCC_COMPAT
+#ifndef REGISTER_PREFIX
+#define REGISTER_PREFIX ""
+#endif
+#ifndef USER_LABEL_PREFIX
+#define USER_LABEL_PREFIX ""
+#endif
+#endif
+
+#ifndef PCC_PTRDIFF_TYPE
+#define PCC_PTRDIFF_TYPE "long int"
+#endif
+
 int
 main(int argc, char *argv[])
 {
@@ -274,7 +322,7 @@ main(int argc, char *argv[])
 	char *t, *u;
 	char *assource;
 	char **pv, *ptemp[MAXOPT], **pvt;
-	int nc, nl, nas, i, j, c, nxo, na;
+	int nc, nl, nas, ncpp, i, j, c, nxo, na;
 #ifdef MULTITARGET
 	int k;
 #endif
@@ -290,7 +338,7 @@ main(int argc, char *argv[])
 	pass0 = win32pathsubst(pass0);
 #endif
 
-	i = nc = nl = nas = nxo = 0;
+	i = nc = nl = nas = ncpp = nxo = 0;
 	pv = ptemp;
 	while(++i < argc) {
 		if (argv[i][0] == '-') {
@@ -307,9 +355,10 @@ main(int argc, char *argv[])
 				if (strcmp(argv[i], "--version") == 0) {
 					printf("%s\n", VERSSTR);
 					return 0;
-				} else if (strcmp(argv[i], "--param") == 0)
+				} else if (strcmp(argv[i], "--param") == 0) {
 					/* NOTHING YET */;
-				else
+					i++; /* ignore arg */
+				} else
 					goto passa;
 				break;
 
@@ -375,12 +424,13 @@ main(int argc, char *argv[])
 					wlist[nw++] = t;
 				} else if (strncmp(argv[i], "-Wp,", 4) == 0) {
 					/* preprocessor */
-					if (!strncmp(argv[i], "-Wp,-C", 6))
-						Cflag++;
-					else if (!strncmp(argv[i], "-Wp,-V", 6))
-						Vflag++;
-					else if (!strncmp(argv[i], "-Wp,-P", 6))
-						Pflag++;
+					t = &argv[i][4];
+					while ((u = strchr(t, ','))) {
+						*u++ = 0;
+						cpplist[ncpp++] = t;
+						t = u;
+					}
+					cpplist[ncpp++] = t;
 				} else if (strcmp(argv[i], "-Wall") == 0) {
 					Wallflag = 1;
 				} else if (strcmp(argv[i], "-WW") == 0) {
@@ -454,7 +504,22 @@ main(int argc, char *argv[])
 				break;
 
 			case 'm': /* target-dependent options */
+#ifdef mach_amd64
+				/* need to call i386 ccom for this */
+				if (strcmp(argv[i], "-m32") == 0) {
+					pass0 = LIBEXECDIR "/ccom_i386";
+					amd64_i386 = 1;
+					break;
+				}
+#endif
 				mlist[nm++] = argv[i];
+				if (argv[i][2] == 0) {
+					/* separate second arg */
+					/* give also to linker */
+					llist[nl++] = argv[i++];
+					mlist[nm++] = argv[i];
+					llist[nl++] = argv[i];
+				}
 				break;
 
 			case 'n': /* handle -n flags */
@@ -479,7 +544,11 @@ main(int argc, char *argv[])
 					/* NOTHING YET */;
 				else if (strcmp(argv[i], "-pedantic") == 0)
 					/* NOTHING YET */;
-				else
+				else if (strcmp(argv[i],
+				    "-print-prog-name=ld") == 0) {
+					printf("%s\n", LINKER);
+					return 0;
+				} else
 					errorx(1, "unknown option %s", argv[i]);
 				break;
 
@@ -540,7 +609,7 @@ main(int argc, char *argv[])
 				break;
 #endif
 			case 'C':
-				Cflag = 1;
+				cpplist[ncpp++] = argv[i];
 				break;
 			case 'D':
 			case 'I':
@@ -637,9 +706,7 @@ main(int argc, char *argv[])
 		tmp4 = gettmp();
 	}
 	if (Bflag) {
-		incdir = Bflag;
 		altincdir = Bflag;
-		libdir = Bflag;
 		pccincdir = Bflag;
 		pcclibdir = Bflag;
 	}
@@ -681,37 +748,49 @@ main(int argc, char *argv[])
 		av[na++] = "-D__PCC__=" MKS(PCC_MAJOR);
 		av[na++] = "-D__PCC_MINOR__=" MKS(PCC_MINOR);
 		av[na++] = "-D__PCC_MINORMINOR__=" MKS(PCC_MINORMINOR);
+#ifndef os_win32
+#ifdef GCC_COMPAT
+		av[na++] = "-D__GNUC__=4";
+		av[na++] = "-D__GNUC_MINOR__=3";
+		av[na++] = "-D__GNUC_PATCHLEVEL__=1";
+		av[na++] = "-D__GNUC_STDC_INLINE__=1";
+		av[na++] = "-D__VERSION__=" MKS(VERSSTR);
+		av[na++] = "-D__SCHAR_MAX__=" MKS(MAX_CHAR);
+		av[na++] = "-D__SHRT_MAX__=" MKS(MAX_SHORT);
+		av[na++] = "-D__INT_MAX__=" MKS(MAX_INT);
+		av[na++] = "-D__LONG_MAX__=" MKS(MAX_LONG);
+		av[na++] = "-D__LONG_LONG_MAX__=" MKS(MAX_LONGLONG);
+#endif
+#endif
 		if (ascpp)
 			av[na++] = "-D__ASSEMBLER__";
 		if (sspflag)
 			av[na++] = "-D__SSP__=1";
 		if (pthreads)
 			av[na++] = "-D_PTHREADS";
-		if (Cflag)
-			av[na++] = "-C";
 		if (Mflag)
 			av[na++] = "-M";
-		if (Vflag)
-			av[na++] = "-V";
-		if (Pflag)
-			av[na++] = "-P";
+		if (Oflag)
+			av[na++] = "-D__OPTIMIZE__";
+#ifdef GCC_COMPAT
+		av[na++] = "-D__REGISTER_PREFIX__=" REGISTER_PREFIX;
+		av[na++] = "-D__USER_LABEL_PREFIX__=" USER_LABEL_PREFIX;
+		if (Oflag)
+			av[na++] = "-D__OPTIMIZE__";
+#endif
 		if (dflag)
 			av[na++] = alist;
 		for (j = 0; cppadd[j]; j++)
 			av[na++] = cppadd[j];
+		for (j = 0; j < ncpp; j++)
+			av[na++] = cpplist[j];
 		av[na++] = "-D__STDC_ISO_10646__=200009L";
-#if WCHAR_SIZE == 2
-		av[na++] = "-D__WCHAR_TYPE__=short unsigned int";
-		av[na++] = "-D__SIZEOF_WCHAR_T__=2";
-		av[na++] = "-D__WCHAR_MAX__=65535U";
-#else
-		av[na++] = "-D__WCHAR_TYPE__=unsigned int";
-		av[na++] = "-D__SIZEOF_WCHAR_T__=4";
-		av[na++] = "-D__WCHAR_MAX__=4294967295U";
-#endif
+		av[na++] = "-D__WCHAR_TYPE__=" WCT;
+		av[na++] = "-D__SIZEOF_WCHAR_T__=" MKS(WCHAR_SIZE);
+		av[na++] = "-D__WCHAR_MAX__=" WCM;
 		av[na++] = "-D__WINT_TYPE__=unsigned int";
 		av[na++] = "-D__SIZE_TYPE__=unsigned long";
-		av[na++] = "-D__PTRDIFF_TYPE__=int";
+		av[na++] = "-D__PTRDIFF_TYPE__=" PCC_PTRDIFF_TYPE;
 		av[na++] = "-D__SIZEOF_WINT_T__=4";
 #ifdef MULTITARGET
 		for (k = 0; cppmds[k].mach; k++) {
@@ -781,8 +860,10 @@ main(int argc, char *argv[])
 			av[na++] = wlist[j];
 		for (j = 0; j < nf; j++)
 			av[na++] = flist[j];
+#if !defined(os_sunos) && !defined(mach_i386)
 		if (vflag)
 			av[na++] = "-v";
+#endif
 		if (pgflag)
 			av[na++] = "-p";
 		if (gflag)
@@ -791,6 +872,11 @@ main(int argc, char *argv[])
 		/* darwin always wants PIC compilation */
 		if (!Bstatic)
 			av[na++] = "-k";
+#elif defined(os_sunos) && defined(mach_i386)
+		if (kflag) {
+			av[na++] = "-K";
+			av[na++] = "pic";
+		}
 #else
 		if (kflag)
 			av[na++] = "-k";
@@ -861,6 +947,10 @@ main(int argc, char *argv[])
 			av[na++] = "-v";
 		if (kflag)
 			av[na++] = "-k";
+#ifdef mach_amd64
+		if (amd64_i386)
+			av[na++] = "--32";
+#endif
 		av[na++] = "-o";
 		if (outfile && cflag)
 			ermfile = av[na++] = outfile;
@@ -1004,16 +1094,16 @@ nocom:
 			av[j++] = "-lpthread";
 		if (!nostdlib) {
 #ifdef MSLINKER
-#define	DL	"/LIBPATH:"
+#define	LFLAG	"/LIBPATH:"
 #else
-#define	DL	"-L"
+#define	LFLAG	"-L"
 #endif
-			char *s = copy(DL, i = strlen(pcclibdir));
-			strlcat(s, pcclibdir, sizeof(DL) + i);
+			char *s = copy(LFLAG, i = strlen(pcclibdir));
+			strlcat(s, pcclibdir, sizeof(LFLAG) + i);
 			av[j++] = s;
 #ifdef os_win32
-			s = copy(DL, i = strlen(libdir));
-			strlcat(s, libdir, sizeof(DL) + i);
+			s = copy(LFLAG, i = strlen(libdir));
+			strlcat(s, libdir, sizeof(LFLAG) + i);
 			av[j++] = s;
 #endif
 			if (pgflag) {
@@ -1251,7 +1341,11 @@ callsys(char *f, char *v[])
 		len = strlen(Bflag) + 8;
 		a = malloc(len);
 	}
+#ifdef HAVE_VFORK
 	if ((p = vfork()) == 0) {
+#else
+	if ((p = fork()) == 0) {
+#endif
 		if (Bflag) {
 			if (a == NULL) {
 				error("callsys: malloc failed");

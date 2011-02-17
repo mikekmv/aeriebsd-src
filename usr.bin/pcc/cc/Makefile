@@ -5,8 +5,8 @@ PROG=   	cc
 TARGOS=		aeriebsd
 TARGMACH=       ${MACHINE_ARCH}
 
-CPPFLAGS+=	-I${.CURDIR}/..
-CPPFLAGS+=	-DDEFMACH=\"${TARGMACH}\"
+CPPFLAGS+=	-I${.CURDIR}/.. -I${.CURDIR}/../${MACHINE_ARCH}
+CPPFLAGS+=	-DDEFMACH=\"${TARGMACH}\" -DINCLUDEDIR=\"/usr/include/\"
 
 .include <bsd.prog.mk>
 .include "../../Makefile.inc"
