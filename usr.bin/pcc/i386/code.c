@@ -109,8 +109,16 @@ defloc(struct symtab *sp)
 	while (ISARY(t))
 		t = DECREF(t);
 	al = ISFTN(t) ? ALINT : talign(t, sp->sap);
-	if (al > ALCHAR)
+	if (al > ALCHAR) {
+#ifdef MACHOABI
+		int n = ispow2(al);
+		if (n == -1)
+	                cerror("defalign: n != 2^i");
+		printf("	.align %d\n", n/ALCHAR);
+#else
 		printf("	.align %d\n", al/ALCHAR);
+#endif
+	}
 	if (weak)
 		printf("	.weak %s\n", name);
 	else if (sp->sclass == EXTDEF) {

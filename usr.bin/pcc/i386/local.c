@@ -30,6 +30,7 @@
 
 /*	this file contains code which is dependent on the target machine */
 
+#ifdef notyet
 /*
  * Check if a constant is too large for a type.
  */
@@ -56,6 +57,7 @@ toolarge(TWORD t, CONSZ con)
 	}
 	return 0;
 }
+#endif
 
 #if defined(MACHOABI)
 
@@ -485,7 +487,8 @@ clocal(NODE *p)
 			
 		break;
 
-#if 0
+#ifdef notyet
+	/* XXX breaks sometimes */
 	case CBRANCH:
 		l = p->n_left;
 

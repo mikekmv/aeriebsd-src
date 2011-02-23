@@ -491,7 +491,7 @@ clocal(NODE *p)
 		/* Float conversions may need extra casts */
 		if (p->n_type == FLOAT || p->n_type == DOUBLE ||
 		    p->n_type == LDOUBLE) {
-			if (l->n_type < INT) {
+			if (l->n_type < INT || l->n_type == BOOL) {
 				p->n_left = block(SCONV, l, NIL,
 				    ISUNSIGNED(l->n_type) ? UNSIGNED : INT,
 				    l->n_df, l->n_ap);
@@ -519,7 +519,8 @@ clocal(NODE *p)
 		}
 
 		if (DEUNSIGN(p->n_type) == INT && DEUNSIGN(l->n_type) == INT &&
-		    coptype(l->n_op) == BITYPE && l->n_op != COMOP) {
+		    coptype(l->n_op) == BITYPE && l->n_op != COMOP &&
+		    l->n_op != QUEST) {
 			l->n_type = p->n_type;
 			nfree(p);
 			return l;

@@ -255,7 +255,13 @@ nspecial(struct optab *q)
 		break;
 
 	case MOD:
-		{
+		if (q->ltype & TUCHAR) {
+			static struct rspecial s[] = {
+				{ NEVER, RAX },
+				{ NLEFT, RAX }, { NRES, RAX },
+				{ NORIGHT, RAX }, { 0 } };
+			return s;
+		} else {
 			static struct rspecial s[] = {
 				{ NEVER, RAX }, { NEVER, RDX },
 				{ NLEFT, RAX }, { NRES, RDX },
