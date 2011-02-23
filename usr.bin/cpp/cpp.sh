@@ -39,7 +39,7 @@
 #	doesn't search gcc-include
 #
 PATH=/usr/bin:/bin
-TRAD=-t
+TRAD=""
 DGNUC=""
 STDINC="-I/usr/include"
 DOLLAR="@dollaropt@"
