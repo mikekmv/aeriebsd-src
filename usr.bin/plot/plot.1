@@ -60,9 +60,9 @@
 .\"
 .\"	@(#)plot.1	8.1 (Berkeley) 6/6/93
 .\"
-.Dd June 6, 1993
+.Dd $Mdocdate$
 .Dt PLOT 1
-.Os ATT 7th
+.Os
 .Sh NAME
 .Nm plot
 .Nd graphics filters
@@ -136,6 +136,13 @@ Hewlett Packard 2648 graphics terminal.
 Versatec D1200A printer-plotter.
 .It Cm var
 Benson Varian printer-plotter.
+.It Cm xterm
+.Tn X11
+.Xr xterm 1
+flavour of the DEC vt220 terminal (a synonym for
+.Cm 4014
+and
+.Cm tek ).
 .El
 .Pp
 These versions of
@@ -152,21 +159,11 @@ the standard output.
 Used to determine the terminal type if not given as an argument.
 .Sh FILES
 .Bl -tag -width /usr/bin/gigiplot -compact
-.It Pa /usr/libexec/plot/t4013
-.It Pa /usr/libexec/plot/tek
-.It Pa /usr/libexec/plot/t450
-.It Pa /usr/libexec/plot/t300
-.It Pa /usr/libexec/plot/t300s
-.It Pa /usr/libexec/plot/aedplot
-.It Pa /usr/libexec/plot/bgplot
-.It Pa /usr/libexec/plot/crtplot
-.It Pa /usr/libexec/plot/dumbplot
-.It Pa /usr/libexec/plot/gigiplot
-.It Pa /usr/libexec/plot/hpplot
-.It Pa /usr/libexec/plot/implot
+.It Pa /usr/share/misc/plotcap
 .It Pa /usr/bin/lpr
 .El
 .Sh SEE ALSO
+.Xr graph 1 ,
 .Xr lpr 1 ,
 .Xr plot 3 ,
 .Xr plot 5 ,
