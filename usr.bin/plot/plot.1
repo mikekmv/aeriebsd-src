@@ -60,7 +60,7 @@
 .\"
 .\"	@(#)plot.1	8.1 (Berkeley) 6/6/93
 .\"
-.Dd $Mdocdate$
+.Dd $Mdocdate: March 3 2011 $
 .Dt PLOT 1
 .Os
 .Sh NAME
@@ -72,12 +72,11 @@
 .Op Fl r Ar resolution
 .Ar
 .Sh DESCRIPTION
-These commands read plotting instructions (see
+These command reads plotting instructions (see
 .Xr plot 5 )
 from the standard input or the specified
-.Ar files  ,
-and in general
-produce plotting instructions suitable for
+.Ar files ,
+and in general produce plotting instructions suitable for
 a particular
 .Ar terminal
 on the standard output.
@@ -145,14 +144,6 @@ and
 .Cm tek ).
 .El
 .Pp
-These versions of
-.Nm plot
-use the
-.Fl g
-option of
-.Xr lpr  1
-to send the result directly to the plotter device rather than to
-the standard output.
 .Sh ENVIRONMENT
 .Bl -tag -width Fl
 .It Ev TERM
@@ -167,6 +158,7 @@ Used to determine the terminal type if not given as an argument.
 .Xr lpr 1 ,
 .Xr plot 3 ,
 .Xr plot 5 ,
+.Xr plotcap 5 ,
 .Xr term 7
 .Sh HISTORY
 The
