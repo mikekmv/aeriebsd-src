@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: plot.c,v 1.4 2009/05/28 13:53:35 mickey Exp $";
 #endif
 
 #include <stdio.h>
@@ -99,8 +99,9 @@ main(int argc, char *argv[])
 	do {
 		if (*argv) {
 			fname = *argv;
+			argv++;
 			if (!(freopen(fname, "r", stdin)))
-				err(1, "%s", fname);
+				err(1, "freopen: %s", fname);
 		}
 
 		if (!(v = plot_open(term, "dumb", stdout)))
@@ -213,7 +214,7 @@ main(int argc, char *argv[])
 		if (plot_close(v))
 			err(1, "plot_close");
 
-	} while(*argv++);
+	} while(*argv);
 
 	return (0);
 }
