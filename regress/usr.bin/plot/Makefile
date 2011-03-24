@@ -8,7 +8,7 @@ CLEANFILES+=pt.pl li.pl
 	awk -f ${.IMPSRC} > $@
 
 pt li: $@.pl
-	plot -Tps < $@.pl | diff ${.CURDIR}/$@.ps -
+	plot -Tps $@.pl | diff ${.CURDIR}/$@.ps -
 
 .PHONY: pt
 
