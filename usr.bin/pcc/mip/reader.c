@@ -1,4 +1,3 @@
-/*	$Id: reader.c,v 1.16 2011/02/17 16:12:57 mickey Exp $	*/
 /*
  * Copyright (c) 2003 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -1614,6 +1613,7 @@ xasmcode(char *s)
 		case '=': cw |= XASMASG; break;
 		case '&': cw |= XASMCONSTR; break;
 		case '+': cw |= XASMINOUT; break;
+		case '%': break;
 		default:
 			if ((*s >= 'a' && *s <= 'z') ||
 			    (*s >= 'A' && *s <= 'Z') ||

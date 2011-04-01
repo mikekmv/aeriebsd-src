@@ -29,7 +29,7 @@
 # include <ctype.h>
 # include <string.h>
 
-#if defined(PECOFFABI) || defined(MACHOABI)
+#if defined(PECOFFABI) || defined(MACHOABI) || defined(AOUTABI)
 #define EXPREFIX	"_"
 #else
 #define EXPREFIX	""
@@ -404,7 +404,7 @@ starg(NODE *p)
 	expand(p, 0, "	pushl AL\n");
 	expand(p, 0, "	leal 8(%esp),A1\n");
 	expand(p, 0, "	pushl A1\n");
-	fprintf(fp, "	call %s\n", EXPREFIX "memcpy");
+	fprintf(fp, "	call %s%s\n", EXPREFIX "memcpy", kflag ? "@PLT" : "");
 	fprintf(fp, "	addl $12,%%esp\n");
 #endif
 }
@@ -1457,8 +1457,13 @@ myxasm(struct interpass *ip, NODE *p)
 	case 'L':
 	case 'M':
 	case 'N':
-		if (p->n_left->n_op != ICON)
+		if (p->n_left->n_op != ICON) {
+			if ((c = XASMVAL1(cw)) != 0) {
+				p->n_name++;
+				return 0; /* Try again */
+			}
 			uerror("xasm arg not constant");
+		}
 		v = p->n_left->n_lval;
 		if ((c == 'K' && v < -128) ||
 		    (c == 'L' && v != 0xff && v != 0xffff) ||
@@ -1566,6 +1571,8 @@ static struct {
 	{ "ebx", EBX },
 	{ "ecx", ECX },
 	{ "edx", EDX },
+	{ "esi", ESI },
+	{ "edi", EDI },
 	{ "ax", EAX },
 	{ "bx", EBX },
 	{ "cx", ECX },

@@ -117,8 +117,8 @@ import(NODE *p)
 
 	sp = picsymtab("__imp_", name, "");
 	q = xbcon(0, sp, PTR+VOID);
-	q = block(UMUL, q, 0, PTR|VOID, 0, MKSUE(VOID));
-	q = block(UMUL, q, 0, p->n_type, p->n_df, p->n_sue);
+	q = block(UMUL, q, 0, PTR|VOID, 0, MKAP(VOID));
+	q = block(UMUL, q, 0, p->n_type, p->n_df, p->n_ap);
 	q->n_sp = p->n_sp; /* for init */
 	nfree(p);
 
@@ -188,7 +188,7 @@ picext(NODE *p)
 	nfree(p);
 	return q;
 
-#elif defined(PECOFFABI)
+#else /* defined(PECOFFABI) || defined(AOUTABI) */
 
 	return p;
 
@@ -258,7 +258,7 @@ picstatic(NODE *p)
 	nfree(p);
 	return q;
 
-#elif defined(PECOFFABI)
+#else /* defined(PECOFFABI) || defined(AOUTABI) */
 
 	return p;
 
@@ -523,7 +523,7 @@ clocal(NODE *p)
 			goto delp;
 		}
 		if (l->n_type < INT || l->n_type == LONGLONG || 
-		    l->n_type == ULONGLONG) {
+		    l->n_type == ULONGLONG || l->n_type == BOOL) {
 			/* float etc? */
 			p->n_left = block(SCONV, l, NIL,
 			    UNSIGNED, 0, MKAP(UNSIGNED));
@@ -575,7 +575,8 @@ clocal(NODE *p)
 		}
 
 		if (DEUNSIGN(p->n_type) == INT && DEUNSIGN(l->n_type) == INT &&
-		    coptype(l->n_op) == BITYPE) {
+		    coptype(l->n_op) == BITYPE && l->n_op != COMOP &&
+		    l->n_op != QUEST) {
 			l->n_type = p->n_type;
 			nfree(p);
 			return l;
@@ -755,7 +756,7 @@ clocal(NODE *p)
 static void
 fixnames(NODE *p, void *arg)
 {
-#if !defined(PECOFFABI)
+#if defined(ELFABI) || defined(MACHOABI)
 
 	struct symtab *sp;
 	struct attr *ap;
@@ -959,11 +960,11 @@ instring(struct symtab *sp)
 {
 	char *s, *str = sp->sname;
 
-#if defined(ELFABI) || defined(PECOFFABI)
+#if !defined(MACHOABI)
 
 	defloc(sp);
 
-#elif defined(MACHOABI)
+#else
 
 	extern int lastloc;
 	if (lastloc != STRNG)
@@ -1176,7 +1177,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 char *
 exname(char *p)
 {
-#if defined(PECOFFABI) || defined(MACHOABI)
+#if !defined(ELFABI)
 
 #define NCHNAM  256
 	static char text[NCHNAM+1];
@@ -1251,6 +1252,19 @@ defzero(struct symtab *sp)
 	al = talign(sp->stype, sp->sap)/SZCHAR;
 	off = (int)tsize(sp->stype, sp->sdf, sp->sap);
 	off = (off+(SZCHAR-1))/SZCHAR;
+	if (attr_find(sp->sap, GCC_ATYP_SECTION)) {
+		/* let the "other" code handle sections */
+		if (sp->sclass != STATIC)
+			printf("	.globl %s\n", name);
+		defloc(sp);
+#ifdef os_darwin
+		printf("\t.space %d\n", off);
+#else
+		printf("\t.zero %d\n", off);
+#endif
+		return;
+	}
+
 #ifdef GCC_COMPAT
 	{
 		struct attr *ap;
@@ -1342,6 +1356,7 @@ mypragma(char *str)
 		return 1;
 	}
 #endif
+#ifndef AOUTABI
 	if (strcmp(str, "constructor") == 0 || strcmp(str, "init") == 0) {
 		constructor = 1;
 		return 1;
@@ -1350,6 +1365,7 @@ mypragma(char *str)
 		destructor = 1;
 		return 1;
 	}
+#endif
 	if (strcmp(str, "section") == 0 && a2 != NULL) {
 		nextsect = section2string(a2, strlen(a2));
 		return 1;
@@ -1415,6 +1431,8 @@ fixdef(struct symtab *sp)
 			else
 				printf("\t.destructor\n");
 		}
+#elif defined(AOUTABI)
+		uerror("constructor/destructor are not supported for this target");
 #endif
 		printf("\t.p2align 2\n");
 		printf("\t.long %s\n", exname(sp->sname));
@@ -1539,13 +1557,13 @@ mangle(NODE *p)
 				    r->n_op == CM; r = r->n_left) {
 					t = r->n_type;
 					if (t == STRTY || t == UNIONTY)
-						size += r->n_sue->suesize;
+						size += tsize(t, r->n_df, r->n_ap);
 					else
 						size += szty(t) * SZINT / SZCHAR;
 				}
 				t = r->n_type;
 				if (t == STRTY || t == UNIONTY)
-					size += r->n_sue->suesize; /* XXX */
+					size += tsize(t, r->n_df, r->n_ap);
 				else
 					size += szty(t) * SZINT / SZCHAR;
 			}

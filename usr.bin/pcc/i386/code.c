@@ -45,6 +45,8 @@ defloc(struct symtab *sp)
 	static char *loctbl[] = { "text", "data", "section .rodata" };
 #elif defined(MACHOABI)
 	static char *loctbl[] = { "text", "data", "const_data" };
+#elif defined(AOUTABI)
+	static char *loctbl[] = { "text", "data", "data" };
 #endif
 	TWORD t;
 	int s, al;
@@ -72,12 +74,20 @@ defloc(struct symtab *sp)
 			weak = 1;
 		if (attr_find(sp->sap, GCC_ATYP_DESTRUCTOR)) {
 			printf("\t.section\t.dtors,\"aw\",@progbits\n");
+#ifdef MACHOABI
+			printf("\t.align 2\n\t.long\t%s\n", name);
+#else
 			printf("\t.align 4\n\t.long\t%s\n", name);
+#endif
 			lastloc = -1;
 		}
 		if (attr_find(sp->sap, GCC_ATYP_CONSTRUCTOR)) {
 			printf("\t.section\t.ctors,\"aw\",@progbits\n");
+#ifdef MACHOABI
+			printf("\t.align 2\n\t.long\t%s\n", name);
+#else
 			printf("\t.align 4\n\t.long\t%s\n", name);
+#endif
 			lastloc = -1;
 		}
 		if ((ap = attr_find(sp->sap, GCC_ATYP_VISIBILITY)) &&
@@ -128,6 +138,16 @@ defloc(struct symtab *sp)
 		    ISFTN(t)? "function" : "object");
 #endif
 	}
+#if defined(ELFABI)
+	if (!ISFTN(t)) {
+		if (sp->slevel == 0)
+			printf("\t.size %s,%d\n", name,
+			    (int)tsize(t, sp->sdf, sp->sap)/SZCHAR);
+		else
+			printf("\t.size " LABFMT ",%d\n", sp->soffset,
+			    (int)tsize(t, sp->sdf, sp->sap)/SZCHAR);
+	}
+#endif
 	if (sp->slevel == 0)
 		printf("%s:\n", name);
 	else

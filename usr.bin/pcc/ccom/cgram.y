@@ -548,8 +548,7 @@ struct_dcl:	   str_head '{' struct_dcl_list '}' {
 			if (pragma_allpacked) {
 				p = bdty(CALL, bdty(NAME, "packed"),
 				    bcon(pragma_allpacked));
-				$$ = cmop(biop(ATTRIB, p, 0), $$);
-			}
+				$$->n_ap = attr_add($$->n_ap,gcc_attr_parse(p)); }
 		}
 		|  C_STRUCT attr_var C_NAME { 
 			$$ = rstruct($3,$1);
@@ -815,6 +814,7 @@ statement:	   e ';' { ecomp(eve($1)); symclear(blevel); }
 			    if( (flostat&FBRK) || !(flostat&FLOOP) ) reached = 1;
 			    else reached = 0;
 			    resetbc(0);
+			    symclear(blevel); /* if declaration inside for() */
 			    }
 		| switchpart statement
 			{ if( reached ) branch( brklab );

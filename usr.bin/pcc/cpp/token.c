@@ -103,7 +103,7 @@ char spechr[256] = {
 	0,	C_I,	C_I,	C_I,	C_I,	C_I|C_EP, C_I,	C_I,
 	C_I,	C_I,	C_I,	C_I,	C_I,	C_I,	C_I,	C_I,
 	C_I|C_EP, C_I,	C_I,	C_I,	C_I,	C_I,	C_I,	C_I,
-	C_I,	C_I,	C_I,	0,	C_I,	0,	0,	C_I,
+	C_I,	C_I,	C_I,	0,	C_SPEC,	0,	0,	C_I,
 
 	0,	C_I,	C_I,	C_I,	C_I,	C_I|C_EP, C_I,	C_I,
 	C_I,	C_I,	C_I,	C_I,	C_I,	C_I,	C_I,	C_I,
@@ -178,6 +178,8 @@ fastscan(void)
 {
 	struct symtab *nl;
 	int ch, i, ccnt, onemore;
+	int nnl = 0;
+	usch *cp;
 
 	goto run;
 	for (;;) {
@@ -230,7 +232,8 @@ cppcmt:				if (Cflag) { PUTCH(ch); } else { PUTCH(' '); }
 			goto xloop;
 
 		case '\n': /* newlines, for pp directives */
-			ifiles->lineno++;
+			while (nnl > 0) { PUTCH('\n'); nnl--; }
+run2:			ifiles->lineno++;
 			do {
 				PUTCH(ch);
 run:				ch = NXTCH();
@@ -247,6 +250,13 @@ run:				ch = NXTCH();
 					ch = '/';
 				}
 			} while (ch == ' ' || ch == '\t');
+			if (ch == '\\') {
+				ch = NXTCH();
+				if (ch == '\n')
+					goto run2;
+				unch(ch);
+				ch = '\\';
+			}
 			if (ch == '#') {
 				ppdir();
 				continue;
@@ -264,14 +274,20 @@ run:				ch = NXTCH();
 
 		case '\"': /* strings */
 str:			PUTCH(ch);
-			while ((ch = inch()) != '\"') {
-					PUTCH(ch);
+			while ((ch = NXTCH()) != '\"') {
+				if (ch == '\n')
+					goto xloop;
 				if (ch == '\\') {
-					ch = inch();
-					PUTCH(ch);
-				}
+					if ((ch = NXTCH()) != '\n') {
+						PUTCH('\\');
+						PUTCH(ch);
+					} else
+						nnl++;
+					continue;
+                                }
 				if (ch < 0)
 					return;
+				PUTCH(ch);
 			}
 			PUTCH(ch);
 			break;
@@ -310,14 +326,19 @@ con:			PUTCH(ch);
 			if (tflag)
 				continue; /* character constants ignored */
 			while ((ch = NXTCH()) != '\'') {
-				PUTCH(ch);
-				if (ch == '\\') {
-					ch = NXTCH();
-					PUTCH(ch);
-				} else if (ch < 0)
-					return;
-				else if (ch == '\n')
+				if (ch == '\n')
 					goto xloop;
+				if (ch == '\\') {
+					if ((ch = NXTCH()) != '\n') {
+						PUTCH('\\');
+						PUTCH(ch);
+					} else
+						nnl++;
+					continue;
+				}
+				if (ch < 0)
+					return;
+				PUTCH(ch);
 			}
 			PUTCH(ch);
 			break;
@@ -350,9 +371,10 @@ con:			PUTCH(ch);
 				if (ch == '\\') {
 					ch = NXTCH();
 					if (ch != '\n') {
-						unch('\n');
+						unch(ch);
 						ch = '\\';
 					} else {
+						putch('\n');
 						ifiles->lineno++;
 						ch = NXTCH();
 					}
@@ -364,10 +386,12 @@ con:			PUTCH(ch);
 			yytext[i] = 0;
 			unch(ch);
 
+			cp = stringbuf;
 			if ((nl = lookup((usch *)yytext, FIND)) && kfind(nl)) {
 				putstr(stringbuf);
 			} else
 				putstr((usch *)yytext);
+			stringbuf = cp;
 
 			break;
 		}
@@ -787,6 +811,9 @@ pushfile(const usch *file, const usch *fn, int idx, void *incs)
 		ic->infil = 0;
 		ic->orgfn = ic->fname = (const usch *)"<stdin>";
 	}
+#ifndef BUF_STACK
+	ic->bbuf = malloc(BBUFSZ);
+#endif
 	ic->buffer = ic->bbuf+NAMEMAX;
 	ic->curptr = ic->buffer;
 	ifiles = ic;
@@ -816,6 +843,9 @@ pushfile(const usch *file, const usch *fn, int idx, void *incs)
 	if (otrulvl != trulvl || flslvl)
 		error("unterminated conditional");
 
+#ifndef BUF_STACK
+	free(ic->bbuf);
+#endif
 	ifiles = ic->next;
 	close(ic->infil);
 	inclevel--;
