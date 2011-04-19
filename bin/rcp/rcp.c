@@ -38,7 +38,7 @@ static char copyright[] =
 #if 0
 static char sccsid[] = "@(#)rcp.c	8.2 (Berkeley) 4/2/94";
 #else
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: rcp.c,v 1.1.1.1 2008/08/26 14:36:31 root Exp $";
 #endif
 #endif /* not lint */
 
@@ -67,7 +67,6 @@ static const char rcsid[] = "$ABSD$";
 #include "extern.h"
 
 #ifdef KERBEROS
-#include <des.h>
 #include <kerberosIV/krb.h>
 
 char	dst_realm_buf[REALM_SZ];
