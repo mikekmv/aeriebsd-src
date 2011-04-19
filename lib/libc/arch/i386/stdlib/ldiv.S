@@ -1,4 +1,3 @@
-/*	$NetBSD: ldiv.S,v 1.8 2003/07/26 19:24:33 salo Exp $	*/
 /*
  * Written by J.T. Conklin <jtc@NetBSD.org>.
  * Public domain.
@@ -8,7 +7,7 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: ldiv.S,v 1.3 2009/10/31 21:30:54 mickey Exp $"
+	.asciz "$ABSD: ldiv.S,v 1.4 2011/04/19 17:43:29 mickey Exp $"
 	.text
 #endif
 
