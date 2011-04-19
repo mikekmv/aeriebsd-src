@@ -1,5 +1,5 @@
 /*
- * Written by J.T. Conklin <jtc@netbsd.org>.
+ * Written by J.T. Conklin <jtc@NetBSD.org>.
  * Public domain.
  */
 
@@ -7,15 +7,19 @@
 
 #if defined(LIBC_SCCS)
 	.section	.rodata
-	.asciz "$ABSD: div.S,v 1.2 2009/03/26 17:30:47 mickey Exp $"
+	.asciz "$ABSD: div.S,v 1.3 2009/10/31 21:30:54 mickey Exp $"
 	.text
 #endif
 
 ENTRY(div)
-	movl	4(%esp),%eax
-	movl	8(%esp),%ecx
+	pushl	%ebx
+	movl	8(%esp),%ebx
+	movl	12(%esp),%eax
+	movl	16(%esp),%ecx
 	cdq
 	idiv	%ecx
-	movl	%eax,4(%esp)
-	movl	%edx,8(%esp)
+	movl	%eax,(%ebx)
+	movl	%edx,4(%ebx)
+	movl	%ebx,%eax
+	popl	%ebx
 	ret
