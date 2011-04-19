@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: amd64.c,v 1.2 2011/01/18 10:28:00 mickey Exp $";
+static const char rcsid[] = "$ABSD: amd64.c,v 1.3 2011/02/03 23:22:24 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -36,6 +36,7 @@ static const char rcsid[] = "$ABSD: amd64.c,v 1.2 2011/01/18 10:28:00 mickey Exp
 #define	ELF_EH_FRAME	".eh_frame"
 #define	ELF_EH_FRAME_H	".eh_frame_hdr"
 #define	ELF_GCC_EXCEPT	".gcc_except_table"
+#define	ELF_GCC_LINK1	".gnu.linkonce"
 #define	ELF_STAB	".stab"
 #define	ELF_STABSTR	".stabstr"
 #define	ELF_STAB_EXCL	".stab.excl"
@@ -67,6 +68,7 @@ const struct ldorder amd64_order[] = {
 	{ ldo_section,  ELF_EH_FRAME_H, SHT_PROGBITS, SHF_ALLOC },
 	{ ldo_section,  ELF_EH_FRAME, SHT_PROGBITS, SHF_ALLOC },
 	{ ldo_section,  ELF_GCC_EXCEPT, SHT_PROGBITS, SHF_ALLOC },
+	{ ldo_section,  ELF_GCC_LINK1, SHT_PROGBITS, SHF_ALLOC, LD_LINK1 },
 	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
 	{ ldo_symbol,	"__data_start", N_ABS },
 	{ ldo_section,	ELF_SDATA, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },

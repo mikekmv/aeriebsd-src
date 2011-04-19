@@ -169,10 +169,12 @@ struct ldorder {
 #define	LD_WXORX	0x0008	/* only for (normal) W^X executables */
 #define	LD_PIE		0x0010	/* for position-independant executables */
 #define	LD_DYNAMIC	0x0020	/* for dynamic executables */
+#define	LD_EXCTBL	0x0040	/* gcc exception table */
 #define	LD_DEBUG	0x0100	/* debugging info (strip w/ -S) */
 #define	LD_CONTAINS	0x0200	/* contents is generated in ldo_wurst */
 #define	LD_SYMTAB	0x0400	/* this is a symtab or relevant section */
 #define	LD_ENTRY	0x1000	/* entry point */
+#define	LD_LINK1	0x2000	/* link once bits */
 	uint64_t ldo_filler;	/* gap filler */
 
 	TAILQ_HEAD(, section) ldo_seclst;	/* all sections */
