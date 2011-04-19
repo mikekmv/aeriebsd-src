@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld.c,v 1.30 2011/02/03 23:22:24 mickey Exp $";
+static const char rcsid[] = "$ABSD: ld.c,v 1.31 2011/04/19 22:12:11 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -169,7 +169,6 @@ int
 main(int argc, char *argv[])
 {
 	char output[MAXPATHLEN];
-	struct stat sb;
 	u_int64_t *pst;
 	FILE *fp;
 	int ch, li;
@@ -392,14 +391,11 @@ main(int argc, char *argv[])
 		if (!(fp = fopen(*argv, "r")))
 			err(1, "fopen: %s", *argv);
 
-		if (fstat(fileno(fp), &sb) < 0)
-			err(1, "fstat: %s", *argv);
-
-		if (sb.st_size == 0)
-			errx(1, "%s: file is empty", *argv);
-
-		if (fread(armag, sizeof armag, 1, fp) != 1)
+		if (fread(armag, sizeof armag, 1, fp) != 1) {
+			if (feof(fp))
+				errx(1, "%s: file is too short", *argv);
 			err(1, "fread: %s", *argv);
+		}
 
 		fseek(fp, 0, SEEK_SET);
 		if (!strncmp(armag, ARMAG, SARMAG))
