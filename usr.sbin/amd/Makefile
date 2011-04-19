@@ -1,4 +1,4 @@
 
-SUBDIR= amd amq doc
+SUBDIR= amd amq
 
 .include <bsd.subdir.mk>
