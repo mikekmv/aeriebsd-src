@@ -71,7 +71,7 @@ static const char copyright[] =
 static const char sccsid[] = "@(#)graph.c	8.1 (Berkeley) 6/6/93";
 #else
 static const char rcsid[] =
-    "$ABSD: graph.c,v 1.1 2009/03/21 15:03:33 mickey Exp $";
+    "$ABSD: graph.c,v 1.2 2009/05/28 13:59:04 mickey Exp $";
 #endif
 #endif
 
@@ -151,8 +151,7 @@ char	*modes[] = {
 int		mode = 1;
 
 double
-ident(x)
-	double		x;
+ident(double x)
 {
 	return (x);
 }
@@ -284,15 +283,14 @@ main(argc, argv)
 }
 
 void
-init(p)
-	struct xy      *p;
+init(struct xy *p)
 {
 	p->xf = ident;
 	p->xmult = 1;
 }
 
 void
-readin()
+readin(void)
 {
 	int		t;
 	struct val     *temp;
@@ -324,7 +322,7 @@ readin()
 }
 
 void
-transpose()
+transpose(void)
 {
 	int		i;
 	float		f;
@@ -342,8 +340,7 @@ transpose()
 }
 
 int
-copystring(k)
-	int k;
+copystring(int k)
 {
 	register char  *temp;
 	int		i;
@@ -360,17 +357,14 @@ copystring(k)
 }
 
 float
-modceil(f, t)
-	float		f, t;
+modceil(float f, float t)
 {
-
 	t = fabs(t);
 	return (ceil(f / t) * t);
 }
 
 float
-modfloor(f, t)
-	float		f, t;
+modfloor(float f, float t)
 {
 	t = fabs(t);
 	return (floor(f / t) * t);
@@ -382,9 +376,7 @@ modfloor(f, t)
  * v[0].xv is a valid limit value.
  */
 void
-getlim(p, v)
-	struct xy	*p;
-	struct val     *v;
+getlim(struct xy *p, struct val *v)
 {
 	int	i;
 
@@ -407,8 +399,7 @@ struct z {
 }		setloglim(), setlinlim();
 
 void
-setlim(p)
-	register struct xy *p;
+setlim(struct xy *p)
 {
 	float		t, delta, sign;
 	struct z	z;
@@ -473,8 +464,7 @@ setlim(p)
 }
 
 struct z
-setloglim(lbf, ubf, lb, ub)
-	float		lb, ub;
+setloglim(int lbf, int ubf, float lb, float ub)
 {
 	float		r, s, t;
 	struct z	z;
@@ -506,9 +496,7 @@ setloglim(lbf, ubf, lb, ub)
 }
 
 struct z
-setlinlim(lbf, ubf, xlb, xub)
-	int		lbf, ubf;
-	float		xlb, xub;
+setlinlim(int lbf, int ubf, float xlb, float xub)
 {
 	struct z	z;
 	float		r, s, delta;
@@ -631,11 +619,7 @@ setmark(xmark, p)
 }
 
 void
-submark(xmark, pxn, x, p)
-	int	       *xmark;
-	int	       *pxn;
-	float		x;
-	struct xy      *p;
+submark(int *xmark, int *pxn, float x, struct xy *p)
 {
 	if (1.001 * p->xlb < x && .999 * p->xub > x)
 		xmark[(*pxn)++] = log10(x) * p->xa + p->xb;
@@ -670,10 +654,7 @@ plot(void *pl)
 }
 
 int
-conv(xv, p, ip)
-	float		xv;
-	register struct xy *p;
-	int	       *ip;
+conv(float xv, struct xy *p, int *ip)
 {
 	long		ix;
 	ix = p->xa * (*p->xf) (xv * p->xmult) + p->xb;
@@ -684,7 +665,7 @@ conv(xv, p, ip)
 }
 
 int
-getstring()
+getstring(void)
 {
 	int		i;
 	char		junk[20];
