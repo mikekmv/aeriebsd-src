@@ -45,7 +45,7 @@ char xxxvers[] = "FORTRAN 77 DRIVER, VERSION 1.11,   28 JULY 1978\n";
 #include <stdarg.h>
 #include <errno.h>
 
-#include "f77config.h"
+#include "ccconfig.h"
 
 typedef FILE *FILEP;
 typedef int flag;

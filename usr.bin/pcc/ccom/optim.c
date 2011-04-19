@@ -82,10 +82,9 @@ short revrel[] ={ EQ, NE, GE, GT, LE, LT, UGE, UGT, ULE, ULT };
 NODE *
 optim(NODE *p)
 {
-	struct attr *ap;
 	int o, ty;
 	NODE *sp, *q;
-	int i;
+	int i, sz;
 	TWORD t;
 
 	t = BTYPE(p->n_type);
@@ -142,10 +141,10 @@ again:	o = p->n_op;
 		if (LCON(p) && RCON(p) && conval(p->n_left, o, p->n_right))
 			goto zapright;
 
-		ap = attr_find(p->n_ap, ATTR_BASETYP);
+		sz = tsize(p->n_type, p->n_df, p->n_ap);
 
 		if (LO(p) == RS && RCON(p->n_left) && RCON(p) &&
-		    (RV(p) + RV(p->n_left)) < ap->atypsz) {
+		    (RV(p) + RV(p->n_left)) < sz) {
 			/* two right-shift  by constants */
 			RV(p) += RV(p->n_left);
 			p->n_left = zapleft(p->n_left);
@@ -174,9 +173,8 @@ again:	o = p->n_op;
 			} else
 #endif
 			/* avoid larger shifts than type size */
-			if (RV(p) >= ap->atypsz) {
-				RV(p) = RV(p) % 
-				    attr_find(p->n_ap, ATTR_BASETYP)->atypsz;
+			if (RV(p) >= sz) {
+				RV(p) = RV(p) % sz;
 				werror("shift larger than type");
 			}
 			if (RV(p) == 0)
@@ -188,7 +186,7 @@ again:	o = p->n_op;
 		if (LCON(p) && RCON(p) && conval(p->n_left, o, p->n_right))
 			goto zapright;
 
-		ap = attr_find(p->n_ap, ATTR_BASETYP);
+		sz = tsize(p->n_type, p->n_df, p->n_ap);
 
 		if (LO(p) == LS && RCON(p->n_left) && RCON(p)) {
 			/* two left-shift  by constants */
@@ -216,9 +214,8 @@ again:	o = p->n_op;
 			} else
 #endif
 			/* avoid larger shifts than type size */
-			if (RV(p) >= ap->atypsz) {
-				RV(p) = RV(p) %
-				    attr_find(p->n_ap, ATTR_BASETYP)->atypsz;
+			if (RV(p) >= sz) {
+				RV(p) = RV(p) % sz;
 				werror("shift larger than type");
 			}
 			if (RV(p) == 0)  
@@ -315,7 +312,7 @@ again:	o = p->n_op;
 			RV(p) = i;
 			q = p->n_right;
 			if(tsize(q->n_type, q->n_df, q->n_ap) > SZINT)
-				p->n_right = makety(q, INT, 0, 0, MKAP(INT));
+				p->n_right = makety(q, INT, 0, 0, 0);
 
 			break;
 		}

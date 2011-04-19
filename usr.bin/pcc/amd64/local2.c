@@ -1026,6 +1026,8 @@ retry:	switch (c) {
 	case 'c': reg = RCX; break;
 	case 'd': reg = RDX; break;
 
+	case 'Q': reg = RDX; break; /* Always dx for now */
+
 	case 'x':
 	case 'q':
 	case 't':
@@ -1116,6 +1118,11 @@ targarg(char *w, void *arg, int n)
 	if (q->n_op == REG) {
 		if (*w == 'k') {
 			q->n_type = INT;
+		} else if (*w == 'h' || *w == 'b') {
+			/* Can do this only because we know dx is used */
+			printf("%%d%c", *w == 'h' ? 'h' : 'l');
+			tfree(q);
+			return;
 		} else if (*w != 'w') {
 			cerror("targarg"); /* XXX ??? */
 			if (q->n_type > UCHAR) {

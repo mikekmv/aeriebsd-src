@@ -49,8 +49,8 @@ builtin_alloca(NODE *f, NODE *a, TWORD rt)
 #endif
 	sp = f->n_sp;
 
-	t = tempnode(0, VOID|PTR, 0, MKAP(INT) /* XXX */);
-	u = tempnode(regno(t), VOID|PTR, 0, MKAP(INT) /* XXX */);
+	t = tempnode(0, VOID|PTR, 0, 0);
+	u = tempnode(regno(t), VOID|PTR, 0, 0);
 	spalloc(t, a, SZCHAR);
 	tfree(f);
 	return u;
@@ -300,7 +300,7 @@ builtin_unimp_f(NODE *f, NODE *a, TWORD rt)
 static NODE *
 mtisnan(NODE *p)
 {
-	NODE *q = block(NAME, NIL, NIL, INT, 0, MKAP(INT));
+	NODE *q = block(NAME, NIL, NIL, INT, 0, 0);
 
 	return binhelp(q, cast(ccopy(p), DOUBLE, 0), INT, "isnan");
 }
@@ -430,7 +430,7 @@ static char nLDOUBLE[] = { 0x7f, 0xff, 0xc0, 0, 0, 0, 0, 0, 0, 0 };
 	x = MIN(sizeof(n ## TYP), sizeof(d));			\
 	memcpy(&d, v ## TYP, x);				\
 	nfree(f);						\
-	f = block(FCON, NIL, NIL, TYP, NULL, MKAP(TYP));	\
+	f = block(FCON, NIL, NIL, TYP, NULL, 0);	\
 	f->n_dcon = d;						\
 	return f;						\
 }
@@ -455,7 +455,7 @@ builtin_huge_vall(NODE *f, NODE *a, TWORD rt) VALX(long double,LDOUBLE)
 		x = MIN(sizeof(n ## TYP), sizeof(d));			\
 		memcpy(&d, n ## TYP, x);				\
 		tfree(a); tfree(f);					\
-		f = block(FCON, NIL, NIL, TYP, NULL, MKAP(TYP));	\
+		f = block(FCON, NIL, NIL, TYP, NULL, 0);	\
 		f->n_dcon = d;						\
 		return f;						\
 	}								\
@@ -505,6 +505,8 @@ static TWORD strcpyt[] = { CHAR|PTR, CHAR|PTR, INT };
 static TWORD strncpyt[] = { CHAR|PTR, CHAR|PTR, SIZET, INT };
 static TWORD strchrt[] = { CHAR|PTR, INT };
 static TWORD strcspnt[] = { CHAR|PTR, CHAR|PTR };
+static TWORD strspnt[] = { CHAR|PTR, CHAR|PTR };
+static TWORD strpbrkt[] = { CHAR|PTR, CHAR|PTR };
 static TWORD nant[] = { CHAR|PTR };
 static TWORD bitt[] = { UNSIGNED };
 static TWORD bitlt[] = { ULONG };
@@ -572,6 +574,8 @@ static const struct bitable {
 	{ "__builtin_strncpy", builtin_unimp, 3, strncpyt, CHAR|PTR },
 	{ "__builtin_strncat", builtin_unimp, 3, strncpyt, CHAR|PTR },
 	{ "__builtin_strcspn", builtin_unimp, 2, strcspnt, SIZET },
+	{ "__builtin_strspn", builtin_unimp, 2, strspnt, SIZET },
+	{ "__builtin_strpbrk", builtin_unimp, 2, strpbrkt, CHAR|PTR },
 #ifndef TARGET_STDARGS
 	{ "__builtin_stdarg_start", builtin_stdarg_start, 2 },
 	{ "__builtin_va_start", builtin_stdarg_start, 2 },
@@ -602,14 +606,14 @@ acnt(NODE *a, int narg, TWORD *tp)
 		t = tp[narg-1];
 		if (q->n_type == t)
 			continue;
-		a->n_right = ccast(q, t, 0, NULL, MKAP(BTYPE(t)));
+		a->n_right = ccast(q, t, 0, NULL, 0);
 	}
 
 	/* Last arg is ugly to deal with */
 	if (narg == 1 && tp != NULL) {
 		q = talloc();
 		*q = *a;
-		q = ccast(q, tp[0], 0, NULL, MKAP(BTYPE(tp[0])));
+		q = ccast(q, tp[0], 0, NULL, 0);
 		*a = *q;
 		nfree(q);
 	}

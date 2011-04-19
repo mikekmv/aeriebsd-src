@@ -69,14 +69,12 @@ clocal(NODE *p)
 		l = buildtree(ASSIGN, t, l);
 
 		if (r->n_right->n_op != CM) {
-			r->n_right = block(CM, l, r->n_right,
-			    INT, 0, MKSUE(INT));
+			r->n_right = block(CM, l, r->n_right, INT, 0, 0);
 		} else {
 			for (t = r->n_right; t->n_left->n_op == CM;
 			    t = t->n_left)
 				;
-			t->n_left = block(CM, l, t->n_left,
-			    INT, 0, MKSUE(INT));
+			t->n_left = block(CM, l, t->n_left, INT, 0, 0);
 		}
 		return r;
 
@@ -100,8 +98,7 @@ clocal(NODE *p)
 
                 p = tempnode(tmpnr, r->n_type, r->n_df, r->n_sue);
                 if (isptrvoid) {
-                        p = block(PCONV, p, NIL, PTR+VOID,
-                            p->n_df, MKSUE(PTR+VOID));
+                        p = block(PCONV, p, NIL, PTR+VOID, p->n_df, 0);
                 }
                 p = buildtree(COMOP, r, p);
                 break;
@@ -158,7 +155,7 @@ clocal(NODE *p)
                 /* put return value in return reg */
                 p->n_op = ASSIGN;
                 p->n_right = p->n_left;
-                p->n_left = block(REG, NIL, NIL, p->n_type, 0, MKSUE(INT));
+                p->n_left = block(REG, NIL, NIL, p->n_type, 0, 0);
                 p->n_left->n_rval = p->n_left->n_type == BOOL ? 
                     RETREG(BOOL_TYPE) : RETREG(p->n_type);
                 break;
@@ -234,7 +231,7 @@ clocal(NODE *p)
                                 cerror("unknown type %d", l->n_type);
                         }
 			l->n_type = p->n_type;
-			l->n_sue = MKSUE(p->n_type);
+			l->n_sue = 0;
                         nfree(p);
                         return l;
                 } else if (p->n_op == FCON) {
@@ -242,7 +239,7 @@ clocal(NODE *p)
 			l->n_sp = NULL;
 			l->n_op = ICON;
 			l->n_type = p->n_type;
-			l->n_sue = MKSUE(p->n_type);
+			l->n_sue = 0;
 			nfree(p);
 			return clocal(l);
 		}
@@ -263,8 +260,7 @@ clocal(NODE *p)
 			goto delp;
 		}
 		if (l->n_type < INT || DEUNSIGN(l->n_type) == LONGLONG) {
-			p->n_left = block(SCONV, l, NIL,
-			    UNSIGNED, 0, MKSUE(UNSIGNED));
+			p->n_left = block(SCONV, l, NIL, UNSIGNED, 0, 0);
 			break;
 		}
 		if (l->n_op == SCONV)
@@ -303,7 +299,7 @@ myp2tree(NODE *p)
 
 	sp = IALLOC(sizeof(struct symtab));
 	sp->sclass = STATIC;
-	sp->ssue = MKSUE(p->n_type);
+	sp->ssue = 0;
 	sp->slevel = 1; /* fake numeric label */
 	sp->soffset = getlab();
 	sp->sflags = 0;
@@ -382,7 +378,7 @@ spalloc(NODE *t, NODE *p, OFFSZ off)
 	p = buildtree(MUL, p, bcon(off/SZCHAR)); /* XXX word alignment? */
 
 	/* sub the size from sp */
-	sp = block(REG, NIL, NIL, p->n_type, 0, MKSUE(INT));
+	sp = block(REG, NIL, NIL, p->n_type, 0, 0);
 	sp->n_lval = 0;
 	sp->n_rval = SP;
 	ecomp(buildtree(MINUSEQ, sp, p));
@@ -771,23 +767,25 @@ static int destructor;
  * Give target the opportunity of handling pragmas.
  */
 int
-mypragma(char **ary)
+mypragma(char *str)
 {
-	if (strcmp(ary[1], "tls") == 0) { 
+	char *a2 = pragtok(NULL);
+
+	if (strcmp(str, "tls") == 0) { 
 		uerror("thread-local storage not supported for this target");
 		return 1;
 	} 
-	if (strcmp(ary[1], "constructor") == 0 || strcmp(ary[1], "init") == 0) {
+	if (strcmp(str, "constructor") == 0 || strcmp(str, "init") == 0) {
 		constructor = 1;
 		return 1;
 	}
-	if (strcmp(ary[1], "destructor") == 0 || strcmp(ary[1], "fini") == 0) {
+	if (strcmp(str, "destructor") == 0 || strcmp(str, "fini") == 0) {
 		destructor = 1;
 		return 1;
 	}
-	if (strcmp(ary[1], "section") || ary[2] == NULL)
+	if (strcmp(str, "section") || s2 == NULL)
 		return 0;
-	nextsect = newstring(ary[2], strlen(ary[2]));
+	nextsect = newstring(s2, strlen(s2));
 	return 1;
 }
 
@@ -802,6 +800,7 @@ fixdef(struct symtab *sp)
 		    constructor ? 'c' : 'd');
 		printf("\t.p2align 2\n");
 		printf("\t.long %s\n", exname(sp->sname));
+		printf("\t.previous\n");
 		constructor = destructor = 0;
 	}
 }

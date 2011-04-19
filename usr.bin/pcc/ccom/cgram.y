@@ -260,7 +260,7 @@ external_def:	   funtype kr_args compoundstmt { fend(); }
 		;
 
 funtype:	  /* no type given */ declarator {
-		    fundef(mkty(INT, 0, MKAP(INT)), $1);
+		    fundef(mkty(INT, 0, 0), $1);
 		    cftnsp->sflags |= NORETYP;
 		}
 		| declaration_specifiers declarator { fundef($1,$2); }
@@ -1004,7 +1004,7 @@ switchpart:	   C_SWITCH  '('  e ')' {
 				$3 = intprom($3);
 				t = $3->n_type;
 			}
-			p = tempnode(0, t, 0, MKAP(t));
+			p = tempnode(0, t, 0, 0);
 			num = regno(p);
 			ecomp(buildtree(ASSIGN, p, $3));
 			branch( $$ = getlab());
@@ -1131,8 +1131,7 @@ term:		   term C_INCOP {  $$ = biop($2, $1, bcon(1)); }
 				$$ = $5;
 			}
 			$$ = biop(ADDROF, $$, NIL);
-			$3 = block(NAME, NIL, NIL, ENUNSIGN(INTPTR), 0,
-			    MKAP(ENUNSIGN(INTPTR)));
+			$3 = block(NAME, NIL, NIL, ENUNSIGN(INTPTR), 0, 0);
 			$$ = biop(CAST, $3, $$);
 		}
 		|  C_ICON { $$ = $1; }
@@ -1302,7 +1301,7 @@ addcase(NODE *p)
 
 	if (DEUNSIGN(swpole->type) != DEUNSIGN(p->n_type)) {
 		val = p->n_lval;
-		p = makety(p, swpole->type, 0, 0, MKAP(swpole->type));
+		p = makety(p, swpole->type, 0, 0, 0);
 		if (p->n_op != ICON)
 			cerror("could not cast case value to type of switch "
 			       "expression");
@@ -1423,7 +1422,7 @@ genswitch(int num, TWORD type, struct swents **p, int n)
 	/* simple switch code */
 	for (i = 1; i <= n; ++i) {
 		/* already in 1 */
-		r = tempnode(num, type, 0, MKAP(type));
+		r = tempnode(num, type, 0, 0);
 		q = xbcon(p[i]->sval, NULL, type);
 		r = buildtree(NE, r, clocal(q));
 		cbranch(buildtree(NOT, r, NIL), bcon(p[i]->slab));
@@ -1704,7 +1703,8 @@ olddecl(NODE *p, NODE *a)
 	if (ISARY(s->stype)) {
 		s->stype += (PTR-ARY);
 		s->sdf++;
-	}
+	} else if (s->stype == FLOAT)
+		s->stype = DOUBLE;
 	if (a)
 		attr_add(s->sap, gcc_attr_parse(a));
 	nfree(p);
@@ -1858,7 +1858,7 @@ simname(char *s)
 NODE *
 biop(int op, NODE *l, NODE *r)
 {
-	return block(op, l, r, INT, 0, MKAP(INT));
+	return block(op, l, r, INT, 0, 0);
 }
 
 static NODE *
@@ -1870,7 +1870,7 @@ cmop(NODE *l, NODE *r)
 static NODE *
 voidcon(void)
 {
-	return block(ICON, NIL, NIL, STRTY, 0, MKAP(VOID));
+	return block(ICON, NIL, NIL, STRTY, 0, 0);
 }
 
 /* Support for extended assembler a' la' gcc style follows below */
@@ -2052,7 +2052,7 @@ eve(NODE *p)
 			if (sp->stype == UNDEF) {
 				p1->n_type = FTN|INT;
 				p1->n_sp = sp;
-				p1->n_ap = MKAP(INT);
+				p1->n_ap = NULL;
 				defid(p1, EXTERN);
 			}
 			nfree(p1);
@@ -2092,8 +2092,6 @@ eve(NODE *p)
 		break;
 #endif
 	case MOD:
-	case INCR:
-	case DECR:
 	case CM:
 	case GT:
 	case GE:
@@ -2111,15 +2109,48 @@ eve(NODE *p)
 	case EREQ:
 	case OREQ:
 	case ANDEQ:
+	case QUEST:
+	case COLON:
+		p1 = eve(p1);
+eve2:		r = buildtree(p->n_op, p1, eve(p2));
+		break;
+
+	case INCR:
+	case DECR:
+		p1 = eve(p1);
+		if (p1->n_type >= FLOAT && p1->n_type <= LDOUBLE) {
+			/* ++/-- on floats isn't ((d+=1)-1) */
+			/* rewrite to (t=d,d++,t) */
+			/* XXX - side effects */
+			NODE *t = cstknode(p1->n_type, 0, 0);
+			r = buildtree(ASSIGN, ccopy(t), ccopy(p1));
+			r = buildtree(COMOP, r,buildtree(p->n_op, p1, eve(p2)));
+			r = buildtree(COMOP, r, t);
+			break;
+		}
+		if (p1->n_type != BOOL)
+			goto eve2;
+		/* Hey, fun.  ++ will always be 1, and -- will toggle result */
+		if (p->n_op == INCR) {
+			p->n_op = ASSIGN;
+		} else {
+			p1 = buildtree(EREQ, p1, eve(p2));
+			p2 = bcon(1);
+			p->n_op = ER;
+		}
+		goto eve2;
+
+	case MODEQ:
 	case MINUSEQ:
 	case PLUSEQ:
 	case MULEQ:
 	case DIVEQ:
-	case MODEQ:
-	case QUEST:
-	case COLON:
 		p1 = eve(p1);
-		r = buildtree(p->n_op, p1, eve(p2));
+		if (p1->n_type != BOOL)
+			goto eve2;
+
+		r = buildtree(UNASG p->n_op, ccopy(p1), eve(p2));
+		r = buildtree(ASSIGN, p1, r);
 		break;
 
 	case STRING:

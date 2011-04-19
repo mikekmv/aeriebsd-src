@@ -42,7 +42,11 @@
 #define SZINT		32
 #define SZFLOAT		32
 #define SZDOUBLE	64
+#ifdef ELFABI
 #define SZLDOUBLE	96
+#else
+#define SZLDOUBLE	128
+#endif
 #define SZLONG		32
 #define SZSHORT		16
 #define SZLONGLONG	64
@@ -56,7 +60,11 @@
 #define ALINT		32
 #define ALFLOAT		32
 #define ALDOUBLE	32
+#ifdef ELFABI
 #define ALLDOUBLE	32
+#else
+#define ALLDOUBLE	128
+#endif
 #define ALLONG		32
 #ifdef ELFABI
 #define ALLONGLONG	64
@@ -381,12 +389,12 @@ void addstub(struct stub *list, char *name);
 
 #define NODE struct node
 struct node;
-NODE *powerpc_builtin_stdarg_start(NODE *f, NODE *a);
-NODE *powerpc_builtin_va_arg(NODE *f, NODE *a);
-NODE *powerpc_builtin_va_end(NODE *f, NODE *a);
-NODE *powerpc_builtin_va_copy(NODE *f, NODE *a);
-NODE *powerpc_builtin_frame_address(NODE *f, NODE *a);
-NODE *powerpc_builtin_return_address(NODE *f, NODE *a);
+NODE *powerpc_builtin_stdarg_start(NODE *f, NODE *a, unsigned int);
+NODE *powerpc_builtin_va_arg(NODE *f, NODE *a, unsigned int);
+NODE *powerpc_builtin_va_end(NODE *f, NODE *a, unsigned int);
+NODE *powerpc_builtin_va_copy(NODE *f, NODE *a, unsigned int);
+NODE *powerpc_builtin_frame_address(NODE *f, NODE *a, unsigned int);
+NODE *powerpc_builtin_return_address(NODE *f, NODE *a, unsigned int);
 #undef NODE
 
 #define NARGREGS	8

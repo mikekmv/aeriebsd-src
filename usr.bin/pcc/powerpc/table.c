@@ -770,7 +770,7 @@ struct optab table[] = {
 		0,	RDEST,
 		"	lis AL," HA16(AR) "\n"
 		"	addi AL,AL," LO16(AR) "\n"
-		"	lis UL," HA16(UR) "\n"\
+		"	lis UL," HA16(UR) "\n"
 		"	addi UL,UL," LO16(UR) "\n", },
 
 { ASSIGN,	FOREFF|INAREG,
@@ -958,7 +958,7 @@ struct optab table[] = {
 { STASG,	INAREG|FOREFF,
 	SOREG|SNAME,	TANY,
 	SAREG,		TPTRTO|TANY,
-		NSPECIAL,	RRIGHT,
+		NSPECIAL,	RDEST,
 		"ZQ", },
 
 { ASSIGN,	FOREFF|INCREG | FEATURE_HARDFLOAT,
@@ -1508,7 +1508,7 @@ struct optab table[] = {
 	SCON,	TANY,
 	SANY,	TANY,
 		0,	RNOP,
-		"	ba LL\n", },
+		"	b LL\n", },
 
 { GOTO, 	FOREFF,
 	SAREG,	TANY,

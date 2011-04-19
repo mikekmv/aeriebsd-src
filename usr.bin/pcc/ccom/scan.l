@@ -53,6 +53,7 @@ static void control(int);
 static void pragma(void);
 int notype, parbal, inattr, parlvl;
 static int resw(TWORD, int);
+extern int doing_init;
 
 #define	CPP_IDENT 	2
 #define	CPP_LINE 	3
@@ -132,6 +133,21 @@ extern void yyset_lineno (int);
 
 			yylval.strp = addname(yytext);
 #ifdef GCC_COMPAT
+			if (doing_init) {
+				/* check for name: for old gcc compat */
+				while (isspace(i = input()))
+					;
+				if (i == ':') {
+					/* Transfer to C99 syntax */
+					unput('='); /* destroys yytext */
+					for (i = strlen(yylval.strp) - 1;
+					    i >= 0; i--)
+						unput(yylval.strp[i]);
+					yylval.intval = DOT;
+					return(C_STROP);
+				}
+				unput(i);
+			}
 			if ((i = gcc_keyword(yylval.strp, &yylval.nodep)) > 0)
 				return i;
 #endif
@@ -249,7 +265,7 @@ resw(TWORD t, int rv)
 		return rv;
 
 	case C_TYPE:
-		yylval.nodep = mkty(t, 0, MKAP(t));
+		yylval.nodep = mkty(t, 0, 0);
 		notype=1;
 		return(rv);
 
@@ -311,7 +327,7 @@ f2(char *str)
 	dc = strtod(str, &eptr); /* XXX - avoid strtod() */
 #endif
 	dc = typround(dc, eptr, &tw);
-	p = block(FCON, NIL, NIL, tw, 0, MKAP(tw));
+	p = block(FCON, NIL, NIL, tw, 0, 0);
 	p->n_dcon = dc;
 	return p;
 }
@@ -374,7 +390,7 @@ fhexcon(char *c)
 	while (ed < 0)
 		d /= 2, ed++;
 	d = typround(d, ep, &tw);
-	p = block(FCON, NIL, NIL, tw, 0, MKAP(tw));
+	p = block(FCON, NIL, NIL, tw, 0, 0);
 	p->n_dcon = d;
 	return p;
 }
@@ -449,7 +465,7 @@ NODE *
 cvtdig(int radix)
 {
 	NODE *p;
-	TWORD ntype;
+	TWORD otype, ntype;
 	unsigned long long v;
 	char *ch = yytext;
 	int n, numl, numu;
@@ -483,19 +499,48 @@ cvtdig(int radix)
 	if (*ch)
 		uerror("constant has too many '%c'", *ch);
 
-	if (ntype == INT) {
-		/* v contains a number. Get type correct */
-		if (v > MAX_LONGLONG && radix != 10)
+	otype = ntype;
+	switch (ntype) {
+	case INT:
+	case LONG:
+	case LONGLONG:
+		if (radix == 10) {
+			if (otype == LONGLONG)
+				break;
+			if (v > MAX_LONG) { 
+				ntype = LONGLONG;
+				if (otype == LONG)
+					break;
+			} else if (v > MAX_INT)
+				ntype = LONG;
+		} else {
+			if (v > MAX_LONGLONG) {
+				ntype = ULONGLONG;
+				if (otype == LONGLONG)
+					break;
+			} else if (v > MAX_ULONG) {
+				ntype = LONGLONG;
+			} else if (v > MAX_LONG) {
+				ntype = ULONG;
+				if (otype == LONG)
+					break;
+			} else if (v > MAX_UNSIGNED) {
+				ntype = LONG;
+			} else if (v > MAX_INT)
+				ntype = UNSIGNED;
+		}
+		break;
+	case UNSIGNED:
+	case ULONG:
+		if (v > MAX_ULONG) {
 			ntype = ULONGLONG;
-		else if (v > MAX_ULONG)
-			ntype = LONGLONG;
-		else if (v > MAX_LONG && radix != 10)
+			if (otype == ULONG)
+				break;
+		} else if (v > MAX_UNSIGNED)
 			ntype = ULONG;
-		else if (v > MAX_UNSIGNED)
-			ntype = LONG;
-		else if (v > MAX_INT && radix != 10)
-			ntype = UNSIGNED;
-	}
+		break;	
+	}	
+
 	ntype = ctype(ntype);
 	p = xbcon(v, NULL, ntype);
 	ASGLVAL(p->n_slval, v);

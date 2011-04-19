@@ -135,13 +135,13 @@ picstatic(NODE *p)
 static NODE *
 cmop(NODE *l, NODE *r)
 {
-	return block(CM, l, r, INT, 0, MKAP(INT));
+	return block(CM, l, r, INT, 0, 0);
 }
 
 static NODE *
 mkx(char *s, NODE *p)
 {
-	p = block(XARG, p, NIL, INT, 0, MKAP(INT));
+	p = block(XARG, p, NIL, INT, 0, 0);
 	p->n_name = s;
 	return p;
 }
@@ -190,7 +190,7 @@ tlspic(NODE *p)
 
 	s = ccopy(r = tempnode(0, INCREF(p->n_type), p->n_df, p->n_ap));
 	r = mkx("=a", r);
-	r = block(XASM, r, q, INT, 0, MKAP(INT));
+	r = block(XASM, r, q, INT, 0, 0);
 
 	/* Create the magic string */
 	s1 = ".byte 0x66\n\tleaq ";
@@ -225,7 +225,7 @@ tlsinitialexec(NODE *p)
 
 	s = ccopy(r = tempnode(0, INCREF(p->n_type), p->n_df, p->n_ap));
 	r = mkx("=r", r);
-	r = block(XASM, r, q, INT, 0, MKAP(INT));
+	r = block(XASM, r, q, INT, 0, 0);
 
 	s1 = "movq %%fs:0,%0\n\taddq ";
 	s2 = "@GOTTPOFF(%%rip),%0";
@@ -262,19 +262,17 @@ static NODE *
 stkblk(TWORD t)
 {
 	int al, tsz, off, noff;
-	struct attr *bt;
 	NODE *p;
 
-	bt = MKAP(BTYPE(t));
-	al = talign(t, bt);
-	tsz = (int)tsize(t, 0, bt);
+	al = talign(t, 0);
+	tsz = (int)tsize(t, 0, 0);
 
 	noff = autooff + tsz;
 	SETOFF(noff, al);
 	off = -noff;
 	autooff = noff;
 
-	p = block(REG, NIL, NIL, INCREF(t), 0, bt);
+	p = block(REG, NIL, NIL, INCREF(t), 0, 0);
 	p->n_lval = 0;
 	p->n_rval = FPREG;
 	p = buildtree(UMUL, buildtree(PLUS, p, bcon(off/SZLDOUBLE)), NIL);
@@ -392,7 +390,7 @@ clocal(NODE *p)
 	case UCALL:
 	case USTCALL:
 		/* For now, always clear eax */
-		l = block(REG, NIL, NIL, INT, 0, MKAP(INT));
+		l = block(REG, NIL, NIL, INT, 0, 0);
 		regno(l) = RAX;
 		p->n_right = clocal(buildtree(ASSIGN, l, bcon(0)));
 		p->n_op -= (UCALL-CALL);
@@ -446,10 +444,9 @@ clocal(NODE *p)
 		if (l->n_op == ICON) {
 			goto delp;
 		}
-		if (l->n_type < LONG) {
+		if (l->n_type < LONG || l->n_type == BOOL) {
 			/* float etc? */
-			p->n_left = block(SCONV, l, NIL,
-			    UNSIGNED, 0, MKAP(UNSIGNED));
+			p->n_left = block(SCONV, l, NIL, UNSIGNED, 0, 0);
 			break;
 		}
 		/* if left is SCONV, cannot remove */
@@ -507,7 +504,8 @@ clocal(NODE *p)
 		}
 
 		if ((p->n_type & TMASK) == 0 && (l->n_type & TMASK) == 0 &&
-		    btattr[p->n_type].atypsz == btattr[l->n_type].atypsz) {
+		    tsize(p->n_type, p->n_df, p->n_ap) ==
+		    tsize(l->n_type, l->n_df, l->n_ap)) {
 			if (p->n_type != FLOAT && p->n_type != DOUBLE &&
 			    l->n_type != FLOAT && l->n_type != DOUBLE &&
 			    l->n_type != LDOUBLE && p->n_type != LDOUBLE) {
@@ -578,7 +576,7 @@ clocal(NODE *p)
 				cerror("unknown type %d", m);
 			}
 			l->n_type = m;
-			l->n_ap = MKAP(m);
+			l->n_ap = NULL;
 			nfree(p);
 			return l;
 		} else if (l->n_op == FCON) {
@@ -589,14 +587,9 @@ clocal(NODE *p)
 			l->n_sp = NULL;
 			l->n_op = ICON;
 			l->n_type = m;
-			l->n_ap = MKAP(m);
+			l->n_ap = NULL;
 			nfree(p);
 			return clocal(l);
-		}
-		if (DEUNSIGN(p->n_type) == SHORT &&
-		    DEUNSIGN(l->n_type) == SHORT) {
-			nfree(p);
-			p = l;
 		}
 		if ((p->n_type == CHAR || p->n_type == UCHAR ||
 		    p->n_type == SHORT || p->n_type == USHORT) &&
@@ -615,9 +608,9 @@ clocal(NODE *p)
 		if (o == MOD && p->n_type != CHAR && p->n_type != SHORT)
 			break;
 		/* make it an int division by inserting conversions */
-		p->n_left = block(SCONV, p->n_left, NIL, INT, 0, MKAP(INT));
-		p->n_right = block(SCONV, p->n_right, NIL, INT, 0, MKAP(INT));
-		p = block(SCONV, p, NIL, p->n_type, 0, MKAP(p->n_type));
+		p->n_left = block(SCONV, p->n_left, NIL, INT, 0, 0);
+		p->n_right = block(SCONV, p->n_right, NIL, INT, 0, 0);
+		p = block(SCONV, p, NIL, p->n_type, 0, 0);
 		p->n_left->n_type = INT;
 		break;
 
@@ -632,7 +625,7 @@ clocal(NODE *p)
 		/* put return value in return reg */
 		p->n_op = ASSIGN;
 		p->n_right = p->n_left;
-		p->n_left = block(REG, NIL, NIL, p->n_type, 0, MKAP(INT));
+		p->n_left = block(REG, NIL, NIL, p->n_type, 0, 0);
 		t = p->n_type;
 		if (ISITY(t))
 			t = t - (FIMAG-FLOAT);
@@ -645,8 +638,7 @@ clocal(NODE *p)
 		/* shift count must be in a char */
 		if (p->n_right->n_type == CHAR || p->n_right->n_type == UCHAR)
 			break;
-		p->n_right = block(SCONV, p->n_right, NIL,
-		    CHAR, 0, MKAP(CHAR));
+		p->n_right = block(SCONV, p->n_right, NIL, CHAR, 0, 0);
 		break;
 	}
 #ifdef PCC_DEBUG
@@ -674,7 +666,7 @@ myp2tree(NODE *p)
 			sps.sflags = sps.sclass = 0;
 			sps.sname = sps.soname = "";
 			sps.slevel = 1;
-			sps.sap = MKAP(LDOUBLE); /* alignment */
+			sps.sap = NULL;
 			sps.soffset = dblxor;
 			defloc(&sps);
 			printf("\t.long 0,0x80000000,0,0\n");
@@ -690,7 +682,7 @@ myp2tree(NODE *p)
 	/* XXX should let float constants follow */
 	sp = IALLOC(sizeof(struct symtab));
 	sp->sclass = STATIC;
-	sp->sap = MKAP(p->n_type);
+	sp->sap = NULL;
 	sp->slevel = 1; /* fake numeric label */
 	sp->soffset = getlab();
 	sp->sflags = 0;
@@ -777,7 +769,7 @@ spalloc(NODE *t, NODE *p, OFFSZ off)
 	p = buildtree(AND, p, xbcon(-16, NULL, LONG));
 
 	/* sub the size from sp */
-	sp = block(REG, NIL, NIL, p->n_type, 0, MKAP(LONG));
+	sp = block(REG, NIL, NIL, p->n_type, 0, 0);
 	sp->n_lval = 0;
 	sp->n_rval = STKREG;
 	ecomp(buildtree(MINUSEQ, sp, p));
@@ -1232,13 +1224,13 @@ i386_builtin_return_address(NODE *f, NODE *a, TWORD t)
 	tfree(f);
 	tfree(a);
 
-	f = block(REG, NIL, NIL, PTR+VOID, 0, MKAP(VOID));
+	f = block(REG, NIL, NIL, PTR+VOID, 0, 0);
 	regno(f) = FPREG;
 
 	while (nframes--)
-		f = block(UMUL, f, NIL, PTR+VOID, 0, MKAP(VOID));
+		f = block(UMUL, f, NIL, PTR+VOID, 0, 0);
 
-	f = block(PLUS, f, bcon(4), INCREF(PTR+VOID), 0, MKAP(VOID));
+	f = block(PLUS, f, bcon(4), INCREF(PTR+VOID), 0, 0);
 	f = buildtree(UMUL, f, NIL);
 
 	return f;
@@ -1260,11 +1252,11 @@ i386_builtin_frame_address(NODE *f, NODE *a, TWORD t)
 	tfree(f);
 	tfree(a);
 
-	f = block(REG, NIL, NIL, PTR+VOID, 0, MKAP(VOID));
+	f = block(REG, NIL, NIL, PTR+VOID, 0, 0);
 	regno(f) = FPREG;
 
 	while (nframes--)
-		f = block(UMUL, f, NIL, PTR+VOID, 0, MKAP(VOID));
+		f = block(UMUL, f, NIL, PTR+VOID, 0, 0);
 
 	return f;
 bad:
