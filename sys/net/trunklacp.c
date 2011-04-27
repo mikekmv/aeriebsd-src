@@ -311,7 +311,7 @@ bad:
 	return (EINVAL);
 }
 
-__inline int
+int
 lacp_isactive(struct trunk_port *lgp)
 {
 	struct lacp_port *lp = LACP_PORT(lgp);
@@ -325,7 +325,7 @@ lacp_isactive(struct trunk_port *lgp)
 	return (0);
 }
 
-__inline int
+int
 lacp_iscollecting(struct trunk_port *lgp)
 {
 	struct lacp_port *lp = LACP_PORT(lgp);
@@ -333,7 +333,7 @@ lacp_iscollecting(struct trunk_port *lgp)
 	return ((lp->lp_state & LACP_STATE_COLLECTING) != 0);
 }
 
-__inline int
+int
 lacp_isdistributing(struct trunk_port *lgp)
 {
 	struct lacp_port *lp = LACP_PORT(lgp);
