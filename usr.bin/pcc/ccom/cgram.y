@@ -121,6 +121,7 @@
 %token	C_TYPEOF	/* COMPAT_GCC */
 %token	C_ATTRIBUTE	/* COMPAT_GCC */
 %token	PCC_OFFSETOF
+%token	GCC_DESIG
 
 /*
  * Precedence
@@ -237,7 +238,7 @@ struct savbc {
 		designator_list designator xasm oplist oper cnstr funtype
 		typeof attribute attribute_specifier /* COMPAT_GCC */
 		attribute_list attr_spec_list attr_var /* COMPAT_GCC */
-%type <strp>	string C_STRING
+%type <strp>	string C_STRING GCC_DESIG
 %type <rp>	str_head
 %type <symp>	xnfdeclarator clbrace enum_head
 
@@ -709,6 +710,7 @@ init_list:	   designation initializer { dainit($1, $2); }
 		;
 
 designation:	   designator_list '=' { desinit($1); $$ = NIL; }
+		|  GCC_DESIG { desinit(bdty(NAME, $1)); $$ = NIL; }
 		|  '[' e C_ELLIPSIS e ']' '=' { $$ = biop(CM, $2, $4); }
 		|  { $$ = NIL; }
 		;
