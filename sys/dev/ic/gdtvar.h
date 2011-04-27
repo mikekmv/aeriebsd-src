@@ -400,7 +400,6 @@ void	gdtminphys(struct buf *);
 int	gdt_attach(struct gdt_softc *);
 int	gdt_intr(void *);
 
-#ifdef __GNUC__
 /* These all require correctly aligned buffers */
 static __inline__ void gdt_enc16(u_int8_t *, u_int16_t);
 static __inline__ void gdt_enc32(u_int8_t *, u_int32_t);
@@ -444,7 +443,6 @@ gdt_dec32(addr)
 {
 	return letoh32(*(u_int32_t *)addr);
 }
-#endif
 
 extern u_int8_t gdt_polling;
 
