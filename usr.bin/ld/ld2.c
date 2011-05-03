@@ -16,7 +16,8 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: ld2.c,v 1.33 2011/02/03 23:22:24 mickey Exp $";
+static const char rcsid[] =
+    "$ABSD: ld2.c,v 1.34 2011/02/03 23:39:38 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -489,8 +490,18 @@ TODO
 		 * beholder but contrary to that by defixing their appearances
 		 * we will pin on their vectors way more easily.
 		 */
-		TAILQ_INSERT_TAIL(&neworder->ldo_seclst, os, os_entry);
 		os->os_flags |= SECTION_ORDER;
+		/* check if we already got one of these */
+		if (neworder->ldo_flags & LD_LINK1) {
+			struct section *ss;
+			/* TODO optimise linear search */
+			TAILQ_FOREACH(ss, &neworder->ldo_seclst, os_entry)
+				if (!strcmp(os->os_name, ss->os_name))
+					break;
+			if (ss != TAILQ_END(&neworder->ldo_seclst))
+				continue;
+		}
+		TAILQ_INSERT_TAIL(&neworder->ldo_seclst, os, os_entry);
 	}
 
 	return 0;

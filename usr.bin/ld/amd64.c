@@ -16,7 +16,8 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: amd64.c,v 1.3 2011/02/03 23:22:24 mickey Exp $";
+static const char rcsid[] =
+    "$ABSD: amd64.c,v 1.4 2011/04/19 21:00:54 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -32,63 +33,64 @@ static const char rcsid[] = "$ABSD: amd64.c,v 1.3 2011/02/03 23:22:24 mickey Exp
 
 #include "ld.h"
 
-#define	ELF_NOTE	".note.aeriebsd.ident"
-#define	ELF_EH_FRAME	".eh_frame"
-#define	ELF_EH_FRAME_H	".eh_frame_hdr"
-#define	ELF_GCC_EXCEPT	".gcc_except_table"
-#define	ELF_GCC_LINK1	".gnu.linkonce"
-#define	ELF_STAB	".stab"
-#define	ELF_STABSTR	".stabstr"
-#define	ELF_STAB_EXCL	".stab.excl"
-#define	ELF_STAB_EXCLS	".stab.exclstr"
-#define	ELF_STAB_INDEX	".stab.index"
-#define	ELF_STAB_IDXSTR	".stab.indexstr"
-#define	ELF_STAB_COMM	".comment"
-
 /* fill text with smth illigal to avoid nop slides */
 #define	XFILL	0xcecececececececeULL	/* into */
+#define	DFILL	0xd0d0d0d0d0d0d0d0ULL
 const struct ldorder amd64_order[] = {
 	{ ldo_symbol,	"_start", N_UNDF, 0, LD_ENTRY },
 	{ ldo_interp,	ELF_INTERP, SHT_PROGBITS, SHF_ALLOC,
 			LD_CONTAINS | LD_DYNAMIC },
-	{ ldo_note,	ELF_NOTE, SHT_NOTE, SHF_ALLOC,
-			LD_CONTAINS | LD_NONMAGIC | LD_NOOMAGIC },
+	{ ldo_section,	ELF_NOTE, SHT_NOTE, SHF_ALLOC,
+			LD_NONMAGIC | LD_NOOMAGIC },
 	{ ldo_section,	ELF_INIT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
 			0, XFILL },
 	{ ldo_section,	ELF_PLT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
 			LD_DYNAMIC, XFILL },
 	{ ldo_section,	ELF_TEXT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
 			0, XFILL },
+	{ ldo_section,	ELF_GCC_LINK1T, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
+			LD_LINK1, XFILL },
 	{ ldo_section,	ELF_FINI, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
 			0, XFILL },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
 	{ ldo_symbol,	"etext", N_ABS },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
-	{ ldo_section,	ELF_RODATA, SHT_PROGBITS, SHF_ALLOC },
-	{ ldo_section,  ELF_EH_FRAME_H, SHT_PROGBITS, SHF_ALLOC },
-	{ ldo_section,  ELF_EH_FRAME, SHT_PROGBITS, SHF_ALLOC },
-	{ ldo_section,  ELF_GCC_EXCEPT, SHT_PROGBITS, SHF_ALLOC },
-	{ ldo_section,  ELF_GCC_LINK1, SHT_PROGBITS, SHF_ALLOC, LD_LINK1 },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
+	{ ldo_section,	ELF_RODATA, SHT_PROGBITS, SHF_ALLOC,
+			0, DFILL },
+	{ ldo_section,	ELF_GCC_LINK1R, SHT_PROGBITS, SHF_ALLOC, LD_LINK1 },
+	{ ldo_section,	ELF_EH_FRAME_H, SHT_PROGBITS, SHF_ALLOC,
+			LD_CONTAINS | LD_IGNORE },
+	{ ldo_section,	ELF_EH_FRAME, SHT_PROGBITS, SHF_ALLOC, LD_IGNORE },
+	{ ldo_section,	ELF_GCC_EXCEPT, SHT_PROGBITS, SHF_ALLOC, LD_IGNORE },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
 	{ ldo_symbol,	"__data_start", N_ABS },
 	{ ldo_section,	ELF_SDATA, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
-	{ ldo_section,	ELF_DATA, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
+	{ ldo_section,	ELF_DATA, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE,
+			0, DFILL },
+	{ ldo_section,	ELF_GCC_LINK1D, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE,
+			LD_LINK1 },
 	{ ldo_section,	ELF_CTORS, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
 	{ ldo_section,	ELF_DTORS, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
-	{ ldo_symbol,	"__got_start", N_ABS, LD_DYNAMIC },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
+	{ ldo_symbol,	"__got_start", N_ABS, 0, LD_DYNAMIC },
 	{ ldo_section,	ELF_GOT, SHT_PROGBITS, SHF_ALLOC, LD_DYNAMIC },
-	{ ldo_symbol,	"__got_end", N_ABS, LD_DYNAMIC },
+	{ ldo_symbol,	"__got_end", N_ABS, 0, LD_DYNAMIC },
 	{ ldo_symbol,	"edata", N_ABS },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
 	{ ldo_symbol,	"__bss_start", N_ABS },
 	{ ldo_section,	ELF_SBSS, SHT_NOBITS, SHF_ALLOC | SHF_WRITE },
 	{ ldo_section,	ELF_BSS, SHT_NOBITS, SHF_ALLOC | SHF_WRITE },
+	{ ldo_section,	ELF_GCC_LINK1B, SHT_NOBITS, SHF_ALLOC | SHF_WRITE,
+			LD_LINK1 },
 	{ ldo_symbol,	"end", N_ABS },
+	{ ldo_symbol,	"_end", N_ABS },
 	{ ldo_shstr,	ELF_SHSTRTAB, SHT_STRTAB, 0, LD_CONTAINS },
+
 	  /* section headers go here */
+
 	{ ldo_symtab,	ELF_SYMTAB, SHT_SYMTAB, 0, LD_CONTAINS | LD_SYMTAB },
 	{ ldo_strtab,	ELF_STRTAB, SHT_STRTAB, 0, LD_CONTAINS | LD_SYMTAB },
+
 	  /* stabs debugging sections */
 	{ ldo_section,	ELF_STAB, SHT_PROGBITS, 0, LD_DEBUG },
 	{ ldo_section,	ELF_STABSTR, SHT_PROGBITS, 0, LD_DEBUG },

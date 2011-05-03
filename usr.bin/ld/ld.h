@@ -18,8 +18,24 @@
 #include <sys/queue.h>
 #include <sys/tree.h>
 
+/* section names not yet in exec_elf.h */
+#define	ELF_NOTE	".note.aeriebsd.ident"
+#define	ELF_EH_FRAME	".eh_frame"
+#define	ELF_EH_FRAME_H	".eh_frame_hdr"
+#define	ELF_GCC_EXCEPT	".gcc_except_table"
+#define	ELF_GCC_LINK1T	".gnu.linkonce.t"
+#define	ELF_GCC_LINK1R	".gnu.linkonce.r"
+#define	ELF_GCC_LINK1D	".gnu.linkonce.d"
+#define	ELF_GCC_LINK1B	".gnu.linkonce.b"
+#define	ELF_STAB	".stab"
+#define	ELF_STABSTR	".stabstr"
+#define	ELF_STAB_EXCL	".stab.excl"
+#define	ELF_STAB_EXCLS	".stab.exclstr"
+#define	ELF_STAB_INDEX	".stab.index"
+#define	ELF_STAB_IDXSTR	".stab.indexstr"
+#define	ELF_STAB_COMM	".comment"
+
 #define	LD_INTERP	"/usr/libexec/ld.so"
-#define	LD_NOTE		"AerieBSD"
 
 #define	ELF_IBUFSZ	0x10000
 #define	ELF_OBUFSZ	0x10000
@@ -175,6 +191,7 @@ struct ldorder {
 #define	LD_SYMTAB	0x0400	/* this is a symtab or relevant section */
 #define	LD_ENTRY	0x1000	/* entry point */
 #define	LD_LINK1	0x2000	/* link once bits */
+#define	LD_IGNORE	0x4000	/* ignore this entry and whatever matches */
 	uint64_t ldo_filler;	/* gap filler */
 
 	TAILQ_HEAD(, section) ldo_seclst;	/* all sections */
