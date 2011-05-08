@@ -142,6 +142,7 @@ static void insnwalk(NODE *p);
 #ifdef PCC_DEBUG
 int use_regw;
 int nodnum = 100;
+int ntsz, stktemp;
 #define	SETNUM(x)	(x)->nodnum = nodnum++
 #define	ASGNUM(x)	(x)->nodnum
 #else
@@ -248,6 +249,7 @@ nsucomp(NODE *p)
 
 	q = &table[TBLIDX(p->n_su)];
 
+#define	NNEEDS(a,b) ((q->needs & a)/b)
 	for (i = (q->needs & NACOUNT), nareg = 0; i; i -= NAREG)
 		nareg++;
 	for (i = (q->needs & NBCOUNT), nbreg = 0; i; i -= NBREG)
@@ -262,6 +264,9 @@ nsucomp(NODE *p)
 		nfreg++;
 	for (i = (q->needs & NGCOUNT), ngreg = 0; i; i -= NGREG)
 		ngreg++;
+
+	if (ntsz < NNEEDS(NTMASK, NTEMP) * szty(p->n_type))
+		ntsz = NNEEDS(NTMASK, NTEMP) * szty(p->n_type);
 
 	nxreg = nareg + nbreg + ncreg + ndreg + nereg + nfreg + ngreg;
 	nreg = nxreg;
@@ -420,7 +425,7 @@ trivially_colorable_p(int c, int *n)
 	return i;
 }
 
-static int
+int
 ncnt(int needs)
 {
 	int i = 0;
@@ -1089,16 +1094,18 @@ insnwalk(NODE *p)
 			case NLEFT:
 				addalledges(&ablock[rc->num]);
 				ONLY(lr, moveadd);
-				break;
-			case NOLEFT:
-				addedge_r(p->n_left, &ablock[rc->num]);
+				if (optype(o) != BITYPE)
+					break;
+				/* FALLTHROUGH */
+			case NORIGHT:
+				addedge_r(p->n_right, &ablock[rc->num]);
 				break;
 			case NRIGHT:
 				addalledges(&ablock[rc->num]);
 				ONLY(rr, moveadd);
-				break;
-			case NORIGHT:
-				addedge_r(p->n_right, &ablock[rc->num]);
+				/* FALLTHROUGH */
+			case NOLEFT:
+				addedge_r(p->n_left, &ablock[rc->num]);
 				break;
 			case NEVER:
 				addalledges(&ablock[rc->num]);
@@ -1537,6 +1544,7 @@ LivenessAnalysis(struct p2env *p2e)
 #endif
 	}
 }
+
 
 /*
  * Build the set of interference edges and adjacency list.
@@ -2046,6 +2054,41 @@ Coalesce(void)
 }
 
 static void
+coalasg(NODE *p, void *arg)
+{
+	NODE *l;
+	REGW *u;
+
+	if (p->n_op != ASSIGN || p->n_regw == NULL)
+		return;
+	l = p->n_left;
+	if (l->n_op == TEMP)
+		u = &nblock[regno(l)];
+	else if (l->n_op == REG)
+		u = &ablock[regno(l)];
+	else
+		return;
+
+	Combine(u, p->n_regw);
+	AddWorkList(u);
+}
+
+/*
+ * Coalesce assign to a left reg with the assign temp node itself.
+ * This has to be done before anything else.
+ */
+static void
+Coalassign(struct p2env *p2e)
+{
+	struct interpass *ip;
+
+	DLIST_FOREACH(ip, &p2env.ipole, qelem) {
+		if (ip->type == IP_NODE)
+			walkf(ip->ip_node, coalasg, 0);
+	}
+}
+
+static void
 FreezeMoves(REGW *u)
 {
 	MOVL *w, *o;
@@ -2217,6 +2260,12 @@ paint(NODE *p, void *arg)
 					p->n_reg |= ENCRA(COLOR(w), i);
 				w++;
 			}
+#ifdef notdef
+		if (p->n_op == ASSIGN && p->n_left->n_op == REG &&
+		    DECRA(p->n_reg, 0) != regno(p->n_left))
+			comperr("paint: %p clashing ASSIGN moves; %d != %d", p,
+			    DECRA(p->n_reg, 0), regno(p->n_left));
+#endif
 	} else
 		p->n_reg = -1;
 	if (p->n_op == TEMP) {
@@ -2246,17 +2295,23 @@ colfind(int okColors, REGW *r)
 		w = GetAlias(w);
 		if (ONLIST(w) != &coloredNodes && ONLIST(w) != &precolored)
 			continue; /* Not yet colored */
-		c = aliasmap(CLASS(w), COLOR(w));
-		if ((c & okColors) == 0) {
-			RDEBUG(("colfind: Failed coloring from %d\n", ASGNUM(w)));
+		if (CLASS(w) != CLASS(r))
+			comperr("colfind: move between classes");
+
+		for (c = 0; c < regK[CLASS(w)]; c++)
+			if (color2reg(c, CLASS(w)) == COLOR(w))
+				break;
+		if (c == regK[CLASS(w)])
+			comperr("colfind: out of reg number");
+
+		if (((1 << c) & okColors) == 0) {
+			RDEBUG(("colfind: Failed coloring as %d\n", ASGNUM(w)));
 			continue;
 		}
-		okColors &= c;
 		RDEBUG(("colfind: Recommend color from %d\n", ASGNUM(w)));
-		break;
-		
+		return COLOR(w);
 	}
-	return ffs(okColors)-1;
+	return color2reg(ffs(okColors)-1, CLASS(r));
 }
 
 static void
@@ -2299,8 +2354,7 @@ AssignColors(struct interpass *ip)
 			RDEBUG(("Spilling node %d\n", ASGNUM(w)));
 #endif
 		} else {
-			c = colfind(okColors, w);
-			COLOR(w) = color2reg(c, CLASS(w));
+			COLOR(w) = colfind(okColors, w);
 			PUSHWLIST(w, coloredNodes);
 #ifdef PCC_DEBUG
 			RDEBUG(("Coloring %d with %s, free %x\n",
@@ -2734,6 +2788,7 @@ onlyperm: /* XXX - should not have to redo all */
 	memset(live, 0, BIT2BYTE(xbits));
 	RPRINTIP(ipole);
 	DLIST_INIT(&initial, link);
+	ntsz = 0;
 	DLIST_FOREACH(ip, ipole, qelem) {
 		extern int thisline;
 		if (ip->type != IP_NODE)
@@ -2777,6 +2832,7 @@ onlyperm: /* XXX - should not have to redo all */
 	RDEBUG(("Build done\n"));
 	MkWorklist();
 	RDEBUG(("MkWorklist done\n"));
+	Coalassign(p2e);
 	do {
 		if (!WLISTEMPTY(simplifyWorklist))
 			Simplify();
@@ -2852,6 +2908,7 @@ onlyperm: /* XXX - should not have to redo all */
 		ip = ipnode(p);
 		DLIST_INSERT_BEFORE(ipole->qelem.q_back, ip, qelem);
 	}
+	stktemp = BITOOR(freetemp(ntsz));
 	memcpy(p2e->epp->ipp_regs, p2e->ipp->ipp_regs, sizeof(p2e->epp->ipp_regs));
 	/* Done! */
 }

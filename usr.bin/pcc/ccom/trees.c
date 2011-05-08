@@ -1418,6 +1418,9 @@ tymatch(NODE *p)
 	tl = l->n_type;
 	tr = r->n_type;
 
+	if (tl == BOOL) tl = BOOL_TYPE;
+	if (tr == BOOL) tr = BOOL_TYPE;
+
 	lu = ru = 0;
 	if (ISUNSIGNED(tl)) {
 		lu = 1;
