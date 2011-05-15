@@ -114,6 +114,8 @@ defloc(struct symtab *sp)
 	varattrib(name, sp->sap);
 
 	if (nextsect) {
+		if (sectail == NULL)
+			sectail = "";
 		printf("	.section %s%s\n", nextsect, sectail);
 		sectail = nextsect = NULL;
 		s = -1;

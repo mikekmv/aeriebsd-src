@@ -37,6 +37,10 @@
 #define STARTFILES { "/usr/lib/crtbegin.o", NULL }
 #define	ENDFILES { "/usr/lib/crtend.o", NULL }
 
+#ifdef LANG_F77
+#define F77LIBLIST { "-L/usr/local/lib", "-lF77", "-lI77", "-lm", "-lc", NULL };
+#endif
+
 #define CPPMDADDS { \
 	{ "i386", { "-D__i386__", "-D__i386", "-D__ELF__", \
 		NULL } }, \

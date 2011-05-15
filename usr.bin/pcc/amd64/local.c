@@ -32,6 +32,7 @@
 /*
  * Check if a constant is too large for a type.
  */
+#ifdef notyet
 static int
 toolarge(TWORD t, CONSZ con)
 {
@@ -57,6 +58,7 @@ toolarge(TWORD t, CONSZ con)
 	}
 	return 0;
 }
+#endif
 
 #define	IALLOC(sz)	(isinlining ? permalloc(sz) : tmpalloc(sz))
 

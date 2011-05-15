@@ -262,16 +262,20 @@ defid(NODE *q, int class)
 
 	/*
 	 * Its allowed to add attributes to existing declarations.
-	 * Be care ful though not to trash existing attributes.
+	 * Be careful though not to trash existing attributes.
+	 * XXX - code below is probably not correct.
 	 */
 	if (p->sap && p->sap->atype <= ATTR_MAX) {
 		/* nothing special, just overwrite */
 		p->sap = q->n_ap;
 	} else {
-		for (ap = q->n_ap; ap; ap = ap->next) {
-			if (ap->atype > ATTR_MAX)
-				p->sap = attr_add(p->sap, attr_dup(ap, 3));
-		}
+		if (p->slevel == blevel) {
+			for (ap = q->n_ap; ap; ap = ap->next) {
+				if (ap->atype > ATTR_MAX)
+					p->sap = attr_add(p->sap, attr_dup(ap, 3));
+			}
+		} else
+			p->sap = q->n_ap;
 	}
 
 	if (class & FIELD)
@@ -745,12 +749,15 @@ enumdcl(struct symtab *sp)
 #ifdef ENUMSIZE
 	t = ENUMSIZE(enumhigh, enumlow);
 #else
+	t = ctype(enumlow < 0 ? INT : UNSIGNED);
+#ifdef notdef
 	if (enumhigh <= MAX_CHAR && enumlow >= MIN_CHAR)
 		t = ctype(CHAR);
 	else if (enumhigh <= MAX_SHORT && enumlow >= MIN_SHORT)
 		t = ctype(SHORT);
 	else
 		t = ctype(INT);
+#endif
 #endif
 	
 	if (sp)
@@ -1079,8 +1086,13 @@ talign(unsigned int ty, struct attr *apl)
 		}
 
 	/* check for alignment attribute */
-	if ((al = attr_find(apl, GCC_ATYP_ALIGNED)))
-		return al->iarg(0);
+	if ((al = attr_find(apl, GCC_ATYP_ALIGNED))) {
+		if ((a = al->iarg(0)) == 0) {
+			uerror("no alignment");
+			a = ALINT;
+		} 
+		return a;
+	}
 
 	ty = BTYPE(ty);
 	if (ISUNSIGNED(ty))
@@ -1109,7 +1121,7 @@ talign(unsigned int ty, struct attr *apl)
 OFFSZ
 tsize(TWORD ty, union dimfun *d, struct attr *apl)
 {
-	struct attr *ap;
+	struct attr *ap, *ap2;
 	OFFSZ mult, sz;
 	int i;
 
@@ -1155,7 +1167,9 @@ tsize(TWORD ty, union dimfun *d, struct attr *apl)
 	case LDOUBLE: sz = SZLDOUBLE; break;
 	case STRTY:
 	case UNIONTY:
-		if ((ap = strattr(apl)) == NULL) {
+		if ((ap = strattr(apl)) == NULL ||
+		    (ap2 = attr_find(apl, GCC_ATYP_ALIGNED)) == NULL ||
+		    (ap2->iarg(0) == 0)) {
 			uerror("unknown structure/union/enum");
 			sz = SZINT;
 		} else
@@ -1438,9 +1452,10 @@ dynalloc(struct symtab *p, int *poff)
 int
 falloc(struct symtab *p, int w, NODE *pty)
 {
-	int al,sz,type;
+	TWORD otype, type;
+	int al,sz;
 
-	type = p ? p->stype : pty->n_type;
+	otype = type = p ? p->stype : pty->n_type;
 
 	if (type == BOOL)
 		type = BOOL_TYPE;
@@ -1475,7 +1490,7 @@ falloc(struct symtab *p, int w, NODE *pty)
 
 	p->soffset = rpole->rstr;
 	rpole->rstr += w;
-	p->stype = type;
+	p->stype = otype;
 	fldty(p);
 	return(0);
 }
