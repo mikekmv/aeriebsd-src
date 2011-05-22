@@ -45,6 +45,10 @@
 #include "cpp.h"
 #include "y.tab.h"
 
+#ifndef S_ISDIR
+#define S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
+#endif
+
 #define	SBSIZE	1000000
 
 static usch	sbf[SBSIZE];
@@ -304,11 +308,21 @@ addidir(char *idir, struct incs **ww)
 		return; /* ignore */
 	if (*ww != NULL) {
 		for (w = *ww; w->next; w = w->next) {
+#ifdef WIN32
+			if (strcmp(w->dir, idir) == 0)
+				return;
+#else
 			if (w->dev == st.st_dev && w->ino == st.st_ino)
 				return;
+#endif
 		}
+#ifdef WIN32
+		if (strcmp(w->dir, idir) == 0)
+			return;
+#else
 		if (w->dev == st.st_dev && w->ino == st.st_ino)
 			return;
+#endif
 		ww = &w->next;
 	}
 	if ((w = calloc(sizeof(struct incs), 1)) == NULL)
@@ -383,6 +397,12 @@ fsrch(const usch *fn, int idx, struct incs *w)
 	return 0;
 }
 
+static void
+prem(void)
+{
+	error("premature EOF");
+}
+
 /*
  * Include a file. Include order:
  * - For <...> files, first search -I directories, then system directories.
@@ -426,6 +446,8 @@ include()
 		savch('\0');
 		while ((c = sloscan()) == WSPACE)
 			;
+		if (c == 0)
+			prem();
 		if (c != '\n')
 			goto bad;
 		it = SYSINC;
@@ -448,6 +470,8 @@ include()
 		safefn = stringbuf;
 		savstr(fn); savch(0);
 		c = yylex();
+		if (c == 0)
+			prem();
 		if (c != '\n')
 			goto bad;
 		if (pushfile(nm, safefn, 0, NULL) == 0)
@@ -668,6 +692,8 @@ define()
 	} else if (c == '\n') {
 		/* #define foo */
 		;
+	} else if (c == 0) {
+		prem();
 	} else if (c != WSPACE)
 		goto bad;
 
@@ -789,6 +815,9 @@ in2:			if (narg < 0) {
 		case CMNT: /* save comments */
 			getcmnt();
 			break;
+
+		case 0:
+			prem();
 
 		default:
 id:			savstr((usch *)yytext);
