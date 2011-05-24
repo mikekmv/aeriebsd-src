@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2010 Michael Shalayeff
+ * Copyright (c) 2003-2011 Michael Shalayeff
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.28 2011/01/18 20:10:07 mickey Exp $";
+    "$ABSD: elf.c,v 1.29 2011/02/05 15:30:27 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,6 +32,12 @@ static const char rcsid[] =
 #include <a.out.h>
 #include <elf_abi.h>
 #include "elfuncs.h"
+
+#ifdef __FreeBSD__
+#define swap16	bswap16
+#define swap32	bswap32
+#define swap64	bswap64
+#endif
 
 #if ELFSIZE == 32
 #define	swap_addr	swap32
@@ -468,7 +474,7 @@ elf_fix_rel(Elf_Ehdr *eh, Elf_Rel *rel)
 		return (0);
 
 	rel->r_offset = swap_addr(rel->r_offset);
-	rel->r_info = swap_xword(rel->r_offset);
+	rel->r_info = swap_xword(rel->r_info);
 
 	return (1);
 }
@@ -481,8 +487,8 @@ elf_fix_rela(Elf_Ehdr *eh, Elf_RelA *rela)
 		return (0);
 
 	rela->r_offset = swap_addr(rela->r_offset);
-	rela->r_info = swap_xword(rela->r_offset);
-	rela->r_addend = swap_sxword(rela->r_offset);
+	rela->r_info = swap_xword(rela->r_info);
+	rela->r_addend = swap_sxword(rela->r_addend);
 
 	return (1);
 }
