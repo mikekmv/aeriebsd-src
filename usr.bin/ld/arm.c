@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: arm.c,v 1.3 2011/04/19 21:00:54 mickey Exp $";
+    "$ABSD: arm.c,v 1.4 2011/05/03 14:36:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -111,6 +111,7 @@ const struct ldorder arm_order[] = {
 	{ ldo_section,	DWARF_PUBNAMES, SHT_PROGBITS, 0, LD_DEBUG },
 	{ ldo_section,	DWARF_STR, SHT_PROGBITS, 0, LD_DEBUG },
 #endif
+	{ ldo_kaput }
 };
 
 int

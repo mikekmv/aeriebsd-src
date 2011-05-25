@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: amd64.c,v 1.4 2011/04/19 21:00:54 mickey Exp $";
+    "$ABSD: amd64.c,v 1.5 2011/05/03 14:36:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -99,6 +99,7 @@ const struct ldorder amd64_order[] = {
 	{ ldo_section,	ELF_STAB_INDEX, SHT_PROGBITS, 0, LD_DEBUG },
 	{ ldo_section,	ELF_STAB_IDXSTR, SHT_PROGBITS, 0, LD_DEBUG },
 /*	{ ldo_section,	ELF_STAB_COMM, SHT_PROGBITS, 0, LD_DEBUG }, */
+#if 0
 	  /* dwarf mark II debugging sections */
 	{ ldo_section,	DWARF_ABBREV, SHT_PROGBITS, 0, LD_DEBUG },
 	{ ldo_section,	DWARF_ARANGES, SHT_PROGBITS, 0, LD_DEBUG },
@@ -109,6 +110,8 @@ const struct ldorder amd64_order[] = {
 	{ ldo_section,	DWARF_MACROS, SHT_PROGBITS, 0, LD_DEBUG },
 	{ ldo_section,	DWARF_PUBNAMES, SHT_PROGBITS, 0, LD_DEBUG },
 	{ ldo_section,	DWARF_STR, SHT_PROGBITS, 0, LD_DEBUG },
+#endif
+	{ ldo_kaput }
 };
 
 int
