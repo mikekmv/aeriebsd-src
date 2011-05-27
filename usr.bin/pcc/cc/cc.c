@@ -341,6 +341,24 @@ main(int argc, char *argv[])
 	pcclibdir = win32pathsubst(pcclibdir);
 	passp = win32pathsubst(passp);
 	pass0 = win32pathsubst(pass0);
+#ifdef STARTFILES
+	for (i = 0; startfiles[i] != NULL; i++)
+		startfiles[i] = win32pathsubst(startfiles[i]);
+	for (i = 0; endfiles[i] != NULL; i++)
+		endfiles[i] = win32pathsubst(endfiles[i]);
+#endif
+#ifdef STARTFILES_T
+	for (i = 0; startfiles_T[i] != NULL; i++)
+		startfiles_T[i] = win32pathsubst(startfiles_T[i]);
+	for (i = 0; endfiles_T[i] != NULL; i++)
+		endfiles_T[i] = win32pathsubst(endfiles_T[i]);
+#endif
+#ifdef STARTFILES_S
+	for (i = 0; startfiles_S[i] != NULL; i++)
+		startfiles_S[i] = win32pathsubst(startfiles_S[i]);
+	for (i = 0; endfiles_S[i] != NULL; i++)
+		endfiles_S[i] = win32pathsubst(endfiles_S[i]);
+#endif
 #endif
 
 	i = nc = nl = nas = ncpp = nxo = 0;
@@ -985,9 +1003,18 @@ main(int argc, char *argv[])
 #endif
 		if (kflag)
 			av[na++] = "-k";
+#ifdef os_darwin
+		av[na++] = "-arch";
+#if mach_amd64
+		av[na++] = amd64_i386 ? "i386" : "x86_64";
+#else
+		av[na++] = "i386";
+#endif
+#else
 #ifdef mach_amd64
 		if (amd64_i386)
 			av[na++] = "--32";
+#endif
 #endif
 		av[na++] = "-o";
 		if (outfile && cflag)

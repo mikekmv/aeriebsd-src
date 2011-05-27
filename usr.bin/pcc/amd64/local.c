@@ -90,6 +90,8 @@ static int ininval;
 static NODE *
 picext(NODE *p)
 {
+#if defined(ELFABI)
+
 	NODE *q;
 	struct symtab *sp;
 	char *c, *g;
@@ -110,6 +112,12 @@ picext(NODE *p)
 	q->n_sp = sp;
 	nfree(p);
 	return q;
+
+#elif defined(MACHOABI)
+
+	return p;
+
+#endif
 }
 
 #ifdef notdef
@@ -690,6 +698,7 @@ myp2tree(NODE *p)
 	sp->sflags = 0;
 	sp->stype = p->n_type;
 	sp->squal = (CON >> TSHIFT);
+	sp->sname = sp->soname = NULL;
 
 	defloc(sp);
 	ninval(0, tsize(sp->stype, sp->sdf, sp->sap), p);
