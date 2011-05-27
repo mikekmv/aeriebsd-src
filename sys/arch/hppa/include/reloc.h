@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1999 Michael Shalayeff
  * All rights reserved.
@@ -47,7 +46,8 @@ enum reloc_type {
 	RELOC_DIR17R,		/*	RR(symbol, addend) */
 	RELOC_DIR17F,		/*	symbol + addend */
 	RELOC_DIR14R = 6,	/*	RR(symbol, addend) */
-	RELOC_PCREL32 = 9,	/*	pa2: symbol - PC - 8 + addend */
+	RELOC_PCREL12F = 8,	/*      symbol - PC - 8 + addend */
+	RELOC_PCREL32,		/*	pa2: symbol - PC - 8 + addend */
 	RELOC_PCREL21L,		/*	L(symbol - PC - 8 + addend */
 	RELOC_PCREL17R,		/*	R(symbol - PC - 8 + addend */
 	RELOC_PCREL17F,		/*	symbol - PC - 8 + addend */
@@ -56,7 +56,7 @@ enum reloc_type {
 	RELOC_DPREL21L = 18,	/* pa1: LR(symbol - GP, addend */
 	RELOC_DPREL14WR,	/* pa1: RR(symbol - GP, addend */
 	RELOC_DPREL14DR,	/* pa1: RR(symbol - GP, addend */
-	RELOC_DPREL14R,		/* pa1: RR(symbol - GP, addend */
+	RELOC_DPREL14R = 22,	/* pa1: RR(symbol - GP, addend */
 	RELOC_GPREL21L = 26,	/*	LR(symbol - GP, addend */
 	RELOC_GPREL14R = 30,	/*	RR(symbol - GP, addend */
 	RELOC_LTOFF21L = 34,	/*	L(ltoff(symbol + addend)) */
