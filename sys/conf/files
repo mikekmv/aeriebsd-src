@@ -947,10 +947,10 @@ file compat/common/tty_43.c		!small_kernel &
 	(compat_43 | compat_sunos | compat_svr4 | compat_freebsd | compat_osf1)
 file compat/common/uipc_syscalls_43.c	!small_kernel &
 	(compat_bsdos | compat_freebsd | compat_linux | compat_osf1 |
-	compat_sunos | compat_svr4 | compat_ultrix)
+	compat_hpux | compat_sunos | compat_svr4 | compat_ultrix)
 file compat/common/vfs_syscalls_43.c	!small_kernel &
 	(compat_bsdos | compat_freebsd | compat_ibcs2 | compat_sunos |
-	compat_osf1)
+	compat_hpux | compat_osf1)
 file compat/common/vfs_syscalls_44.c	!small_kernel &
 	(compat_bsdos | compat_freebsd)
 file compat/common/vm_43.c		!small_kernel &
