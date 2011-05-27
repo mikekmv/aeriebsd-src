@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1998-2003 Michael Shalayeff
  * Copyright (c) 1992, 1993
@@ -334,7 +333,7 @@ device_register(struct device *dev, void *aux)
 	extern struct cfdriver pci_cd;
 #endif
 	struct confargs *ca = aux;
-	char *basename;
+	const char *basename;
 	static struct device *elder = NULL;
 
 	if (bootdv != NULL)

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1998-2004 Michael Shalayeff
  * All rights reserved.
@@ -73,6 +72,10 @@
 #include <machine/frame.h>
 #include <machine/reg.h>
 #include "assym.h"
+
+#ifdef COMPAT_OPENBSD
+#include <compat/openbsd/openbsd_syscall.h>
+#endif
 
 /*
  * hv-specific instructions
@@ -2955,6 +2958,35 @@ sigcode_call
 	ldi	SYS_exit, t1
 ALTENTRY(esigcode)
 EXIT(sigcode)
+
+#ifdef COMPAT_OPENBSD
+/*
+ * Signal "trampoline" code. Invoked from RTE setup by sendsig().
+ */
+ENTRY(openbsd_sigcode,0)
+	bb,>=,n	arg3, 30, openbsd_sigcode_call
+	dep	r0, 31, 2, arg3
+	ldw	4(arg3), r19
+	ldw	0(arg3), arg3
+openbsd_sigcode_call
+	.call
+	ble	0(sr0, arg3)
+	copy	r31, rp
+
+	ldil	L%SYSCALLGATE, r1
+	copy	r4, arg0
+	.call
+	ble	4(sr7, r1)
+	ldi	OPENBSD_SYS_sigreturn, t1
+
+	ldil	L%SYSCALLGATE, r1
+	copy	ret0, arg0
+	.call
+	ble	4(sr7, r1)
+	ldi	OPENBSD_SYS_exit, t1
+ALTENTRY(openbsd_esigcode)
+EXIT(openbsd_sigcode)
+#endif
 
 #ifdef COMPAT_HPUX
 ENTRY(hpux_sigcode,0)

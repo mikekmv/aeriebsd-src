@@ -50,6 +50,15 @@
 #endif
 #endif
 
+#ifdef COMPAT_HPUX
+#include <compat/hpux/hppa/hpux_syscall.h>
+extern struct emul emul_hpux;
+#endif
+#ifdef COMPAT_OPENBSD
+#include <compat/openbsd/openbsd_syscall.h>
+extern struct emul emul_openbsd_elf32;
+#endif
+
 #ifdef PTRACE
 void ss_clear_breakpoints(struct proc *p);
 #endif
@@ -570,9 +579,22 @@ child_return(arg)
 
 	userret(p);
 #ifdef KTRACE
-	if (KTRPOINT(p, KTR_SYSRET))
-		ktrsysret(p,
-		    (p->p_flag & P_PPWAIT) ? SYS_vfork : SYS_fork, 0, 0);
+	if (KTRPOINT(p, KTR_SYSRET)) {
+		int sys;
+#ifdef COMPAT_OPENBSD
+		if (p->p_emul == &emul_openbsd_elf32)
+			sys = (p->p_flag & P_PPWAIT)?
+			    OPENBSD_SYS_vfork : OPENBSD_SYS_fork;
+		else
+#elif defined(COMPAT_HPUX)
+		if (p->p_emul == &emul_hpux)
+			sys = (p->p_flag & P_PPWAIT)?
+			    HPUX_SYS_vfork : HPUX_SYS_fork;
+		else
+#endif
+		sys = (p->p_flag & P_PPWAIT) ? SYS_vfork : SYS_fork;
+		ktrsysret(p, sys, 0, 0);
+	}
 #endif
 }
 
@@ -702,7 +724,11 @@ syscall(struct trapframe *frame)
 		argoff = 3;
 		break;
 	case SYS___syscall:
-		if (callp != sysent)
+		if (callp != sysent
+#ifdef COMPAT_OPENBSD
+                    && p->p_emul != &emul_openbsd_elf32
+#endif
+		    )
 			break;
 		/*
 		 * this works, because quads get magically swapped
@@ -754,18 +780,41 @@ syscall(struct trapframe *frame)
 			int t;
 
 			i = 0;
-			switch (code) {
-			case SYS_lseek:		retq = 0;
-			case SYS_truncate:
-			case SYS_ftruncate:	i = 2;	break;
-			case SYS_preadv:
-			case SYS_pwritev:
-			case SYS_pread:
-			case SYS_pwrite:	i = 4;	break;
-			case SYS_mquery:
-			case SYS_mmap:		i = 6;	break;
-			}
-
+			if (callp == sysent)
+				switch (code) {
+				case SYS_lseek:		retq = 0;
+				case SYS_truncate:
+				case SYS_ftruncate:	i = 2;	break;
+				case SYS_preadv:
+				case SYS_pwritev:
+				case SYS_pread:
+				case SYS_pwrite:	i = 4;	break;
+				case SYS_mquery:
+				case SYS_mmap:		i = 6;	break;
+				}
+#ifdef COMPAT_OPENBSD
+			else if (p->p_emul == &emul_openbsd_elf32)
+				switch (code) {
+				case OPENBSD_SYS_lseek:		retq = 0;
+				case OPENBSD_SYS_truncate:
+				case OPENBSD_SYS_ftruncate:	i = 2;	break;
+				case OPENBSD_SYS_preadv:
+				case OPENBSD_SYS_pwritev:
+				case OPENBSD_SYS_pread:
+				case OPENBSD_SYS_pwrite:	i = 4;	break;
+				case OPENBSD_SYS_mquery:
+				case OPENBSD_SYS_mmap:		i = 6;	break;
+				}
+#endif
+#ifdef COMPAT_HPUX
+			else if (p->p_emul != &emul_hpux)
+				switch (code) {
+				case HPUX_SYS_lseek:	retq = 0;
+				case HPUX_SYS_truncate:
+				case HPUX_SYS_ftruncate:i = 2;	break;
+				case HPUX_SYS_mmap:	i = 6;	break;
+				}
+#endif
 			if (i) {
 				t = args[i];
 				args[i] = args[i + 1];
