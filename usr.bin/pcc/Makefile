@@ -1,6 +1,4 @@
-#
-# Makefile.in for top-level of pcc.
-#
-SUBDIR=cc cpp ccom/${MACHINE_ARCH}
+
+SUBDIR=cpp cc f77 ccom/${MACHINE_ARCH} fcom/${MACHINE_ARCH}
 
 .include <bsd.subdir.mk>

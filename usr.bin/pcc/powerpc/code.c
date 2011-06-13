@@ -489,15 +489,6 @@ efcode()
         ecomp(p);
 }
 
-/*
- * by now, the automatics and register variables are allocated
- */
-void
-bccode()
-{
-	SETOFF(autooff, SZINT);
-}
-
 struct stub stublist;
 struct stub nlplist;
 
@@ -557,10 +548,7 @@ ejobcode(int flag )
 #endif
 
 #ifndef os_darwin
-#define _MKSTR(x) #x
-#define MKSTR(x) _MKSTR(x) 
-#define OS MKSTR(TARGOS)
-        printf("\t.ident \"PCC: %s (%s)\"\n", PACKAGE_STRING, OS);
+	printf("\t.ident \"PCC: %s\"\n", VERSSTR);
 #endif
 
 }

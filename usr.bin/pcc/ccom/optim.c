@@ -85,9 +85,7 @@ optim(NODE *p)
 	int o, ty;
 	NODE *sp, *q;
 	int i, sz;
-	TWORD t;
 
-	t = BTYPE(p->n_type);
 	if( oflag ) return(p);
 
 	ty = coptype(p->n_op);
@@ -101,6 +99,12 @@ again:	o = p->n_op;
 	switch(o){
 
 	case SCONV:
+		if (concast(p->n_left, p->n_type)) {
+			q = p->n_left;
+			nfree(p);
+			return q;
+		}
+		/* FALLTHROUGH */
 	case PCONV:
 		return( clocal(p) );
 
@@ -113,7 +117,7 @@ again:	o = p->n_op;
 			return p;
 		if( LO(p) != NAME ) cerror( "& error" );
 
-		if( !andable(p->n_left) ) return(p);
+		if( !andable(p->n_left) && !statinit) return(p);
 
 		LO(p) = ICON;
 

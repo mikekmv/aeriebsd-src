@@ -97,12 +97,6 @@ bfcode(struct symtab **sp, int cnt)
 }
 
 void
-bccode()
-{
-	SETOFF(autooff, SZINT);
-}
-
-void
 ejobcode(int flag)
 {
 }
@@ -110,6 +104,10 @@ ejobcode(int flag)
 void
 bjobcode()
 {
+	astypnames[USHORT] = astypnames[SHORT] = "\t.half";
+	astypnames[INT] = astypnames[UNSIGNED] = "\t.long";
+	astypnames[LONG] = astypnames[ULONG] = 
+	    astypnames[LONGLONG] = astypnames[ULONGLONG] = "\t.xword";
 }
 
 /*

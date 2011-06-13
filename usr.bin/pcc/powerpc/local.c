@@ -10,8 +10,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -574,12 +572,6 @@ clocal(NODE *p)
 		p->n_left->n_type = INT;
 		break;
 
-	case PMCONV:
-	case PVCONV:
-                
-                nfree(p);
-                return(buildtree(o==PMCONV?MUL:DIV, p->n_left, p->n_right));
-
 	case STNAME:
 		if ((q = p->n_sp) == NULL)
 			return p;
@@ -738,49 +730,12 @@ andable(NODE *p)
 }
 
 /*
- * at the end of the arguments of a ftn, set the automatic offset
- */
-void
-cendarg()
-{
-#ifdef PCC_DEBUG
-	if (xdebug)
-		printf("cendarg: autooff=%d (was %d)\n", AUTOINIT, autooff);
-#endif
-	autooff = AUTOINIT;
-}
-
-/*
  * Return 1 if a variable of type type is OK to put in register.
  */
 int
 cisreg(TWORD t)
 {
 	return 1;
-}
-
-/*
- * return a node, for structure references, which is suitable for
- * being added to a pointer of type t, in order to be off bits offset
- * into a structure
- * t, d, and s are the type, dimension offset, and sizeoffset
- * Be careful about only handling first-level pointers, the following
- * indirections must be fullword.
- */
-NODE *
-offcon(OFFSZ off, TWORD t, union dimfun *d, struct attr *ap)
-{
-	register NODE *p;
-
-#ifdef PCC_DEBUG
-	if (xdebug)
-		printf("offcon: OFFSZ %lld type %x dim %p siz %d\n",
-		    off, t, d, (int)tsize(t, d, ap));
-#endif
-
-	p = bcon(0);
-	p->n_lval = off/SZCHAR;	/* Default */
-	return(p);
 }
 
 /*
@@ -974,7 +929,7 @@ infld(CONSZ off, int fsz, CONSZ val)
  * off is bit offset from the beginning of the aggregate
  * fsz is the number of bits this is referring to
  */
-void
+int
 ninval(CONSZ off, int fsz, NODE *p)
 {
 	union { float f; double d; long double l; int i[3]; } u;
@@ -985,13 +940,8 @@ ninval(CONSZ off, int fsz, NODE *p)
 
 	t = p->n_type;
 	if (t > BTMASK)
-		t = INT; /* pointer */
+		p->n_type = t = INT; /* pointer */
 
-	while (p->n_op == SCONV || p->n_op == PCONV) {
-		NODE *l = p->n_left;
-		l->n_type = p->n_type;
-		p = l;
-	}
 
 	if (kflag && (p->n_op == PLUS || p->n_op == UMUL)) {
 		if (p->n_op == UMUL)
@@ -1016,10 +966,6 @@ ninval(CONSZ off, int fsz, NODE *p)
 #endif
 
 	}
-
-	if (p->n_op != ICON && p->n_op != FCON)
-		cerror("ninval: init node not constant: node %p [%s]",
-		     p, cftnsp->soname);
 
 	if (p->n_op == ICON && p->n_sp != NULL && DEUNSIGN(t) != INT)
 		uerror("element not constant");
@@ -1058,18 +1004,6 @@ ninval(CONSZ off, int fsz, NODE *p)
 		}
 		printf("\n");
 		break;
-	case SHORT:
-	case USHORT:
-		printf("\t.short %d\n", (int)p->n_lval & 0xffff);
-		break;
-	case BOOL:
-		if (p->n_lval > 1)
-			p->n_lval = p->n_lval != 0;
-		/* FALLTHROUGH */
-	case CHAR:
-	case UCHAR:
-		printf("\t.byte %d\n", (int)p->n_lval & 0xff);
-		break;
 	case LDOUBLE:
 		u.i[2] = 0;
 		u.l = (long double)p->n_dcon;
@@ -1089,8 +1023,9 @@ ninval(CONSZ off, int fsz, NODE *p)
 		printf("\t.long 0x%x\n", u.i[0]);
 		break;
 	default:
-		cerror("ninval");
+		return 0;
 	}
+	return 1;
 }
 
 /* make a name look like an external name in the local machine */

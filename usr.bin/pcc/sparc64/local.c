@@ -67,7 +67,8 @@ clocal(NODE *p)
 	case SCONV:
         /* Remove redundant conversions. */
 		if ((p->n_type & TMASK) == 0 && (l->n_type & TMASK) == 0 &&
-		    btattr[p->n_type].atypsz == btattr[l->n_type].atypsz &&
+		    tsize(p->n_type, p->n_df, p->n_ap) ==
+		    tsize(l->n_type, l->n_df, l->n_ap) &&
 		    p->n_type != FLOAT && p->n_type != DOUBLE &&
 		    l->n_type != FLOAT && l->n_type != DOUBLE &&
 		    l->n_type != DOUBLE && p->n_type != LDOUBLE) {
@@ -128,14 +129,6 @@ clocal(NODE *p)
 		p = l;
 		break;
 
-	case PMCONV:
-	case PVCONV:
-		if (r->n_op != ICON)
-			cerror("converting bad type");
-		nfree(p);
-		p = buildtree(op == PMCONV ? MUL : DIV, l, r);
-		break;
-
 	case FORCE:
 		/* Put attached value into the return register. */
 		p->n_op = ASSIGN;
@@ -172,7 +165,7 @@ myp2tree(NODE *p)
 	sp->squal = (CON >> TSHIFT);
 
 	defloc(sp);
-	ninval(0, btattr[p->n_type].atypsz, p);
+	ninval(0, tsize(p->n_type, p->n_df, p->n_ap), p);
 
 	p->n_op = NAME;
 	p->n_lval = 0;
@@ -185,12 +178,6 @@ andable(NODE *p)
 	return 1;
 }
 
-void
-cendarg()
-{
-	autooff = AUTOINIT;
-}
-
 int
 cisreg(TWORD t)
 {
@@ -198,105 +185,30 @@ cisreg(TWORD t)
 	return 1;
 }
 
-NODE *
-offcon(OFFSZ off, TWORD t, union dimfun *d, struct attr *ap)
-{
-	return bcon(off / SZCHAR);
-}
-
 void
 spalloc(NODE *t, NODE *p, OFFSZ off)
 {
+	cerror("spalloc");
 }
 
-void
-instring(struct symtab *sp)
-{
-	char *s, *str;
-
-	defloc(sp);
-	str = sp->sname;
-
-	printf("\t.ascii \"");
-	for (s = str; *s != 0; ) {
-		if (*s++ == '\\')
-			esccon(&s);
-		if (s - str > 60) {
-			fwrite(str, 1, s - str, stdout);
-			printf("\"\n\t.ascii \"");
-			str = s;
-		}
-	}
-	fwrite(str, 1, s - str, stdout);
-	printf("\\0\"\n");
-}
-
-void
-zbits(OFFSZ off, int fsz)
-{
-}
-
-void
-infld(CONSZ off, int fsz, CONSZ val)
-{
-}
-
-void
+int
 ninval(CONSZ off, int fsz, NODE *p)
 {
-	TWORD t;
-	struct symtab *sp;
 	union { float f; double d; int i; long long l; } u;
 
-	t = p->n_type;
-	sp = p->n_sp;
-
-	if (ISPTR(t))
-		t = LONGLONG;
-
-	if (p->n_op != ICON && p->n_op != FCON)
-		cerror("ninval: not a constant");
-	if (p->n_op == ICON && sp != NULL && DEUNSIGN(t) != LONGLONG)
-		cerror("ninval: not constant");
-
-	switch (t) {
-		case CHAR:
-		case UCHAR:
-			printf("\t.byte %d\n", (int)p->n_lval & 0xff);
-			break;
-		case SHORT:
-		case USHORT:
-			printf("\t.half %d\n", (int)p->n_lval &0xffff);
-			break;
-		case BOOL:
-			p->n_lval = (p->n_lval != 0); /* FALLTHROUGH */
-		case INT:
-		case UNSIGNED:
-			printf("\t.long " CONFMT "\n", p->n_lval);
-			break;
-		case LONG:
-		case ULONG:
-		case LONGLONG:
-		case ULONGLONG:
-			printf("\t.xword %lld", p->n_lval);
-			if (sp != 0) {
-				if (sp->sclass == STATIC && sp->slevel > 0)
-					printf("+" LABFMT, sp->soffset);
-				else
-					printf("+%s", sp->soname ?
-					    sp->soname : exname(sp->sname));
-			}
-			printf("\n");
-			break;
-		case FLOAT:
-			u.f = (float)p->n_dcon;
-			printf("\t.long %d\n", u.i);
-			break;
-		case DOUBLE:
-			u.d = (double)p->n_dcon;
-			printf("\t.xword %lld\n", u.l);
-			break;
+	switch (p->n_type) {
+	case FLOAT:
+		u.f = (float)p->n_dcon;
+		printf("\t.long %d\n", u.i);
+		break;
+	case DOUBLE:
+		u.d = (double)p->n_dcon;
+		printf("\t.xword %lld\n", u.l);
+		break;
+	default:
+		return 0;
 	}
+	return 1;
 }
 
 char *
@@ -308,6 +220,14 @@ exname(char *p)
 TWORD
 ctype(TWORD type)
 {
+	switch (BTYPE(type)) {
+	case LONGLONG:
+		MODTYPE(type,LONG);
+		break;
+	case ULONGLONG:
+		MODTYPE(type,ULONG);
+
+	}
 	return type;
 }
 

@@ -10,8 +10,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -410,7 +408,7 @@ clocal(NODE *p)
 			if (kflag == 0) {
 				if (q->slevel == 0)
 					break;
-			} else if (blevel > 0)
+			} else if (blevel > 0 && !statinit)
 				p = picstatic(p);
 			break;
 
@@ -435,7 +433,7 @@ clocal(NODE *p)
 #endif
 			if (kflag == 0)
 				break;
-			if (blevel > 0)
+			if (blevel > 0 && !statinit)
 				p = picext(p);
 			break;
 		}
@@ -586,64 +584,24 @@ clocal(NODE *p)
 		m = p->n_type;
 
 		if (o == ICON) {
-			CONSZ val = l->n_lval;
-
-			if (!ISPTR(m)) /* Pointers don't need to be conv'd */
-			    switch (m) {
-			case BOOL:
-				l->n_lval = nncon(l) ? (l->n_lval != 0) : 1;
-				l->n_sp = NULL;
+			/*
+			 * Can only end up here if o is an address,
+			 * and in that case the only compile-time conversion
+			 * possible is to int.
+			 */
+			if ((TMASK & l->n_type) == 0)
+				cerror("SCONV ICON");
+			if (l->n_sp == 0) {
+				p->n_type = UNSIGNED;
+				concast(l, m);
+			} else if (m != INT && m != UNSIGNED)
 				break;
-			case CHAR:
-				l->n_lval = (char)val;
-				break;
-			case UCHAR:
-				l->n_lval = val & 0377;
-				break;
-			case SHORT:
-				l->n_lval = (short)val;
-				break;
-			case USHORT:
-				l->n_lval = val & 0177777;
-				break;
-			case ULONG:
-			case UNSIGNED:
-				l->n_lval = val & 0xffffffff;
-				break;
-			case LONG:
-			case INT:
-				l->n_lval = (int)val;
-				break;
-			case LONGLONG:
-				l->n_lval = (long long)val;
-				break;
-			case ULONGLONG:
-				l->n_lval = val;
-				break;
-			case VOID:
-				break;
-			case LDOUBLE:
-			case DOUBLE:
-			case FLOAT:
-				l->n_op = FCON;
-				l->n_dcon = val;
-				break;
-			default:
-				cerror("unknown type %d", m);
-			}
 			l->n_type = m;
 			l->n_ap = 0;
 			nfree(p);
 			return l;
-		} else if (l->n_op == FCON) {
-			l->n_lval = (CONSZ)l->n_dcon;
-			l->n_sp = NULL;
-			l->n_op = ICON;
-			l->n_type = m;
-			l->n_ap = 0;
-			nfree(p);
-			return clocal(l);
-		}
+		} else if (l->n_op == FCON)
+			cerror("SCONV FCON");
 		if ((p->n_type == CHAR || p->n_type == UCHAR ||
 		    p->n_type == SHORT || p->n_type == USHORT) &&
 		    (l->n_type == FLOAT || l->n_type == DOUBLE ||
@@ -661,17 +619,11 @@ clocal(NODE *p)
 		if (o == MOD && p->n_type != CHAR && p->n_type != SHORT)
 			break;
 		/* make it an int division by inserting conversions */
-		p->n_left = block(SCONV, p->n_left, NIL, INT, 0, 0);
-		p->n_right = block(SCONV, p->n_right, NIL, INT, 0, 0);
-		p = block(SCONV, p, NIL, p->n_type, 0, 0);
-		p->n_left->n_type = INT;
-		break;
-
-	case PMCONV:
-	case PVCONV:
-		r = p;
-		p = buildtree(o == PMCONV ? MUL : DIV, p->n_left, p->n_right);
-		nfree(r);
+		p->n_left = makety(p->n_left, INT, 0, 0, 0);
+		p->n_right = makety(p->n_right, INT, 0, 0, 0);
+		o = p->n_type;
+		p->n_type = INT;
+		p = makety(p, o, 0, 0, 0);
 		break;
 
 	case FORCE:
@@ -871,15 +823,6 @@ andable(NODE *p)
 }
 
 /*
- * at the end of the arguments of a ftn, set the automatic offset
- */
-void
-cendarg()
-{
-	autooff = AUTOINIT;
-}
-
-/*
  * Return 1 if a variable of type type is OK to put in register.
  */
 int
@@ -888,30 +831,6 @@ cisreg(TWORD t)
 	if (t == FLOAT || t == DOUBLE || t == LDOUBLE)
 		return 0; /* not yet */
 	return 1;
-}
-
-/*
- * return a node, for structure references, which is suitable for
- * being added to a pointer of type t, in order to be off bits offset
- * into a structure
- * t, d, and s are the type, dimension offset, and sizeoffset
- * For pdp10, return the type-specific index number which calculation
- * is based on its size. For example, short a[3] would return 3.
- * Be careful about only handling first-level pointers, the following
- * indirections must be fullword.
- */
-NODE *
-offcon(OFFSZ off, TWORD t, union dimfun *d, struct attr *ap)
-{
-	register NODE *p;
-
-	if (xdebug)
-		printf("offcon: OFFSZ %lld type %x dim %p siz %d\n",
-		    off, t, d, 0);
-
-	p = bcon(0);
-	p->n_lval = off/SZCHAR;	/* Default */
-	return(p);
 }
 
 /*
@@ -1001,160 +920,27 @@ instring(struct symtab *sp)
 	printf("\\0\"\n");
 }
 
-static int inbits, inval;
-
-/*
- * set fsz bits in sequence to zero.
- */
-void
-zbits(OFFSZ off, int fsz)
-{
-	int m;
-
-	if (idebug)
-		printf("zbits off %lld, fsz %d inbits %d\n", off, fsz, inbits);
-	if ((m = (inbits % SZCHAR))) {
-		m = SZCHAR - m;
-		if (fsz < m) {
-			inbits += fsz;
-			return;
-		} else {
-			fsz -= m;
-			printf("\t.byte %d\n", inval);
-			inval = inbits = 0;
-		}
-	}
-	if (fsz >= SZCHAR) {
-#ifdef os_darwin
-		printf("\t.space %d\n", fsz/SZCHAR);
-#else
- 		printf("\t.zero %d\n", fsz/SZCHAR);
-#endif
-		fsz -= (fsz/SZCHAR) * SZCHAR;
-	}
-	if (fsz) {
-		inval = 0;
-		inbits = fsz;
-	}
-}
-
-/*
- * Initialize a bitfield.
- */
-void
-infld(CONSZ off, int fsz, CONSZ val)
-{
-	if (idebug)
-		printf("infld off %lld, fsz %d, val %lld inbits %d\n",
-		    off, fsz, val, inbits);
-	val &= ((CONSZ)1 << fsz)-1;
-	while (fsz + inbits >= SZCHAR) {
-		inval |= (int)(val << inbits);
-		printf("\t.byte %d\n", inval & 255);
-		fsz -= (SZCHAR - inbits);
-		val >>= (SZCHAR - inbits);
-		inval = inbits = 0;
-	}
-	if (fsz) {
-		inval |= (int)(val << inbits);
-		inbits += fsz;
-	}
-}
-
 /*
  * print out a constant node, may be associated with a label.
  * Do not free the node after use.
  * off is bit offset from the beginning of the aggregate
  * fsz is the number of bits this is referring to
  */
-void
+int
 ninval(CONSZ off, int fsz, NODE *p)
 {
 	union { float f; double d; long double l; int i[3]; } u;
-	struct symtab *q;
-#if defined(ELFABI) || defined(MACHOABI)
-	char *c;
-#endif
-	TWORD t;
 	int i;
 
-	t = p->n_type;
-	if (t > BTMASK)
-		t = INT; /* pointer */
-
-	while (p->n_op == SCONV || p->n_op == PCONV) {
-		NODE *l = p->n_left;
-		l->n_type = p->n_type;
-		p = l;
-	}
-
-	if (kflag && (p->n_op == PLUS || p->n_op == UMUL)) {
-		if (p->n_op == UMUL)
-			p = p->n_left;
-		p = p->n_right;
-		q = p->n_sp;
-
-		if (q->soname != NULL) {
-#if defined(ELFABI)
-
-			if ((c = strstr(q->soname, "@GOT")) != NULL)
-				*c = 0; /* ignore GOT ref here */
-#elif defined(MACHOABI)
-
-			if  ((c = strstr(q->soname, "$non_lazy_ptr")) != NULL) {
-				q->soname++;	/* skip "L" */
-				*c = 0; /* ignore GOT ref here */
-			} else if ((c = strstr(q->soname, "-L")) != NULL)
-				*c = 0; /* ignore GOT ref here */
-#endif
-		}
-	}
-	if (p->n_op != ICON && p->n_op != FCON)
-		cerror("ninval: init node not constant");
-
-	if (p->n_op == ICON && p->n_sp != NULL && DEUNSIGN(t) != INT)
-		uerror("element not constant");
-
-	switch (t) {
+	switch (p->n_type) {
 	case LONGLONG:
 	case ULONGLONG:
 		i = (int)(p->n_lval >> 32);
 		p->n_lval &= 0xffffffff;
 		p->n_type = INT;
-		ninval(off, 32, p);
+		inval(off, 32, p);
 		p->n_lval = i;
-		ninval(off+32, 32, p);
-		break;
-	case INT:
-	case UNSIGNED:
-		printf("\t.long %d", (int)p->n_lval);
-		if ((q = p->n_sp) != NULL) {
-			if ((q->sclass == STATIC && q->slevel > 0)) {
-				printf("+" LABFMT, q->soffset);
-			} else {
-				char *name;
-				if ((name = q->soname) == NULL)
-					name = exname(q->sname);
-				printf("+%s", name);
-			}
-		}
-		printf("\n");
-		break;
-	case SHORT:
-	case USHORT:
-#ifdef os_sunos
-		printf("\t.2byte 0x%x\n", (int)p->n_lval & 0xffff);
-#else
-		printf("\t.short 0x%x\n", (int)p->n_lval & 0xffff);
-#endif
-		break;
-	case BOOL:
-		if (p->n_lval > 1)
-			p->n_lval = p->n_lval != 0;
-		/* FALLTHROUGH */
-	case CHAR:
-	case UCHAR:
-		printf("\t.byte %d\n", (int)p->n_lval & 0xff);
+		inval(off+32, 32, p);
 		break;
 	case LDOUBLE:
 		u.i[2] = 0;
@@ -1179,8 +965,9 @@ ninval(CONSZ off, int fsz, NODE *p)
 		printf("\t.long\t%d\n", u.i[0]);
 		break;
 	default:
-		cerror("ninval");
+		return 0;
 	}
+	return 1;
 }
 
 /* make a name look like an external name in the local machine */

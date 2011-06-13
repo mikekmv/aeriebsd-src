@@ -166,13 +166,6 @@ clocal(p) NODE *p; {
 		nfree(p);
 		return( r );  /* conversion gets clobbered */
 
-	case PVCONV:
-	case PMCONV:
-		if( p->n_right->n_op != ICON ) cerror( "bad conversion", 0);
-		r = buildtree( o==PMCONV?MUL:DIV, p->n_left, p->n_right);
-		nfree(p);
-		return r;
-
 	case RS:
 	case RSEQ:
 		/* convert >> to << with negative shift count */
@@ -251,33 +244,9 @@ andable(NODE *p)
 	return 0; /* Delay name reference to table, for PIC code generation */
 }
  
-void
-cendarg(){ /* at the end of the arguments of a ftn, set the automatic offset */
-	autooff = AUTOINIT;
-	}
-
 int
 cisreg( t ) TWORD t; { /* is an automatic variable of type t OK for a register variable */
 	return(1);	/* all are now */
-	}
-
-NODE *
-offcon(OFFSZ off, TWORD t, union dimfun *d, struct suedef *sue)
-{
-
-	/* return a node, for structure references, which is suitable for
-	   being added to a pointer of type t, in order to be off bits offset
-	   into a structure */
-
-	register NODE *p;
-
-	/* t, d, and s are the type, dimension offset, and sizeoffset */
-	/* in general they  are necessary for offcon, but not on H'well */
-
-	p = bcon(0);
-	p->n_lval = off/SZCHAR;
-	return(p);
-
 	}
 
 void
@@ -285,63 +254,6 @@ spalloc(NODE *t, NODE *p, OFFSZ off)
 {
 	cerror("spalloc");
 }
-
-static int inbits, inval;
-
-/*
- * set fsz bits in sequence to zero.
- */
-void
-zbits(OFFSZ off, int fsz)
-{
-	int m;
-
-	if (idebug)
-		printf("zbits off %lld, fsz %d inbits %d\n", off, fsz, inbits);
-	if ((m = (inbits % SZCHAR))) {
-		m = SZCHAR - m;
-		if (fsz < m) {
-			inbits += fsz;
-			return;
-		} else {
-			fsz -= m;
-			printf("\t.byte %d\n", inval);
-			inval = inbits = 0;
-		}
-	}
-	if (fsz >= SZCHAR) {
-		printf("\t.space %d\n", fsz/SZCHAR);
-		fsz -= (fsz/SZCHAR) * SZCHAR;
-	}
-	if (fsz) {
-		inval = 0;
-		inbits = fsz;
-	}
-}
-
-/*
- * Initialize a bitfield.
- */
-void
-infld(CONSZ off, int fsz, CONSZ val)
-{
-	if (idebug)
-		printf("infld off %lld, fsz %d, val %lld inbits %d\n",
-		    off, fsz, val, inbits);
-	val &= ((CONSZ)1 << fsz)-1;
-	while (fsz + inbits >= SZCHAR) {
-		inval |= (val << inbits);
-		printf("\t.byte %d\n", inval & 255);
-		fsz -= (SZCHAR - inbits);
-		val >>= (SZCHAR - inbits);
-		inval = inbits = 0;
-	}
-	if (fsz) {
-		inval |= (val << inbits);
-		inbits += fsz;
-	}
-}
-
 
 char *
 exname( p ) char *p; {
@@ -423,7 +335,7 @@ setloc1(int locc)
  * fsz is the number of bits this is referring to
  * XXX - floating point constants may be wrong if cross-compiling.
  */
-void
+int
 ninval(CONSZ off, int fsz, NODE *p)
 {
 	union { float f; double d; long double l; int i[3]; } u;
@@ -432,10 +344,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 
 	t = p->n_type;
 	if (t > BTMASK)
-		t = INT; /* pointer */
-
-	if (p->n_op != ICON && p->n_op != FCON)
-		cerror("ninval: init node not constant");
+		p->n_type = t = INT; /* pointer */
 
 	if (p->n_op == ICON && p->n_sp != NULL && DEUNSIGN(t) != INT)
 		uerror("element not constant");
@@ -457,18 +366,6 @@ ninval(CONSZ off, int fsz, NODE *p)
 		}
 		printf("\n");
 		break;
-	case SHORT:
-	case USHORT:
-		printf("\t.short 0x%x\n", (int)p->n_lval & 0xffff);
-		break;
-	case BOOL:
-		if (p->n_lval > 1)
-			p->n_lval = p->n_lval != 0;
-		/* FALLTHROUGH */
-	case CHAR:
-	case UCHAR:
-		printf("\t.byte %d\n", (int)p->n_lval & 0xff);
-		break;
 	case LDOUBLE:
 		u.i[2] = 0;
 		u.l = (long double)p->n_dcon;
@@ -483,8 +380,9 @@ ninval(CONSZ off, int fsz, NODE *p)
 		printf("\t.long\t0x%x\n", u.i[0]);
 		break;
 	default:
-		cerror("ninval");
+		return 0;
 	}
+	return 1;
 
 }
 /*

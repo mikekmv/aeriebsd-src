@@ -687,7 +687,14 @@ init_declarator:   declarator attr_var { init_declarator($<nodep>0, $1, 0, $2);}
 			init_declarator($<nodep>0, $1, 0, $6);
 #endif
 		}
-		|  xnfdeclarator '=' e { simpleinit($1, eve($3)); xnf = NULL; }
+		|  xnfdeclarator '=' e { 
+			if ($1->sclass == STATIC || $1->sclass == EXTDEF)
+				statinit++;
+			simpleinit($1, eve($3));
+			if ($1->sclass == STATIC || $1->sclass == EXTDEF)
+				statinit--;
+			xnf = NULL;
+		}
 		|  xnfdeclarator '=' begbr init_list optcomma '}' {
 			endinit();
 			xnf = NULL;
@@ -770,7 +777,6 @@ begin:		  '{' {
 			bc->contlab = autooff;
 			bc->next = savctx;
 			savctx = bc;
-			bccode();
 			if (!isinlining && sspflag && blevel == 2)
 				sspstart();
 		}
@@ -2194,7 +2200,7 @@ eve2:		r = buildtree(p->n_op, p1, eve(p2));
 int
 con_e(NODE *p)
 {
-	return icons(eve(p));
+	return icons(optim(eve(p)));
 }
 
 void

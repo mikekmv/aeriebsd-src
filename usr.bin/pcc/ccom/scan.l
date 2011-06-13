@@ -53,7 +53,6 @@ static void control(int);
 static void pragma(void);
 int notype, parbal, inattr, parlvl, nodinit;
 static int resw(TWORD, int);
-extern int doing_init;
 
 #define	CPP_IDENT 	2
 #define	CPP_LINE 	3
@@ -594,9 +593,9 @@ wcharcon(void)
 	}
 
 	if (i == 0)
-		uerror("empty wide character constant");
+		uerror("empty wide-character constant");
 	if (i > 1)
-		werror("too many characters in wide character constant");
+		werror("too many characters in wide-character constant");
 	return xbcon(lastcon, NULL, ctype(UNSIGNED));
 }
 

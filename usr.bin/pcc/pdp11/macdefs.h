@@ -113,7 +113,8 @@ typedef long long OFFSZ;
 #define BACKTEMP 		/* stack grows negatively for temporaries */
 
 #undef	FIELDOPS		/* no bit-field instructions */
-#define	RTOLBYTES		/* bytes are numbered right to left */
+#define TARGET_ENDIAN TARGET_LE /* XXX TARGET_PDP */
+#define	MYINSTRING
 
 /* Definitions mostly used in pass2 */
 

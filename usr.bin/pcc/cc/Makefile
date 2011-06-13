@@ -1,6 +1,4 @@
-#
-# Makefile for the cc part of pcc.
-#
+
 PROG=   	cc
 TARGOS=		aeriebsd
 TARGMACH=       ${MACHINE_ARCH}

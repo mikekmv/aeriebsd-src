@@ -1,17 +1,9 @@
-#
-# Makefile for the f77 part of pcc.
-#
-PROG=   	f77
-PREFIX=		/usr/local
-BINDIR=		${PREFIX}/bin
-MANDIR=		${PREFIX}/man/man
-TARGOS=		aeriebsd
-TARGMACH=       ${MACHINE_ARCH}
 
-CPPFLAGS+=	-DLANG_F77
-CPPFLAGS+=	-DLIBEXECDIR=\"${PREFIX}/libexec\"
-CPPFLAGS+=	-DLIBDIR=\"${PREFIX}/lib\"
-CPPFLAGS+=	-I${.CURDIR}/..
-CPPFLAGS+=	-DDEFMACH=\"${TARGMACH}\"
+PROG=	f77
+TARGOS=	aeriebsd
+TARGMACH=${MACHINE_ARCH}
+
+CPPFLAGS+=-DLANG_F77 -I${.CURDIR}/.. -DDEFMACH=\"${TARGMACH}\"
+CPPFLAGS+=-DLIBEXECDIR=\"/usr/libexec\" -DLIBDIR=\"/usr/lib\"
 
 .include <bsd.prog.mk>

@@ -82,7 +82,6 @@ picsymtab(char *p, char *s, char *s2)
 
 int gotnr; /* tempnum for GOT register */
 int argstacksize;
-static int ininval;
 
 /*
  * Create a reference for an extern variable or function.
@@ -369,7 +368,7 @@ clocal(NODE *p)
 				p = tlsref(p);
 				break;
 			}
-			if (kflag == 0)
+			if (kflag == 0 || statinit)
 				break;
 			if (blevel > 0)
 				p = picext(p);
@@ -618,17 +617,10 @@ clocal(NODE *p)
 		if (o == MOD && p->n_type != CHAR && p->n_type != SHORT)
 			break;
 		/* make it an int division by inserting conversions */
-		p->n_left = block(SCONV, p->n_left, NIL, INT, 0, 0);
-		p->n_right = block(SCONV, p->n_right, NIL, INT, 0, 0);
-		p = block(SCONV, p, NIL, p->n_type, 0, 0);
+		p->n_left = makety(p->n_left, INT, 0, 0, 0);
+		p->n_right = makety(p->n_right, INT, 0, 0, 0);
+		p = makety(p, p->n_type, 0, 0, 0);
 		p->n_left->n_type = INT;
-		break;
-
-	case PMCONV:
-	case PVCONV:
-		r = p;
-		p = buildtree(o == PMCONV ? MUL : DIV, p->n_left, p->n_right);
-		nfree(r);
 		break;
 
 	case FORCE:
@@ -648,7 +640,7 @@ clocal(NODE *p)
 		/* shift count must be in a char */
 		if (p->n_right->n_type == CHAR || p->n_right->n_type == UCHAR)
 			break;
-		p->n_right = block(SCONV, p->n_right, NIL, CHAR, 0, 0);
+		p->n_right = makety(p->n_right, CHAR, 0, 0, 0);
 		break;
 	}
 #ifdef PCC_DEBUG
@@ -714,20 +706,9 @@ myp2tree(NODE *p)
 int
 andable(NODE *p)
 {
-	if (ininval)
-		return 1;
 	if (p->n_sp->sclass == STATIC || p->n_sp->sclass == USTATIC)
 		return 0;
 	return 1;
-}
-
-/*
- * at the end of the arguments of a ftn, set the automatic offset
- */
-void
-cendarg()
-{
-	autooff = AUTOINIT;
 }
 
 /*
@@ -739,30 +720,6 @@ cisreg(TWORD t)
 	if (t == LDOUBLE)
 		return 0;
 	return 1;
-}
-
-/*
- * return a node, for structure references, which is suitable for
- * being added to a pointer of type t, in order to be off bits offset
- * into a structure
- * t, d, and s are the type, dimension offset, and sizeoffset
- * For pdp10, return the type-specific index number which calculation
- * is based on its size. For example, short a[3] would return 3.
- * Be careful about only handling first-level pointers, the following
- * indirections must be fullword.
- */
-NODE *
-offcon(OFFSZ off, TWORD t, union dimfun *d, struct attr *ap)
-{
-	register NODE *p;
-
-	if (xdebug)
-		printf("offcon: OFFSZ %lld type %x dim %p siz %d\n",
-		    off, t, d, (int)tsize(t, d, ap));
-
-	p = bcon(0);
-	p->n_lval = off/SZCHAR;	/* Default */
-	return(p);
 }
 
 /*
@@ -795,183 +752,17 @@ spalloc(NODE *t, NODE *p, OFFSZ off)
 }
 
 /*
- * Print out a string of characters.
- * Assume that the assembler understands C-style escape
- * sequences.
- */
-void
-instring(struct symtab *sp)
-{
-	char *s, *str = sp->sname;
-
-	defloc(sp);
-
-	/* be kind to assemblers and avoid long strings */
-	printf("\t.ascii \"");
-	for (s = str; *s != 0; ) {
-		if (*s++ == '\\') {
-			(void)esccon(&s);
-		}
-		if (s - str > 60) {
-			fwrite(str, 1, s - str, stdout);
-			printf("\"\n\t.ascii \"");
-			str = s;
-		}
-	}
-	fwrite(str, 1, s - str, stdout);
-	printf("\\0\"\n");
-}
-
-static int inbits, inval;
-
-/*
- * set fsz bits in sequence to zero.
- */
-void
-zbits(OFFSZ off, int fsz)
-{
-	int m;
-
-	if (idebug)
-		printf("zbits off %lld, fsz %d inbits %d\n", off, fsz, inbits);
-	if ((m = (inbits % SZCHAR))) {
-		m = SZCHAR - m;
-		if (fsz < m) {
-			inbits += fsz;
-			return;
-		} else {
-			fsz -= m;
-			printf("\t.byte %d\n", inval);
-			inval = inbits = 0;
-		}
-	}
-	if (fsz >= SZCHAR) {
-#ifdef MACHOABI
-		printf("\t.space %d\n", fsz/SZCHAR);
-#else
-		printf("\t.zero %d\n", fsz/SZCHAR);
-#endif
-		fsz -= (fsz/SZCHAR) * SZCHAR;
-	}
-	if (fsz) {
-		inval = 0;
-		inbits = fsz;
-	}
-}
-
-/*
- * Initialize a bitfield.
- */
-void
-infld(CONSZ off, int fsz, CONSZ val)
-{
-	if (idebug)
-		printf("infld off %lld, fsz %d, val %lld inbits %d\n",
-		    off, fsz, val, inbits);
-	val &= (((((CONSZ)1 << (fsz-1))-1)<<1)|1);
-	while (fsz + inbits >= SZCHAR) {
-		inval |= (val << inbits);
-		printf("\t.byte %d\n", inval & 255);
-		fsz -= (SZCHAR - inbits);
-		val >>= (SZCHAR - inbits);
-		inval = inbits = 0;
-	}
-	if (fsz) {
-		inval |= (val << inbits);
-		inbits += fsz;
-	}
-}
-
-/*
  * print out a constant node, may be associated with a label.
  * Do not free the node after use.
  * off is bit offset from the beginning of the aggregate
  * fsz is the number of bits this is referring to
  */
-void
+int
 ninval(CONSZ off, int fsz, NODE *p)
 {
 	union { float f; double d; long double l; int i[3]; } u;
-	struct symtab *q;
-	NODE st, *op = NIL;
-	TWORD t;
 
-	if (coptype(p->n_op) != LTYPE) {
-		ininval = 1;
-		op = p = optim(ccopy(p));
-		ininval = 0;
-	}
-
-	while (p->n_op == PCONV)
-		p = p->n_left;
-
-	t = p->n_type;
-
-	if (kflag && p->n_op == NAME && ISPTR(t) &&
-	    (ISFTN(DECREF(t)) || ISSOU(BTYPE(t)))) {
-		/* functions as initializers will be NAME here */
-		if (op == NIL) {
-			st = *p;
-			p = &st;
-		}
-		p->n_op = ICON;
-	}
-
-	if (t > BTMASK)
-		t = LONG; /* pointer */
-
-	if (p->n_op == COMOP) {
-		NODE *r = p->n_right;
-		tfree(p->n_left);
-		nfree(p);
-		p = r;
-	}
-
-	if (p->n_op != ICON && p->n_op != FCON) {
-fwalk(p, eprint, 0);
-		cerror("ninval: init node not constant");
-	}
-
-	if (p->n_op == ICON && p->n_sp != NULL && DEUNSIGN(t) != LONG)
-		uerror("element not constant");
-
-	switch (t) {
-	case LONG:
-	case ULONG:
-		printf("\t.quad 0x%llx", p->n_lval);
-		if ((q = p->n_sp) != NULL) {
-			if ((q->sclass == STATIC && q->slevel > 0)) {
-				printf("+" LABFMT, q->soffset);
-			} else {
-				char *name;
-				if ((name = q->soname) == NULL)
-					name = q->sname;
-				/* Never any PIC stuff in static init */
-				if (strchr(name, '@')) {
-					name = tmpstrdup(name);
-					*strchr(name, '@') = 0;
-				}
-				printf("+%s", name);
-			}
-		}
-		printf("\n");
-		break;
-	case INT:
-	case UNSIGNED:
-		printf("\t.long 0x%x\n", (int)p->n_lval & 0xffffffff);
-		break;
-	case SHORT:
-	case USHORT:
-		printf("\t.short 0x%x\n", (int)p->n_lval & 0xffff);
-		break;
-	case BOOL:
-		if (p->n_lval > 1)
-			p->n_lval = p->n_lval != 0;
-		/* FALLTHROUGH */
-	case CHAR:
-	case UCHAR:
-		printf("\t.byte %d\n", (int)p->n_lval & 0xff);
-		break;
+	switch (p->n_type) {
 	case LDOUBLE:
 		u.i[2] = 0;
 		u.l = (long double)p->n_dcon;
@@ -995,10 +786,9 @@ fwalk(p, eprint, 0);
 		printf("\t.long\t0x%x\n", u.i[0]);
 		break;
 	default:
-		cerror("ninval");
+		return 0;
 	}
-	if (op)
-		tfree(op);
+	return 1;
 }
 
 /* make a name look like an external name in the local machine */

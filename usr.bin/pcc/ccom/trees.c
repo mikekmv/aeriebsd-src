@@ -144,6 +144,16 @@ static char *tnames[] = {
 int bdebug = 0;
 extern int negrel[];
 
+/* Have some defaults for most common targets */
+#ifndef WORD_ADDRESSED
+#define	offcon(o,t,d,ap) xbcon((o/SZCHAR), NULL, INTPTR)
+#define	VBLOCK(p,b,t,d,a) buildtree(DIV, p, b)
+#define	MBLOCK(p,b,t,d,a) buildtree(MUL, p, b)
+#else
+#define	VBLOCK(p,b,t,d,a) block(PVCONV, p, b, t, d, a)
+#define	MBLOCK(p,b,t,d,a) block(PMCONV, p, b, t, d, a)
+#endif
+
 NODE *
 buildtree(int o, NODE *l, NODE *r)
 {
@@ -193,8 +203,11 @@ buildtree(int o, NODE *l, NODE *r)
 			l->n_dcon = FLOAT_NEG(l->n_dcon);
 			return(l);
 
-	} else if( o==QUEST && l->n_op==ICON ) {
+	} else if( o==QUEST &&
+	    (l->n_op==ICON || (l->n_op==NAME && ISARY(l->n_type)))) {
 		CONSZ c = l->n_lval;
+		if (l->n_op==NAME)
+			c = 1; /* will become constant later */
 		nfree(l);
 		if (c) {
 			walkf(r->n_right, putjops, 0);
@@ -699,6 +712,69 @@ ccast(NODE *p, TWORD t, TWORD u, union dimfun *df, struct attr *ap)
 	q = optim(p->n_right);
 	nfree(p);
 	return q;
+}
+
+/*
+ * Do an actual cast of a constant (if possible).
+ * Routine assumes 2-complement (is there anything else today?)
+ * Returns 1 if handled, 0 otherwise.
+ */
+int
+concast(NODE *p, TWORD t)
+{
+	extern short sztable[];
+	CONSZ val;
+
+	if (p->n_op != ICON && p->n_op != FCON) /* only constants */
+		return 0;
+	if (p->n_op == ICON && p->n_sp != NULL) { /* no addresses */
+		if (t == BOOL) {
+			p->n_lval = 1, p->n_type = BOOL, p->n_sp = NULL;
+			return 1;
+		}
+		return 0;
+	}
+	if ((p->n_type & TMASK) || (t & TMASK)) /* no cast of pointers */
+		return 0;
+
+//printf("concast till %d\n", t);
+//fwalk(p, eprint, 0);
+
+#define	TYPMSK(y) ((((1LL << (y-1))-1) << 1) | 1)
+	if (p->n_op == ICON) {
+		val = p->n_lval;
+
+		if (t == BOOL) {
+			if (val)
+				p->n_lval = 1;
+		} else if (t <= ULONGLONG) {
+			p->n_lval = val & TYPMSK(sztable[t]);
+			if (!ISUNSIGNED(t)) {
+				if (val & (1LL << (sztable[t]-1)))
+					p->n_lval |= ~TYPMSK(sztable[t]);
+			}
+		} else if (t <= LDOUBLE) {
+			p->n_op = FCON;
+			p->n_dcon = FLOAT_CAST(val, p->n_type);
+		}
+	} else { /* p->n_op == FCON */
+		if (t == BOOL) {
+			p->n_op = ICON;
+			p->n_lval = FLOAT_NE(p->n_dcon,0.0);
+			p->n_sp = NULL;
+		} else if (t <= ULONGLONG) {
+			p->n_op = ICON;
+			p->n_lval = ISUNSIGNED(t) ? /* XXX FIXME */
+			    ((U_CONSZ)p->n_dcon) : p->n_dcon;
+			p->n_sp = NULL;
+		} else {
+			p->n_dcon = t == FLOAT ? (float)p->n_dcon :
+			    t == DOUBLE ? (double)p->n_dcon : p->n_dcon;
+		}
+	}
+	p->n_type = t;
+//fwalk(p, eprint, 0);
+	return 1;
 }
 
 /*
@@ -1225,10 +1301,10 @@ convert(NODE *p, int f)
 		df++;
 		ty = DECREF(ty);
 	}
-	rv = clocal(block(PMCONV, rv, r, INT, 0, 0));
+	rv = clocal(MBLOCK(rv, r, INT, 0, 0));
 	rv = optim(rv);
 
-	r = block(PMCONV, q, rv, INT, 0, 0);
+	r = MBLOCK(q, rv, INT, 0, 0);
 	r = clocal(r);
 	/*
 	 * Indexing is only allowed with integer arguments, so insert
@@ -1236,7 +1312,7 @@ convert(NODE *p, int f)
 	 * XXX - complain?
 	 */
 	if (r->n_type != INTPTR)
-		r = clocal(block(SCONV, r, NIL, INTPTR, 0, 0));
+		r = clocal(makety(r, INTPTR, 0, 0, 0));
 	if (f == CVTL)
 		p->n_left = r;
 	else
@@ -1283,8 +1359,7 @@ oconvert(p) register NODE *p; {
 	case MINUS:
 		p->n_type = INTPTR;
 		p->n_ap = NULL;
-		return(  clocal( block( PVCONV,
-			p, bpsize(p->n_left), INT, 0, 0)));
+		return(clocal(VBLOCK(p, bpsize(p->n_left), INT, 0, 0)));
 		}
 
 	cerror( "illegal oconvert: %d", p->n_op );
@@ -1507,18 +1582,6 @@ tymatch(NODE *p)
 #endif
 
 	return(p);
-	}
-
-/*
- * Create a float const node of zero.
- */
-static NODE *
-fzero(TWORD t)
-{
-	NODE *p = block(FCON, NIL, NIL, t, 0, 0);
-
-	p->n_dcon = FLOAT_CAST(0, INT);
-	return p;
 }
 
 /*
@@ -1535,76 +1598,13 @@ makety(NODE *p, TWORD t, TWORD q, union dimfun *d, struct attr *ap)
 		return(p);
 	}
 
-	if (p->n_op == FCON && (t >= FLOAT && t <= LDOUBLE)) {
-		if (t == FLOAT)
-			p->n_dcon = (float)p->n_dcon;
-		else if (t == DOUBLE)
-			p->n_dcon = (double)p->n_dcon;
-		else
-			p->n_dcon = (long double)p->n_dcon;
-		p->n_type = t;
-		return p;
-	}
+	if (ISITY(t) || ISCTY(t) || ISITY(p->n_type) || ISCTY(p->n_type))
+		cerror("makety");
 
-	if (p->n_op == FCON) {
-		int isf = ISFTY(t);
-		NODE *r;
-
-		if (isf||ISITY(t)) {
-			if (isf == ISFTY(p->n_type)) {
-				p->n_type = t;
-				p->n_qual = q;
-				p->n_df = d;
-				p->n_ap = ap;
-				return(p);
-			} else if (isf == ISITY(p->n_type)) {
-				/* will be zero */
-				nfree(p);
-				return fzero(t);
-			} else if (ISCTY(p->n_type))
-				cerror("complex constant");
-		} else if (ISCTY(t)) {
-			if (ISITY(p->n_type)) {
-				/* convert to correct subtype */
-				r = fzero(t - (COMPLEX-DOUBLE));
-				p->n_type = t + (IMAG-COMPLEX);
-				p->n_qual = q;
-				p->n_df = d;
-				p->n_ap = NULL;
-				return block(CM, r, p, t, 0, 0);
-			} else if (ISFTY(p->n_type)) {
-				/* convert to correct subtype */
-				r = fzero(t + (IMAG-COMPLEX));
-				p->n_type = t - (COMPLEX-DOUBLE);
-				p->n_qual = q;
-				p->n_df = d;
-				p->n_ap = NULL;
-				return block(CM, p, r, t, 0, 0);
-			} else if (ISCTY(p->n_type))
-				cerror("complex constant2");
-		}
-	}
-
-	if (t & TMASK) {
-		/* non-simple type */
-		p = block(PCONV, p, NIL, t, d, ap);
-		p->n_qual = q;
+	if (concast(p, t))
 		return clocal(p);
-	}
 
-	if (p->n_op == ICON) {
-		if (ISFTY(t)) {
-			p->n_op = FCON;
-			p->n_dcon = FLOAT_CAST(p->n_lval, p->n_type);
-			p->n_type = t;
-			p->n_qual = q;
-			p->n_ap = NULL;
-			return (clocal(p));
-		} else if (ISCTY(t) || ISITY(t))
-			cerror("complex constant3");
-	}
-
-	p = block(SCONV, p, NIL, t, d, ap);
+	p = block(t & TMASK ? PCONV : SCONV, p, NIL, t, d, ap);
 	p->n_qual = q;
 	return clocal(p);
 
@@ -2407,6 +2407,143 @@ delasgop(NODE *p)
 	return p;
 }
 
+#ifndef FIELDOPS
+/*
+ * Rewrite bitfield operations to shifts.
+ */
+static NODE *
+rmfldops(NODE *p)
+{
+	CONSZ msk;
+	TWORD t;
+	NODE *q, *r, *t1, *t2, *bt, *t3, *t4;
+	int fsz, foff, tsz;
+
+	if (p->n_op == FLD) {
+		/* Rewrite a field read operation */
+		q = p->n_left;
+		fsz = UPKFSZ(p->n_rval);
+		foff = UPKFOFF(p->n_rval);
+		tsz = tsize(q->n_type, 0, 0);
+#if TARGET_ENDIAN == TARGET_BE
+		foff = tsz - fsz - foff;
+#endif
+		q = clocal(block(LS, q, bcon(tsz-fsz-foff), p->n_type, 0, 0));
+		q = clocal(block(RS, q, bcon(tsz-fsz), p->n_type, 0, 0));
+		if (q->n_type != p->n_type)
+			q = cast(q, p->n_type, p->n_qual);
+		nfree(p);
+		p = q;
+	} else if (((cdope(p->n_op)&ASGOPFLG) || p->n_op == ASSIGN ||
+	    p->n_op == INCR || p->n_op == DECR) && p->n_left->n_op == FLD) {
+		/*
+		 * Rewrite a field write operation
+		 * More difficult than a read op since we must care
+		 * about side effects.
+		 */
+		q = p->n_left;
+		fsz = UPKFSZ(q->n_rval);
+		foff = UPKFOFF(q->n_rval);
+		t = q->n_left->n_type;
+		tsz = tsize(t, 0, 0);
+#if TARGET_ENDIAN == TARGET_BE
+		foff = tsz - fsz - foff;
+#endif
+		msk = (((1LL << (fsz-1))-1) << 1) | 1;
+		bt = NULL;
+		if (p->n_right->n_op != ICON && p->n_right->n_op != NAME) {
+			t2 = tempnode(0, p->n_right->n_type, 0, 0);
+			bt = buildtree(ASSIGN, ccopy(t2), p->n_right);
+		} else
+			t2 = p->n_right;
+
+		if (q->n_left->n_op == UMUL) {
+			/* LHS of assignment may have side effects */
+			q = q->n_left;
+			t1 = tempnode(0, q->n_left->n_type, 0, 0);
+			r = buildtree(ASSIGN, ccopy(t1), q->n_left);
+			
+			bt = bt ? block(COMOP, bt, r, INT, 0, 0) : r;
+			q->n_left = t1;
+		}
+		t1 = p->n_left->n_left;
+
+		if (p->n_op == ASSIGN) {
+			q = clocal(block(AND, ccopy(t1),
+			    xbcon(~(msk << foff), 0, t), t, 0,0));
+
+			r = clocal(block(AND, ccopy(t2),
+			    xbcon(msk, 0, t), t, 0, 0));
+			r = clocal(block(LS, r, bcon(foff), t, 0, 0));
+			q = clocal(block(OR, q, r, t, 0, 0));
+			q = block(ASSIGN, t1, q, t, 0, 0);
+			if (bt)
+				q = block(COMOP, bt, q, t, 0, 0);
+			nfree(p->n_left);
+			p->n_left = q;
+			p->n_right = t2;
+			p->n_op = COMOP;
+		} else if ((cdope(p->n_op)&ASGOPFLG)) {
+			/* And here is the asgop-specific code */
+			t3 = tempnode(0, t, 0, 0);
+			q = buildtree(ASSIGN, ccopy(t3), ccopy(t1));
+			if (bt)
+				bt = block(COMOP, bt, q, t, 0, 0);
+			else
+				bt = q;
+
+			q = clocal(block(LS, t3, bcon(tsz-fsz-foff), t, 0, 0));
+			q = clocal(block(RS, q, bcon(tsz-fsz), t, 0, 0));
+			nfree(p->n_left);
+			p->n_right = t2;
+			p->n_left = q;
+			p->n_op = UNASG p->n_op;
+
+			p = clocal(p);
+			q = clocal(block(AND, ccopy(t1),
+			    xbcon(~(msk << foff), 0, t), t, 0,0));
+			r = clocal(block(AND, p, xbcon(msk, 0, t), t, 0, 0));
+			r = clocal(block(LS, r, bcon(foff), t, 0, 0));
+			q = clocal(block(OR, q, r, t, 0, 0));
+			q = block(ASSIGN, ccopy(t1), q, t, 0, 0);
+			q = block(COMOP, bt, q, t, 0, 0);
+			p = buildtree(COMOP, q, t1);
+		} else {
+			t3 = tempnode(0, t, 0, 0);
+			q = buildtree(ASSIGN, ccopy(t3), ccopy(t1));
+			if (bt)
+				bt = block(COMOP, bt, q, t, 0, 0);
+			else
+				bt = q;
+
+			q = clocal(block(LS, t3, bcon(tsz-fsz-foff), t, 0, 0));
+			q = clocal(block(RS, q, bcon(tsz-fsz), t, 0, 0));
+			t4 = tempnode(0, t, 0, 0);
+			q = buildtree(ASSIGN, ccopy(t4), q);
+
+			nfree(p->n_left);
+			p->n_right = t2;
+			p->n_left = q;
+			p->n_op = p->n_op == INCR ? PLUS : MINUS;
+
+			q = clocal(block(AND, ccopy(t1),
+			    xbcon(~(msk << foff), 0, t), t, 0,0));
+			r = clocal(block(AND, p, xbcon(msk, 0, t), t, 0, 0));
+			r = clocal(block(LS, r, bcon(foff), t, 0, 0));
+			q = clocal(block(OR, q, r, t, 0, 0));
+			q = block(ASSIGN, t1, q, t, 0, 0);
+			q = block(COMOP, bt, q, t, 0, 0);
+			p = buildtree(COMOP, q, t4);
+		}
+	}
+	if (coptype(p->n_op) != LTYPE)
+		p->n_left = rmfldops(p->n_left);
+	if (coptype(p->n_op) == BITYPE)
+		p->n_right = rmfldops(p->n_right);
+	return p;
+}
+#endif
+
 int edebug = 0;
 void
 ecomp(NODE *p)
@@ -2421,6 +2558,9 @@ ecomp(NODE *p)
 		reached = 1;
 	}
 	p = optim(p);
+#ifndef FIELDOPS
+	p = rmfldops(p);
+#endif
 	comops(p);
 	rmcops(p);
 	p = delasgop(p);

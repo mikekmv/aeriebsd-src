@@ -130,7 +130,8 @@ char	*tmp4;
 char	*outfile, *ermfile;
 static void add_prefix(const char *);
 static char *find_file(const char *, int);
-char *copy(char *, int);
+char *copy(const char *, int);
+char *cat(const char *, const char *);
 char *setsuf(char *, char);
 int getsuf(char *);
 int main(int, char *[]);
@@ -755,8 +756,7 @@ main(int argc, char *argv[])
 	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)	/* terminate */
 		signal(SIGTERM, idexit);
 #ifdef MULTITARGET
-	pass0 = copy(LIBEXECDIR "/ccom_", k = strlen(mach));
-	strlcat(pass0, mach, sizeof(LIBEXECDIR "/ccom_") + k);
+	pass0 = cat(LIBEXECDIR "/ccom_", mach);
 #endif
 	pvt = pv;
 	for (i=0; i<nc; i++) {
@@ -857,9 +857,9 @@ main(int argc, char *argv[])
 		for(pv=ptemp; pv <pvt; pv++)
 			av[na++] = *pv;
 		if (!nostdinc) {
-			av[na++] = "-S", av[na++] = altincdir;
-			av[na++] = "-S", av[na++] = incdir;
-			av[na++] = "-S", av[na++] = pccincdir;
+			av[na++] = "-S", av[na++] = cat(sysroot, altincdir);
+			av[na++] = "-S", av[na++] = cat(sysroot, incdir);
+			av[na++] = "-S", av[na++] = cat(sysroot, pccincdir);
 		}
 		if (idirafter) {
 			av[na++] = "-I";
@@ -1053,6 +1053,8 @@ nocom:
 #if !defined(os_sunos) && !defined(os_win32) && !defined(os_darwin)
 		av[j++] = "-X";
 #endif
+		if (sysroot)
+			av[j++] = cat("--sysroot=", sysroot);
 		if (shared) {
 #ifdef os_darwin
 			av[j++] = "-dylib";
@@ -1091,10 +1093,7 @@ nocom:
 		}
 		if (outfile) {
 #ifdef MSLINKER
-#define	OUTSTR	"/OUT:"
-			char *s = copy(OUTSTR, i = strlen(outfile));
-			strlcat(s, outfile, sizeof(OUTSTR) + i);
-			av[j++] = s;
+			av[j++] = cat("/OUT:", outfile);
 #else
 			av[j++] = "-o";
 			av[j++] = outfile;
@@ -1163,13 +1162,9 @@ nocom:
 #else
 #define	LFLAG	"-L"
 #endif
-			char *s = copy(LFLAG, i = strlen(pcclibdir));
-			strlcat(s, pcclibdir, sizeof(LFLAG) + i);
-			av[j++] = s;
+			av[j++] = cat(LFLAG, pcclibdir); 
 #ifdef os_win32
-			s = copy(LFLAG, i = strlen(libdir));
-			strlcat(s, libdir, sizeof(LFLAG) + i);
-			av[j++] = s;
+			av[j++] = cat(LFLAG, libdir);
 #endif
 			if (pgflag) {
 				for (i = 0; libclibs_profile[i]; i++)
@@ -1287,14 +1282,9 @@ add_prefix(const char *prefix)
 {
 	file_prefixes = realloc(file_prefixes,
 	    sizeof(*file_prefixes) * (file_prefixes_cnt + 1));
-	if (file_prefixes == NULL) {
-		error("malloc failed");
-		exit(1);
-	}
-	if ((file_prefixes[file_prefixes_cnt++] = strdup(prefix)) == NULL) {
-		error("malloc failed");
-		exit(1);
-	}
+	if (file_prefixes == NULL)
+		errorx(1, "malloc failed");
+	file_prefixes[file_prefixes_cnt++] = copy(prefix, 0);
 }
 
 static char *
@@ -1307,14 +1297,14 @@ find_file(const char *base, int mode)
 
 	for (i = 0; i < file_prefixes_cnt; ++i) {
 		prefix_len = strlen(file_prefixes[i]);
-		len = prefix_len + + baselen + 2;
+		len = prefix_len + baselen + 2;
 		if (file_prefixes[i][0] == '=') {
 			len += sysrootlen;
-			path = malloc(len);
+			path = ccmalloc(len);
 			snprintf(path, len, "%s%s/%s", sysroot,
 			    file_prefixes[i] + 1, base);
 		} else {
-			path = malloc(len);
+			path = ccmalloc(len);
 			snprintf(path, len, "%s/%s", file_prefixes[i], base);
 		}
 		if (access(path, mode) == 0)
@@ -1322,12 +1312,7 @@ find_file(const char *base, int mode)
 		free(path);
 	}
 
-	path = strdup(base);
-	if (path == NULL) {
-		error("malloc failed");
-		exit(1);
-	}
-	return path;
+	return copy(base, 0);
 }
 
 int
@@ -1451,13 +1436,28 @@ callsys(char *f, char *v[])
  * Make a copy of string as, mallocing extra bytes in the string.
  */
 char *
-copy(char *s, int extra)
+copy(const char *s, int extra)
 {
 	int len = strlen(s)+1;
 	char *rv;
 
 	rv = ccmalloc(len+extra);
 	strlcpy(rv, s, len);
+	return rv;
+}
+
+/*
+ * Catenate two (optional) strings together
+ */
+char *
+cat(const char *a, const char *b)
+{
+	size_t len;
+	char *rv;
+
+	len = (a ? strlen(a) : 0) + (b ? strlen(b) : 0) + 1;
+	rv = ccmalloc(len);
+	snprintf(rv, len, "%s%s", (a ? a : ""), (b ? b : ""));
 	return rv;
 }
 

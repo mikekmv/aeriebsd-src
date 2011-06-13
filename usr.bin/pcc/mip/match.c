@@ -70,7 +70,9 @@ int s2debug;
 
 extern char *ltyp[], *rtyp[];
 
+#ifdef PCC_DEBUG
 static char *srtyp[] = { "SRNOPE", "SRDIR", "SROREG", "SRREG" };
+#endif
 
 /*
  * return true if shape is appropriate for the node p
@@ -252,7 +254,7 @@ ttype(TWORD t, int tword)
 }
 
 #define FLDSZ(x)	UPKFSZ(x)
-#ifdef RTOLBYTES
+#if TARGET_ENDIAN == TARGET_LE
 #define	FLDSHF(x)	UPKFOFF(x)
 #else
 #define	FLDSHF(x)	(SZINT - FLDSZ(x) - UPKFOFF(x))

@@ -1,20 +1,17 @@
-#
-# Makefile for the ccom part of pcc.
-#
 
-PROG=   	ccom_${TARGMACH}
-MAN=		ccom.1
-BINDIR=		/usr/libexec
+PROG=	ccom_${TARGMACH}
+MAN=	ccom.1
+BINDIR=	/usr/libexec
 
-TARGOS=		aeriebsd
-CLEANFILES=	cgram.h external.h external.c mkext
+TARGOS=	aeriebsd
+CLEANFILES=cgram.h external.h external.c mkext
 
-CFLAGS+=	-DPCC_DEBUG -DGCC_COMPAT -DTARGOS=${TARGOS} -Dos_${TARGOS}
-CFLAGS+=	-g -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
-CPPFLAGS+=	-I. -I${.CURDIR}/.. -I${.CURDIR} -I${.CURDIR}/../../mip
-CPPFLAGS+=	-I${.CURDIR}/../../${TARGMACH}
-CPPFLAGS+=	-I${.CURDIR}/../..
-#LFLAGS+=	-CFe
+CFLAGS+=-DPCC_DEBUG -DGCC_COMPAT -DTARGOS=${TARGOS} -Dos_${TARGOS}
+CFLAGS+=-g -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
+CPPFLAGS+=-I. -I${.CURDIR}/.. -I${.CURDIR} -I${.CURDIR}/../../mip
+CPPFLAGS+=-I${.CURDIR}/../../${TARGMACH}
+CPPFLAGS+=-I${.CURDIR}/../..
+#LFLAGS+=-CFe
 
 .PATH:	${.CURDIR}/../../${TARGMACH}
 .PATH:	${.CURDIR}/../../mip

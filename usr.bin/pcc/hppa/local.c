@@ -11,8 +11,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -335,12 +333,6 @@ clocal(NODE *p)
 		p->n_left->n_type = INT;
 		break;
 
-	case PMCONV:
-	case PVCONV:
-                if( p->n_right->n_op != ICON ) cerror( "bad conversion", 0);
-                nfree(p);
-                return(buildtree(o==PMCONV?MUL:DIV, p->n_left, p->n_right));
-
 	case LS:
 	case RS:
 		/* shift count must be in an int */
@@ -591,46 +583,12 @@ andable(NODE *p)
 }
 
 /*
- * at the end of the arguments of a ftn, set the automatic offset
- */
-void
-cendarg()
-{
-	/* TODO can use to generate sp/rp tree ops? */
-	autooff = AUTOINIT;
-}
-
-/*
  * Return 1 if a variable of type "t" is OK to put in register.
  */
 int
 cisreg(TWORD t)
 {
 	return 1;
-}
-
-/*
- * return a node, for structure references, which is suitable for
- * being added to a pointer of type t, in order to be off bits offset
- * into a structure
- * t, d, and s are the type, dimension offset, and sizeoffset
- * For pdp10, return the type-specific index number which calculation
- * is based on its size. For example, short a[3] would return 3.
- * Be careful about only handling first-level pointers, the following
- * indirections must be fullword.
- */
-NODE *
-offcon(OFFSZ off, TWORD t, union dimfun *d, struct suedef *sue)
-{
-	register NODE *p;
-
-	if (xdebug)
-		printf("offcon: OFFSZ %lld type %x dim %p siz %d\n",
-		    off, t, d, sue->suesize);
-
-	p = bcon(0);
-	p->n_lval = off/SZCHAR;	/* Default */
-	return(p);
 }
 
 /*
@@ -660,115 +618,6 @@ spalloc(NODE *t, NODE *p, OFFSZ off)
 
 }
 
-#if 0
-/*
- * Print out an integer constant of size size.
- * can only be sizes <= SZINT.
- */
-void
-indata(CONSZ val, int size)
-{
-	switch (size) {
-	case SZCHAR:
-		printf("\t.byte %d\n", (int)val & 0xff);
-		break;
-	case SZSHORT:
-		printf("\t.word %d\n", (int)val & 0xffff);
-		break;
-	case SZINT:
-		printf("\t.long %d\n", (int)val & 0xffffffff);
-		break;
-	default:
-		cerror("indata");
-	}
-}
-#endif
-
-/*
- * Print out a string of characters.
- * Assume that the assembler understands C-style escape
- * sequences.  Location is already set.
- */
-void
-instring(struct symtab *sp)
-{
-	char *s, *str;
-
-	defloc(sp);
-	str = sp->sname;
-
-	/* be kind to assemblers and avoid long strings */
-	printf("\t.ascii\t\"");
-	for (s = str; *s != 0; ) {
-		if (*s++ == '\\') {
-			(void)esccon(&s);
-		}
-		if (s - str > 64) {
-			fwrite(str, 1, s - str, stdout);
-			printf("\"\n\t.ascii\t\"");
-			str = s;
-		}
-	}
-	fwrite(str, 1, s - str, stdout);
-	printf("\\0\"\n");
-}
-
-static int inbits, inval;
-
-/*
- * set fsz bits in sequence to zero.
- */
-void
-zbits(OFFSZ off, int fsz)
-{
-	int m;
-
-	if (idebug)
-		printf("zbits off %lld, fsz %d inbits %d\n", off, fsz, inbits);
-	if ((m = (inbits % SZCHAR))) {
-		m = SZCHAR - m;
-		if (fsz < m) {
-			inbits += fsz;
-			return;
-		} else {
-			fsz -= m;
-			printf("\t.byte %d\n", inval);
-			inval = inbits = 0;
-		}
-	}
-	if (fsz >= SZCHAR) {
-		printf("\t.zero %d\n", fsz/SZCHAR);
-		fsz -= (fsz/SZCHAR) * SZCHAR;
-	}
-	if (fsz) {
-		inval = 0;
-		inbits = fsz;
-	}
-}
-
-/*
- * Initialize a bitfield.
- */
-void
-infld(CONSZ off, int fsz, CONSZ val)
-{
-	if (idebug)
-		printf("infld off %lld, fsz %d, val %lld inbits %d\n",
-		    off, fsz, val, inbits);
-	val &= (1 << fsz)-1;
-	while (fsz + inbits >= SZCHAR) {
-		inval |= (val << inbits);
-		printf("\t.byte %d\n", inval & 255);
-		fsz -= (SZCHAR - inbits);
-		val >>= (SZCHAR - inbits);
-		inval = inbits = 0;
-	}
-	if (fsz) {
-		inval |= (val << inbits);
-		inbits += fsz;
-	}
-}
-
 /*
  * print out a constant node, may be associated with a label.
  * Do not free the node after use.
@@ -777,7 +626,7 @@ infld(CONSZ off, int fsz, CONSZ val)
  *
  * XXX this relies on the host fp numbers representation
  */
-void
+int
 ninval(CONSZ off, int fsz, NODE *p)
 {
 	union { float f; double d; long double l; int i[3]; } u;
@@ -787,10 +636,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 
 	t = p->n_type;
 	if (t > BTMASK)
-		t = INT; /* pointer */
-
-	if (p->n_op != ICON && p->n_op != FCON)
-		cerror("ninval: init node not constant");
+		p->n_type = t = INT; /* pointer */
 
 	if (p->n_op == ICON && p->n_sp != NULL && DEUNSIGN(t) != INT)
 		uerror("element not constant");
@@ -817,19 +663,6 @@ ninval(CONSZ off, int fsz, NODE *p)
 		}
 		printf("\n");
 		break;
-	case SHORT:
-	case USHORT:
-		printf("\t.short 0x%x\n", (int)p->n_lval & 0xffff);
-		break;
-	case BOOL:
-		if (p->n_lval > 1)
-			p->n_lval = p->n_lval != 0;
-		/* FALLTHROUGH */
-	case CHAR:
-	case UCHAR:
-		/* TODO make the upper layer give an .asciz */
-		printf("\t.byte %d\n", (int)p->n_lval & 0xff);
-		break;
 	case LDOUBLE:
 	case DOUBLE:
 		u.d = (double)p->n_dcon;
@@ -840,8 +673,9 @@ ninval(CONSZ off, int fsz, NODE *p)
 		printf("\t.long\t0x%x\n", u.i[0]);
 		break;
 	default:
-		cerror("ninval");
+		return 0;
 	}
+	return 1;
 }
 
 /* make a name look like an external name in the local machine */

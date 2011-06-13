@@ -320,15 +320,6 @@ bfcode(struct symtab **sp, int cnt)
 }
 
 
-/*
- * by now, the automatics and register variables are allocated
- */
-void
-bccode()
-{
-	SETOFF(autooff, SZINT);
-}
-
 #if defined(MACHOABI)
 struct stub stublist;
 struct stub nlplist;
@@ -364,15 +355,16 @@ ejobcode(int flag )
 	}
 #endif
 
-#define _MKSTR(x) #x
-#define MKSTR(x) _MKSTR(x)
-#define OS MKSTR(TARGOS)
-        printf("\t.ident \"PCC: %s (%s)\"\n", PACKAGE_STRING, OS);
+	printf("\t.ident \"PCC: %s\"\n", VERSSTR);
 }
 
 void
 bjobcode()
 {
+#ifdef os_sunos
+	astypnames[SHORT] = astypnames[USHORT] = "\t.2byte";
+#endif
+	astypnames[INT] = astypnames[UNSIGNED] = "\t.long";
 #if defined(MACHOABI)
 	DLIST_INIT(&stublist, link);
 	DLIST_INIT(&nlplist, link);

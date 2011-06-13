@@ -189,6 +189,9 @@ extern	int brklab;
 extern	int contlab;
 extern	int flostat;
 extern	int retlab;
+extern	int doing_init, statinit;
+extern	short sztable[];
+extern	char *astypnames[];
 
 /* pragma globals */
 extern int pragma_allpacked, pragma_packed, pragma_aligned;
@@ -215,7 +218,9 @@ extern	NODE
 	*strend(int gtype, char *),
 	*tymerge(NODE *, NODE *),
 	*stref(NODE *),
+#ifdef WORD_ADDRESSED
 	*offcon(OFFSZ, TWORD, union dimfun *, struct attr *),
+#endif
 	*bcon(int),
 	*xbcon(CONSZ, struct symtab *, TWORD),
 	*bpsize(NODE *),
@@ -277,7 +282,8 @@ void extdec(struct symtab *);
 void defzero(struct symtab *);
 int falloc(struct symtab *, int, NODE *);
 TWORD ctype(TWORD);  
-void ninval(CONSZ, int, NODE *);
+void inval(CONSZ, int, NODE *);
+int ninval(CONSZ, int, NODE *);
 void infld(CONSZ, int, CONSZ);
 void zbits(CONSZ, int);
 void instring(struct symtab *);
@@ -342,14 +348,12 @@ int ispow2(CONSZ);
 void defid(NODE *q, int class);
 void efcode(void);
 void ecomp(NODE *p);
-void cendarg(void);
 int upoff(int size, int alignment, int *poff);
 void nidcl(NODE *p, int class);
 void eprint(NODE *, int, int *, int *);
 int uclass(int class);
 int notlval(NODE *);
 void ecode(NODE *p);
-void bccode(void);
 void ftnend(void);
 void dclargs(void);
 int suemeq(struct attr *s1, struct attr *s2);
@@ -358,7 +362,7 @@ int yylex(void);
 void yyerror(char *);
 int pragmas_gcc(char *t);
 NODE *cstknode(TWORD t, union dimfun *df, struct attr *ap);
-
+int concast(NODE *p, TWORD t);
 NODE *builtin_check(NODE *f, NODE *a);
 
 #ifdef SOFTFLOAT
@@ -537,6 +541,9 @@ void stabs_struct(struct symtab *, struct attr *);
 #else
 #error int size unknown
 #endif
+
+/* Generate a bitmask from a given type size */
+#define SZMASK(y) ((((1LL << ((y)-1))-1) << 1) | 1)
 
 /*
  * C compiler first pass extra defines.

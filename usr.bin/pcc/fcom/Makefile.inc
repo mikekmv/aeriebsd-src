@@ -1,21 +1,19 @@
-#
-# Makefile for the fcom part of pcc.
-#
 
-PROG=   	fcom_${TARGMACH}
-MAN=		fcom.1
-BINDIR=		/usr/libexec
+PROG=	fcom_${TARGMACH}
+#MAN=	fcom.1
+NOMAN=
+BINDIR=	/usr/libexec
 
-TARGOS=		aeriebsd
-CLEANFILES=	gram.c gram.h external.h external.c mkext tokdefs
+TARGOS=	aeriebsd
+CLEANFILES=gram.c gram.h external.h external.c mkext tokdefs
 
-CFLAGS+=	-g -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
-CPPFLAGS+=	-DPCC_DEBUG -DGCC_COMPAT -DTARGOS=${TARGOS} -Dos_${TARGOS}
-CPPFLAGS+=	-DFCOM -DLANG_F77
-CPPFLAGS+=	-I. -I${.CURDIR}/.. -I${.CURDIR} -I${.CURDIR}/../../mip
-CPPFLAGS+=	-I${.CURDIR}/../../${TARGMACH}
-CPPFLAGS+=	-I${.CURDIR}/../..
-#LFLAGS+=	-CFe
+CFLAGS+=-g -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
+CPPFLAGS+=-DPCC_DEBUG -DGCC_COMPAT -DTARGOS=${TARGOS} -Dos_${TARGOS}
+CPPFLAGS+=-DFCOM -DLANG_F77
+CPPFLAGS+=-I. -I${.CURDIR}/.. -I${.CURDIR} -I${.CURDIR}/../../mip
+CPPFLAGS+=-I${.CURDIR}/../../${TARGMACH}
+CPPFLAGS+=-I${.CURDIR}/../..
+#LFLAGS+=-CFe
 
 .PATH:	${.CURDIR}/../../${TARGMACH}
 .PATH:	${.CURDIR}/../../mip

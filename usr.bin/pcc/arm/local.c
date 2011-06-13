@@ -11,8 +11,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -159,11 +157,6 @@ clocal(NODE *p)
                 p->n_left->n_rval = p->n_left->n_type == BOOL ? 
                     RETREG(BOOL_TYPE) : RETREG(p->n_type);
                 break;
-
-	case PMCONV:
-	case PVCONV:
-		nfree(p);
-		return buildtree(o == PMCONV ? MUL : DIV, p->n_left, p->n_right);
 
 	case SCONV:
 		l = p->n_left;
@@ -331,17 +324,6 @@ andable(NODE *p)
 }
 
 /*
- * Called just after function arguments are built.  Re-initialize the
- * offset of the arguments on the stack.
- * Is this necessary anymore?  bfcode() is called immediately after.
- */
-void
-cendarg()
-{
-	autooff = AUTOINIT;
-}
-
-/*
  * Return 1 if a variable of type 't' is OK to put in register.
  */
 int
@@ -350,17 +332,6 @@ cisreg(TWORD t)
 	if (t == FLOAT || t == DOUBLE || t == LDOUBLE)
 		return 0; /* not yet */
 	return 1;
-}
-
-/*
- * Used for generating pointer offsets into structures and arrays.
- *
- * For a pointer of type 't', generate an the offset 'off'.
- */
-NODE *
-offcon(OFFSZ off, TWORD t, union dimfun *d, struct suedef *sue)
-{
-	return bcon(off/SZCHAR);
 }
 
 /*
@@ -392,97 +363,12 @@ spalloc(NODE *t, NODE *p, OFFSZ off)
 }
 
 /*
- * Print out a string of characters.
- * Assume that the assembler understands C-style escape
- * sequences.
- */
-void
-instring(struct symtab *sp)
-{
-	char *s, *str;
-
-	defloc(sp);
-	str = sp->sname;
-
-	/* be kind to assemblers and avoid long strings */
-	printf("\t.ascii \"");
-	for (s = str; *s != 0; ) {
-		if (*s++ == '\\') {
-			(void)esccon(&s);
-		}
-		if (s - str > 60) {
-			fwrite(str, 1, s - str, stdout);
-			printf("\"\n\t.ascii \"");
-			str = s;
-		}
-	}
-	fwrite(str, 1, s - str, stdout);
-	printf("\\0\"\n");
-}
-
-static int inbits = 0, inval = 0;
-
-/*
- * set 'fsz' bits in sequence to zero.
- */
-void
-zbits(OFFSZ off, int fsz)
-{
-	int m;
-
-	if (idebug)
-		printf("zbits off %lld, fsz %d inbits %d\n", off, fsz, inbits);
-	if ((m = (inbits % SZCHAR))) {
-		m = SZCHAR - m;
-		if (fsz < m) {
-			inbits += fsz;
-			return;
-		} else {
-			fsz -= m;
-			printf("\t.byte %d\n", inval);
-			inval = inbits = 0;
-		}
-	}
-	if (fsz >= SZCHAR) {
-		printf("\t.space %d\n", fsz/SZCHAR);
-		fsz -= (fsz/SZCHAR) * SZCHAR;
-	}
-	if (fsz) {
-		inval = 0;
-		inbits = fsz;
-	}
-}
-
-/*
- * Initialize a bitfield.
- */
-void
-infld(CONSZ off, int fsz, CONSZ val)
-{
-	if (idebug)
-		printf("infld off %lld, fsz %d, val %lld inbits %d\n",
-		    off, fsz, val, inbits);
-	val &= (1 << fsz)-1;
-	while (fsz + inbits >= SZCHAR) {
-		inval |= (val << inbits);
-		printf("\t.byte %d\n", inval & 255);
-		fsz -= (SZCHAR - inbits);
-		val >>= (SZCHAR - inbits);
-		inval = inbits = 0;
-	}
-	if (fsz) {
-		inval |= (val << inbits);
-		inbits += fsz;
-	}
-}
-
-/*
  * Print an integer constant node, may be associated with a label.
  * Do not free the node after use.
  * 'off' is bit offset from the beginning of the aggregate
  * 'fsz' is the number of bits this is referring to
  */
-void
+int
 ninval(CONSZ off, int fsz, NODE *p)
 {
 	union { float f; double d; int i[2]; } u;
@@ -492,20 +378,7 @@ ninval(CONSZ off, int fsz, NODE *p)
 
 	t = p->n_type;
 	if (t > BTMASK)
-		t = INT; /* pointer */
-
-	/*
-	 * The target-independent code does rewrite the NAME nodes
-	 * to ICONS after we prefixed the NAME nodes with ADDROF.
-	 * We do it here.  Maybe this is too much of a hack!
-	 */
-	if (p->n_op == ADDROF && p->n_left->n_op == NAME) {
-		p = p->n_left;
-		p->n_op = ICON;
-	}
-
-	if (p->n_op != ICON && p->n_op != FCON)
-		cerror("ninval: init node not constant: node %p", p);
+		t = p->n_type = INT; /* pointer */
 
 	if (p->n_op == ICON && p->n_sp != NULL && DEUNSIGN(t) != INT)
 		uerror("element not constant");
@@ -540,18 +413,6 @@ ninval(CONSZ off, int fsz, NODE *p)
 		}
 		printf("\n");
 		break;
-	case SHORT:
-	case USHORT:
-		printf("\t.short 0x%x\n", (int)p->n_lval & 0xffff);
-		break;
-	case BOOL:
-		if (p->n_lval > 1)
-			p->n_lval = p->n_lval != 0;
-		/* FALLTHROUGH */
-	case CHAR:
-	case UCHAR:
-		printf("\t.byte %d\n", (int)p->n_lval & 0xff);
-		break;
 	case LDOUBLE:
 	case DOUBLE:
 		u.d = (double)p->n_dcon;
@@ -571,8 +432,9 @@ ninval(CONSZ off, int fsz, NODE *p)
 		printf("\t.word\t0x%x\n", u.i[0]);
 		break;
 	default:
-		cerror("ninval");
+		return 0;
 	}
+	return 1;
 }
 
 /*
