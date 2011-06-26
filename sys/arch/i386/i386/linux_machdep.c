@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995 Frank van der Linden
  * All rights reserved.
@@ -83,6 +82,18 @@ int linux_read_ldt(struct proc *, struct linux_sys_modify_ldt_args *,
 int linux_write_ldt(struct proc *, struct linux_sys_modify_ldt_args *,
     register_t *);
 #endif
+
+struct linux_user_desc {
+	unsigned int	entry_number;
+	unsigned int	base_addr;
+	unsigned int	limit;
+	unsigned int	seg_32bit:1;
+	unsigned int	contents:2;
+	unsigned int	read_exec_only:1;
+	unsigned int	limit_in_pages:1;
+	unsigned int	seg_not_present:1;
+	unsigned int	useable:1;
+};
 
 /*
  * Deal with some i386-specific things in the Linux emulation code.
@@ -630,5 +641,26 @@ linux_sys_ioperm(struct proc *p, void *v, register_t *retval)
 	if (SCARG(uap, val))
 		fp->tf_eflags |= PSL_IOPL;
 	*retval = 0;
+	return 0;
+}
+
+/*
+ * set private thread pointer in %gs
+ */
+int
+linux_setprivate(struct proc *p, struct linux_user_desc *v)
+{
+	struct linux_user_desc desc;
+	struct trapframe *tf = p->p_md.md_regs;
+	struct pcb *pcb = &p->p_addr->u_pcb;
+	int error;
+
+	if ((error = copyin(v, &desc, sizeof desc)))
+		return error;
+
+	setsegment(&pcb->pcb_ldt[LUGS_SEL].sd, (void *)desc.base_addr,
+	    desc.limit, SDT_MEMERA, SEL_UPL, 1, 1);
+	tf->tf_gs = GSEL(LUGS_SEL, SEL_UPL);;
+			     
 	return 0;
 }

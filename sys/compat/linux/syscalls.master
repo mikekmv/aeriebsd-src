@@ -1,4 +1,4 @@
-;	$ABSD: syscalls.master,v 1.5 2010/01/19 18:44:40 mickey Exp $
+;	$ABSD: syscalls.master,v 1.6 2010/06/05 09:35:41 mickey Exp $
 
 ;	@(#)syscalls.master	8.1 (Berkeley) 7/19/93
 
@@ -381,7 +381,8 @@
 240	UNIMPL		linux_sys_futex
 241	UNIMPL		linux_sys_sched_setaffinity
 242	UNIMPL		linux_sys_sched_getaffinity
-243	UNIMPL		linux_sys_set_thread_area
+243	STD		{ int linux_sys_set_thread_area \
+			    (struct linux_user_desc *desc); }
 244	UNIMPL		linux_sys_get_thread_area
 245	UNIMPL		linux_sys_io_setup
 246	UNIMPL		linux_sys_io_destroy

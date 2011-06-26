@@ -230,6 +230,8 @@ void idt_vec_free(int);
 #define	LUCODE1_SEL	2	/* User code descriptor */
 #define	LUCODE_SEL	3	/* User code descriptor (a stack short) */
 #define	LUDATA_SEL	4	/* User data descriptor */
+#define	LUFS_SEL	5	/* User %fs descriptor */
+#define	LUGS_SEL	6	/* User %gs descriptor */
 #define	LBSDICALLS_SEL	16	/* BSDI system call gate */
 #define	NLDT		17
 

@@ -86,8 +86,8 @@ static void linux_to_bsd_mmap_args(struct sys_mmap_args *,
     const struct linux_sys_mmap2_args *);
 
 char linux_sysname[128] = "Linux";
-char linux_release[128] = "2.4.18";
-char linux_version[128] = "#0 Wed Feb 20 20:00:02 CET 2002";
+char linux_release[128] = "2.6.18";
+char linux_version[128] = "#0 Wed Mar 3 03:03:03 PST 2010";
 
 /*
  * The information on a terminated (or stopped) process needs

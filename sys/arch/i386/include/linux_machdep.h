@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995 Frank van der Linden
  * All rights reserved.
@@ -79,6 +78,9 @@ struct linux_sigframe {
 void linux_sendsig(sig_t, int, int, u_long, int, union sigval);
 dev_t linux_fakedev(dev_t);
 #endif
+
+struct linux_user_desc;
+int linux_setprivate(struct proc *, struct linux_user_desc *);
 
 /*
  * Major device numbers of VT device on both Linux and NetBSD. Used in
