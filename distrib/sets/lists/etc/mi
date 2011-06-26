@@ -124,7 +124,6 @@
 ./etc/sysctl.conf
 ./etc/syslog.conf
 ./etc/systrace/usr_sbin_lpd
-./etc/systrace/usr_sbin_named
 ./etc/ttys
 ./etc/weekly
 ./root/.cshrc
@@ -152,16 +151,6 @@
 ./var/log/xferlog
 ./var/mail/root
 ./var/msgs/bounds
-./var/named/etc/named-dual.conf
-./var/named/etc/named-simple.conf
-./var/named/etc/named.conf
-./var/named/etc/root.hint
-./var/named/master
-./var/named/slave
-./var/named/standard
-./var/named/standard/localhost
-./var/named/standard/loopback
-./var/named/standard/loopback6.arpa
 ./var/run/utmp
 ./var/www/cgi-bin/printenv
 ./var/www/cgi-bin/test-cgi
@@ -184,7 +173,6 @@
 ./var/www/htdocs/mod_ssl_sb.gif
 ./var/www/htdocs/openbsd_pb.gif
 ./var/www/htdocs/openbsdpower.gif
-./var/www/htdocs/openssl_ics.gif
 ./var/www/htdocs/smalltitle.gif
 ./var/www/icons/README
 ./var/www/icons/a.gif
