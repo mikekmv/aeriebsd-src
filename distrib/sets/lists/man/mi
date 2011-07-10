@@ -2502,7 +2502,6 @@
 ./var/www/htdocs/man/man1/zless.html
 ./var/www/htdocs/man/man1/zmore.html
 ./var/www/htdocs/man/man1/znew.html
-13014a14816,15057
 ./var/www/htdocs/man/man2/EV_SET.html
 ./var/www/htdocs/man/man2/S_ISBLK.html
 ./var/www/htdocs/man/man2/S_ISCHR.html
@@ -2745,7 +2744,6 @@
 ./var/www/htdocs/man/man2/zaurus
 ./var/www/htdocs/man/man2/zaurus/arm_drain_writebuf.html
 ./var/www/htdocs/man/man2/zaurus/arm_sync_icache.html
-13015a15059,18953
 ./var/www/htdocs/man/man3/ASN1_OBJECT_free.html
 ./var/www/htdocs/man/man3/ASN1_OBJECT_new.html
 ./var/www/htdocs/man/man3/ASN1_STRING_cmp.html
@@ -4083,7 +4081,6 @@
 ./var/www/htdocs/man/man3/confstr.html
 ./var/www/htdocs/man/man3/copysign.html
 ./var/www/htdocs/man/man3/copysignf.html
-./var/www/htdocs/man/man3/copysigl.html
 ./var/www/htdocs/man/man3/copywin.html
 ./var/www/htdocs/man/man3/cos.html
 ./var/www/htdocs/man/man3/cosf.html
@@ -6029,7 +6026,6 @@
 ./var/www/htdocs/man/man3/scalbf.html
 ./var/www/htdocs/man/man3/scalbn.html
 ./var/www/htdocs/man/man3/scalbnf.html
-./var/www/htdocs/man/man3/scalbl.html
 ./var/www/htdocs/man/man3/scale_form.html
 ./var/www/htdocs/man/man3/scale_menu.html
 ./var/www/htdocs/man/man3/scan_scaled.html
@@ -6640,7 +6636,6 @@
 ./var/www/htdocs/man/man3/zaurus
 ./var/www/htdocs/man/man3/zlibCompileFlags.html
 ./var/www/htdocs/man/man3/zlibVersion.html
-13016a18955,19809
 ./var/www/htdocs/man/man4/aac.html
 ./var/www/htdocs/man/man4/ablecom.html
 ./var/www/htdocs/man/man4/ac97.html
@@ -7496,7 +7491,6 @@
 ./var/www/htdocs/man/man4/zaurus/zts.html
 ./var/www/htdocs/man/man4/zero.html
 ./var/www/htdocs/man/man4/zyd.html
-13017a19811,19953
 ./var/www/htdocs/man/man5/.rhosts.html
 ./var/www/htdocs/man/man5/a.out.html
 ./var/www/htdocs/man/man5/acct.html
@@ -7640,7 +7634,6 @@
 ./var/www/htdocs/man/man5/ypserv.acl.html
 ./var/www/htdocs/man/man5/zaurus
 ./var/www/htdocs/man/man5/zaurus/boot.conf.html
-13018a19955,19992
 ./var/www/htdocs/man/man6/arithmetic.html
 ./var/www/htdocs/man/man6/backgammon.html
 ./var/www/htdocs/man/man6/banner.html
@@ -7679,7 +7672,6 @@
 ./var/www/htdocs/man/man6/worm.html
 ./var/www/htdocs/man/man6/worms.html
 ./var/www/htdocs/man/man6/wump.html
-13019a19994,20017
 ./var/www/htdocs/man/man7/ascii.html
 ./var/www/htdocs/man/man7/environ.html
 ./var/www/htdocs/man/man7/hier.html
@@ -7703,8 +7695,6 @@
 ./var/www/htdocs/man/man7/script.html
 ./var/www/htdocs/man/man7/securelevel.html
 ./var/www/htdocs/man/man7/symlink.html
-./var/www/htdocs/man/man7/term.html
-13020a20019,20482
 ./var/www/htdocs/man/man8/UKC.html
 ./var/www/htdocs/man/man8/ac.html
 ./var/www/htdocs/man/man8/accton.html
@@ -8169,9 +8159,6 @@
 ./var/www/htdocs/man/man8/zaurus/zzz.html
 ./var/www/htdocs/man/man8/zdump.html
 ./var/www/htdocs/man/man8/zic.html
-13022c20484,21350
-< ./var/www/htdocs/mod_ssl_sb.gif
----
 ./var/www/htdocs/man/man9/FREE.html
 ./var/www/htdocs/man/man9/FREF.html
 ./var/www/htdocs/man/man9/FRELE.html

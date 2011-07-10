@@ -487,8 +487,6 @@
 ./usr/libexec/auth/login_snk
 ./usr/libexec/auth/login_tis
 ./usr/libexec/auth/login_token
-./usr/libexec/ccom_i386
-./usr/libexec/fcom_i386
 ./usr/libexec/comsat
 ./usr/libexec/cpp
 ./usr/libexec/diff3prog

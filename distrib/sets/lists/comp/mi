@@ -2639,6 +2639,8 @@
 ./usr/lib/liby_p.a
 ./usr/lib/libz.a
 ./usr/lib/libz_p.a
+./usr/libexec/ccom_i386
+./usr/libexec/fcom_i386
 ./usr/libdata/lint/llib-lc.ln
 ./usr/libdata/lint/llib-lcompat.ln
 ./usr/libdata/lint/llib-lcrypto.ln
@@ -4269,7 +4271,6 @@
 ./usr/share/man/cat3/confstr.0
 ./usr/share/man/cat3/copysign.0
 ./usr/share/man/cat3/copysignf.0
-./usr/share/man/cat3/copysigl.0
 ./usr/share/man/cat3/copywin.0
 ./usr/share/man/cat3/cos.0
 ./usr/share/man/cat3/cosf.0
@@ -5626,7 +5627,7 @@
 ./usr/share/man/cat3/labs.0
 ./usr/share/man/cat3/lcong48.0
 ./usr/share/man/cat3/ldexp.0
-./usr/share/man/cat3/ldexpf.0  
+./usr/share/man/cat3/ldexpf.0
 ./usr/share/man/cat3/ldexpl.0
 ./usr/share/man/cat3/ldiv.0
 ./usr/share/man/cat3/leaveok.0
@@ -6105,7 +6106,6 @@
 ./usr/share/man/cat3/re_exec.0
 ./usr/share/man/cat3/readdir.0
 ./usr/share/man/cat3/readdir_r.0
-./usr/share/man/cat3/readline.0
 ./usr/share/man/cat3/readpass.0
 ./usr/share/man/cat3/readpassphrase.0
 ./usr/share/man/cat3/readskey.0
@@ -6180,7 +6180,6 @@
 ./usr/share/man/cat3/sbrk.0
 ./usr/share/man/cat3/scalb.0
 ./usr/share/man/cat3/scalbf.0
-./usr/share/man/cat3/scalbl.0
 ./usr/share/man/cat3/scalbn.0
 ./usr/share/man/cat3/scalbnf.0
 ./usr/share/man/cat3/scale_form.0
@@ -6644,7 +6643,7 @@
 ./usr/share/man/cat3/wcsstr.0
 ./usr/share/man/cat3/wcstod.0
 ./usr/share/man/cat3/wcstof.0
-./usr/share/man/cat3/wcstol.0  
+./usr/share/man/cat3/wcstol.0
 ./usr/share/man/cat3/wcstold.0
 ./usr/share/man/cat3/wcstoll.0
 ./usr/share/man/cat3/wcstoimax.0
