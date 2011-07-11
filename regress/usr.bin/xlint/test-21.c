@@ -1,3 +1,4 @@
+ /*	$OpenBSD: test-21.c,v 1.2 2006/05/05 06:48:20 otto Exp $*/
 
 /*
  * Placed in the public domain by Chad Loder <cloder@openbsd.org>.

@@ -31,7 +31,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: init.c,v 1.1.1.1 2008/08/26 14:43:28 root Exp $";
 #endif
 
 #include <stdlib.h>
@@ -392,7 +392,7 @@ mkinit(tnode_t *tn)
 		goto end;
 
 	/*
-	 * Store the tree memory. This is nessesary because otherwise
+	 * Store the tree memory. This is necessary because otherwise
 	 * expr() would free it.
 	 */
 	tmem = tsave();

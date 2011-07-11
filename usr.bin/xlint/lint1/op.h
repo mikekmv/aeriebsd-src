@@ -112,6 +112,8 @@ typedef	enum {
 	LOAD,
 	PUSH,
 	RETURN,
+	REAL,		/* gcc extension: __real__ */
+	IMAG,		/* gcc extension: __imag__ */
 	INIT,		/* pseudo op, not used in trees */
 	CASE,		/* pseudo op, not used in trees */
 	FARG		/* pseudo op, not used in trees */

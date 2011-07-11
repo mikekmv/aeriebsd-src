@@ -1,3 +1,4 @@
+/*      $OpenBSD: test-20.c,v 1.2 2006/05/03 18:23:17 otto Exp $ */
 
 /*
  * Placed in the public domain by Otto Moerbeek <otto@drijf.net>.

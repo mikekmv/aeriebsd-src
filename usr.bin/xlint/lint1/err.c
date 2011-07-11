@@ -31,7 +31,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: err.c,v 1.1.1.1 2008/08/26 14:43:28 root Exp $";
 #endif
 
 /* number of errors found */
@@ -367,6 +367,8 @@ const	char *msgs[] = {
 	"suspicious operator for sizeof: %s",			      /* 312 */
 	"conversion of %s() return value from '%s' to '%s'",	      /* 313 */
 	"hexadecimal float constants are illegal in traditional C",   /* 314 */
+	"empty body of the if statement",			      /* 315 */
+	"empty body of the else statement",			      /* 316 */
 };
 
 /*

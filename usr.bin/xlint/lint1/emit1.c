@@ -31,7 +31,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: emit1.c,v 1.1.1.1 2008/08/26 14:43:28 root Exp $";
 #endif
 
 #include <ctype.h>
@@ -46,6 +46,7 @@ static	void	outfstrg(strg_t *);
  * The type is written as a sequence of substrings, each of which describes a
  * node of type type_t
  * a node is coded as follows:
+ *	_Bool			B
  *	char			C
  *	signed char		s C
  *	unsigned char		u C
@@ -60,6 +61,12 @@ static	void	outfstrg(strg_t *);
  *	float			s D
  *	double			D
  *	long double		l D
+ *	float _Complex		s X
+ *	double _Complex		X
+ *	long double _Complex	l X
+ *	float _Imaginary	s J
+ *	double _Imaginary	J
+ *	long double _Imaginary	l J
  *	void			V
  *	*			P
  *	[n]			A n
@@ -91,6 +98,7 @@ outtype(type_t *tp)
 		if ((ts = tp->t_tspec) == INT && tp->t_isenum)
 			ts = ENUM;
 		switch (ts) {
+		case BOOL:	t = 'B';	s = '\0';	break;
 		case CHAR:	t = 'C';	s = '\0';	break;
 		case SCHAR:	t = 'C';	s = 's';	break;
 		case UCHAR:	t = 'C';	s = 'u';	break;
@@ -105,6 +113,12 @@ outtype(type_t *tp)
 		case FLOAT:	t = 'D';	s = 's';	break;
 		case DOUBLE:	t = 'D';	s = '\0';	break;
 		case LDOUBLE:	t = 'D';	s = 'l';	break;
+		case COMPLEX:	t = 'X';	s = 's';	break;
+		case DCOMPLEX:	t = 'X';	s = '\0';	break;
+		case LDCOMPLEX:	t = 'X';	s = 'l';	break;
+		case IMAGINARY:	 t = 'J';	s = 's';	break;
+		case DIMAGINARY: t = 'J';	s = '\0';	break;
+		case LDIMAGINARY:t = 'J';	s = 'l';	break;
 		case VOID:	t = 'V';	s = '\0';	break;
 		case PTR:	t = 'P';	s = '\0';	break;
 		case ARRAY:	t = 'A';	s = '\0';	break;

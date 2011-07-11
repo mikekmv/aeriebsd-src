@@ -1,3 +1,4 @@
+/*	$OpenBSD: test-12.c,v 1.2 2005/12/10 19:20:21 cloder Exp $	*/
 
 /*
  * Placed in the public domain by Chad Loder <cloder@openbsd.org>.

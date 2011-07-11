@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: cgram.y,v 1.1.1.1 2008/08/26 14:43:28 root Exp $";
 #endif
 
 #include <stdlib.h>
@@ -53,6 +53,11 @@ int	blklev;
  * be removed from the symbol table after the declaration.
  */
 int	mblklev;
+
+/*
+ * Is the statement empty?
+ */
+int	estmnt;
 
 static	int	toicon(tnode_t *);
 static	void	idecl(sym_t *, int);
@@ -1179,15 +1184,26 @@ direct_abs_decl:
 	;
 
 stmnt:
-	  labeled_stmnt
+	  labeled_stmnt {
+		estmnt = 0;
+	  }
 	| expr_stmnt
-	| comp_stmnt
-	| selection_stmnt
-	| iteration_stmnt
+	| comp_stmnt {
+		estmnt = 0;
+	  }
+	| selection_stmnt {
+		estmnt = 0;
+	  }
+	| iteration_stmnt {
+		estmnt = 0;
+	  }
 	| jump_stmnt {
+		estmnt = 0;
 		ftflg = 0;
 	  }
-	| asm_stmnt
+	| asm_stmnt {
+		estmnt = 0;
+	  }
 	;
 
 labeled_stmnt:
@@ -1260,9 +1276,11 @@ stmnt_list:
 expr_stmnt:
 	  expr T_SEMI {
 		expr($1, 0, 0);
+		estmnt = 0;
 		ftflg = 0;
 	  }
 	| T_SEMI {
+		estmnt = 1;
 		ftflg = 0;
 	  }
 	;
@@ -1275,6 +1293,11 @@ selection_stmnt:
 	| if_without_else T_ELSE {
 		if2();
 	  } stmnt {
+		if (estmnt) {
+			/* empty body of the else statement */
+			warning(316);
+		}
+
 		if3(1);
 	  }
 	| if_without_else T_ELSE error {
@@ -1289,7 +1312,12 @@ selection_stmnt:
 	;
 
 if_without_else:
-	  if_expr stmnt
+	  if_expr stmnt {
+		if (estmnt) {
+			/* empty body of the if statement */
+			warning(315);
+		}
+	  }
 	| if_expr error
 	;
 

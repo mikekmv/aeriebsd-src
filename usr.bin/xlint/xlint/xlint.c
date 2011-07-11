@@ -30,7 +30,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD: xlint.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $";
+static char rcsid[] = "$ABSD: xlint.c,v 1.2 2010/03/12 18:15:52 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -263,9 +263,9 @@ static void
 usage()
 {
 	(void)printf("usage: lint [-ceFfgHhprsVvxz] [-i | -nu] [-Dname[=def]] [-Idirectory]\n");
-	(void)printf("\t[-Ldirectory] [-llibrary] [-ooutputfile] [-Uname] file ...\n");
+	(void)printf("\t[-Ldirectory] [-llibrary] [-ooutputfile] [-MD] [-Uname] file ...\n");
 	(void)printf("       lint [-ceFfgHhprsVvz] -Clibrary [-Dname[=def]]\n");
-	(void)printf("\t[-Idirectory] [-Uname] file ...\n");
+	(void)printf("\t[-Idirectory] [-MD] [-Uname] file ...\n");
 	terminate(-1);
 }
 
@@ -321,6 +321,8 @@ main(int argc, char *argv[])
 	appcstrg(&cppflags, "-CC");
 #endif
 	appcstrg(&cppflags, "-Wcomment");
+#else
+	appcstrg(&cppflags, "-C");
 #endif
 	appcstrg(&cppflags, "-D__AerieBSD__");
 	appcstrg(&cppflags, "-Dlint");		/* XXX don't def. with -s */
@@ -334,6 +336,12 @@ main(int argc, char *argv[])
 	appstrg(&lcppflgs, concat2("-D", un.machine));
 
 #ifdef MACHINE_ARCH
+#ifdef MACHINE_CPU
+	if (strcmp(MACHINE_ARCH, MACHINE_CPU) != 0) {
+		appdef(&cppflags, MACHINE_CPU);
+		appstrg(&lcppflgs, concat2("-D", MACHINE_CPU));
+	}
+#endif
 	if (strcmp(un.machine, MACHINE_ARCH) != 0) {
 		appdef(&cppflags, MACHINE_ARCH);
 		appstrg(&lcppflgs, concat2("-D", MACHINE_ARCH));
@@ -349,7 +357,7 @@ main(int argc, char *argv[])
 	(void)signal(SIGTERM, terminate);
 
 	while (argc > optind) {
-		c = getopt(argc, argv, "abcefghil:no:prstuvxyzC:D:FHI:L:U:V");
+		c = getopt(argc, argv, "abcefghil:no:prstuvxyzC:D:FHI:L:M:U:V");
 
 		switch (c) {
 
@@ -455,6 +463,9 @@ main(int argc, char *argv[])
 
 		case 'L':
 			appcstrg(&libsrchpath, optarg);
+			break;
+
+		case 'M':
 			break;
 
 		case 'H':

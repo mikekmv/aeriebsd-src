@@ -31,7 +31,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: emit2.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $";
 #endif
 
 #include <err.h>
@@ -56,6 +56,7 @@ outtype(type_t *tp)
 		if ((ts = tp->t_tspec) == INT && tp->t_isenum)
 			ts = ENUM;
 		switch (ts) {
+		case BOOL:	t = 'B';	s = '\0';	break;
 		case CHAR:	t = 'C';	s = '\0';	break;
 		case SCHAR:	t = 'C';	s = 's';	break;
 		case UCHAR:	t = 'C';	s = 'u';	break;
@@ -70,6 +71,12 @@ outtype(type_t *tp)
 		case FLOAT:	t = 'D';	s = 's';	break;
 		case DOUBLE:	t = 'D';	s = '\0';	break;
 		case LDOUBLE:	t = 'D';	s = 'l';	break;
+		case COMPLEX:	t = 'X';	s = 's';	break;
+		case DCOMPLEX:	t = 'X';	s = '\0';	break;
+		case LDCOMPLEX:	t = 'X';	s = 'l';	break;
+		case IMAGINARY:	 t = 'J';	s = 's';	break;
+		case DIMAGINARY: t = 'J';	s = '\0';	break;
+		case LDIMAGINARY:t = 'J';	s = 'l';	break;
 		case VOID:	t = 'V';	s = '\0';	break;
 		case PTR:	t = 'P';	s = '\0';	break;
 		case ARRAY:	t = 'A';	s = '\0';	break;

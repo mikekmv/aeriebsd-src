@@ -136,6 +136,7 @@ extern	void	pushdecl(scl_t);
 extern	void	popdecl(void);
 extern	void	setasm(void);
 extern	void	clrtyp(void);
+extern	int	mergedomain(tspec_t *, tspec_t);
 extern	void	deftyp(void);
 extern	int	length(type_t *, const char *);
 extern	int	getbound(type_t *);

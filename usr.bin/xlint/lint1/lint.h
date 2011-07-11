@@ -43,6 +43,7 @@ typedef enum {
 	NOTSPEC,
 	SIGNED,		/* keyword "signed", only used in the parser */
 	UNSIGN,		/* keyword "unsigned", only used in the parser */
+	BOOL,		/* _Bool */
 	CHAR,		/* char */
 	SCHAR,		/* signed char */
 	UCHAR,		/* unsigned char */
@@ -57,6 +58,12 @@ typedef enum {
 	FLOAT,		/* float */
 	DOUBLE,		/* double */
 	LDOUBLE,	/* long double */
+	COMPLEX,	/* float _Complex */
+	DCOMPLEX,	/* double _Complex */
+	LDCOMPLEX,	/* long double _Complex */
+	IMAGINARY,	/* float _Imaginary */
+	DIMAGINARY,	/* double _Imaginary */
+	LDIMAGINARY,	/* long double _Imaginary */
 	VOID,		/* void */
 	STRUCT,		/* structure tag */
 	UNION,		/* union tag */
@@ -81,7 +88,8 @@ typedef	struct {
 	u_int	tt_isutyp : 1;		/* 1 if unsigned integer type */
 	u_int	tt_isftyp : 1;		/* 1 if floating point type */
 	u_int	tt_isatyp : 1;		/* 1 if arithmetic type */
-	u_int	tt_issclt : 1;		/* 1 if scalar type */
+	u_int	tt_domain : 2;		/* 0 if non-scalar, 1 if real,
+					   2 if imaginary, 3 if complex */
 	char	*tt_name;		/* type name */
 } ttab_t;
 
@@ -94,7 +102,9 @@ typedef	struct {
 #define isutyp(t)	(ttab[t].tt_isutyp)
 #define isftyp(t)	(ttab[t].tt_isftyp)
 #define isatyp(t)	(ttab[t].tt_isatyp)
-#define issclt(t)	(ttab[t].tt_issclt)
+#define issclt(t)	(ttab[t].tt_domain != 0)
+#define iscomplex(t)	(ttab[t].tt_domain == 3)
+#define isimag(t)	(ttab[t].tt_domain == 2)
 
 extern	ttab_t	ttab[];
 

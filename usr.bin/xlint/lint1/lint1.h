@@ -222,6 +222,7 @@ typedef	struct sym {
 		tqual_t	_s_tqu;	/* qualifier (only for keywords) */
 		struct	sym *_s_args; /* arguments in old style function
 					 definitions */
+		op_t	_s_op;	/* op type (only for operators) */
 	} u;
 	struct	sym *s_link;	/* next symbol with same hash value */
 	struct	sym **s_rlink;	/* pointer to s_link of prev. symbol */
@@ -234,6 +235,7 @@ typedef	struct sym {
 #define	s_etyp	u._s_et
 #define	s_tspec	u._s_tsp
 #define	s_tqual	u._s_tqu
+#define	s_op	u._s_op
 #define	s_args	u._s_args
 
 /*
@@ -292,9 +294,10 @@ typedef	struct tnode {
  *
  */
 typedef	struct dinfo {
-	tspec_t	d_atyp;		/* VOID, CHAR, INT, FLOAT or DOUBLE */
-	tspec_t	d_smod;		/* SIGNED or UNSIGN */
-	tspec_t	d_lmod;		/* SHORT, LONG or QUAD */
+	tspec_t	d_atyp;		/* NOTSPEC, VOID, CHAR, INT, FLOAT or DOUBLE */
+	tspec_t	d_smod;		/* sign: NOTSPEC, SIGNED or UNSIGN */
+	tspec_t	d_lmod;		/* length: NOTSPEC, SHORT, LONG or QUAD */
+	tspec_t	d_dmod;		/* domain: NOTSPEC, COMPLEX or IMAGINARY */
 	scl_t	d_scl;		/* storage class */
 	type_t	*d_type;	/* after deftyp() pointer to the type used
 				   for all declarators */
@@ -309,7 +312,7 @@ typedef	struct dinfo {
 	u_int	d_mscl : 1;	/* multiple storage classes */
 	u_int	d_terr : 1;	/* invalid type combination */
 	u_int	d_nedecl : 1;	/* 1 if at least a tag is declared */
-	u_int	d_vararg : 1;	/* ... in in current function decl. */
+	u_int	d_vararg : 1;	/* ... in current function decl. */
 	u_int	d_proto : 1;	/* current funct. decl. is prototype */
 	u_int	d_notyp : 1;	/* set if no type specifier was present */
 	u_int	d_asm : 1;	/* set if d_ctx == AUTO and asm() present */

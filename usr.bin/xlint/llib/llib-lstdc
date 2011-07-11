@@ -54,7 +54,7 @@
 /*
  * assert.h
  */
-#if defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__NetBSD__) || defined(__OpenBSD__) || defined(__AerieBSD__)
 void	(__assert)(const char *expression, int line, const char *file);
 #else
 void	(assert)(int expression);

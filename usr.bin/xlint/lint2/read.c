@@ -31,7 +31,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$ABSD$";
+static char rcsid[] = "$ABSD: read.c,v 1.1.1.1 2008/08/26 14:43:29 root Exp $";
 #endif
 
 #include <stdio.h>
@@ -159,6 +159,8 @@ readfile(const char *name)
 		if (cp == eptr)
 			inperr();
 		cp = eptr;
+		if (isrc < 0 || isrc >= ninpfns)
+			inperr();
 		isrc = inpfns[isrc];
 
 		/* line number in isrc */
@@ -515,6 +517,9 @@ inptype(const char *cp, const char **epp)
 	}
 
 	switch (c) {
+	case 'B':
+		tp->t_tspec = BOOL;
+		break;
 	case 'C':
 		tp->t_tspec = s == 's' ? SCHAR : (s == 'u' ? UCHAR : CHAR);
 		break;
@@ -532,6 +537,14 @@ inptype(const char *cp, const char **epp)
 		break;
 	case 'D':
 		tp->t_tspec = s == 's' ? FLOAT : (s == 'l' ? LDOUBLE : DOUBLE);
+		break;
+	case 'X':
+		tp->t_tspec = s == 's' ? COMPLEX : (s == 'l' ?
+		    LDCOMPLEX : DCOMPLEX);
+		break;
+	case 'J':
+		tp->t_tspec = s == 's' ? IMAGINARY : (s == 'l' ?
+		    LDIMAGINARY : DIMAGINARY);
 		break;
 	case 'V':
 		tp->t_tspec = VOID;
@@ -647,6 +660,9 @@ gettlen(const char *cp, const char **epp)
 	t = NOTSPEC;
 
 	switch (c) {
+	case 'B':
+		t = BOOL;
+		break;
 	case 'C':
 		if (s == 's') {
 			t = SCHAR;
@@ -691,6 +707,24 @@ gettlen(const char *cp, const char **epp)
 			t = LDOUBLE;
 		} else if (s == '\0') {
 			t = DOUBLE;
+		}
+		break;
+	case 'X':
+		if (s == 's') {
+			t = COMPLEX;
+		} else if (s == 'l') {
+			t = LDCOMPLEX;
+		} else if (s == '\0') {
+			t = DCOMPLEX;
+		}
+		break;
+	case 'J':
+		if (s == 's') {
+			t = IMAGINARY;
+		} else if (s == 'l') {
+			t = LDIMAGINARY;
+		} else if (s == '\0') {
+			t = DIMAGINARY;
 		}
 		break;
 	case 'V':
