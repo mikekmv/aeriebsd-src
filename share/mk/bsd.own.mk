@@ -20,7 +20,7 @@ TCP_WRAPPERS?=	yes
 # Set `AFS` to `yes' to build with AFS support.
 AFS?=		yes
 # Set `WANTLINT' to `yes' to build lint libraries
-WANTLINT?=	no
+WANTLINT?=	yes
 # Set `DEBUGLIBS' to `yes' to build libraries with debugging symbols
 DEBUGLIBS?=	no
 # Set toolchain to be able to know differences.
