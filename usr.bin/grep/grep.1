@@ -27,7 +27,7 @@
 .\"
 .\"	@(#)grep.1	8.3 (Berkeley) 4/18/94
 .\"
-.Dd $Mdocdate: May 31 2007 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt GREP 1
 .Os
 .Sh NAME
@@ -37,7 +37,7 @@
 .Sh SYNOPSIS
 .Nm grep
 .Bk -words
-.Op Fl abcEFGHhIiLlnoPqRSsUVvwxZ
+.Op Fl abcEFGHhIiLlnoqRsUVvwxZ
 .Op Fl A Ar num
 .Op Fl B Ar num
 .Op Fl C Ns Op Ar num
@@ -60,6 +60,7 @@ without its trailing newline.
 An empty expression matches every line.
 Each input line that matches at least one of the patterns is written
 to the standard output.
+If no file arguments are specified, the standard input is used.
 .Pp
 .Nm grep
 is used for simple patterns and
@@ -183,11 +184,9 @@ as a basic regular expression
 to behave as traditional
 .Nm grep ) .
 .It Fl H
-If
-.Fl R
-is specified, follow symbolic links only if they were explicitly listed
-on the command line.
-The default is not to follow symbolic links.
+Always print filename headers
+.Pq i.e. filenames
+with output lines.
 .It Fl h
 Never print filename headers
 .Pq i.e. filenames
@@ -229,12 +228,7 @@ or
 is
 specified.
 .It Fl o
-Always print filename headers with output lines.
-.It Fl P
-If
-.Fl R
-is specified, no symbolic links are followed.
-This is the default.
+Print each match, but only the match, not the entire line.
 .It Fl q
 Quiet mode:
 suppress normal output.
@@ -243,11 +237,6 @@ will only search a file until a match has been found,
 making searches potentially less expensive.
 .It Fl R
 Recursively search subdirectories listed.
-.It Fl S
-If
-.Fl R
-is specified, all symbolic links are followed.
-The default is not to follow symbolic links.
 .It Fl s
 Silent mode.
 Nonexistent and unreadable files are ignored
@@ -299,13 +288,12 @@ By default, output is line buffered when standard output is a terminal
 and block buffered otherwise.
 .Pp
 .El
-If no file arguments are specified, the standard input is used.
-.Sh RETURN VALUES
+.Sh EXIT STATUS
 The
 .Nm grep
 utility exits with one of the following values:
 .Pp
-.Bl -tag -width flag -compact
+.Bl -tag -width Ds -offset indent -compact
 .It Li 0
 One or more lines were selected.
 .It Li 1
@@ -362,11 +350,11 @@ looking for either 19, 20, or 25.
 The
 .Nm
 utility is compliant with the
-.St -p1003.1-2004
+.St -p1003.1-2008
 specification.
 .Pp
 The flags
-.Op Fl AaBbCGHhILoPRSUVwZ
+.Op Fl AaBbCGHhILoRUVwZ
 are extensions to that specification, and the behaviour of the
 .Fl f
 flag when used with an empty pattern file is left undefined.

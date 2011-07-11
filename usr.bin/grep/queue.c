@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1999 James Howard and Dag-Erling Coïdan Smørgrav
  * All rights reserved.
@@ -24,6 +23,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
 
 /*
  * A really poor man's queue.  It does only what it has to and gets out of
@@ -106,7 +109,7 @@ printqueue(void)
 	queue_t *item;
 
 	while ((item = dequeue()) != NULL) {
-		printline(&item->data, '-');
+		printline(&item->data, '-', NULL);
 		free_item(item);
 	}
 }

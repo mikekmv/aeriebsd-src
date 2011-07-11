@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1999 James Howard and Dag-Erling Coïdan Smørgrav
  * All rights reserved.
@@ -25,6 +24,10 @@
  * SUCH DAMAGE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -35,6 +38,8 @@
 #include <unistd.h>
 
 #include "grep.h"
+
+#ifndef SMALL
 
 #define MAX_MAP_LEN 1048576
 
@@ -95,3 +100,5 @@ mmfgetln(mmf_t *mmf, size_t *l)
 	++mmf->ptr;
 	return p;
 }
+
+#endif

@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1999 James Howard and Dag-Erling Coïdan Smørgrav
  * All rights reserved.
@@ -24,6 +23,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
 
 #include <sys/types.h>
 #include <sys/limits.h>
@@ -61,11 +64,9 @@ int	 Bflag;		/* -B x: print x lines leading each match */
 int	 Eflag;		/* -E: interpret pattern as extended regexp */
 int	 Fflag;		/* -F: interpret pattern as list of fixed strings */
 int	 Gflag;		/* -G: interpret pattern as basic regexp */
-int	 Hflag;		/* -H: if -R, follow explicitly listed symlinks */
+int	 Hflag;		/* -H: always print filename header */
 int	 Lflag;		/* -L: only show names of files with no matches */
-int	 Pflag;		/* -P: if -R, no symlinks are followed */
 int	 Rflag;		/* -R: recursively search directory trees */
-int	 Sflag;		/* -S: if -R, follow all symlinks */
 #ifndef NOZ
 int	 Zflag;		/* -Z: decompress input before processing */
 #endif
@@ -75,7 +76,7 @@ int	 hflag;		/* -h: don't print filename headers */
 int	 iflag;		/* -i: ignore case */
 int	 lflag;		/* -l: only show names of files with matches */
 int	 nflag;		/* -n: show line numbers in front of matching lines */
-int	 oflag;		/* -o: always print file name */
+int	 oflag;		/* -o: print each match */
 int	 qflag;		/* -q: quiet mode (don't output anything) */
 int	 sflag;		/* -s: silent mode (ignore errors) */
 int	 vflag;		/* -v: only show non-matching lines */
@@ -109,9 +110,9 @@ usage(void)
 {
 	fprintf(stderr,
 #ifdef NOZ
-	    "usage: %s [-abcEFGHhIiLlnoPqRSsUVvwx] [-A num] [-B num] [-C[num]]\n"
+	    "usage: %s [-abcEFGHhIiLlnoqRsUVvwx] [-A num] [-B num] [-C[num]]\n"
 #else
-	    "usage: %s [-abcEFGHhIiLlnoPqRSsUVvwxZ] [-A num] [-B num] [-C[num]]\n"
+	    "usage: %s [-abcEFGHhIiLlnoqRsUVvwxZ] [-A num] [-B num] [-C[num]]\n"
 #endif
 	    "\t[-e pattern] [-f file] [--binary-files=value] [--context[=num]]\n"
 	    "\t[--line-buffered] [pattern] [file ...]\n", __progname);
@@ -119,9 +120,9 @@ usage(void)
 }
 
 #ifdef NOZ
-static char *optstr = "0123456789A:B:CEFGHILPSRUVabce:f:hilnoqrsuvwxy";
+static char *optstr = "0123456789A:B:CEFGHILRUVabce:f:hilnoqrsuvwxy";
 #else
-static char *optstr = "0123456789A:B:CEFGHILPSRUVZabce:f:hilnoqrsuvwxy";
+static char *optstr = "0123456789A:B:CEFGHILRUVZabce:f:hilnoqrsuvwxy";
 #endif
 
 struct option long_options[] =
@@ -137,6 +138,7 @@ struct option long_options[] =
 	{"extended-regexp",	no_argument,		NULL, 'E'},
 	{"fixed-strings",	no_argument,		NULL, 'F'},
 	{"basic-regexp",	no_argument,		NULL, 'G'},
+	{"with-filename",	no_argument,		NULL, 'H'},
 	{"binary",		no_argument,		NULL, 'U'},
 	{"version",		no_argument,		NULL, 'V'},
 	{"text",		no_argument,		NULL, 'a'},
@@ -233,10 +235,10 @@ read_patterns(const char *fn)
 int
 main(int argc, char *argv[])
 {
-	int c, lastc, prevoptind, newarg, i, needpattern;
+	int c, lastc, prevoptind, newarg, i, needpattern, exprs, expr_sz;
 	struct patfile *patfile, *pf_next;
 	long l;
-	char *ep;
+	char *ep, **expr;
 
 	SLIST_INIT(&patfilelh);
 	switch (__progname[0]) {
@@ -271,6 +273,8 @@ main(int argc, char *argv[])
 	newarg = 1;
 	prevoptind = 1;
 	needpattern = 1;
+	expr_sz = exprs = 0;
+	expr = NULL;
 	while ((c = getopt_long(argc, argv, optstr,
 				long_options, NULL)) != -1) {
 		switch (c) {
@@ -326,16 +330,9 @@ main(int argc, char *argv[])
 			lflag = 0;
 			Lflag = qflag = 1;
 			break;
-		case 'P':
-			Pflag++;
-			break;
-		case 'S':
-			Sflag++;
-			break;
 		case 'R':
 		case 'r':
 			Rflag++;
-			oflag++;
 			break;
 		case 'U':
 			binbehave = BIN_FILE_BIN;
@@ -359,8 +356,14 @@ main(int argc, char *argv[])
 			cflag = 1;
 			break;
 		case 'e':
-			add_patterns(optarg);
+			/* defer adding of expressions until all arguments are parsed */
+			if (exprs == expr_sz) {
+				expr_sz *= 2;
+				expr = grep_realloc(expr, ++expr_sz * sizeof(*expr));
+			}
 			needpattern = 0;
+			expr[exprs] = optarg;
+			++exprs;
 			break;
 		case 'f':
 			patfile = grep_malloc(sizeof(*patfile));
@@ -369,7 +372,6 @@ main(int argc, char *argv[])
 			needpattern = 0;
 			break;
 		case 'h':
-			oflag = 0;
 			hflag = 1;
 			break;
 		case 'i':
@@ -385,7 +387,6 @@ main(int argc, char *argv[])
 			nflag = 1;
 			break;
 		case 'o':
-			hflag = 0;
 			oflag = 1;
 			break;
 		case 'q':
@@ -431,6 +432,11 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
+	for (i = 0; i < exprs; i++)
+		add_patterns(expr[i]);
+	free(expr);
+	expr = NULL;
+
 	for (patfile = SLIST_FIRST(&patfilelh); patfile != NULL;
 	    patfile = pf_next) {
 		pf_next = SLIST_NEXT(patfile, pf_next);
@@ -449,13 +455,23 @@ main(int argc, char *argv[])
 
 	if (Eflag)
 		cflags |= REG_EXTENDED;
+	if (Fflag)
+		cflags |= REG_NOSPEC;
+#ifdef SMALL
+	/* Sorry, this won't work */
+	if (Fflag && wflag)
+		errx(1, "Can't use small fgrep with -w");
+#endif
 	fg_pattern = grep_calloc(patterns, sizeof(*fg_pattern));
 	r_pattern = grep_calloc(patterns, sizeof(*r_pattern));
 	for (i = 0; i < patterns; ++i) {
 		/* Check if cheating is allowed (always is for fgrep). */
+#ifndef SMALL
 		if (Fflag) {
 			fgrepcomp(&fg_pattern[i], pattern[i]);
-		} else {
+		} else
+#endif
+		{
 			if (fastcomp(&fg_pattern[i], pattern[i])) {
 				/* Fall back to full regex library */
 				c = regcomp(&r_pattern[i], pattern[i], cflags);
@@ -471,7 +487,7 @@ main(int argc, char *argv[])
 	if (lbflag)
 		setlinebuf(stdout);
 
-	if ((argc == 0 || argc == 1) && !oflag)
+	if ((argc == 0 || argc == 1) && !Rflag && !Hflag)
 		hflag = 1;
 
 	if (argc == 0)
