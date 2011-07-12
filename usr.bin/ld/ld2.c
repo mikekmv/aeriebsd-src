@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009,2010 Michael Shalayeff
+ * Copyright (c) 2009-2011 Michael Shalayeff
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld2.c,v 1.34 2011/02/03 23:39:38 mickey Exp $";
+    "$ABSD: ld2.c,v 1.35 2011/05/03 14:36:01 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -881,11 +881,11 @@ elf_addreloc(struct objlist *ol, struct section *os, struct relist *r,
 	int si;
 
 	if ((si = ELF_R_SYM(rel->r_info)) >= ol->ol_naux)
-		errx(1, "%s: invalid reloc #%ld",
-		    ol->ol_path, r - os->os_rels);
+		errx(1, "%s: invalid reloc #%ld %x",
+		    ol->ol_path, r - os->os_rels, rel->r_info);
 	if (rel->r_offset > shbits->sh_size)
 		errx(1, "%s: reloc #%ld offset 0x%llx is out of range",
-		    ol->ol_path, r - os->os_rels, (long long)rel->r_offset);
+		    ol->ol_path, r - os->os_rels, (quad_t)rel->r_offset);
 
 	sym = sidx[si];
 	esym = &ELF_SYM(sym->sl_elfsym);
@@ -947,6 +947,21 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 	}
 	sidx = ol->ol_aux;
 
+	if (esym->st_name >= es->stabsz)
+		err(1, "%s: invalid symtab entry #%d", es->name, is);
+	name = es->stab + esym->st_name;
+
+	/* convert all unwanted locals to sections */
+	if (ELF_ST_BIND(esym->st_info) == STB_LOCAL &&
+	    (Xflag == 2 || (Xflag == 1 && *name == 'L'))) {
+		if (esym->st_shndx >= SHN_LORESERVE)
+			errx(1, "unexpected section number 0x%x for %s",
+			    esym->st_shndx, name);
+		esym->st_info = ELF_ST_INFO(STB_LOCAL, STT_SECTION);
+		esym->st_name = 0;
+		name = es->stab;
+	}
+
 	if (ELF_ST_TYPE(esym->st_info) == STT_SECTION) {
 		if (esym->st_shndx >= ol->ol_nsect)
 			errx(1, "%s: corrupt symbol table", es->name);
@@ -961,9 +976,6 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 		return 0;
 	}
 
-	if (esym->st_name >= es->stabsz)
-		err(1, "%s: invalid symtab entry #%d", es->name, is);
-	name = es->stab + esym->st_name;
 	laname = NULL;
 if (is && *name == '\0') warnx("#%d is null", is);
 
