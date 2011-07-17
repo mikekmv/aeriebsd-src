@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld2.c,v 1.35 2011/05/03 14:36:01 mickey Exp $";
+    "$ABSD: ld2.c,v 1.36 2011/07/12 10:17:59 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -936,7 +936,7 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 	struct symlist **sidx, *sym;
 	char *name, *laname;
 
-	if (!is)
+	if (!is && esym->st_shndx == SHN_UNDEF && esym->st_name == 0)
 		return 0;
 
 	/* allocate symindex */
