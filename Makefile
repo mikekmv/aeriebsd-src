@@ -72,19 +72,7 @@ build:
 	    NOMAN=1 exec ${SUDO} ${MAKE} install
 	${MAKE} depend && ${MAKE} && exec ${SUDO} ${MAKE} install
 
-CROSS_TARGETS=cross-env cross-dirs cross-obj cross-includes cross-binutils \
-	cross-gcc cross-tools cross-lib cross-bin cross-etc-root-var \
-	cross-depend cross-clean cross-cleandir
-
-.if !defined(TARGET)
-${CROSS_TARGETS}:
-	@echo "TARGET must be set for $@"; exit 1
-.else
-. include "Makefile.cross"
-.endif # defined(TARGET)
-
-.PHONY: ${CROSS_TARGETS} \
-	build regression-tests includes beforeinstall afterinstall \
+.PHONY:	build regression-tests includes beforeinstall afterinstall \
 	all depend
 
 .include <bsd.subdir.mk>
