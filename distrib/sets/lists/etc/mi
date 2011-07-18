@@ -15,6 +15,7 @@
 ./etc/daily
 ./etc/dhclient.conf
 ./etc/dhcpd.conf
+./etc/dhcpd.interfaces
 ./etc/disktab
 ./etc/dumpdates
 ./etc/dvmrpd.conf
@@ -28,6 +29,7 @@
 ./etc/hosts
 ./etc/hosts.equiv
 ./etc/hosts.lpd
+./etc/hoststated.conf
 ./etc/hotplug
 ./etc/ifstated.conf
 ./etc/inetd.conf
@@ -124,6 +126,7 @@
 ./etc/sysctl.conf
 ./etc/syslog.conf
 ./etc/systrace/usr_sbin_lpd
+./etc/systrace/usr_sbin_named
 ./etc/ttys
 ./etc/weekly
 ./root/.cshrc
@@ -170,7 +173,6 @@
 ./var/www/htdocs/lock.gif
 ./var/www/htdocs/logo23.jpg
 ./var/www/htdocs/logo24.jpg
-./var/www/htdocs/mod_ssl_sb.gif
 ./var/www/htdocs/openbsd_pb.gif
 ./var/www/htdocs/openbsdpower.gif
 ./var/www/htdocs/smalltitle.gif

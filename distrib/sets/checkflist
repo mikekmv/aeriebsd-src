@@ -34,4 +34,4 @@ trap 'rm -f $TMP' 0 1 15
 sh makeflist > $TMP
 ( cd $DESTDIR ; find . \( -type d -o -type f -o -type l \) ) | \
     grep -v -e '^\./snapshot' -e '^.$' -e '^\./usr/src/' -e '^\./usr/obj/' \
-      -e '^./tmp' -e '^./var/tmp' | sort -H | diff $TMP - 
+      -e '^./tmp/' -e '^./var/tmp/' | sort -H | diff $TMP - 

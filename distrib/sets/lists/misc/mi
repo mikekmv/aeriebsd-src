@@ -267,6 +267,7 @@
 ./usr/share/doc/psd/00.contents
 ./usr/share/doc/psd/01.cacm
 ./usr/share/doc/psd/01.cacm/Makefile
+./usr/share/doc/psd/01.cacm/p.mac
 ./usr/share/doc/psd/01.cacm/p1
 ./usr/share/doc/psd/01.cacm/p2
 ./usr/share/doc/psd/01.cacm/p3
@@ -277,10 +278,11 @@
 ./usr/share/doc/psd/02.implement/Makefile
 ./usr/share/doc/psd/02.implement/implement
 ./usr/share/doc/psd/03.iosys
-./usr/share/doc/psd/03.iosys/Makefile   
+./usr/share/doc/psd/03.iosys/Makefile
 ./usr/share/doc/psd/03.iosys/iosys
 ./usr/share/doc/psd/04.uprog
 ./usr/share/doc/psd/04.uprog/Makefile
+./usr/share/doc/psd/04.uprog/p.mac
 ./usr/share/doc/psd/04.uprog/p0
 ./usr/share/doc/psd/04.uprog/p1
 ./usr/share/doc/psd/04.uprog/p2

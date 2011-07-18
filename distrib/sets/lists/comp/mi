@@ -3,6 +3,7 @@
 ./usr/bin/as
 ./usr/bin/asa
 ./usr/bin/cc
+./usr/bin/f77
 ./usr/bin/flex
 ./usr/bin/flex++
 ./usr/bin/fpr
@@ -11,6 +12,7 @@
 ./usr/bin/lex
 ./usr/bin/lint
 ./usr/bin/lorder
+./usr/bin/objcopy
 ./usr/bin/pmdb
 ./usr/bin/ranlib
 ./usr/bin/rpcgen
@@ -2184,6 +2186,9 @@
 ./usr/include/pwd.h
 ./usr/include/ranlib.h
 ./usr/include/re_comp.h
+./usr/include/readline
+./usr/include/readline/history.h
+./usr/include/readline/readline.h
 ./usr/include/readpassphrase.h
 ./usr/include/regex.h
 ./usr/include/regexp.h
@@ -4271,6 +4276,7 @@
 ./usr/share/man/cat3/confstr.0
 ./usr/share/man/cat3/copysign.0
 ./usr/share/man/cat3/copysignf.0
+./usr/share/man/cat3/copysignl.0
 ./usr/share/man/cat3/copywin.0
 ./usr/share/man/cat3/cos.0
 ./usr/share/man/cat3/cosf.0
@@ -4403,6 +4409,8 @@
 ./usr/share/man/cat3/delscreen.0
 ./usr/share/man/cat3/delwin.0
 ./usr/share/man/cat3/derwin.0
+./usr/share/man/cat3/des_cipher.0
+./usr/share/man/cat3/des_setkey.0
 ./usr/share/man/cat3/devname.0
 ./usr/share/man/cat3/dh.0
 ./usr/share/man/cat3/difftime.0
@@ -6106,6 +6114,7 @@
 ./usr/share/man/cat3/re_exec.0
 ./usr/share/man/cat3/readdir.0
 ./usr/share/man/cat3/readdir_r.0
+./usr/share/man/cat3/readlabelfs.0
 ./usr/share/man/cat3/readpass.0
 ./usr/share/man/cat3/readpassphrase.0
 ./usr/share/man/cat3/readskey.0
@@ -6182,6 +6191,7 @@
 ./usr/share/man/cat3/scalbf.0
 ./usr/share/man/cat3/scalbn.0
 ./usr/share/man/cat3/scalbnf.0
+./usr/share/man/cat3/scalbnl.0
 ./usr/share/man/cat3/scale_form.0
 ./usr/share/man/cat3/scale_menu.0
 ./usr/share/man/cat3/scan_scaled.0
