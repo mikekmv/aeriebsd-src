@@ -42,7 +42,7 @@ ADIRS=	alpha amd64 arm armish hp300 hppa hppa64 i386 \
 RDIRS=	../lib/libpthread ../lib/libcompat ../lib/libcurses \
 	../lib/libelf ../lib/libform ../lib/libssl ../lib/libmenu \
 	../lib/libocurses ../lib/libossaudio ../lib/libpanel ../lib/librpcsvc \
-	../lib/libskey ../lib/libedit ../lib/libexpat \
+	../lib/libskey ../lib/libedit ../lib/libedit/readline ../lib/libexpat \
 	../lib/libpcap ../lib/libplot ../lib/libutil ../lib/libusbhid \
 	../lib/libwrap ../lib/libz ../lib/libkeynote ../lib/libevent \
 	../usr.bin/lex ../sys/arch/${MACHINE}
@@ -139,7 +139,7 @@ copies:
 	pax -rw -pa -L -s "|/include||" \
 	    `find ${ADIRS} -follow -type f -name '*.h' \
 	    -path '*/include/*' -print` ${DESTDIR}/usr/include
-	ln -sf ${MACHINE} ${DESTDIR}/usr/include/machine; \
+	ln -hsf ${MACHINE} ${DESTDIR}/usr/include/machine; \
 
 symlinks:
 	@echo symlinks: ${LDIRS} ${ADIRS}
@@ -151,7 +151,7 @@ symlinks:
 		rm -rf ${DESTDIR}/usr/include/$$i && \
 		ln -s /sys/arch/$$i/include ${DESTDIR}/usr/include/$$i; \
 	done
-	ln -sf ${MACHINE} ${DESTDIR}/usr/include/machine
+	ln -hsf ${MACHINE} ${DESTDIR}/usr/include/machine
 
 includes: ${SYS_INCLUDE}
 
