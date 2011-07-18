@@ -22,7 +22,7 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 ****************************************************************/
 
-const char	*version = "version 20041222";
+const char	*version = "version 20100523";
 
 #define DEBUG
 #include <stdio.h>
@@ -33,8 +33,6 @@ const char	*version = "version 20041222";
 #include <signal.h>
 #include "awk.h"
 #include "ytab.h"
-
-#define	MAX_PFILE	20
 
 extern	char	**environ;
 extern	int	nfields;
@@ -47,6 +45,8 @@ char	*lexprog;	/* points to program argument if it exists */
 extern	int errorflag;	/* non-zero if any syntax errors; set by yyerror */
 int	compile_time = 2;	/* for error printing: */
 				/* 2 = cmdline, 1 = compile, 0 = running */
+
+#define	MAX_PFILE	20	/* max number of -f's */
 
 char	*pfile[MAX_PFILE];	/* program filenames from -f's */
 int	npfile = 0;	/* number of filenames */
@@ -88,6 +88,8 @@ int main(int argc, char *argv[])
 				FATAL("too many -f options");
 			if (argc <= 1)
 				FATAL("no program filename");
+			if (npfile >= MAX_PFILE - 1)
+				FATAL("too many -f options"); 
 			pfile[npfile++] = argv[1];
 			break;
 		case 'F':	/* set field separator */
@@ -109,10 +111,8 @@ int main(int argc, char *argv[])
 		case 'v':	/* -v a=1 to be done NOW.  one -v for each */
 			if (argv[1][2] == '\0' && --argc > 1 && isclvar((++argv)[1]))
 				setclvar(argv[1]);
-			break;
-		case 'm':	/* more memory: -mr=record, -mf=fields */
-				/* no longer supported */
-			WARNING("obsolete option %s ignored", argv[1]);
+			else if (argv[1][2] != '\0')
+				setclvar(&argv[1][2]);
 			break;
 		case 'd':
 			dbg = atoi(&argv[1][2]);
