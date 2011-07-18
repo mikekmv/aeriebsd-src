@@ -2,7 +2,7 @@
 SUBDIR+= _setjmp alloca atexit basename cxa-atexit db dirname getaddrinfo
 SUBDIR+= getcap getopt_long hsearch longjmp locale malloc
 SUBDIR+= netdb popen regex setjmp setjmp-signal sigreturn sigsetjmp
-SUBDIR+= sprintf strerror strtod strtonum telldir time vis
+SUBDIR+= sprintf stackprotector strerror strtod strtonum telldir time vis
 
 .if (${MACHINE_ARCH} != "vax")
 SUBDIR+= ieeefp
