@@ -55,13 +55,18 @@ static usch	sbf[SBSIZE];
 /* C command */
 
 int tflag;	/* traditional cpp syntax */
-#ifdef CPP_DEBUG
+#ifdef PCC_DEBUG
 int dflag;	/* debug printouts */
+static void imp(const char *);
+static void prline(const usch *s);
+static void prrep(const usch *s);
 #define	DPRINT(x) if (dflag) printf x
 #define	DDPRINT(x) if (dflag > 1) printf x
+#define	IMP(x) if (dflag > 1) imp(x)
 #else
 #define DPRINT(x)
 #define DDPRINT(x)
+#define IMP(x)
 #endif
 
 int ofd;
@@ -120,8 +125,6 @@ usch *stringbuf = sbf;
 #define	ENTER	1
 
 static int readargs(struct symtab *sp, const usch **args);
-void prline(const usch *s);
-static void prrep(const usch *s);
 static void exparg(int);
 static void subarg(struct symtab *sp, const usch **args, int);
 void define(void);
@@ -132,8 +135,6 @@ void flbuf(void);
 void usage(void);
 usch *xstrdup(const usch *str);
 static void addidir(char *idir, struct incs **ww);
-void imp(const char *);
-#define IMP(x) if (dflag>1) imp(x)
 
 int
 main(int argc, char **argv)
@@ -180,7 +181,7 @@ main(int argc, char **argv)
 			addidir(optarg, &incdir[ch == 'I' ? INCINC : SYSINC]);
 			break;
 
-#ifdef CPP_DEBUG
+#ifdef PCC_DEBUG
 		case 'V':
 			dflag++;
 			break;
@@ -356,7 +357,7 @@ line()
 		p++;
 	c = strlen((char *)p);
 	if (llen < c) {
-		/* XXX may loose heap space */
+		/* XXX may lose heap space */
 		lbuf = stringbuf;
 		stringbuf += c;
 		llen = c;
@@ -414,7 +415,7 @@ include()
 	struct symtab *nl;
 	usch *osp;
 	usch *fn, *safefn;
-	int c, it;
+	int c;
 
 	if (flslvl)
 		return;
@@ -450,7 +451,6 @@ include()
 			prem();
 		if (c != '\n')
 			goto bad;
-		it = SYSINC;
 		safefn = fn;
 	} else {
 		usch *nm = stringbuf;
@@ -476,7 +476,7 @@ include()
 			goto bad;
 		if (pushfile(nm, safefn, 0, NULL) == 0)
 			goto okret;
-		/* XXX may loose stringbuf space */
+		/* XXX may lose stringbuf space */
 	}
 
 	if (fsrch(safefn, 0, incdir[0]))
@@ -858,7 +858,7 @@ id:			savstr((usch *)yytext);
 	} else
 		np->value = stringbuf-1;
 
-#ifdef CPP_DEBUG
+#ifdef PCC_DEBUG
 	if (dflag) {
 		const usch *w = np->value;
 
@@ -880,6 +880,10 @@ id:			savstr((usch *)yytext);
 #endif
 	for (i = 0; i < narg; i++)
 		free(args[i]);
+
+	/* fix \\\n */
+	if (ifiles->lineno > 1)
+		prtline();
 	return;
 
 bad:	error("bad define");
@@ -977,6 +981,7 @@ donex(void)
 			return n; /* already blocked */
 	bptr[bidx++] = n;
 	/* XXX - check for sp buffer overflow */
+#ifdef PCC_DEBUG
 	if (dflag>1) {
 		printf("donex %d (%d) blocking:\n", bidx, n);
 		printf("donex %s(%d) blocking:", norep[n]->namep, n);
@@ -984,6 +989,7 @@ donex(void)
 			printf(" '%s'", norep[bptr[i]]->namep);
 		printf("\n");
 	}
+#endif
 	return n;
 }
 
@@ -1333,7 +1339,7 @@ submac(struct symtab *sp, int lvl)
 	if (readargs(sp, argary)) {
 		/* Bailed out in the middle of arg list */
 		unpstr(bp);
-		if (dflag>1)printf("%d:noreadargs\n", lvl);
+		DDPRINT(("%d:noreadargs\n", lvl));
 		stringbuf = bp;
 		return 0;
 	}
@@ -1418,11 +1424,13 @@ oho:			while ((c = sloscan()) == '\n') {
 		    iswsnl(stringbuf[-1]) && stringbuf[-3] != EBLOCK)
 			stringbuf--;
 		savch('\0');
+#ifdef PCC_DEBUG
 		if (dflag) {
 			printf("readargs: save arg %d '", i);
 			prline(args[i]);
 			printf("'\n");
 		}
+#endif
 	}
 
 	IMP("RDA2");
@@ -1501,11 +1509,13 @@ subarg(struct symtab *nl, const usch **args, int lvl)
 
 	sp = vp;
 	instr = snuff = 0;
+#ifdef PCC_DEBUG
 	if (dflag>1) {
 		printf("%d:subarg ARGlist for %s: '", lvl, nl->namep);
 		prrep(vp);
 		printf("'\n");
 	}
+#endif
 
 	/*
 	 * push-back replacement-list onto lex buffer while replacing
@@ -1531,11 +1541,13 @@ subarg(struct symtab *nl, const usch **args, int lvl)
 #endif
 			} else
 				bp = ap = args[(int)*--sp];
+#ifdef PCC_DEBUG
 			if (dflag>1){
 				printf("%d:subarg GOTwarn; arglist '", lvl);
 				prline(bp);
 				printf("'\n");
 			}
+#endif
 			if (sp[2] != CONC && !snuff && sp[-1] != CONC) {
 				/*
 				 * Expand an argument; 6.10.3.1: 
@@ -1674,7 +1686,8 @@ sav:			savstr(yytext);
 	readmac--;
 }
 
-void
+#ifdef PCC_DEBUG
+static void
 imp(const char *str)
 {
 	printf("%s (%d) '", str, bidx);
@@ -1682,7 +1695,7 @@ imp(const char *str)
 	printf("'\n");
 }
 
-void
+static void
 prrep(const usch *s)
 {
 	while (*s) {
@@ -1697,7 +1710,7 @@ prrep(const usch *s)
 	}
 }
 
-void
+static void
 prline(const usch *s)
 {
 	while (*s) {
@@ -1712,6 +1725,7 @@ prline(const usch *s)
 		s++;
 	}
 }
+#endif
 
 usch *
 savstr(const usch *str)
@@ -1903,7 +1917,7 @@ lookup(const usch *key, int enterf)
 	struct symtab *sp;
 	struct tree *w, *new, *last;
 	int len, cix, bit, fbit, svbit, ix, bitno;
-	const usch *k, *m, *sm;
+	const usch *k, *m;
 
 	/* Count full string length */
 	for (k = key, len = 0; *k; k++, len++)
@@ -1938,7 +1952,7 @@ lookup(const usch *key, int enterf)
 
 	sp = (struct symtab *)w;
 
-	sm = m = sp->namep;
+	m = sp->namep;
 	k = key;
 
 	/* Check for correct string and return */

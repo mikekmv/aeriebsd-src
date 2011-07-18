@@ -55,28 +55,6 @@ builtin_alloca(NODE *f, NODE *a, TWORD rt)
 }
 
 /*
- * See if there is a goto in the tree.
- * XXX this function is a hack for a flaw in handling of 
- * compound expressions and inline functions and should not be 
- * needed.
- */
-static int
-hasgoto(NODE *p)
-{
-	int o = coptype(p->n_op);
-
-	if (o == LTYPE)
-		return 0;
-	if (p->n_op == GOTO)
-		return 1;
-	if (o == UTYPE)
-		return hasgoto(p->n_left);
-	if (hasgoto(p->n_left))
-		return 1;
-	return hasgoto(p->n_right);
-}
-
-/*
  * Determine if a value is known to be constant at compile-time and
  * hence that PCC can perform constant-folding on expressions involving
  * that value.
@@ -601,7 +579,7 @@ acnt(NODE *a, int narg, TWORD *tp)
 		if (tp == NULL)
 			continue;
 		q = a->n_right;
-		t = tp[narg-1];
+		t = ctype(tp[narg-1]);
 		if (q->n_type == t)
 			continue;
 		a->n_right = ccast(q, t, 0, NULL, 0);
@@ -611,7 +589,7 @@ acnt(NODE *a, int narg, TWORD *tp)
 	if (narg == 1 && tp != NULL) {
 		q = talloc();
 		*q = *a;
-		q = ccast(q, tp[0], 0, NULL, 0);
+		q = ccast(q, ctype(tp[0]), 0, NULL, 0);
 		*a = *q;
 		nfree(q);
 	}

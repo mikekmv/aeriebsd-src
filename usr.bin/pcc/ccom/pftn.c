@@ -377,8 +377,7 @@ defid(NODE *q, int class)
 		printf("	new entry made\n");
 #endif
 	if (type < BTMASK && (ap = attr_find(q->n_ap, GCC_ATYP_MODE))) {
-		int u = ISUNSIGNED(type);
-		type = u ? ENUNSIGN(ap->iarg(0)) : ap->iarg(0);
+		type = ENUNSIGN(ap->iarg(0));
 		if (type == XTYPE)
 			uerror("fix XTYPE basetyp");
 	}
@@ -489,6 +488,7 @@ ssave(struct symtab *sym)
 void
 ftnend()
 {
+	struct attr *gc, *gd;
 	extern NODE *cftnod;
 	extern struct savbc *savbc;
 	extern struct swdef *swpole;
@@ -518,6 +518,26 @@ ftnend()
 			cerror("parameter reset error");
 		if (swpole != NULL)
 			cerror("switch error");
+	}
+	if (cftnsp) {
+		gc = attr_find(cftnsp->sap, GCC_ATYP_CONSTRUCTOR);
+		gd = attr_find(cftnsp->sap, GCC_ATYP_DESTRUCTOR);
+		if (gc || gd) {
+			struct symtab sts = *cftnsp;
+			NODE *p;
+			sts.stype = INCREF(sts.stype);
+			p = nametree(&sts);
+			p->n_op = ICON;
+			if (gc) {
+				locctr(CTORS, &sts);
+				inval(0, SZPOINT(0), p);
+			}
+			if (gd) {
+				locctr(DTORS, &sts);
+				inval(0, SZPOINT(0), p);
+			}
+			tfree(p);
+		}
 	}
 	savbc = NULL;
 	lparam = NULL;
@@ -1070,21 +1090,18 @@ int
 talign(unsigned int ty, struct attr *apl)
 {
 	struct attr *al;
-	int i, a;
+	int a;
 
-	for( i=0; i<=(SZINT-BTSHIFT-1); i+=TSHIFT ){
-		switch( (ty>>i)&TMASK ){
-
+	for (; ty > BTMASK; ty = DECREF(ty)) {
+		switch (ty & TMASK) {
 		case PTR:
 			return(ALPOINT);
 		case ARY:
 			continue;
 		case FTN:
 			cerror("compiler takes alignment of function");
-		case 0:
-			break;
-			}
 		}
+	}
 
 	/* check for alignment attribute */
 	if ((al = attr_find(apl, GCC_ATYP_ALIGNED))) {
@@ -1096,7 +1113,7 @@ talign(unsigned int ty, struct attr *apl)
 	}
 
 	ty = BTYPE(ty);
-	if (ISUNSIGNED(ty))
+	if (ty >= CHAR && ty <= ULONGLONG && ISUNSIGNED(ty))
 		ty = DEUNSIGN(ty);
 
 	switch (ty) {
@@ -1116,7 +1133,7 @@ talign(unsigned int ty, struct attr *apl)
 	return a;
 }
 
-short sztable[] = { 0, 0, SZCHAR, SZCHAR, SZSHORT, SZSHORT, SZINT, SZINT,
+short sztable[] = { 0, SZBOOL, SZCHAR, SZCHAR, SZSHORT, SZSHORT, SZINT, SZINT,
 	SZLONG, SZLONG, SZLONGLONG, SZLONGLONG, SZFLOAT, SZDOUBLE, SZLDOUBLE };
 
 /* compute the size associated with type ty,
@@ -1127,12 +1144,11 @@ tsize(TWORD ty, union dimfun *d, struct attr *apl)
 {
 	struct attr *ap, *ap2;
 	OFFSZ mult, sz;
-	int i;
 
 	mult = 1;
 
-	for( i=0; i<=(SZINT-BTSHIFT-1); i+=TSHIFT ){
-		switch( (ty>>i)&TMASK ){
+	for (; ty > BTMASK; ty = DECREF(ty)) {
+		switch (ty & TMASK) {
 
 		case FTN:
 			uerror( "cannot take size of function");
@@ -1145,19 +1161,13 @@ tsize(TWORD ty, union dimfun *d, struct attr *apl)
 				cerror("tsize: dynarray");
 			mult *= d->ddim;
 			d++;
-			continue;
-		case 0:
-			break;
-
-			}
 		}
+	}
 
-	if ((ty = BTYPE(ty)) == VOID)
+	if (ty == VOID)
 		ty = CHAR;
 	if (ty <= LDOUBLE)
 		sz = sztable[ty];
-	else if (ty == BOOL)
-		sz = SZBOOL;
 	else if (ISSOU(ty)) {
 		if ((ap = strattr(apl)) == NULL ||
 		    (ap2 = attr_find(apl, GCC_ATYP_ALIGNED)) == NULL ||
@@ -1235,6 +1245,7 @@ inwstring(struct symtab *sp)
 	char *s = sp->sname;
 	NODE *p;
 
+	locctr(STRNG, sp);
 	defloc(sp);
 	p = xbcon(0, NULL, WCHAR_TYPE);
 	do {
@@ -1258,6 +1269,7 @@ instring(struct symtab *sp)
 {
 	char *s, *str;
 
+	locctr(STRNG, sp);
 	defloc(sp);
 	str = sp->sname;
 
@@ -1481,7 +1493,7 @@ falloc(struct symtab *p, int w, NODE *pty)
 
 	if (type == BOOL)
 		type = BOOL_TYPE;
-	if (type < CHAR || type > ULONGLONG) {
+	if (!ISINTEGER(type)) {
 		uerror("illegal field type");
 		type = INT;
 	}
@@ -1518,6 +1530,24 @@ falloc(struct symtab *p, int w, NODE *pty)
 }
 
 /*
+ * Check if this symbol should be a common or must be handled in data seg.
+ */
+static void
+commchk(struct symtab *sp)
+{
+	if ((sp->sflags & STLS) || attr_find(sp->sap, GCC_ATYP_SECTION)) {
+		/* TLS handled in data segment */
+		if (sp->sclass == EXTERN)
+			sp->sclass = EXTDEF;
+		beginit(sp);
+		endinit(1);
+	} else {
+		symdirec(sp);
+		defzero(sp);
+	}
+}
+
+/*
  * handle unitialized declarations assumed to be not functions:
  * int a;
  * extern int a;
@@ -1540,11 +1570,6 @@ nidcl(NODE *p, int class)
 	}
 
 	defid(p, class);
-
-#ifdef GCC_COMPAT
-	if (p->n_op == CM)
-		cerror("nidcl CM");
-#endif
 
 	sp = p->n_sp;
 	/* check if forward decl */
@@ -1569,7 +1594,7 @@ nidcl(NODE *p, int class)
 		if (blevel == 0)
 			lcommadd(p->n_sp);
 		else
-			defzero(p->n_sp);
+			commchk(p->n_sp);
 		break;
 	}
 }
@@ -1630,7 +1655,7 @@ lcommprint(void)
 
 	SLIST_FOREACH(lc, &lhead, next) {
 		if (lc->sp != NULL)
-			defzero(lc->sp);
+			commchk(lc->sp);
 	}
 }
 
@@ -1893,9 +1918,6 @@ tymerge(NODE *typ, NODE *idp)
 		fwalk(idp, eprint, 0);
 	}
 #endif
-
-	if (typ->n_op == CM || idp->n_op == CM)
-		cerror("tymerge CM");
 
 	if (typ->n_op != TYPE)
 		cerror("tymerge: arg 1");
@@ -2749,8 +2771,13 @@ scnames(int c)
 	}
 #endif
 
+#ifdef os_openbsd
+static char *stack_chk_fail = "__stack_smash_handler";
+static char *stack_chk_guard = "__guard";
+#else
 static char *stack_chk_fail = "__stack_chk_fail";
 static char *stack_chk_guard = "__stack_chk_guard";
+#endif
 static char *stack_chk_canary = "__stack_chk_canary";
 
 void

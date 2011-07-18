@@ -48,7 +48,6 @@ stoasg( p, o ) register NODE *p; {
 	if( o==UNARY MUL && p->left->op == REG && !isbreg(p->left->rval) ) SETSTO(p,INAREG);
  */
 	}
-#endif
 
 int
 deltest( p ) register NODE *p; {
@@ -57,7 +56,6 @@ deltest( p ) register NODE *p; {
 	return( p->n_op == REG || p->n_op == NAME || p->n_op == OREG );
 	}
 
-#if 0
 autoincr( p ) NODE *p; {
 	register NODE *q = p->left, *r;
 
@@ -292,10 +290,47 @@ rallo( p, down ) NODE *p; {
 	}
 #endif
 
+/*
+ * Turn a UMUL-referenced node into OREG.
+ * Be careful about register classes, this is a place where classes change.
+ */
+void
+offstar(NODE *p, int shape)
+{
+
+	if (x2debug)
+		printf("offstar(%p)\n", p);
+
+	if (isreg(p))
+		return; /* Is already OREG */
+
+#if 0 /* notyet */
+	NODE *r;
+	r = p->n_right;
+	if( p->n_op == PLUS || p->n_op == MINUS ){
+		if( r->n_op == ICON ){
+			if (isreg(p->n_left) == 0)
+				(void)geninsn(p->n_left, INAREG);
+			/* Converted in ormake() */
+			return;
+		}
+		if (r->n_op == LS && r->n_right->n_op == ICON &&
+		    r->n_right->n_lval == 2 && p->n_op == PLUS) {
+			if (isreg(p->n_left) == 0)
+				(void)geninsn(p->n_left, INAREG);
+			if (isreg(r->n_left) == 0)
+				(void)geninsn(r->n_left, INAREG);
+			return;
+		}
+	}
+#endif
+	(void)geninsn(p, INAREG);
+}
+
+
+#if 0
 void
 offstar( p, s ) register NODE *p; {
-comperr("offstar");
-#if 0
 	if( p->n_op == PLUS ) {
 		if( p->n_left->n_su == fregs ) {
 			order( p->n_left, INAREG );
@@ -339,8 +374,8 @@ comperr("offstar");
 	}
 
 	order( p, INAREG );
-#endif
 	}
+#endif
 
 int
 setbin( p ) register NODE *p; {
@@ -568,8 +603,28 @@ argsize( p ) register NODE *p; {
 struct rspecial *
 nspecial(struct optab *q)
 {
-	comperr("nspecial");
-	return NULL;
+	switch (q->op) {
+	case STARG:
+		{
+		static struct rspecial s[] = {
+		    { NEVER, R0, }, { NEVER, R1, }, { NEVER, R2, },
+		    { NEVER, R3, }, { NEVER, R4, }, { NEVER, R5 } };
+		return s;
+		}
+	case MOD:
+	case MUL:
+	case DIV:
+		{
+		static struct rspecial s[] = {
+		    { NEVER, R0, }, { NEVER, R1, }, { NEVER, R2, },
+		    { NEVER, R3, }, { NEVER, R4, }, { NEVER, R5 },
+		    { NRES, XR0 }, };
+		return s;
+		}
+	default:
+		comperr("nspecial");
+		return NULL;
+	}
 }
 
 /*

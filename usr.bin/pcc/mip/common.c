@@ -150,7 +150,7 @@ werror(char *s, ...)
 bittype warnary[(NUMW/NUMBITS)+1], werrary[(NUMW/NUMBITS)+1];
 
 static char *warntxt[] = {
-	"conversion to '%s' from '%s' may alter its value",
+	"conversion from '%s' to '%s' may alter its value",
 	"function declaration isn't a prototype", /* Wstrict_prototypes */
 	"no previous prototype for `%s'", /* Wmissing_prototypes */
 	"return type defaults to `int'", /* Wimplicit_int */
@@ -481,7 +481,7 @@ tprint(FILE *fp, TWORD t, TWORD q)
 {
 	static char * tnames[] = {
 		"undef",
-		"farg",
+		"bool",
 		"char",
 		"uchar",
 		"short",
@@ -501,7 +501,7 @@ tprint(FILE *fp, TWORD t, TWORD q)
 		"moety",
 		"void",
 		"signed", /* pass1 */
-		"bool", /* pass1 */
+		"farg", /* pass1 */
 		"fimag", /* pass1 */
 		"dimag", /* pass1 */
 		"limag", /* pass1 */
@@ -569,7 +569,7 @@ permalloc(int size)
 	if (size <= 0)
 		cerror("permalloc2");
 	if (allocleft < size) {
-		/* looses unused bytes */
+		/* loses unused bytes */
 		lostmem += allocleft;
 		if ((allocpole = malloc(MEMCHUNKSZ)) == NULL)
 			cerror("permalloc: out of memory");
@@ -780,4 +780,26 @@ listarg(NODE *p, int n, int *cnt)
 		r = n == 0 ? p : NIL;
 	}
 	return r;
+}
+
+/*
+ * Make a type unsigned, if possible.
+ */
+TWORD
+enunsign(TWORD t)
+{
+	if (BTYPE(t) >= CHAR && BTYPE(t) <= ULONGLONG)
+		t |= 1;
+	return t;
+}
+
+/*
+ * Make a type signed, if possible.
+ */
+TWORD
+deunsign(TWORD t)
+{
+	if (BTYPE(t) >= CHAR && BTYPE(t) <= ULONGLONG)
+		t &= ~1;
+	return t;
 }

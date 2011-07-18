@@ -34,19 +34,10 @@
 
 # include "pass1.h"
 
+static void r1arg(NODE *p, NODE *q);
+
+
 /*	this file contains code which is dependent on the target machine */
-
-#if 0
-NODE *
-cast( p, t ) register NODE *p; TWORD t; {
-	/* cast node p to type t */
-
-	p = buildtree( CAST, block( NAME, NIL, NIL, t, 0, (int)t ), p );
-	p->left->op = FREE;
-	p->op = FREE;
-	return( p->right );
-	}
-#endif
 
 NODE *
 clocal(p) NODE *p; {
@@ -64,9 +55,18 @@ clocal(p) NODE *p; {
 	   exclusive or) are easily handled here as well */
 
 	register struct symtab *q;
-	register NODE *r;
+	register NODE *r, *l;
 	register int o;
-	register int m, ml;
+	register int ml;
+
+
+#ifdef PCC_DEBUG
+	if (xdebug) {
+		printf("clocal(%p)\n", p);
+		if (xdebug>1)
+			fwalk(p, eprint, 0);
+	}
+#endif
 
 	switch( o = p->n_op ){
 
@@ -76,95 +76,43 @@ clocal(p) NODE *p; {
 			}
 		switch( q->sclass ){
 
+		case REGISTER:
 		case AUTO:
 		case PARAM:
 			/* fake up a structure reference */
 			r = block( REG, NIL, NIL, PTR+STRTY, 0, 0 );
 			r->n_lval = 0;
-			r->n_rval = (q->sclass==AUTO?STKREG:ARGREG);
+			r->n_rval = (q->sclass==PARAM?ARGREG:FPREG);
 			p = stref( block( STREF, r, p, 0, 0, 0 ) );
 			break;
-
-		case STATIC:
-			if( q->slevel == 0 ) break;
-			p->n_lval = 0;
-			p->n_rval = -q->soffset;
-			break;
-
-		case REGISTER:
-			p->n_op = REG;
-			p->n_lval = 0;
-			p->n_rval = q->soffset;
-			break;
-
-			}
+		}
 		break;
 
 	case PCONV:
-		/* do pointer conversions for char and longs */
+		/* do pointer conversions */
+		/* XXX fix propagation down of changed types */
+
+		/* if left is SCONV, cannot remove */
+		if (p->n_left->n_op == SCONV)
+			break;
+
 		ml = p->n_left->n_type;
-		if( ( ml==CHAR || ml==UCHAR || ml==SHORT || ml==USHORT ) && p->n_left->n_op != ICON ) break;
+		if (ml < INT && p->n_left->n_op != ICON)
+			break;
 
-		/* pointers all have the same representation; the type is inherited */
-
-	inherit:
-		p->n_left->n_type = p->n_type;
-		p->n_left->n_df = p->n_df;
-		p->n_left->n_sue = p->n_sue;
-		r = p->n_left;
-		nfree(p);
-		return( r );
-
-	case SCONV:
-		m = (p->n_type == FLOAT || p->n_type == DOUBLE );
-		ml = (p->n_left->n_type == FLOAT || p->n_left->n_type == DOUBLE );
-		if( m != ml ) break;
-
-		/* now, look for conversions downwards */
-
-		m = p->n_type;
-		ml = p->n_left->n_type;
-		if( p->n_left->n_op == ICON ){ /* simulate the conversion here */
-			CONSZ val;
-			val = p->n_left->n_lval;
-			switch( m ){
-			case CHAR:
-				p->n_left->n_lval = (char) val;
-				break;
-			case UCHAR:
-				p->n_left->n_lval = val & 0XFF;
-				break;
-			case USHORT:
-				p->n_left->n_lval = val & 0XFFFFL;
-				break;
-			case SHORT:
-				p->n_left->n_lval = (short)val;
-				break;
-			case UNSIGNED:
-				p->n_left->n_lval = val & 0xFFFFFFFFL;
-				break;
-			case INT:
-				p->n_left->n_lval = (int)val;
-				break;
-				}
-			p->n_left->n_type = m;
-			}
-		else {
-			/* meaningful ones are conversion of int to char, int to short,
-			   and short to char, and unsigned version of them */
-			if( m==CHAR || m==UCHAR ){
-				if( ml!=CHAR && ml!= UCHAR ) break;
-				}
-			else if( m==SHORT || m==USHORT ){
-				if( ml!=CHAR && ml!=UCHAR && ml!=SHORT && ml!=USHORT ) break;
-				}
-			}
-
-		/* clobber conversion */
-		if( tlen(p) == tlen(p->n_left) ) goto inherit;
-		r = p->n_left;
-		nfree(p);
-		return( r );  /* conversion gets clobbered */
+		if (coptype(p->n_left->n_op) == LTYPE) {
+			/*
+			 * pointers all have the same representation;
+			 * the type is inherited
+			 */
+			p->n_left->n_type = p->n_type;
+			p->n_left->n_df = p->n_df;
+			p->n_left->n_ap = p->n_ap;
+			r = p->n_left;
+			nfree(p);
+			p = r;
+		}
+		break;
 
 	case RS:
 	case RSEQ:
@@ -184,39 +132,102 @@ clocal(p) NODE *p; {
 		    RETREG(CHAR) : RETREG(p->n_type);
 		break;
 
-	case STCALL:
-	case CALL:
-		/* Fix function call arguments. On vax, just add funarg */
-		for (r = p->n_right; r->n_op == CM; r = r->n_left) {
-			if (r->n_right->n_op != STARG &&
-			    r->n_right->n_op != FUNARG)
-				r->n_right = block(FUNARG, r->n_right, NIL, 
-				    r->n_right->n_type, r->n_right->n_df,
-				    r->n_right->n_sue);
+	case SCONV:
+		l = p->n_left;
+		ml = p->n_type;
+		if (ml == INT && l->n_type == UNSIGNED) {
+			nfree(p);
+			p = l;
+			break;
 		}
-		if (r->n_op != STARG && r->n_op != FUNARG) {
-			NODE *l = talloc();
-			*l = *r;
-			r->n_op = FUNARG; r->n_left = l; r->n_type = l->n_type;
+		if (l->n_op == ICON) {
+			if (l->n_sp == 0) {
+				p->n_type = UNSIGNED;
+				concast(l, p->n_type);
+			} else if (ml != INT && ml != UNSIGNED)
+				break;
+			l->n_type = ml;
+			l->n_ap = 0;
+			nfree(p);
+			p = l;
+			break;
 		}
 		break;
+
+	case STCALL:
+		/* see if we have been here before */
+		for (r = p->n_right; r->n_op == CM; r = r->n_left)
+			;
+		if (r->n_op == ASSIGN)
+			break;
+
+		/* FALLTHROUGH */
+	case USTCALL:
+		/* Allocate buffer on stack to bounce via */
+		/* create fake symtab here */
+		q = getsymtab("77fake", STEMP);
+		q->stype = BTYPE(p->n_type);
+		q->sdf = p->n_df;
+		q->sap = p->n_ap;
+		q->soffset = NOOFFSET;
+		q->sclass = AUTO;
+		oalloc(q, &autooff);
+		r1arg(p, buildtree(ADDROF, nametree(q), 0));
+		break;
 	}
+#ifdef PCC_DEBUG
+	if (xdebug) {
+		printf("clocal end(%p)\n", p);
+		if (xdebug>1)
+			fwalk(p, eprint, 0);
+	}
+#endif
 
 	return(p);
+}
+
+/*
+ * Add R1 with the dest address as arg to a struct return call.
+ */
+static void
+r1arg(NODE *p, NODE *q)
+{
+	NODE *r;
+
+	r = block(REG, NIL, NIL, PTR|VOID, 0, 0);
+	regno(r) = R1;
+	r = buildtree(ASSIGN, r, q);
+	if (p->n_op == USTCALL) {
+		p->n_op = STCALL;
+		p->n_right = r;
+	} else if (p->n_right->n_op != CM) {
+		p->n_right = block(CM, r, p->n_right, INT, 0, 0);
+	} else {
+		for (q = p->n_right; q->n_left->n_op == CM; q = q->n_left)
+			;
+		q->n_left = block(CM, r, q->n_left, INT, 0, 0);
+	}
 }
 
 void
 myp2tree(NODE *p)
 {
 	struct symtab *sp;
-	int o = p->n_op, i;
 
-	if (o != FCON) 
+	if ((cdope(p->n_op) & CALLFLG) && p->n_left->n_op == ADDROF &&
+	    p->n_left->n_left->n_op == NAME) {
+		NODE *q = p->n_left->n_left;
+		nfree(p->n_left);
+		p->n_left = q;
+		q->n_op = ICON;
+	}
+
+	if (p->n_op != FCON) 
 		return;
 
 	sp = inlalloc(sizeof(struct symtab));
 	sp->sclass = STATIC;
-	sp->ssue = 0;
+	sp->sap = 0;
 	sp->slevel = 1; /* fake numeric label */
 	sp->soffset = getlab();
 	sp->sflags = 0;
@@ -224,7 +235,7 @@ myp2tree(NODE *p)
 	sp->squal = (CON >> TSHIFT);
 
 	defloc(sp);
-	ninval(0, sp->ssue->suesize, p);
+	inval(0, tsize(sp->stype, sp->sdf, sp->sap), p);
 
 	p->n_op = NAME;
 	p->n_lval = 0;
@@ -238,21 +249,43 @@ myp2tree(NODE *p)
 int
 andable(NODE *p)
 {
-
-	if ((p->n_type & ~BTMASK) == FTN)
-		return 1; /* functions are called by name */
-	return 0; /* Delay name reference to table, for PIC code generation */
+	/* for now, delay name reference to table, for PIC code generation */
+	/* functions are called by name, convert they in myp2tree */
+	return 0;
 }
- 
-int
-cisreg( t ) TWORD t; { /* is an automatic variable of type t OK for a register variable */
-	return(1);	/* all are now */
-	}
 
+/* is an automatic variable of type t OK for a register variable */
+int
+cisreg(TWORD t)
+{
+	return(1);	/* all are now */
+}
+
+/*
+ * Allocate off bits on the stack.  p is a tree that when evaluated
+ * is the multiply count for off, t is a storeable node where to write
+ * the allocated address.
+ */
 void
 spalloc(NODE *t, NODE *p, OFFSZ off)
 {
-	cerror("spalloc");
+	NODE *sp;
+
+	p = buildtree(MUL, p, bcon(off/SZCHAR)); /* XXX word alignment? */
+
+	/* sub the size from sp */
+	sp = block(REG, NIL, NIL, p->n_type, 0, 0);
+	sp->n_lval = 0;
+	sp->n_rval = STKREG;
+	ecomp(buildtree(MINUSEQ, sp, p));
+
+	/* save the address of sp */
+	sp = block(REG, NIL, NIL, PTR+INT, t->n_df, t->n_ap);
+	sp->n_lval = 0;
+	sp->n_rval = STKREG;
+	t->n_type = sp->n_type;
+	ecomp(buildtree(ASSIGN, t, sp)); /* Emit! */
+
 }
 
 char *
@@ -264,8 +297,9 @@ exname( p ) char *p; {
 	return( p );
 	}
 
+/* map types which are not defined on the local machine */
 TWORD
-ctype(TWORD type ){ /* map types which are not defined on the local machine */
+ctype(TWORD type) {
 	switch( BTYPE(type) ){
 
 	case LONG:
@@ -292,40 +326,26 @@ extdec(struct symtab *q)
 {
 }
 
+/* make a common declaration for id, if reasonable */
 void
-commdec( struct symtab *q ){ /* make a common declaration for id, if reasonable */
-	OFFSZ off;
-
-	printf( "	.comm	%s,", q->soname ? q->soname : exname( q->sname ) );
-	off = tsize( q->stype, q->sdf, q->ssue );
-	printf( CONFMT, off/SZCHAR );
-	printf( "\n" );
-	}
-
-/* make a local common declaration for id, if reasonable */
-void
-lcommdec(struct symtab *q)
+defzero(struct symtab *sp)
 {
-	int off;
+	int off, al;
+	char *name;
 
-	off = tsize(q->stype, q->sdf, q->ssue);
-	off = (off+(SZCHAR-1))/SZCHAR;
-	if (q->slevel == 0)
-		printf("	.lcomm %s,0%o\n", q->soname ? q->soname : exname(q->sname), off);
-	else
-		printf("	.lcomm " LABFMT ",0%o\n", q->soffset, off);
-}
+	if ((name = sp->soname) == NULL)
+		name = exname(sp->sname);
+	off = tsize(sp->stype, sp->sdf, sp->sap);
+	SETOFF(off,SZCHAR);
+	off /= SZCHAR;
+	al = talign(sp->stype, sp->sap)/SZCHAR;
 
-
-static char *loctbl[] = { "text", "data", "section .rodata", "section .rodata" };
-
-void
-setloc1(int locc)
-{
-	if (locc == lastloc)
-		return;
-	lastloc = locc;
-	printf("	.%s\n", loctbl[locc]);
+	if (sp->sclass == STATIC)
+		printf("\t.local %s\n", name);
+	if (sp->slevel == 0) {
+		printf("\t.comm %s,0%o,%d\n", name, off, al);
+	} else
+		printf("\t.comm " LABFMT ",0%o,%d\n", sp->soffset, off, al);
 }
 
 /*
@@ -339,33 +359,8 @@ int
 ninval(CONSZ off, int fsz, NODE *p)
 {
 	union { float f; double d; long double l; int i[3]; } u;
-	struct symtab *q;
-	TWORD t;
 
-	t = p->n_type;
-	if (t > BTMASK)
-		p->n_type = t = INT; /* pointer */
-
-	if (p->n_op == ICON && p->n_sp != NULL && DEUNSIGN(t) != INT)
-		uerror("element not constant");
-
-	switch (t) {
-	case LONGLONG:
-	case ULONGLONG:
-		printf("\t.long 0x%x", (int)p->n_lval);
-		printf("\t.long 0x%x", (int)(p->n_lval >> 32));
-		break;
-	case INT:
-	case UNSIGNED:
-		printf("\t.long 0x%x", (int)p->n_lval);
-		if ((q = p->n_sp) != NULL) {
-			if ((q->sclass == STATIC && q->slevel > 0)) {
-				printf("+" LABFMT, q->soffset);
-			} else
-				printf("+%s", q->soname ? q->soname : exname(q->sname));
-		}
-		printf("\n");
-		break;
+	switch (p->n_type) {
 	case LDOUBLE:
 		u.i[2] = 0;
 		u.l = (long double)p->n_dcon;

@@ -48,7 +48,7 @@
  */
 #include "config.h"
 
-#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 
 #include <ctype.h>
@@ -66,6 +66,10 @@
 #include <windows.h>
 #include <process.h>
 #include <io.h>
+#define F_OK	0x00
+#define R_OK	0x04
+#define W_OK	0x02
+#define X_OK	R_OK 
 #endif
 
 #include "ccconfig.h"
@@ -107,13 +111,11 @@
 #define LINKER		"ld"
 #endif
 
-#define OS MKS(TARGOS)
-#define MACH MKS(TARGMACH)
 #ifndef PCCINCDIR
-#define PCCINCDIR	LIBDIR "pcc/" MACH "-" OS "/" PACKAGE_VERSION "/include"
+#define PCCINCDIR	LIBDIR "pcc/" TARGMACH "-" TARGOS "/" PACKAGE_VERSION "/include"
 #endif
 #ifndef PCCLIBDIR
-#define PCCLIBDIR	LIBDIR "pcc/" MACH "-" OS "/" PACKAGE_VERSION "/lib"
+#define PCCLIBDIR	LIBDIR "pcc/" TARGMACH "-" TARGOS "/" PACKAGE_VERSION "/lib"
 #endif
 
 #ifndef MULTIOSDIR
@@ -219,7 +221,7 @@ char *startfiles_S[] = STARTFILES_S;
 char *endfiles_S[] = ENDFILES_S;
 #endif
 #ifdef MULTITARGET
-char *mach = DEFMACH;
+char *mach = TARGMACH;
 struct cppmd {
 	char *mach;
 	char *cppmdadd[MAXCPPMDARGS];
@@ -693,13 +695,12 @@ main(int argc, char *argv[])
 #ifndef os_darwin
 				if (strcmp(argv[i], "-shared") == 0) {
 					shared = 1;
-#ifndef os_win32
-					nostdlib = 1;
-#endif
 				} else
 #endif
 				if (strcmp(argv[i], "-static") == 0) {
 					Bstatic = 1;
+				} else if (strcmp(argv[i], "-symbolic") == 0) {
+					llist[nl++] = "-Bsymbolic";
 				} else if (strncmp(argv[i], "-std", 4) == 0) {
 					/* ignore gcc -std= */;
 				} else
@@ -859,7 +860,7 @@ main(int argc, char *argv[])
 		if (!nostdinc) {
 			av[na++] = "-S", av[na++] = cat(sysroot, altincdir);
 			av[na++] = "-S", av[na++] = cat(sysroot, incdir);
-			av[na++] = "-S", av[na++] = cat(sysroot, pccincdir);
+			av[na++] = "-S", av[na++] = pccincdir;
 		}
 		if (idirafter) {
 			av[na++] = "-I";

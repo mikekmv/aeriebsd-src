@@ -165,20 +165,22 @@ inline_start(struct symtab *sp)
 void
 inline_end()
 {
+	struct symtab *sp = cifun->sp;
 
 	SDEBUG(("inline_end()\n"));
 
 	if (sdebug)printip(&cifun->shead);
 	isinlining = 0;
 
-	if (attr_find(cifun->sp->sap, GCC_ATYP_GNU_INLINE)) {
-		if (cifun->sp->sclass == EXTDEF)
-			cifun->sp->sclass = 0;
+	if (sp->sclass != STATIC &&
+	    (attr_find(sp->sap, GCC_ATYP_GNU_INLINE) || xgcc)) {
+		if (sp->sclass == EXTDEF)
+			sp->sclass = 0;
 		else
-			cifun->sp->sclass = EXTDEF;
+			sp->sclass = EXTDEF;
 	}
 
-	if (cifun->sp->sclass == EXTDEF) {
+	if (sp->sclass == EXTDEF) {
 		cifun->flags |= REFD;
 		inline_prtout();
 	}
@@ -283,6 +285,7 @@ inline_prtout()
 	SLIST_FOREACH(w, &ipole, link) {
 		if ((w->flags & (REFD|WRITTEN)) == REFD &&
 		    !DLIST_ISEMPTY(&w->shead, qelem)) {
+			locctr(PROG, w->sp);
 			defloc(w->sp);
 			puto(w);
 			w->flags |= WRITTEN;

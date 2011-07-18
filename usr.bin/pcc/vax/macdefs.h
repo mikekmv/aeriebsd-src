@@ -81,7 +81,7 @@
 /* Default char is signed */
 #undef  CHAR_UNSIGNED
 #define BOOL_TYPE       CHAR    /* what used to store _Bool */
-
+#define	HASP2ALIGN
 /*	size in which constants are converted */
 /*	should be long if feasable */
 
@@ -97,35 +97,22 @@ typedef unsigned long long U_CONSZ;
  */
 typedef long long OFFSZ;
 
-/* 	character set macro */
-
-# define  CCTRANS(x) x
-
 /* register cookie for stack poINTer */
 
-# define  STKREG 13
-# define ARGREG 12
-
-/*	maximum and minimum register variables */
-
-# define MAXRVAR 11
-# define MINRVAR 6
 
 /* show stack grows negatively */
 #define BACKAUTO
 #define BACKTEMP
 
 /* show field hardware support on VAX */
-#define FIELDOPS
+/* XXX notyet */
+#undef FIELDOPS
 
 /* bytes are numbered from right to left */
 #define TARGET_ENDIAN TARGET_LE
 
 /* we want prtree included */
 # define STDPRTREE
-# ifndef FORT
-# define ONEPASS
-#endif
 
 /*	VAX-11/780 Registers */
 
@@ -176,7 +163,7 @@ extern int maxargs;
 
 # define BYTEOFF(x) ((x)&03)
 # define wdal(k) (BYTEOFF(k)==0)
-# define BITOOR(x) ((x)>>3)  /* bit offset to oreg offset */
+# define BITOOR(x) ((x))  /* bit offset to oreg offset XXX wrong */
 
 # define REGSZ 16
 
@@ -238,9 +225,10 @@ extern int maxargs;
 #define NUMCLASS        2       /* highest number of reg classes used */
 
 /* size, in registers, needed to hold thing of type t */
-#define	szty(t)	(((t) == DOUBLE || (t) == LDOUBLE || (t) == FLOAT || \
-	(t) == LONGLONG || (t) == ULONGLONG) ? 2 : 1)
+#define	szty(t)	(((t) == DOUBLE || (t) == LONGLONG || (t) == ULONGLONG) ? 2 : 1)
 #define FPREG	FP	/* frame pointer */
+#define STKREG	SP
+#define ARGREG	AP
 
 #define DECRA(x,y)      (((x) >> (y*6)) & 63)   /* decode encoded regs */
 #define ENCRD(x)        (x)             /* Encode dest reg in n_reg */
@@ -251,6 +239,8 @@ extern int maxargs;
 #define PCLASS(p)	(szty(p->n_type) == 2 ? SBREG : SAREG)
 #define RETREG(x)	(szty(x) == 2 ? XR0 : R0)
 #define GCLASS(x)	(x < XR0 ? CLASSA : CLASSB)
+int xasmconstregs(char *s);
+#define XASMCONSTREGS(x) xasmconstregs(x)
 int COLORMAP(int c, int *r);
 
 #define	SNCON		(MAXSPECIAL+1)	/* named constand */

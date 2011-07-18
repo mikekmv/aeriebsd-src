@@ -76,7 +76,6 @@ extern void yyset_lineno (int);
 static int inch(void);
 
 int inif;
-extern int dflag;
 
 #define	PUTCH(ch) if (!flslvl) putch(ch)
 /* protection against recursion in #include */
@@ -177,7 +176,7 @@ static void
 fastscan(void)
 {
 	struct symtab *nl;
-	int ch, i, ccnt, onemore;
+	int ch, i = 0;
 	int nnl = 0;
 	usch *cp;
 
@@ -186,8 +185,10 @@ fastscan(void)
 		ch = NXTCH();
 xloop:		if (ch == -1)
 			return;
+#ifdef PCC_DEBUG
 		if (dflag>1)
 			printf("fastscan ch %d (%c)\n", ch, ch > 31 ? ch : '@');
+#endif
 		if ((spechr[ch] & C_SPEC) == 0) {
 			PUTCH(ch);
 			continue;
@@ -370,7 +371,7 @@ con:			PUTCH(ch);
 					ch = NXTCH();
 				goto xloop;
 			}
-			onemore = i = ccnt = 0;
+			i = 0;
 			do {
 				yytext[i++] = (usch)ch;
 				ch = NXTCH();
@@ -882,7 +883,7 @@ prtline()
 void
 cunput(int c)
 {
-#ifdef CPP_DEBUG
+#ifdef PCC_DEBUG
 //	extern int dflag;
 //	if (dflag)printf(": '%c'(%d)\n", c > 31 ? c : ' ', c);
 #endif
@@ -991,14 +992,21 @@ chknl(int ignore)
 	while ((t = sloscan()) == WSPACE)
 		;
 	if (t != '\n') {
-		if (ignore) {
-			warning("newline expected, got \"%s\"", yytext);
-			/* ignore rest of line */
-			while ((t = sloscan()) && t != '\n')
-				;
+		if (t && t != (usch)-1) {
+			if (ignore) {
+				warning("newline expected, got \"%s\"", yytext);
+				/* ignore rest of line */
+				while ((t = sloscan()) && t != '\n')
+					;
+			}
+			else
+				error("newline expected, got \"%s\"", yytext);
+		} else {
+			if (ignore)
+				warning("no newline at end of file");
+			else
+				error("no newline at end of file");
 		}
-		else
-			error("newline expected, got \"%s\"", yytext);
 	}
 }
 

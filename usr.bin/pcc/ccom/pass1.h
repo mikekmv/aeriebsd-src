@@ -46,8 +46,6 @@ typedef unsigned int bittype; /* XXX - for basicblock */
 #endif
 #include "manifest.h"
 
-#include "ccconfig.h"
-
 /*
  * Storage classes
  */
@@ -87,7 +85,7 @@ extern	char *scnames(int);
 #define	NSTYPES		05
 #define	SMASK		07
 
-/* #define SSET		00010 */
+#define	STLS		00010	/* Thread Local Support variable */
 /* #define SREF		00020 */
 #define SNOCREAT	00040	/* don't create a symbol in lookup() */
 #define STEMP		00100	/* Allocate symtab from temp or perm mem */
@@ -180,7 +178,7 @@ extern	OFFSZ inoff;
 
 extern	int reached;
 extern	int isinlining;
-extern	int xinline;
+extern	int xinline, xgcc;
 
 extern	int sdebug, idebug, pdebug;
 
@@ -205,6 +203,31 @@ extern char *pragma_renamed;
 #define FDEF		010
 #define FLOOP		020
 
+/*
+ * Location counters
+ */
+#define NOSEG		-1
+#define PROG		0		/* (ro) program segment */
+#define DATA		1		/* (rw) data segment */
+#define RDATA		2		/* (ro) data segment */
+#define LDATA		3		/* (rw) local data */
+#define UDATA		4		/* (rw) uninitialized data */
+#define STRNG		5		/* (ro) string segment */
+#define PICDATA		6		/* (rw) relocatable data segment */
+#define PICRDATA	7		/* (ro) relocatable data segment */
+#define PICLDATA	8		/* (rw) local relocatable data */
+#define TLSDATA		9		/* (rw) TLS data segment */
+#define TLSUDATA	10		/* (rw) TLS uninitialized segment */
+#define CTORS		11		/* constructor */
+#define DTORS		12		/* destructor */
+#define	NMSEG		13		/* other (named) segment */
+
+extern int lastloc, nextloc;
+void locctr(int type, struct symtab *sp);
+void setseg(int type, char *name);
+void defalign(int al);
+void symdirec(struct symtab *sp);
+
 /*	mark an offset which is undefined */
 
 #define NOOFFSET	(-10201)
@@ -228,7 +251,6 @@ extern	NODE
 	*pconvert(NODE *),
 	*oconvert(NODE *),
 	*ptmatch(NODE *),
-	*tymatch(NODE *),
 	*makety(NODE *, TWORD, TWORD, union dimfun *, struct attr *),
 	*block(int, NODE *, NODE *, TWORD, union dimfun *, struct attr *),
 	*doszof(NODE *),
@@ -297,7 +319,7 @@ char *tmpsprintf(char *, ...);
 char *tmpvsprintf(char *, va_list);
 void asginit(NODE *);
 void desinit(NODE *);
-void endinit(void);
+void endinit(int);
 void endictx(void);
 void sspinit(void);
 void sspstart(void);
@@ -592,7 +614,7 @@ void stabs_struct(struct symtab *, struct attr *);
  * The following types are only used in pass1.
  */
 #define SIGNED		(MAXTYPES+1)
-#define BOOL		(MAXTYPES+2)
+#define FARG		(MAXTYPES+2)
 #define	FIMAG		(MAXTYPES+3)
 #define	IMAG		(MAXTYPES+4)
 #define	LIMAG		(MAXTYPES+5)
