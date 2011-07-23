@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: syms.c,v 1.11 2011/02/03 23:39:38 mickey Exp $";
+    "$ABSD: syms.c,v 1.12 2011/05/03 14:36:01 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -183,6 +183,8 @@ sym_undcheck(void)
 	int err = 0;
 
 	SPLAY_FOREACH(sym, symtree, &undsyms) {
+		if (!sym->sl_name)
+			continue;
 		if (sym->sl_sect)
 			warnx("%s: undefined, first used in %s",
 			    sym->sl_name,
