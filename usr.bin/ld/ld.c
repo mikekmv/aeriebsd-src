@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld.c,v 1.32 2011/04/19 22:28:31 mickey Exp $";
+    "$ABSD: ld.c,v 1.33 2011/05/03 14:36:00 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -103,6 +103,7 @@ const struct option longopts[] = {
 	{ "auxiliary",		required_argument,	0, 'f' },
 	{ "filter",		required_argument,	0, 'F' },
 	{ "fini",		required_argument,	0, 'c' },
+	{ "gc-sections",	no_argument,		0, 0, },
 	{ "soname",		required_argument,	0, 'h' },
 	{ "init",		required_argument,	0, 'C' },
 	{ "library",		required_argument,	0, 'l' },
@@ -541,20 +542,18 @@ lib_add(const char *path, FILE *fp)
 	u_long len, symlen;
 	int i, nlen, ltrace = trace;
 
-	if (path[0] == '-' && path[1] == 'l') {
+	if (path[0] == '-' && path[1] == 'l')
 		TAILQ_FOREACH(pl, &libdirs, pl_entry) {
 			if (asprintf(&p, "%slib%s.a", pl->pl_path, path+2) < 0)
 				err(1, "asprintf");
-			if (ltrace) {
+			if (ltrace)
 				printf("%s (%s)\n", path, p);
+			if (!access(p, F_OK)) {
+				path = p;
 				ltrace = 0;
+				break;
 			}
-			if (access(p, F_OK) < 0)
-				continue;
-			path = p;
-			break;
 		}
-	}
 
 	if (!fp && !(fp = fopen(path, "r")))
 		err(1, "fopen: %s", path);
@@ -973,7 +972,7 @@ ldorder(const struct ldarch *lda)
 		}
 	}
 
-	/* check for disordered sctions */
+	/* check for disordered sections */
 	obj_foreach(order_check, NULL);
 
 	n = 1;
