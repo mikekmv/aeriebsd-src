@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld.c,v 1.33 2011/05/03 14:36:00 mickey Exp $";
+    "$ABSD: ld.c,v 1.34 2011/07/23 17:07:16 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -135,7 +135,7 @@ const struct ldarch ldarchs[] = {
 	{ EM_AMD64, 0, amd64_order, amd64_fix },
 /*	{ EM_MIPS, 0, mips_order, mips_fix }, */
 /*	{ EM_MIPS64, 0, mips64_order, mips64_fix }, */
-/*	{ EM_PARISC, 0, hppa_order, hppa_fix }, */
+	{ EM_PARISC, 0, hppa_order, hppa_fix },
 /*	{ EM_PARISC64, 0, hppa64_order, hppa64_fix }, */
 /*	{ EM_PPC, 0, ppc_order, ppc_fix }, */
 /*	{ EM_PPC64, 0, ppc64_order, ppc64_fix }, */
@@ -637,7 +637,7 @@ lib_add(const char *path, FILE *fp)
 		if (mmbr_name(&ah, &p, 0, &nlen, fp))
 			exit(1);
 
-		errx(1, "no symdef: not implemented");
+		errx(1, "%s: no symdef: not implemented", path);
 	}
 
 	if (nametab) {
