@@ -145,10 +145,12 @@ struct nd {
 struct symtab *lookup(const usch *namep, int enterf);
 usch *gotident(struct symtab *nl);
 int slow;	/* scan slowly for new tokens */
+int defining;
 int submac(struct symtab *nl, int);
 int kfind(struct symtab *nl);
 int doexp(void);
 int donex(void);
+void ppdir(void);
 
 int pushfile(const usch *fname, const usch *fn, int idx, void *incs);
 void popfile(void);
@@ -172,12 +174,7 @@ void line(void);
 usch *sheap(const char *fmt, ...);
 void xwarning(usch *);
 void xerror(usch *);
-#ifdef HAVE_CPP_VARARG_MACRO_GCC
 #define warning(...) xwarning(sheap(__VA_ARGS__))
 #define error(...) xerror(sheap(__VA_ARGS__))
-#else
-#define warning printf
-#define error printf
-#endif
 int cinput(void);
 void getcmnt(void);

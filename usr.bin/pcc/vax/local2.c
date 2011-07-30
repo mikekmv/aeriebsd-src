@@ -1,4 +1,4 @@
-/*	$Id: local2.c,v 1.4 2011/07/18 09:58:41 mickey Exp $	*/
+/*	$Id: local2.c,v 1.5 2011/07/30 14:54:33 mickey Exp $	*/
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
@@ -233,8 +233,13 @@ sconv(NODE *p)
 	switch (o) {
 	case MLE:
 	case MLZ:
+		expand(p, INAREG|INBREG, "\tmovl\tAL,A1\n");
+		break;
+
 	case MVD:
-		expand(p, INAREG|INBREG, "\tmovZL\tAL,A1\n");
+		if (l->n_op == REG && regno(l) == regno(getlr(p, '1')))
+			break; /* unneccessary move */
+		expand(p, INAREG|INBREG, "\tmovZR\tAL,A1\n");
 		break;
 
 	case CSE:
@@ -432,7 +437,7 @@ twollcomp(NODE *p)
 	}
 	if (p->n_op >= ULE)
 		cb1 += 4, cb2 += 4;
-	expand(p, 0, "	cmpl UR,UL\n");
+	expand(p, 0, "	cmpl UL,UR\n");
 	if (cb1) cbgen(cb1, s);
 	if (cb2) cbgen(cb2, e);
 	expand(p, 0, "	cmpl AL,AR\n");
@@ -561,7 +566,9 @@ zzzcode(NODE *p, int c)
 		return;
 
 	case 'U':	/* 32 - n, for unsigned right shifts */
-		printf("$" CONFMT, 32 - p->n_right->n_lval );
+		m = p->n_left->n_type == UCHAR ? 8 :
+		    p->n_left->n_type == USHORT ? 16 : 32;
+		printf("$" CONFMT, m - p->n_right->n_lval);
 		return;
 
 	case 'T':	/* rounded structure length for arguments */
@@ -640,7 +647,7 @@ void
 rmove( int rt,int  rs, TWORD t ){
 	printf( "	%s	%s,%s\n",
 		(t==FLOAT ? "movf" : (t==DOUBLE ? "movd" : "movl")),
-		rnames[rs], rnames[rt] );
+		rnames[rt], rnames[rs] );
 	}
 
 #if 0
@@ -1177,6 +1184,20 @@ optim2(NODE *p, void *arg)
 			p->n_left = mklnode(ICON, 0, 0, FTN|p->n_type);
 			p->n_left->n_name = "__lshrdi3";
 			p->n_op = CALL;
+		} else if (p->n_type == INT) {
+			/* convert >> to << with negative shift count */
+			/* RS of char & short must use extv */
+			if (p->n_right->n_op == ICON) {
+				p->n_right->n_lval = -p->n_right->n_lval;
+			} else if (p->n_right->n_op == UMINUS) {
+				r = p->n_right->n_left;
+				nfree(p->n_right);
+				p->n_right = r;
+			} else {
+				p->n_right = mkunode(UMINUS, p->n_right,
+				    0, p->n_right->n_type);
+			}
+			p->n_op = LS;
 		}
 		break;
 

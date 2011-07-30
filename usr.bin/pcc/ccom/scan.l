@@ -313,11 +313,7 @@ f2(char *str)
 	long double dc;
 	char *eptr;
 
-#ifdef HAVE_STRTOLD
 	dc = strtold(str, &eptr); /* XXX - avoid strtod() */
-#else
-	dc = strtod(str, &eptr); /* XXX - avoid strtod() */
-#endif
 	dc = typround(dc, eptr, &tw);
 	p = block(FCON, NIL, NIL, tw, 0, 0);
 	p->n_dcon = dc;

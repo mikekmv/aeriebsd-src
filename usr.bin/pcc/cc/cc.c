@@ -190,7 +190,7 @@ int	nostartfiles, Bstatic, shared;
 int	nostdinc, nostdlib;
 int	onlyas;
 int	pthreads;
-int	xcflag;
+int	xcflag, xgcc;
 int 	ascpp;
 
 char	*passp = LIBEXECDIR PREPROCESSOR;
@@ -262,7 +262,14 @@ struct Wflags {
 } Wflags[] = {
 	{ "-Wtruncate", 0 },
 	{ "-Wno-truncate", NEGATIVE },
-	{ "-Werror", 0 },
+	{ "-Wstrict-prototypes", 0 },
+	{ "-Wno-strict-prototypes", NEGATIVE },
+	{ "-Wmissing-prototypes", 0 },
+	{ "-Wno-missing-prototypes", NEGATIVE },
+	{ "-Wimplicit-int", 0 },
+	{ "-Wno-implicit-int", NEGATIVE },
+	{ "-Wimplicit-function-declaration", 0 },
+	{ "-Wno-implicit-function-declaration", NEGATIVE },
 	{ "-Wshadow", 0 },
 	{ "-Wno-shadow", NEGATIVE },
 	{ "-Wpointer-sign", INWALL },
@@ -317,6 +324,14 @@ struct Wflags {
 #ifndef USER_LABEL_PREFIX
 #define USER_LABEL_PREFIX ""
 #endif
+#endif
+
+#ifndef PCC_WINT_TYPE
+#define PCC_WINT_TYPE "unsigned int"
+#endif
+
+#ifndef PCC_SIZE_TYPE
+#define PCC_SIZE_TYPE "unsigned long"
 #endif
 
 #ifndef PCC_PTRDIFF_TYPE
@@ -459,6 +474,8 @@ main(int argc, char *argv[])
 						t = u;
 					}
 					cpplist[ncpp++] = t;
+				} else if (strcmp(argv[i], "-Werror") == 0) {
+					wlist[nw++] = argv[i];
 				} else if (strcmp(argv[i], "-Wall") == 0) {
 					Wallflag = 1;
 				} else if (strcmp(argv[i], "-WW") == 0) {
@@ -478,6 +495,8 @@ main(int argc, char *argv[])
 					kflag = F_PIC;
 				else if (strcmp(argv[i], "-fpic") == 0)
 					kflag = F_pic;
+				else if (strcmp(argv[i], "-ffreestanding") == 0)
+					flist[nf++] = argv[i];
 				else if (strcmp(argv[i],
 				    "-fsigned-char") == 0)
 					flist[nf++] = argv[i];
@@ -702,7 +721,10 @@ main(int argc, char *argv[])
 				} else if (strcmp(argv[i], "-symbolic") == 0) {
 					llist[nl++] = "-Bsymbolic";
 				} else if (strncmp(argv[i], "-std", 4) == 0) {
-					/* ignore gcc -std= */;
+					if (strcmp(&argv[i][5], "gnu99") == 0 ||
+					    strcmp(&argv[i][5], "gnu9x") == 0 ||
+					    strcmp(&argv[i][5], "gnu89") == 0)
+						xgcc = 1;
 				} else
 					goto passa;
 				break;
@@ -794,7 +816,10 @@ main(int argc, char *argv[])
 		av[na++] = "-D__GNUC__=4";
 		av[na++] = "-D__GNUC_MINOR__=3";
 		av[na++] = "-D__GNUC_PATCHLEVEL__=1";
-		av[na++] = "-D__GNUC_STDC_INLINE__=1";
+		if (xgcc)
+			av[na++] = "-D__GNUC_GNU_INLINE__=1";
+		else
+			av[na++] = "-D__GNUC_STDC_INLINE__=1";
 #endif
 #endif
 		av[na++] = "-D__VERSION__=" MKS(VERSSTR);
@@ -832,8 +857,8 @@ main(int argc, char *argv[])
 		av[na++] = "-D__WCHAR_TYPE__=" WCT;
 		av[na++] = "-D__SIZEOF_WCHAR_T__=" MKS(WCHAR_SIZE);
 		av[na++] = "-D__WCHAR_MAX__=" WCM;
-		av[na++] = "-D__WINT_TYPE__=unsigned int";
-		av[na++] = "-D__SIZE_TYPE__=unsigned long";
+		av[na++] = "-D__WINT_TYPE__=" PCC_WINT_TYPE;
+		av[na++] = "-D__SIZE_TYPE__=" PCC_SIZE_TYPE;
 		av[na++] = "-D__PTRDIFF_TYPE__=" PCC_PTRDIFF_TYPE;
 		av[na++] = "-D__SIZEOF_WINT_T__=4";
 #ifdef os_darwin
@@ -935,6 +960,8 @@ main(int argc, char *argv[])
 			av[na++] = "-xdeljumps";
 			av[na++] = "-xinline";
 		}
+		if (xgcc)
+			av[na++] = "-xgcc";
 		for (j = 0; j < xnum; j++)
 			av[na++] = xlist[j];
 		for (j = 0; j < nm; j++)
@@ -1404,11 +1431,7 @@ callsys(char *f, char *v[])
 	}
 
 	prog = find_file(f, X_OK);
-#ifdef HAVE_VFORK
 	if ((p = vfork()) == 0) {
-#else
-	if ((p = fork()) == 0) {
-#endif
 		static const char msg[] = "Can't find ";
 		execvp(prog, v);
 		(void)write(STDERR_FILENO, msg, sizeof(msg));

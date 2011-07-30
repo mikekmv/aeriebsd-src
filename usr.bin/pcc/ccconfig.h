@@ -38,7 +38,7 @@
 #define	ENDFILES { "/usr/lib/crtend.o", NULL }
 
 #ifdef LANG_F77
-#define F77LIBLIST { "-L/usr/local/lib", "-lF77", "-lI77", "-lm", "-lc", NULL };
+#define F77LIBLIST { "-L/usr/lib", "-lF77", "-lI77", "-lm", "-lc", NULL };
 #endif
 
 #define CPPMDADDS { \

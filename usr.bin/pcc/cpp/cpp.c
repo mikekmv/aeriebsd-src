@@ -646,7 +646,7 @@ define()
 	np = lookup((usch *)yytext, ENTER);
 	redef = np->value != NULL;
 
-	readmac = 1;
+	defining = readmac = 1;
 	sbeg = stringbuf;
 	if ((c = sloscan()) == '(') {
 		narg = 0;
@@ -825,7 +825,7 @@ id:			savstr((usch *)yytext);
 		}
 		c = sloscan();
 	}
-	readmac = 0;
+	defining = readmac = 0;
 	/* remove trailing whitespace */
 	while (stringbuf > sbeg) {
 		if (stringbuf[-1] == ' ' || stringbuf[-1] == '\t')
@@ -1073,6 +1073,7 @@ insblock(int bnr)
 	int c, i;
   
 	IMP("IB");
+	readmac++;
 	while ((c = sloscan()) != WARN) {
 		if (c == EBLOCK) {
 			sss();
@@ -1096,6 +1097,7 @@ insblock(int bnr)
 	cunput(WARN);
 	unpstr(bp);
 	stringbuf = bp;
+	readmac--;
 	IMP("IBRET");
 } 
 
@@ -1362,6 +1364,44 @@ submac(struct symtab *sp, int lvl)
 	return 1;
 }
 
+static int
+isdir(void)
+{
+	usch *bp = stringbuf;
+	usch ch;
+
+	while ((ch = cinput()) == ' ' || ch == '\t')
+		*stringbuf++ = ch;
+	*stringbuf++ = ch;
+	*stringbuf++ = 0;
+	stringbuf = bp;
+	if (ch == '#')
+		return 1;
+	unpstr(bp);
+	return 0;
+}
+
+/*
+ * Deal with directives inside a macro.
+ * Doing so is really ugly but gcc allows it, so...
+ */
+static void
+chkdir(void)
+{
+	usch ch;
+
+	for (;;) {
+		if (isdir())
+			ppdir();
+		if (flslvl == 0)
+			return;
+		while ((ch = cinput()) != '\n')
+			;
+		ifiles->lineno++;
+		putch('\n');
+	}
+}
+
 /*
  * Read arguments and put in argument array.
  * If WARN is encountered return 1, otherwise 0.
@@ -1391,8 +1431,11 @@ readargs(struct symtab *sp, const usch **args)
 		args[i] = stringbuf;
 		plev = 0;
 		while ((c = sloscan()) == WSPACE || c == '\n')
-			if (c == '\n')
+			if (c == '\n') {
+				ifiles->lineno++;
 				putch(cinput());
+				chkdir();
+			}
 		for (;;) {
 			while (c == EBLOCK) {
 				sss();
@@ -1410,7 +1453,9 @@ readargs(struct symtab *sp, const usch **args)
 				plev--;
 			savstr((usch *)yytext);
 oho:			while ((c = sloscan()) == '\n') {
+				ifiles->lineno++;
 				putch(cinput());
+				chkdir();
 				savch(' ');
 			}
 			while (c == CMNT) {
@@ -1454,7 +1499,9 @@ oho:			while ((c = sloscan()) == '\n') {
 			} else
 				savstr((usch *)yytext);
 			while ((c = sloscan()) == '\n') {
+				ifiles->lineno++;
 				cinput();
+				chkdir();
 				savch(' ');
 			}
 		}

@@ -494,6 +494,8 @@ gcc_tcattrfix(NODE *p)
 		if (p->n_type == UNIONTY)
 			coff = 0;
 	}
+	if (mxal < ALCHAR)
+		mxal = ALCHAR; /* for bitfields */
 	SETOFF(csz, mxal); /* Roundup to whatever */
 
 	ap = attr_find(p->n_ap, ATTR_STRUCT);

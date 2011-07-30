@@ -64,7 +64,6 @@ static void cppwarning(void);
 static void elifstmt(void);
 static void badop(const char *);
 static int chktg(void);
-static void ppdir(void);
 void  include(void);
 void  include_next(void);
 void  define(void);
@@ -541,7 +540,7 @@ chlit:
 		goto any;
 
 	case '\"':
-		if (tflag)
+		if (tflag && defining)
 			goto any;
 	strng:
 		for (;;) {

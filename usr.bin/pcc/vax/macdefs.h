@@ -110,6 +110,7 @@ typedef long long OFFSZ;
 
 /* bytes are numbered from right to left */
 #define TARGET_ENDIAN TARGET_LE
+#define	UNALIGNED_ACCESS
 
 /* we want prtree included */
 # define STDPRTREE
@@ -244,3 +245,21 @@ int xasmconstregs(char *s);
 int COLORMAP(int c, int *r);
 
 #define	SNCON		(MAXSPECIAL+1)	/* named constand */
+
+/*
+ * Builtins.
+ */
+#define TARGET_BUILTINS							\
+	{ "__builtin_frame_address", vax_builtin_frame_address, -1 },	\
+	{ "__builtin_return_address", vax_builtin_return_address, -1 },
+
+#define NODE struct node
+struct node;
+
+#define	TARGET_FFS		/* target-specific ffs */
+NODE *builtin_ffs(NODE *f, NODE *a, unsigned int t);
+
+NODE *vax_builtin_frame_address(NODE *f, NODE *a, unsigned int t);
+NODE *vax_builtin_return_address(NODE *f, NODE *a, unsigned int t);
+
+#undef NODE

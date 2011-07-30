@@ -307,7 +307,7 @@ cf_spec:	   C_CLASS { $$ = $1; }
 			$$ = block(QUALIFIER, NIL, NIL, 0, 0, 0); }
 		;
 
-typeof:		   C_TYPEOF '(' term ')' { $$ = tyof(eve($3)); }
+typeof:		   C_TYPEOF '(' e ')' { $$ = tyof(eve($3)); }
 		|  C_TYPEOF '(' cast_type ')' { TYMFIX($3); $$ = tyof($3); }
 		;
 
@@ -1625,6 +1625,11 @@ fundef(NODE *tp, NODE *p)
 	}
 
 	p = typ = tymerge(tp, p);
+#ifdef GCC_COMPAT
+	/* gcc seems to discard __builtin_ when declaring functions */
+	if (strncmp("__builtin_", (char *)typ->n_sp, 10) == 0)
+		typ->n_sp = (struct symtab *)((char *)typ->n_sp + 10);
+#endif
 	s = typ->n_sp = lookup((char *)typ->n_sp, 0); /* XXX */
 
 	oclass = s->sclass;

@@ -1,7 +1,7 @@
-
 /*
  * Generate defines for the needed hardops.
  */
+
 #include "pass2.h"
 #include <stdlib.h>
 #include <string.h>
@@ -352,11 +352,7 @@ if (bitsz == 64) {
 	if (greg > mx) mx = greg;
 	if (mx > (int)(sizeof(int)*8)-1) {
 		printf("too many regs in a class, use two classes instead\n");
-#ifdef HAVE_C99_FORMAT
 		printf("%d > %zu\n", mx, (sizeof(int)*8)-1);
-#else
-		printf("%d > %d\n", mx, (int)(sizeof(int)*8)-1);
-#endif
 		rval++;
 	}
 	fprintf(fc, "static int rmap[NUMCLASS][%d] = {\n", mx);
