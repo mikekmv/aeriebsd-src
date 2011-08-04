@@ -10,8 +10,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -1297,7 +1295,7 @@ addcase(NODE *p)
 	struct swents **put, *w, *sw = tmpalloc(sizeof(struct swents));
 	CONSZ val;
 
-	p = optim(p);  /* change enum to ints */
+	p = optim(rmpconv(p));  /* change enum to ints */
 	if (p->n_op != ICON || p->n_sp != NULL) {
 		uerror( "non-constant case expression");
 		return;
@@ -2170,11 +2168,25 @@ eve2:		r = buildtree(p->n_op, p1, eve(p2));
 	case MULEQ:
 	case DIVEQ:
 		p1 = eve(p1);
-		if (p1->n_type != BOOL)
-			goto eve2;
-
-		r = buildtree(UNASG p->n_op, ccopy(p1), eve(p2));
-		r = buildtree(ASSIGN, p1, r);
+		p2 = eve(p2);
+#ifndef NO_COMPLEX
+		if (ANYCX(p1) || ANYCX(p2)) {
+			r = cxop(UNASG p->n_op, ccopy(p1), p2);
+			r = cxop(ASSIGN, p1, r);
+			break;
+		} else if (ISITY(p1->n_type) || ISITY(p2->n_type)) {
+			r = imop(UNASG p->n_op, ccopy(p1), p2);
+			r = cxop(ASSIGN, p1, r);
+			break;
+		}
+		/* FALLTHROUGH */
+#endif
+		if (p1->n_type == BOOL) {
+			r = buildtree(UNASG p->n_op, ccopy(p1), p2);
+			r = buildtree(ASSIGN, p1, r);
+		} else {
+			r = buildtree(p->n_op, p1, p2);
+		}
 		break;
 
 	case STRING:
@@ -2287,7 +2299,7 @@ aryfix(NODE *p)
 
 	for (q = p; q->n_op != NAME; q = q->n_left) {
 		if (q->n_op == LB) {
-			q->n_right = optim(eve(q->n_right));
+			q->n_right = optim(rmpconv(eve(q->n_right)));
 			if ((blevel == 0 || rpole != NULL) &&
 			    !nncon(q->n_right))
 				uerror("array size not constant"); 

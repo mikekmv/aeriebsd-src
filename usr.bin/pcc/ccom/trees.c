@@ -2445,6 +2445,7 @@ wrualfld(NODE *val, NODE *d, TWORD t, TWORD ct, int off, int fsz)
 		d = buildtree(UMUL, buildtree(PLUS, d, bcon(t2f)), 0);	
 		p = ccopy(d); 
 		p = TYPAND(p, xbcon(~(SZMASK(fsz) << off), 0, ct), ct);
+		val = makety(val, ct, 0, 0, 0);
 		q = TYPAND(val, xbcon(SZMASK(fsz), 0, ct), ct);
 		q = TYPLS(q, bcon(off), ct);   
 		p = TYPOR(p, q, ct);
@@ -2826,6 +2827,134 @@ delvoid(NODE *p, void *arg)
 		
 }
 
+/*
+ * Change calls inside calls to separate statement.
+ */
+static NODE *
+deldcall(NODE *p, int split)
+{
+	NODE *q, *r;
+	int o = p->n_op;
+
+	if (cdope(o) & CALLFLG) {
+		if (split) {
+			q = cstknode(p->n_type, p->n_df, p->n_ap);
+			r = ccopy(q);
+			q = buildtree(ASSIGN, q, p);
+			ecode(q);
+			return r;
+		}
+		split++;
+	}
+	if (coptype(o) == BITYPE)
+		p->n_right = deldcall(p->n_right, split);
+	if (coptype(o) != LTYPE)
+		p->n_left = deldcall(p->n_left, split);
+	return p;
+}
+
+#ifndef WORD_ADDRESSED
+
+static NODE *
+pprop(NODE *p, TWORD t)
+{
+	int o = p->n_op;
+
+	p->n_type = t;
+	switch (o) {
+	case UMUL:
+		t = INCREF(t);
+		break;
+	case ADDROF:
+		t = DECREF(t);
+		break;
+	case PCONV:
+		return p;
+
+	case PLUSEQ:
+	case PLUS:
+	case INCR:
+	case DECR:
+		if (!ISPTR(p->n_left->n_type)) {
+			if (!ISPTR(p->n_right->n_type))
+				cerror("no * in PLUS");
+			p->n_right = pprop(p->n_right, t);
+		} else
+			p->n_left = pprop(p->n_left, t);
+		return p;
+
+	case MINUSEQ:
+	case MINUS:
+		if (ISPTR(p->n_left->n_type)) {
+			if (ISPTR(p->n_right->n_type))
+				break; /* change both */
+			p->n_left = pprop(p->n_left, t);
+		} else 
+			p->n_right = pprop(p->n_right, t);
+		return p;
+
+	case CALL:
+	case UCALL:
+	case STCALL: /* may end up here if struct passed in regs */
+	case USTCALL:
+		return p;
+
+	case STASG: /* if struct is cast to pointer */
+		return p;
+
+	case ASSIGN:
+		break;
+
+	default:
+		if (coptype(o) == LTYPE)
+			break;
+
+fwalk(p, eprint, 0);
+		cerror("pprop op error %d\n", o);
+	}
+	if (coptype(o) == BITYPE)
+		p->n_right = pprop(p->n_right, t);
+	if (coptype(o) != LTYPE)
+		p->n_left = pprop(p->n_left, t);
+	return p;
+}
+
+/*
+ * Search for PCONV's that can be removed while still keeping
+ * the type correctness.
+ */
+NODE *
+rmpconv(NODE *p)
+{
+	struct symtab *sp;
+	int o = p->n_op;
+	int ot = coptype(o);
+	NODE *q, *l;
+
+	if (ot != LTYPE)
+		p->n_left = rmpconv(p->n_left);
+	if (ot == BITYPE)
+		p->n_right = rmpconv(p->n_right);
+	if (o != PCONV)
+		return p;
+	l = p->n_left;
+	if (nncon(l) || (cdope(l->n_op) & CALLFLG))
+		; /* Let any nonamed constant be cast to pointer directly */
+	else if (l->n_type >= INTPTR && l->n_op == ICON) {
+		/* named constants only if >= pointer size */
+		/* create INTPTR type */
+		sp = l->n_sp;
+		l->n_sp = NULL;
+		concast(l, INTPTR);
+		l->n_sp = sp;
+	} else if (!ISPTR(l->n_type))
+		return p;
+	q = pprop(p->n_left, p->n_type);
+	nfree(p);
+	return q;
+}
+#endif
+
 void
 ecode(NODE *p)	
 {
@@ -2845,8 +2974,12 @@ ecode(NODE *p)
 			werror("return value ignored");
 	}
 #endif
+#ifndef WORD_ADDRESSED
+	p = rmpconv(p);
+#endif
 	p = optim(p);
 	p = delasgop(p);
+	p = deldcall(p, 0);
 	walkf(p, delvoid, 0);
 #ifdef PCC_DEBUG
 	if (xdebug) {
