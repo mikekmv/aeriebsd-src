@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld2.c,v 1.36 2011/07/12 10:17:59 mickey Exp $";
+    "$ABSD: ld2.c,v 1.37 2011/07/17 16:45:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -947,6 +947,10 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 	}
 	sidx = ol->ol_aux;
 
+	/* skip file names and size defs */
+	if (ELF_ST_TYPE(esym->st_info) == STT_FILE)
+		return 0;
+
 	if (esym->st_name >= es->stabsz)
 		err(1, "%s: invalid symtab entry #%d", es->name, is);
 	name = es->stab + esym->st_name;
@@ -978,10 +982,6 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 
 	laname = NULL;
 if (is && *name == '\0') warnx("#%d is null", is);
-
-	/* skip file names and size defs */
-	if (ELF_ST_TYPE(esym->st_info) == STT_FILE)
-		return 0;
 
 	switch (esym->st_shndx) {
 	case SHN_UNDEF:
