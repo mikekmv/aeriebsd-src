@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld2.c,v 1.37 2011/07/17 16:45:53 mickey Exp $";
+    "$ABSD: ld2.c,v 1.38 2011/08/05 13:04:14 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -1038,11 +1038,19 @@ if (is && *name == '\0') warnx("#%d is null", is);
 		os = ol->ol_sections + esym->st_shndx;
 		if ((sym = sym_isdefined(name, ol->ol_sections))) {
 			if (ELF_ST_BIND(esym->st_info) == STB_LOCAL) {
-				if (asprintf(&name, "%s.%ld", name,
-				    sym->sl_next++) < 0)
-					err(1, "asprintf");
-				laname = name;
-				sym = sym_isdefined(name, ol->ol_sections);
+				laname = NULL;
+				do {
+					if (sym->sl_next == INT_MAX)
+						errx(1, "static overflow");
+					if (asprintf(&name, "%s.%ld", name,
+					    sym->sl_next++) < 0)
+						err(1, "asprintf");
+					if (laname)
+						free(laname);
+					laname = name;
+					sym = sym_isdefined(name,
+					    ol->ol_sections);
+				} while (sym);
 			} else if (ELF_ST_BIND(ELF_SYM(sym->sl_elfsym).st_info)
 			    == STB_LOCAL) {
 				char *nn;
