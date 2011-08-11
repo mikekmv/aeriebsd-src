@@ -160,7 +160,7 @@ buildtree(int o, NODE *l, NODE *r)
 {
 	NODE *p, *q;
 	int actions;
-	int opty;
+	int opty, n;
 	struct symtab *sp = NULL; /* XXX gcc */
 	NODE *lr, *ll;
 
@@ -314,28 +314,29 @@ buildtree(int o, NODE *l, NODE *r)
 		case GT:
 			switch (o) {
 			case EQ:
-				l->n_lval = FLOAT_EQ(l->n_dcon, r->n_dcon);
+				n = FLOAT_EQ(l->n_dcon, r->n_dcon);
 				break;
 			case NE:
-				l->n_lval = FLOAT_NE(l->n_dcon, r->n_dcon);
+				n = FLOAT_NE(l->n_dcon, r->n_dcon);
 				break;
 			case LE:
-				l->n_lval = FLOAT_LE(l->n_dcon, r->n_dcon);
+				n = FLOAT_LE(l->n_dcon, r->n_dcon);
 				break;
 			case LT:
-				l->n_lval = FLOAT_LT(l->n_dcon, r->n_dcon);
+				n = FLOAT_LT(l->n_dcon, r->n_dcon);
 				break;
 			case GE:
-				l->n_lval = FLOAT_GE(l->n_dcon, r->n_dcon);
+				n = FLOAT_GE(l->n_dcon, r->n_dcon);
 				break;
 			case GT:
-				l->n_lval = FLOAT_GT(l->n_dcon, r->n_dcon);
+				n = FLOAT_GT(l->n_dcon, r->n_dcon);
 				break;
+			default:
+				n = 0; /* XXX flow analysis */
 			}
 			nfree(r);
-			r = bcon(l->n_lval);
 			nfree(l);
-			return r;
+			return bcon(n);
 		}
 	}
 #ifndef CC_DIV_0
@@ -628,7 +629,7 @@ void
 putjops(NODE *p, void *arg)
 {
 	if (p->n_op == COMOP && p->n_left->n_op == GOTO)
-		plabel(p->n_left->n_left->n_lval+1);
+		plabel((int)p->n_left->n_left->n_lval+1);
 }
 
 /*
@@ -786,7 +787,7 @@ cbranch(NODE *p, NODE *q)
 	p = buildtree(CBRANCH, p, q);
 	if (p->n_left->n_op == ICON) {
 		if (p->n_left->n_lval != 0) {
-			branch(q->n_lval); /* branch always */
+			branch((int)q->n_lval); /* branch always */
 			reached = 0;
 		}
 		tfree(p);
@@ -983,7 +984,7 @@ valcast(CONSZ v, TWORD t)
 #define	NOTM(x)	(~M(x))
 #define	SBIT(x)	(1ULL << ((x)-1))
 
-	sz = tsize(t, NULL, NULL);
+	sz = (int)tsize(t, NULL, NULL);
 	r = v & M(sz);
 	if (!ISUNSIGNED(t) && (SBIT(sz) & r))
 		r = r | NOTM(sz);
@@ -1237,7 +1238,7 @@ bpsize(NODE *p)
 				s.sdf++;
 			}
 		}
-		sz = tsize(p->n_type, p->n_df, p->n_ap);
+		sz = (int)tsize(p->n_type, p->n_df, p->n_ap);
 		p = buildtree(MUL, q, bcon(sz/SZCHAR));
 	} else
 		p = (offcon(psize(p), p->n_type, p->n_df, p->n_ap));
@@ -1491,7 +1492,7 @@ tymatch(NODE *p)
 
 	if (casgop(o)) {
 		if (r->n_op != ICON && tl < FLOAT && tr < FLOAT &&
-		    DEUNSIGN(tl) < DEUNSIGN(tr))
+		    DEUNSIGN(tl) < DEUNSIGN(tr) && o != CAST)
 			warner(Wtruncate, tnames[tr], tnames[tl]);
 		p->n_right = makety(p->n_right, l->n_type, 0, 0, 0);
 		t = p->n_type = l->n_type;
@@ -2502,7 +2503,7 @@ rmfldops(NODE *p)
 		/* Rewrite a field read operation */
 		fsz = UPKFSZ(p->n_rval);
 		foff = UPKFOFF(p->n_rval);
-		tsz = tsize(p->n_left->n_type, 0, 0);
+		tsz = (int)tsize(p->n_left->n_type, 0, 0);
 		q = buildtree(ADDROF, p->n_left, NIL);
 
 		ct = t = p->n_type;
@@ -2531,7 +2532,7 @@ rmfldops(NODE *p)
 		fsz = UPKFSZ(q->n_rval);
 		foff = UPKFOFF(q->n_rval);
 		t = q->n_left->n_type;
-		tsz = tsize(t, 0, 0);
+		tsz = (int)tsize(t, 0, 0);
 #if TARGET_ENDIAN == TARGET_BE
 		foff = tsz - fsz - foff;
 #endif
@@ -2840,7 +2841,7 @@ deldcall(NODE *p, int split)
 		if (split) {
 			q = cstknode(p->n_type, p->n_df, p->n_ap);
 			r = ccopy(q);
-			q = buildtree(ASSIGN, q, p);
+			q = block(ASSIGN, q, p, p->n_type, p->n_df, p->n_ap);
 			ecode(q);
 			return r;
 		}
@@ -2856,16 +2857,29 @@ deldcall(NODE *p, int split)
 #ifndef WORD_ADDRESSED
 
 static NODE *
-pprop(NODE *p, TWORD t)
+pprop(NODE *p, TWORD t, struct attr *ap)
 {
 	int o = p->n_op;
 
+#ifdef PCC_DEBUG
+	if (p->n_op == TEMP && p->n_type != t &&
+	    !(ISPTR(p->n_type) && ISPTR(t))) {
+		cerror("TEMP type change: %x -> %x", p->n_type, t);
+	}
+#endif
+
 	p->n_type = t;
+	p->n_ap = ap;
 	switch (o) {
 	case UMUL:
 		t = INCREF(t);
 		break;
 	case ADDROF:
+		if (p->n_left->n_op == TEMP) {
+			/* Will be converted to memory in pass2 */
+			p->n_left->n_type = DECREF(t);
+			return p;
+		}
 		if (ISPTR(p->n_left->n_type) && !ISPTR(DECREF(t)))
 			break; /* not quite correct */
 		t = DECREF(t);
@@ -2880,9 +2894,9 @@ pprop(NODE *p, TWORD t)
 		if (!ISPTR(p->n_left->n_type)) {
 			if (!ISPTR(p->n_right->n_type))
 				cerror("no * in PLUS");
-			p->n_right = pprop(p->n_right, t);
+			p->n_right = pprop(p->n_right, t, ap);
 		} else
-			p->n_left = pprop(p->n_left, t);
+			p->n_left = pprop(p->n_left, t, ap);
 		return p;
 
 	case MINUSEQ:
@@ -2890,9 +2904,9 @@ pprop(NODE *p, TWORD t)
 		if (ISPTR(p->n_left->n_type)) {
 			if (ISPTR(p->n_right->n_type))
 				break; /* change both */
-			p->n_left = pprop(p->n_left, t);
+			p->n_left = pprop(p->n_left, t, ap);
 		} else 
-			p->n_right = pprop(p->n_right, t);
+			p->n_right = pprop(p->n_right, t, ap);
 		return p;
 
 	case CALL:
@@ -2915,9 +2929,9 @@ fwalk(p, eprint, 0);
 		cerror("pprop op error %d\n", o);
 	}
 	if (coptype(o) == BITYPE)
-		p->n_right = pprop(p->n_right, t);
+		p->n_right = pprop(p->n_right, t, ap);
 	if (coptype(o) != LTYPE)
-		p->n_left = pprop(p->n_left, t);
+		p->n_left = pprop(p->n_left, t, ap);
 	return p;
 }
 
@@ -2951,7 +2965,7 @@ rmpconv(NODE *p)
 		l->n_sp = sp;
 	} else if (!ISPTR(l->n_type))
 		return p;
-	q = pprop(p->n_left, p->n_type);
+	q = pprop(p->n_left, p->n_type, p->n_ap);
 	nfree(p);
 	return q;
 }
@@ -3027,6 +3041,12 @@ send_passt(int type, ...)
 	switch (type) {
 	case IP_NODE:
 		ip->ip_node = va_arg(ap, NODE *);
+		if (ip->ip_node->n_op == LABEL) {
+			NODE *p = ip->ip_node;
+			ip->ip_lbl = p->n_left->n_lval;
+			ip->type = IP_DEFLAB;
+			nfree(nfree(p));
+		}
 		break;
 	case IP_EPILOG:
 		if (!isinlining) {
@@ -3111,6 +3131,7 @@ copst(int op)
 	SNAM(SZOF,SIZEOF)
 	SNAM(ATTRIB,ATTRIBUTE)
 	SNAM(TYMERGE,TYMERGE)
+	SNAM(LABEL,LABEL)
 #ifdef GCC_COMPAT
 	SNAM(XREAL,__real__)
 	SNAM(XIMAG,__imag__)
@@ -3146,6 +3167,7 @@ cdope(int op)
 	case XIMAG:
 	case XREAL:
 	case ATTRIB:
+	case LABEL:
 		return UTYPE;
 	case ANDAND:
 	case OROR:
@@ -3207,7 +3229,7 @@ void
 plabel(int label)
 {
 	reached = 1; /* Will this always be correct? */
-	send_passt(IP_DEFLAB, label);
+	send_passt(IP_NODE, block(LABEL, bcon(label), NIL, 0, 0, 0));
 }
 
 /*

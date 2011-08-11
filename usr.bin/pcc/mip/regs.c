@@ -1282,6 +1282,7 @@ xasmionize(NODE *p, void *arg)
 			p = p->n_left;
 			b = regno(p);
 			addnotspill(b);
+			cw &= ~(XASMASG|XASMINOUT);
 		} else
 			return;
 	}
