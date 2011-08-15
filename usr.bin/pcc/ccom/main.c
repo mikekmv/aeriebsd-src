@@ -35,7 +35,7 @@
 #include "pass2.h"
 
 int sflag, nflag, oflag, kflag, pflag;
-int lflag, odebug, rdebug, s2debug, udebug, x2debug;
+int odebug, rdebug, s2debug, udebug, x2debug;
 #if !defined(MULTIPASS) || defined(PASST)
 int iTflag, oTflag;
 #endif
@@ -46,7 +46,7 @@ int funsigned_char = 1;
 int funsigned_char = 0;
 #endif
 int sspflag;
-int xssaflag, xtailcallflag, xtemps, xdeljumps, xdce, xinline, xccp, xgcc;
+int xssa, xtailcall, xtemps, xdeljumps, xdce, xinline, xccp, xgnu89, xgnu99;
 int freestanding;
 int e2debug, t2debug, f2debug, b2debug;
 char *prgname;
@@ -79,9 +79,9 @@ xopt(char *s)
 	int rv = 0;
 
 	if (strcmp(optarg, "ssa") == 0)
-		xssaflag++;
+		xssa++;
 	else if (strcmp(optarg, "tailcall") == 0)
-		xtailcallflag++;
+		xtailcall++;
 	else if (strcmp(optarg, "temps") == 0)
 		xtemps++;
 	else if (strcmp(optarg, "deljumps") == 0)
@@ -92,8 +92,10 @@ xopt(char *s)
 		xinline++;
 	else if (strcmp(optarg, "ccp") == 0)
 		xccp++;
-	else if (strcmp(optarg, "gcc") == 0)
-		xgcc++;
+	else if (strcmp(optarg, "gnu89") == 0)
+		xgnu89++;
+	else if (strcmp(optarg, "gnu99") == 0)
+		xgnu99++;
 	else
 		rv = 1;
 	return rv;
@@ -142,7 +144,7 @@ main(int argc, char *argv[])
 
 	prgname = argv[0];
 
-	while ((ch = getopt(argc, argv, "OT:VW:X:Z:f:gklm:psvwx:")) != -1)
+	while ((ch = getopt(argc, argv, "OT:VW:X:Z:f:gkm:psvwx:")) != -1) {
 		switch (ch) {
 #if !defined(MULTIPASS) || defined(PASS1)
 		case 'X':
@@ -231,10 +233,6 @@ main(int argc, char *argv[])
 			++kflag;
 			break;
 
-		case 'l': /* Linenos */
-			++lflag;
-			break;
-
 		case 'm': /* Target-specific */
 			mflags(optarg);
 			break;
@@ -263,25 +261,26 @@ main(int argc, char *argv[])
 		default:
 			usage();
 		}
-		argc -= optind;
-		argv += optind;
+	}
+	argc -= optind;
+	argv += optind;
 
-		if (argc > 0 && strcmp(argv[0], "-") != 0) {
-			if (freopen(argv[0], "r", stdin) == NULL) {
-				fprintf(stderr, "open input file '%s':",
-				    argv[0]);
-				perror(NULL);
-				exit(1);
-			}
+	if (argc > 0 && strcmp(argv[0], "-") != 0) {
+		if (freopen(argv[0], "r", stdin) == NULL) {
+			fprintf(stderr, "open input file '%s':",
+			    argv[0]);
+			perror(NULL);
+			exit(1);
 		}
-		if (argc > 1 && strcmp(argv[1], "-") != 0) {
-			if (freopen(argv[1], "w", stdout) == NULL) {
-				fprintf(stderr, "open output file '%s':",
-				    argv[1]);
-				perror(NULL);
-				exit(1);
-			}
+	}
+	if (argc > 1 && strcmp(argv[1], "-") != 0) {
+		if (freopen(argv[1], "w", stdout) == NULL) {
+			fprintf(stderr, "open output file '%s':",
+			    argv[1]);
+			perror(NULL);
+			exit(1);
 		}
+	}
 
 	mkdope();
 	signal(SIGSEGV, segvcatch);

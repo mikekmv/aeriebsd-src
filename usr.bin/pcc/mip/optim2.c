@@ -117,7 +117,7 @@ optimize(struct p2env *p2e)
 	if (xdeljumps)
 		deljumps(p2e); /* Delete redundant jumps and dead code */
 
-	if (xssaflag)
+	if (xssa)
 		add_labels(p2e) ;
 #ifdef ENABLE_NEW
 	do_cse(p2e);
@@ -129,7 +129,7 @@ optimize(struct p2env *p2e)
 		printip(ipole);
 	}
 #endif
-	if (xssaflag || xtemps) {
+	if (xssa || xtemps) {
 		bblocks_build(p2e);
 		BDEBUG(("Calling cfg_build\n"));
 		cfg_build(p2e);
@@ -138,7 +138,7 @@ optimize(struct p2env *p2e)
 		printflowdiagram(p2e, "first");
 #endif
 	}
-	if (xssaflag) {
+	if (xssa) {
 		BDEBUG(("Calling liveanal\n"));
 		liveanal(p2e);
 		BDEBUG(("Calling dominators\n"));

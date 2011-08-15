@@ -12,7 +12,8 @@
 .\" PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
 .\" ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 .\" THIS SOFTWARE.
-.Dd September 14, 2007
+.\"
+.Dd August 11, 2011
 .Dt CCOM 1
 .Os
 .Sh NAME
@@ -20,10 +21,11 @@
 .Nd C compiler
 .Sh SYNOPSIS
 .Nm
-.Op Fl gs
+.Op Fl gkps
+.Op Fl f Ar features
 .Op Fl W Ar warnings
 .Op Fl X Ar flags
-.Op Fl x Ar optimizations
+.Op Fl x Ar settings
 .Op Fl Z Ar flags
 .Op infile
 .Op outfile
@@ -47,11 +49,39 @@ or to standard output.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl f Ar feature
+Enable language features.
+Multiple
+.Fl f
+options can be given, the following features are supported:
+.Bl -tag -width Ds
+.It Sy signed-char
+Treat char constants as signed values.
+This is the default for AMD64, HPPA, i386, M16C, MIPS, PDP11 and VAX targets.
+.It Sy unsigned-char
+Treat char constants as unsigned values.
+This is the default for PDP10, Nova and PowerPC targets.
+.It Sy stack-protector
+Enable stack smashing protection.
+Currently the same as
+.Sy stack-protector-all .
+.It Sy stack-protector-all
+Enable stack smashing protection for all functions.
+.It Sy pack-struct Ns Oo = Ns Ar n Oc
+Specify maximum alignment for structure members, similar to a #pragma pack
+statement at the start of the file.
+If no value is given, the default is 1.
+.It Sy freestanding
+Emit code for a freestanding environment.
+Currently not implemented.
+.El
 .It Fl g
 Enable debugging.
 .\" built into binary, explain stabs?
 .It Fl k
 Generate PIC code.
+.It Fl p
+Generate profiling code.
 .It Fl s
 Print statistics to standard error when complete.
 This includes:
@@ -66,9 +96,7 @@ Display version.
 Do some basic checks and emit warnings about possible coding problems.
 Multiple
 .Fl W
-options can be given, the following
-.Ar warning Ns s
-are supported:
+options can be given, the following warnings are supported:
 .Bl -tag -width Ds
 .It Sy error
 Treat all warnings as errors.
@@ -98,7 +126,8 @@ Report statements that cannot be executed.
 C specific debugging where
 .Ar flags
 is one or more of the following:
-.Bl -tag -width Ds
+.Pp
+.Bl -tag -compact -width Ds
 .It Sy b
 Building of parse trees
 .It Sy d
@@ -123,34 +152,45 @@ Type conversions
 Target-specific flag, used in machine-dependent code
 .El
 .\"
-.It Fl x Ar optimizations
-.Ar optimizations
-is one of the following:
-.\" TODO: reword this, since multiple terms don't go with one -x switch??
-.Bl -tag -width deljumps
+.It Fl x Ar setting
+Enable
+.Ar setting
+in the compiler.
+Multiple
+.Fl x
+options can be given, the following settings are supported:
+.Bl -tag -width Ds
+.It Sy ccp
+Apply sparse conditional constant propagation techniques for optimization.
+Currently not implemented.
+.It Sy dce
+Do dead code elimination.
 .It Sy deljumps
 Delete redundant jumps and dead code.
+.It Sy gnu89
+.It Sy gnu99
+Use gcc semantics rather than C99 for some things.
+Currently only inline.
 .It Sy inline
 Replace calls to functions marked with an inline specifier with a copy
 of the actual function.
 .It Sy ssa
-Convert statements into SSA form for optimization.
+Convert statements into static single assignment form for optimization.
 Not yet finished.
 .It Sy tailcall
+Enable optimization of tail-recursion functions.
 Currently not implemented.
 .It Sy temps
-Setting this flag allows variables to be put into registers, for further
+Locate automatic variables into registers where possible, for further
 optimization by the register allocator.
 .El
-The
-.Fl x
-flag can be passed multiple times to set different options.
 .\"
 .It Fl Z Ar flags
 Code generator (pass2) specific debugging where
 .Ar flags
 is one or more of the following:
-.Bl -tag -width Ds
+.Pp
+.Bl -tag -compact -width Ds
 .It Sy b
 Basic block and SSA building
 .It Sy c

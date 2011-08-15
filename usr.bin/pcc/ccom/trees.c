@@ -850,6 +850,8 @@ conval(NODE *p, int o, NODE *q)
 
 	v1 = p->n_lval;
 	v2 = q->n_lval;
+	if (v2 == 0 && (cdope(o) & DIVFLG))
+		return 0; /* leave division by zero to runtime */
 	switch( o ){
 
 	case PLUS:
@@ -866,26 +868,18 @@ conval(NODE *p, int o, NODE *q)
 		p->n_lval *= val;
 		break;
 	case DIV:
-		if (val == 0)
-			uerror("division by 0");
-		else  {
-			if (u) {
-				v1 /= v2;
-				p->n_lval = v1;
-			} else
-				p->n_lval /= val;
-		}
+		if (u) {
+			v1 /= v2;
+			p->n_lval = v1;
+		} else
+			p->n_lval /= val;
 		break;
 	case MOD:
-		if (val == 0)
-			uerror("division by 0");
-		else  {
-			if (u) {
-				v1 %= v2;
-				p->n_lval = v1;
-			} else
-				p->n_lval %= val;
-		}
+		if (u) {
+			v1 %= v2;
+			p->n_lval = v1;
+		} else
+			p->n_lval %= val;
 		break;
 	case AND:
 		p->n_lval &= val;
@@ -1390,8 +1384,15 @@ ptmatch(NODE *p)
 
 	case ASSIGN:
 	case RETURN:
-	case CAST:
 		{  break; }
+
+	case CAST:
+		if (t == VOID) {
+			/* just paint over */
+			p->n_right = block(SCONV, p->n_right, NIL, VOID, 0, 0);
+			return p;
+		}
+		break;
 
 	case MINUS: {
 		int isdyn(struct symtab *sp);
@@ -2429,7 +2430,7 @@ rdualfld(NODE *p, TWORD t, TWORD ct, int off, int fsz)
 static NODE *
 wrualfld(NODE *val, NODE *d, TWORD t, TWORD ct, int off, int fsz)
 { 
-	NODE *p, *q, *r, *rn;
+	NODE *p, *q, *r, *rn, *s;
 	int tsz, ctsz, t2f, inbits;
  
 	tsz = (int)tsize(t, 0, 0);
@@ -2442,17 +2443,26 @@ wrualfld(NODE *val, NODE *d, TWORD t, TWORD ct, int off, int fsz)
 		;
  
 	if (off + fsz <= ctsz) {
+		r = tempnode(0, ct, 0, 0);
+
 		/* only one operation needed */
 		d = buildtree(UMUL, buildtree(PLUS, d, bcon(t2f)), 0);	
 		p = ccopy(d); 
 		p = TYPAND(p, xbcon(~(SZMASK(fsz) << off), 0, ct), ct);
+
 		val = makety(val, ct, 0, 0, 0);
 		q = TYPAND(val, xbcon(SZMASK(fsz), 0, ct), ct);
+		q = buildtree(ASSIGN, ccopy(r), q);
+
 		q = TYPLS(q, bcon(off), ct);   
 		p = TYPOR(p, q, ct);
 		p = makety(p, t, 0, 0, 0);     
 		rn = buildtree(ASSIGN, d, p);
+		rn = buildtree(COMOP, rn, makety(r, t, 0, 0, 0));
 	} else {
+		s = makety(ccopy(val), t, 0, 0, 0);
+		s = TYPAND(s, xbcon(SZMASK(fsz), 0, t), t);
+
 		r = buildtree(UMUL, buildtree(PLUS, ccopy(d), bcon(t2f)), 0);
 		p = ccopy(r);
 		p = TYPAND(p, xbcon(SZMASK(off), 0, ct), ct);
@@ -2484,6 +2494,7 @@ wrualfld(NODE *val, NODE *d, TWORD t, TWORD ct, int off, int fsz)
 		q = makety(q, ct, 0, 0, 0);
 		p = TYPOR(p, q, ct);
 		rn = buildtree(COMOP, rn, buildtree(ASSIGN, r, p));
+		rn = buildtree(COMOP, rn, s);
 	}
 	return rn;
 }
@@ -2860,6 +2871,7 @@ static NODE *
 pprop(NODE *p, TWORD t, struct attr *ap)
 {
 	int o = p->n_op;
+	TWORD t2;
 
 #ifdef PCC_DEBUG
 	if (p->n_op == TEMP && p->n_type != t &&
@@ -2875,12 +2887,16 @@ pprop(NODE *p, TWORD t, struct attr *ap)
 		t = INCREF(t);
 		break;
 	case ADDROF:
+		t2 = p->n_left->n_type;
 		if (p->n_left->n_op == TEMP) {
 			/* Will be converted to memory in pass2 */
-			p->n_left->n_type = DECREF(t);
+			if (!ISPTR(t2) && DECREF(t) != t2) 
+				; /* XXX cannot convert this */
+			else
+				p->n_left->n_type = DECREF(t);
 			return p;
 		}
-		if (ISPTR(p->n_left->n_type) && !ISPTR(DECREF(t)))
+		if (ISPTR(t2) && !ISPTR(DECREF(t)))
 			break; /* not quite correct */
 		t = DECREF(t);
 		break;
@@ -3222,6 +3238,12 @@ ccopy(NODE *p)
 	return(q);
 }
 
+NODE *
+nlabel(int label)
+{
+	return block(LABEL, bcon(label), NIL, 0, 0, 0);
+}
+
 /*
  * set PROG-seg label.
  */
@@ -3229,7 +3251,7 @@ void
 plabel(int label)
 {
 	reached = 1; /* Will this always be correct? */
-	send_passt(IP_NODE, block(LABEL, bcon(label), NIL, 0, 0, 0));
+	send_passt(IP_NODE, nlabel(label));
 }
 
 /*

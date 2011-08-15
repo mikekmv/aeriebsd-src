@@ -70,7 +70,6 @@
 
 /*	some storage declarations */
 int nrecur;
-int lflag;
 int x2debug, udebug, odebug;
 int thisline;
 int fregs;
@@ -410,7 +409,7 @@ pass2_compile(struct interpass *ip)
 	optimize(p2e);
 	ngenregs(p2e);
 
-	if (xssaflag && xtemps && xdeljumps)
+	if (xssa && xtemps && xdeljumps)
 		deljumps(p2e);
 
 	DLIST_FOREACH(ip, &p2e->ipole, qelem)
