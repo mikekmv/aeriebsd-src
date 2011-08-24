@@ -2746,7 +2746,6 @@ ngenregs(struct p2env *p2e)
 	 * Do some setup before doing the real thing.
 	 */
 	tempmin = p2e->ipp->ip_tmpnum;
-	tempmax = p2e->epp->ip_tmpnum;
 
 	/*
 	 * Allocate space for the permanent registers in the
@@ -2766,20 +2765,6 @@ ngenregs(struct p2env *p2e)
 		dontregs |= REGBIT(FPREG);
 #endif
 
-#ifdef PCC_DEBUG
-	nodnum = tempmax;
-#endif
-	tbits = tempmax - tempmin;	/* # of temporaries */
-	xbits = tbits + MAXREGS;	/* total size of live array */
-	if (tbits) {
-		nblock = tmpalloc(tbits * sizeof(REGW));
-
-		nblock -= tempmin;
-		RDEBUG(("nblock %p num %d size %zu\n",
-		    nblock, tbits, (size_t)(tbits * sizeof(REGW))));
-	}
-	live = tmpalloc(BIT2BYTE(xbits));
-
 	/* Block for precolored nodes */
 	ablock = tmpalloc(sizeof(REGW)*MAXREGS);
 	memset(ablock, 0, sizeof(REGW)*MAXREGS);
@@ -2791,6 +2776,25 @@ ngenregs(struct p2env *p2e)
 		ablock[i].nodnum = i;
 #endif
 	}
+
+ssagain:
+	tempmax = p2e->epp->ip_tmpnum;
+#ifdef PCC_DEBUG
+	nodnum = tempmax;
+#endif
+	tbits = tempmax - tempmin;	/* # of temporaries */
+	xbits = tbits + MAXREGS;	/* total size of live array */
+	if (tbits) {
+		nblock = tmpalloc(tbits * sizeof(REGW));
+
+		nblock -= tempmin;
+#ifdef HAVE_C99_FORMAT
+		RDEBUG(("nblock %p num %d size %zu\n",
+		    nblock, tbits, (size_t)(tbits * sizeof(REGW))));
+#endif
+	}
+	live = tmpalloc(BIT2BYTE(xbits));
+
 #ifdef notyet
 	TMPMARK();
 #endif
@@ -2879,6 +2883,8 @@ onlyperm: /* XXX - should not have to redo all */
 			optimize(p2e);
 			if (beenhere++ == MAXLOOP)
 				comperr("cannot color graph - COLORMAP() bug?");
+			if (xssa)
+				goto ssagain;
 			goto recalc;
 		}
 	}

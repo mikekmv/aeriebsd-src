@@ -58,6 +58,7 @@
  */
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -549,7 +550,7 @@ struct balloc {
 	} a2;
 };
 
-#define ALIGNMENT ((long)&((struct balloc *)0)->a2)
+#define	ALIGNMENT offsetof(struct balloc, a2)
 #define	ROUNDUP(x) (((x) + ((ALIGNMENT)-1)) & ~((ALIGNMENT)-1))
 
 static char *allocpole;
