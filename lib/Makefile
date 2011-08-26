@@ -1,4 +1,4 @@
-SUBDIR=	csu libarch libc libcompat libcurses \
+SUBDIR=	csu libF77 libI77 libarch libc libcompat libcurses \
 	libedit libevent libelf libexpat \
 	libform libkeynote libkvm libl libm libmenu \
 	libocurses libossaudio libpanel libpcap libplot libpthread librpcsvc \
