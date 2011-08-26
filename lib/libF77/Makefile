@@ -19,6 +19,7 @@ CMP =	l_ge.c l_gt.c l_le.c l_lt.c hl_ge.c hl_gt.c hl_le.c hl_lt.c
 CHAR =	s_cat.c s_cmp.c s_copy.c
 
 SRCS=$(MISC) $(POW) $(CX) $(DCX) $(REAL) $(DBL) $(INT) $(HALF) $(CMP) $(CHAR) cabs.c
+CPPFLAGS+=-I${.CURDIR}
 NOMAN=
 
 .include <bsd.lib.mk>
