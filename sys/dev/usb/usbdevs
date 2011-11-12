@@ -1,5 +1,5 @@
 #!/usr/bin/awk -f usbdevs
-#version $ABSD: usbdevs,v 1.3 2009/05/29 10:43:32 mickey Exp $
+#version $ABSD: usbdevs,v 1.4 2010/04/12 21:17:00 mickey Exp $
 #/*
 # * Copyright (c) 2009 Michael Shalayeff
 # * Copyright (c) 1998, 1999, 2000 The NetBSD Foundation, Inc.
@@ -499,6 +499,7 @@ END {
 #vendor ARASAN		0x07da	Arasan Chip Systems
 #vendor ALLIEDCABLE	0x07e6	Allied Cable
 #vendor STSN		0x07ef	STSN
+#vendor BEWAN		0x07fa	Bewan
 #vendor ZOOM		0x0803	Zoom Telephonics
 #vendor BROADLOGIC	0x0827	BroadLogic
 #vendor HANDSPRING	0x082d	Handspring
@@ -803,6 +804,8 @@ END {
 #product ACCTON RT2870_3	0x7522	RT2870
 #product ACCTON RT2870_4	0xa618	RT2870
 #product ACCTON ZD1211B		0xe501	ZD1211B
+#product ACCTON WN4501H_LF_IR	0xe503	WN4501H-LF-IR
+#product ACCTON WUS201		0xe506	WUS-201
 #
 #/* Aceeca products */
 #product ACEECA MEZ1000		0x0001	MEZ1000 RDA
@@ -1084,6 +1087,9 @@ END {
 #product BELKIN RT2870		0x8053	RT2870
 #product BELKIN F5D9050C	0x905c	F5D9050C
 #product BELKIN F5D9050V3	0x905b	F5D9050 ver 3
+#
+#/* Bewan products */
+#product BEWAN BWIFI_USB54AR	0x1196	BWIFI-USB54AR
 #
 #/* Billionton products */
 #product BILLIONTON USB100	0x0986	USB100N 10/100 Ethernet
@@ -2377,6 +2383,7 @@ END {
 #product PHILIPS DSS150		0x0471	DSS 150 Digital Speaker System
 #product PHILIPS SNU6500	0x1233	SNU6500
 #product PHILIPS SNU5600	0x1236	SNU5600
+#product PHILIPS SNU5630NS05	0x1237	SNU5630NS/05
 #product PHILIPS DIVAUSB	0x1801	DIVA mp3 player
 #product PHILIPS RT2870		0x200f	RT2870
 #
@@ -2662,6 +2669,7 @@ END {
 #product SIEMENS SPEEDSTREAM	0x1001	SpeedStream
 #product SIEMENS SPEEDSTREAM22	0x1022	SpeedStream 1022
 #product CYBERTAN GIGASET108	0x160c	Siemens Gigaset 108
+#product CYBERTAN ZD1211B	0x1667	ZD1211B
 #
 #/* Sierra Wireless products */
 #product SIERRA EM5625		0x0017	EM5625
@@ -2735,6 +2743,7 @@ END {
 #product SITECOMEU RT2870_2	0x002b	RT2870
 #product SITECOMEU RT2870_3	0x002c	RT2870
 #product SITECOMEU RT2870_4	0x002d	RT2870
+#product SITECOMEU WL603	0x0036	WL-603
 #product SITECOMEU LN028	0x061c	LN-028
 #product SITECOMEU WL113	0x9071	WL-113
 #product SITECOMEU ZD1211B	0x9075	ZD1211B
@@ -2783,6 +2792,7 @@ END {
 #product SONY CLIE_41		0x009a	Clie v4.1
 #product SONY CLIE_NX60		0x00da	Clie nx60
 #product SONY CLIE_TJ25		0x0169	Clie tj25
+#product SONY IFU_WLM2		0x0257	IFU-WLM2
 #
 #/* SOURCENEXT products */
 #product SOURCENEXT KEIKAI8	0x039f	KeikaiDenwa 8
@@ -2967,6 +2977,7 @@ END {
 #
 #/* Unknown vendor 2 */
 #product UNKNOWN2 ZD1211B	0x0105	ZD1211B
+#product UNKNOWN2 NW3100	0x145f	NW-3100
 #
 #/* Unknown vendor 3 */
 #product UNKNOWN3 ZD1211B	0x1233 ZD1211B
@@ -3089,6 +3100,8 @@ END {
 #product ZYDAS ZD1201		0x1201	ZD1201
 #product ZYDAS ZD1211		0x1211	ZD1211
 #product ZYDAS ZD1211B		0x1215	ZD1211B
+#product ZYDAS ALL0298		0xa211	ALL0298
+#product ZYDAS ZD1211B_2	0xb215	ZD1211B
 #
 #/* ZyXEL Communication Co. products */
 #product ZYXEL OMNI56K		0x1500	Omni 56K Plus
