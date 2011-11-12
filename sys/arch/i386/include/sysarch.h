@@ -43,6 +43,9 @@ int i386_iopl(int);
 int i386_get_ioperm(u_long *);
 int i386_set_ioperm(u_long *);
 int sysarch(int, void *);
+#else
+int i386_get_threadbase(struct proc *, void *, int);
+int i386_set_threadbase(struct proc *, uint32_t, int);
 #endif
 
 #endif /* !_I386_SYSARCH_H_ */

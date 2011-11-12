@@ -1331,6 +1331,8 @@ pmap_activate(struct proc *p)
 		 */
 		self->ci_gdt[GUCODE_SEL].sd = pcb->pcb_ldt[LUCODE_SEL].sd =
 		    pmap->pm_codeseg;
+		self->ci_gdt[GUFS_SEL].sd = pcb->pcb_threadsegs[TSEG_FS];
+		self->ci_gdt[GUGS_SEL].sd = pcb->pcb_threadsegs[TSEG_GS];
 
 		lcr3(pcb->pcb_cr3);
 		lldt(pcb->pcb_ldt_sel);

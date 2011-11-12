@@ -1,4 +1,3 @@
-
 /*-
  * Copyright (c) 1995 Charles M. Hannum.  All rights reserved.
  * Copyright (c) 1990 The Regents of the University of California.
@@ -386,6 +385,36 @@ i386_set_ioperm(struct proc *p, void *args, register_t *retval)
 		return (error);
 
 	return copyin(ua.iomap, pcb->pcb_iomap, sizeof(pcb->pcb_iomap));
+}
+
+int
+i386_get_threadbase(struct proc *p, void *args, int which)
+{
+	struct segment_descriptor *sdp =
+	    &p->p_addr->u_pcb.pcb_threadsegs[which];
+	uint32_t base = (uint32_t)sdp->sd_hibase << 24 | sdp->sd_lobase;
+
+	return copyout(&base, args, sizeof(base));
+}
+
+int
+i386_set_threadbase(struct proc *p, uint32_t base, int which)
+{
+	struct segment_descriptor *sdp;
+
+	/*
+	 * We can't place a limit on the segment used by the library
+	 * thread register (%gs) because the ELF ABI for i386 places
+	 * data structures both before and after base pointer, using
+	 * negative offsets for some bits (the static (load-time)
+	 * TLS slots) and non-negative for others (the TCB block,
+	 * including the pointer to the TLS dynamic thread vector).
+	 * Protection must be provided by the paging subsystem.
+	 */
+	sdp = &p->p_addr->u_pcb.pcb_threadsegs[which];
+	setsegment(sdp, (void *)base, 0xfffff, SDT_MEMRWA, SEL_UPL, 1, 1);
+	curcpu()->ci_gdt[which == TSEG_FS ? GUFS_SEL : GUGS_SEL].sd = *sdp;
+	return 0;
 }
 
 int

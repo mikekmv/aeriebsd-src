@@ -219,8 +219,10 @@ void idt_vec_free(int);
 #define	GAPM16CODE_SEL	8	/* 16 bit APM code descriptor */
 #define	GAPMDATA_SEL	9	/* APM data descriptor */
 #define	GICODE_SEL	10	/* Interrupt code descriptor (same as Kernel code) */
-#define GCPU_SEL	11	/* per-CPU segment */
-#define	NGDT		12
+#define	GCPU_SEL	11	/* per-CPU segment */
+#define	GUFS_SEL	12	/* User per-thread (%fs) descriptor */
+#define	GUGS_SEL	13	/* User per-thread (%gs) descriptor */  
+#define	NGDT		14
 
 /*
  * Entries in the Local Descriptor Table (LDT)

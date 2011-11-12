@@ -554,7 +554,11 @@ struct linux_sys_fcntl64_args {
 };
 
 struct linux_sys_set_thread_area_args {
-	syscallarg(struct linux_user_desc *) desc;
+	syscallarg(struct l_segment_descriptor *) desc;
+};
+
+struct linux_sys_get_thread_area_args {
+	syscallarg(struct l_segment_descriptor *) desc;
 };
 
 /*
@@ -810,5 +814,6 @@ int	linux_sys_removexattr(struct proc *, void *, register_t *);
 int	linux_sys_lremovexattr(struct proc *, void *, register_t *);
 int	linux_sys_fremovexattr(struct proc *, void *, register_t *);
 int	linux_sys_set_thread_area(struct proc *, void *, register_t *);
+int	linux_sys_get_thread_area(struct proc *, void *, register_t *);
 int	linux_sys_fadvise64(struct proc *, void *, register_t *);
 int	sys_exit(struct proc *, void *, register_t *);

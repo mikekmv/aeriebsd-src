@@ -2650,6 +2650,10 @@ setregs(struct proc *p, struct exec_package *pack, u_long stack,
 	 */
 	setsegment(&pmap->pm_codeseg, 0, atop(I386_MAX_EXE_ADDR) - 1,
 	    SDT_MEMERA, SEL_UPL, 1, 1);
+	setsegment(&pcb->pcb_threadsegs[TSEG_FS], 0,
+	    atop(VM_MAXUSER_ADDRESS) - 1, SDT_MEMRWA, SEL_UPL, 1, 1);
+	setsegment(&pcb->pcb_threadsegs[TSEG_GS], 0,
+	    atop(VM_MAXUSER_ADDRESS) - 1, SDT_MEMRWA, SEL_UPL, 1, 1);
 
 	/*
 	 * And update the GDT and LDT since we return to the user process
@@ -2657,6 +2661,8 @@ setregs(struct proc *p, struct exec_package *pack, u_long stack,
 	 */
 	curcpu()->ci_gdt[GUCODE_SEL].sd = pcb->pcb_ldt[LUCODE_SEL].sd =
 	    pmap->pm_codeseg;
+	curcpu()->ci_gdt[GUFS_SEL].sd = pcb->pcb_threadsegs[TSEG_FS];
+	curcpu()->ci_gdt[GUGS_SEL].sd = pcb->pcb_threadsegs[TSEG_GS];
 
 	/*
 	 * And reset the hiexec marker in the pmap.

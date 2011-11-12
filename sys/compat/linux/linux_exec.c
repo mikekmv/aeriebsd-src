@@ -635,13 +635,3 @@ linux_sys_execve(p, v, retval)
 
 	return (sys_execve(p, &ap, retval));
 }
-
-int
-linux_sys_set_thread_area(struct proc *p, void *v, register_t *retval)
-{
-	struct linux_sys_set_thread_area_args /* {
-		syscallarg(struct linux_user_desc *) desc;
-	} */ *uap = v;
-
-	return linux_setprivate(p, SCARG(uap, desc));
-}

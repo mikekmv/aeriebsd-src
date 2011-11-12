@@ -529,8 +529,8 @@ const struct sysent linux_sysent[] = {
 	    sys_nosys },			/* 242 = unimplemented linux_sys_sched_getaffinity */
 	{ 1, s(struct linux_sys_set_thread_area_args), 0,
 	    linux_sys_set_thread_area },	/* 243 = set_thread_area */
-	{ 0, 0, 0,
-	    sys_nosys },			/* 244 = unimplemented linux_sys_get_thread_area */
+	{ 1, s(struct linux_sys_get_thread_area_args), 0,
+	    linux_sys_get_thread_area },	/* 244 = get_thread_area */
 	{ 0, 0, 0,
 	    sys_nosys },			/* 245 = unimplemented linux_sys_io_setup */
 	{ 0, 0, 0,

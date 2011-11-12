@@ -64,6 +64,8 @@ struct pcb {
 	int	pcb_pad[2];		/* savefpu on 16-byte boundary */
 	union	savefpu pcb_savefpu;	/* floating point state for FPU */
 	struct	emcsts pcb_saveemc;	/* Cyrix EMC state */
+	struct  segment_descriptor pcb_threadsegs[2];
+					/* per-thread descriptors */
 /*
  * Software pcb (extension)
  */
@@ -78,6 +80,10 @@ struct pcb {
 	int	pcb_flags;
 #define PCB_SAVECTX	0x00000001
 };
+
+/* the indexes of the %fs/%gs segments in pcb_threadsegs */
+#define	TSEG_FS		0
+#define	TSEG_GS		1
 
 /*    
  * The pcb is augmented with machine-dependent additional data for 
