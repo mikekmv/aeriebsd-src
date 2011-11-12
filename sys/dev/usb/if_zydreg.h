@@ -108,7 +108,7 @@
 #define ZYD_MACB_MAX_RETRY	0x9b28
 
 /*
- * Miscellanous registers.
+ * Miscellaneous registers.
  */
 #define ZYD_FIRMWARE_START_ADDR	0xee00
 #define ZYD_FIRMWARE_BASE_ADDR	0xee1d /* Firmware base address */
@@ -158,7 +158,7 @@
 #define ZYD_RF_AL2210		0x7
 #define ZYD_RF_MAXIM_NEW	0x8
 #define ZYD_RF_GCT		0x9
-#define ZYD_RF_PV2000		0xa	/* not supported yet */
+#define ZYD_RF_AL2230S		0xa
 #define ZYD_RF_RALINK		0xb	/* not supported yet */
 #define ZYD_RF_INTERSIL		0xc	/* not supported yet */
 #define ZYD_RF_RFMD		0xd
@@ -636,6 +636,14 @@
 	{ ZYD_CR252, 0x00 }, { ZYD_CR253, 0x00 }			\
 }
 
+#define	ZYD_AL2230S_PHY_INIT						\
+{									\
+	{ ZYD_CR47,  0x1e }, { ZYD_CR106, 0x22 }, { ZYD_CR107, 0x2a },	\
+	{ ZYD_CR109, 0x13 }, { ZYD_CR118, 0xf8 }, { ZYD_CR119, 0x12 },	\
+	{ ZYD_CR122, 0xe0 }, { ZYD_CR128, 0x10 }, { ZYD_CR129, 0x0e },	\
+	{ ZYD_CR130, 0x10 }						\
+}
+
 #define ZYD_AL2230_RF							\
 {									\
 	0x03f790, 0x033331, 0x00000d, 0x0b3331, 0x03b812, 0x00fff3,	\
@@ -946,11 +954,16 @@
 #define ZYD_FILTER_CFE_A	(1 << 31)
 
 /* helpers for register ZYD_MAC_RXFILTER */
-#define ZYD_FILTER_MONITOR	0xffffffff
+#define ZYD_FILTER_MONITOR	0x000fffff
+#if 1
+/* magic from the vendor's driver */
+#define ZYD_FILTER_BSS		0x2400ffff
+#else
 #define ZYD_FILTER_BSS							\
 	(ZYD_FILTER_ASS_RSP | ZYD_FILTER_REASS_RSP |			\
 	 ZYD_FILTER_PRB_RSP | ZYD_FILTER_BCN | ZYD_FILTER_DEASS |	\
 	 ZYD_FILTER_AUTH | ZYD_FILTER_DEAUTH)
+#endif
 #define ZYD_FILTER_HOSTAP						\
 	(ZYD_FILTER_ASS_REQ | ZYD_FILTER_REASS_REQ |			\
 	 ZYD_FILTER_PRB_REQ | ZYD_FILTER_DEASS | ZYD_FILTER_AUTH |	\
@@ -1077,7 +1090,7 @@ struct zyd_notif_retry {
 	(sizeof (struct zyd_tx_desc) + IEEE80211_MAX_LEN)
 
 #define ZYD_MIN_FRAGSZ							\
-	(sizeof (struct zyd_plcphdr) + IEEE80211_MIN_LEN + 		\
+	(sizeof (struct zyd_plcphdr) + IEEE80211_ACK_LEN +		\
 	 sizeof (struct zyd_rx_stat))
 #define ZYD_MIN_RXBUFSZ	ZYD_MIN_FRAGSZ
 #define ZYX_MAX_RXBUFSZ							\
