@@ -122,6 +122,7 @@ struct icmp6_hdr {
 #define ICMP6_FQDN_REPLY		140	/* FQDN reply */
 #define ICMP6_NI_QUERY			139	/* node information request */
 #define ICMP6_NI_REPLY			140	/* node information reply */
+#define MLDV2_LISTENER_REPORT		143	/* RFC3810 listener report */
 
 /* The definitions below are experimental. TBA */
 #define MLD_MTRACE_RESP			200	/* mtrace response(to sender) */
