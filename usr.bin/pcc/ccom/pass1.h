@@ -165,7 +165,6 @@ int mygenswitch(int, TWORD, struct swents **, int);
 extern	int blevel;
 extern	int instruct, got_type;
 extern	int oldstyle;
-extern	int oflag;
 
 extern	int lineno, nerrors;
 
@@ -179,8 +178,8 @@ extern	OFFSZ inoff;
 extern	int reached;
 extern	int isinlining;
 extern	int xinline, xgnu89, xgnu99;
-
-extern	int sdebug, idebug, pdebug;
+extern	int bdebug, ddebug, edebug, idebug, ndebug;
+extern	int odebug, pdebug, sdebug, tdebug, xdebug;
 
 /* various labels */
 extern	int brklab;
@@ -386,7 +385,12 @@ int pragmas_gcc(char *t);
 NODE *cstknode(TWORD t, union dimfun *df, struct attr *ap);
 int concast(NODE *p, TWORD t);
 NODE *builtin_check(NODE *f, NODE *a);
+#ifdef WORD_ADDRESSED
+#define rmpconv(p) (p)
+#else
 NODE *rmpconv(NODE *);
+#endif
+NODE *optloop(NODE *);
 NODE *nlabel(int label);
 
 
@@ -487,6 +491,7 @@ enum {	ATTR_NONE,
 	GCC_ATYP_ALW_INL,
 	GCC_ATYP_TLSMODEL,
 	GCC_ATYP_ALIASWEAK,
+	GCC_ATYP_RETURNS_TWICE,
 
 	/* other stuff */
 	GCC_ATYP_BOUNDED,	/* OpenBSD extra boundary checks */

@@ -129,8 +129,6 @@ static void lcommadd(struct symtab *sp);
 static NODE *mkcmplx(NODE *p, TWORD dt);
 extern int fun_inline;
 
-int ddebug = 0;
-
 /*
  * Declaration of an identifier.  Handles redeclarations, hiding,
  * incomplete types and forward declarations.
@@ -377,7 +375,8 @@ defid(NODE *q, int class)
 		printf("	new entry made\n");
 #endif
 	if (type < BTMASK && (ap = attr_find(q->n_ap, GCC_ATYP_MODE))) {
-		type = ENUNSIGN(ap->iarg(0));
+		int u = ISUNSIGNED(type);
+		type = u ? ENUNSIGN(ap->iarg(0)) : ap->iarg(0);
 		if (type == XTYPE)
 			uerror("fix XTYPE basetyp");
 	}
@@ -1215,7 +1214,7 @@ strend(int wide, char *str)
 		if (wide) {
 			sp->stype = WCHAR_TYPE+ARY;
 		} else {
-			if (funsigned_char) {
+			if (xuchar) {
 				sp->stype = UCHAR+ARY;
 			} else {
 				sp->stype = CHAR+ARY;
@@ -1833,7 +1832,7 @@ typenode(NODE *p)
 			tc.type = ENUNSIGN(tc.type);
 	}
 
-	if (funsigned_char && tc.type == CHAR && tc.sig == 0)
+	if (xuchar && tc.type == CHAR && tc.sig == 0)
 		tc.type = UCHAR;
 
 #ifdef GCC_COMPAT
@@ -1990,6 +1989,10 @@ arglist(NODE *n)
 		if (w->n_right->n_op == ELLIPSIS)
 			continue;
 		ty = w->n_right->n_type;
+		if (ty == ENUMTY) {
+			uerror("arg %d enum undeclared", cnt);
+			ty = w->n_right->n_type = INT;
+		}
 		if (BTYPE(ty) == STRTY || BTYPE(ty) == UNIONTY)
 			num++;
 		while (ISFTN(ty) == 0 && ISARY(ty) == 0 && ty > BTMASK)
@@ -1999,6 +2002,10 @@ arglist(NODE *n)
 	}
 	cnt++;
 	ty = w->n_type;
+	if (ty == ENUMTY) {
+		uerror("arg %d enum undeclared", cnt);
+		ty = w->n_type = INT;
+	}
 	if (BTYPE(ty) == STRTY || BTYPE(ty) == UNIONTY)
 		num++;
 	while (ISFTN(ty) == 0 && ISARY(ty) == 0 && ty > BTMASK)
@@ -2166,7 +2173,10 @@ alprint(union arglist *al, int in)
 				printf(" dim %d ", al->df->ddim);
 			} else if (ISFTN(t)) {
 				al++;
-				alprint(al->df->dfun, in+1);
+				if (al->df->dfun) {
+					printf("\n");
+					alprint(al->df->dfun, in+1);
+				}
 			}
 			t = DECREF(t);
 		}
@@ -2181,6 +2191,7 @@ alprint(union arglist *al, int in)
 		printf("end arglist\n");
 }
 #endif
+
 int
 suemeq(struct attr *s1, struct attr *s2)
 {
@@ -2974,9 +2985,9 @@ complinit()
 	struct rstack *rp;
 	NODE *p, *q;
 	char *n[] = { "0f", "0d", "0l" };
-	int i, odebug;
+	int i, d_debug;
 
-	odebug = ddebug;
+	d_debug = ddebug;
 	ddebug = 0;
 	real = addname("__real");
 	imag = addname("__imag");
@@ -2994,7 +3005,7 @@ complinit()
 		nfree(q);
 	}
 	nfree(p);
-	ddebug = odebug;
+	ddebug = d_debug;
 }
 
 /*

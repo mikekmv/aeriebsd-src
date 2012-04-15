@@ -353,7 +353,7 @@ ejobcode(int flag )
 	if (flag)
 		return;
 
-#ifdef MACHOAPI
+#ifdef MACHOABI
 #define PT(x)
 #else
 #define	PT(x) printf(".type __pcc_" x ",@function\n")

@@ -109,8 +109,6 @@
  * - Alignment of structs on like i386 char members.
  */
 
-int idebug;
-
 /*
  * Struct used in array initialisation.
  */
@@ -400,7 +398,7 @@ beginit(struct symtab *sp)
 			basesz = SZINT;
 		}
 	} else
-		basesz = tsize(DECREF(sp->stype), sp->sdf, sp->sap);
+		basesz = tsize(sp->stype, sp->sdf, sp->sap);
 	SLIST_INIT(&lpole);
 
 	/* first element */
@@ -691,11 +689,8 @@ scalinit(NODE *p)
 		nfree(p);
 	} else
 		q = p;
-#ifndef WORD_ADDRESSED
-	if (csym->sclass != AUTO)
-		q = rmpconv(optim(rmpconv(q)));
-#endif
-	q = optim(q);
+
+	q = optloop(q);
 
 	woff = findoff();
 
@@ -1193,10 +1188,7 @@ simpleinit(struct symtab *sp, NODE *p)
 			break;
 		}
 #endif
-		p = optim(buildtree(ASSIGN, nt, p));
-#ifndef WORD_ADDRESSED
-		p = optim(rmpconv(p));
-#endif
+		p = optloop(buildtree(ASSIGN, nt, p));
 		q = p->n_right;
 		t = q->n_type;
 		sz = (int)tsize(t, q->n_df, q->n_ap);

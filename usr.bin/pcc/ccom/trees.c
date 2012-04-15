@@ -142,7 +142,6 @@ static char *tnames[] = {
 
 	*/
 
-int bdebug = 0;
 extern int negrel[];
 
 /* Have some defaults for most common targets */
@@ -735,7 +734,7 @@ concast(NODE *p, TWORD t)
 		}
 		return 0;
 	}
-	if ((p->n_type & TMASK) || (t & TMASK)) /* no cast of pointers */
+	if (((p->n_type & TMASK) && t != BOOL) || (t & TMASK)) /* no pointers */
 		return 0;
 
 //printf("concast till %d\n", t);
@@ -1456,8 +1455,6 @@ ptmatch(NODE *p)
 
 	return(clocal(p));
 	}
-
-int tdebug = 0;
 
 /*
  * Satisfy the types of various arithmetic binary ops.
@@ -2627,7 +2624,6 @@ rmfldops(NODE *p)
 }
 #endif
 
-int edebug = 0;
 void
 ecomp(NODE *p)
 {
@@ -2986,6 +2982,21 @@ rmpconv(NODE *p)
 	return q;
 }
 #endif
+
+NODE *
+optloop(NODE *p)
+{
+	extern int usednodes;
+	int n;
+
+	do {
+		n = usednodes;
+		p = rmpconv(p);
+		p = optim(p);
+	} while (n != usednodes);
+
+	return p;
+}
 
 void
 ecode(NODE *p)	

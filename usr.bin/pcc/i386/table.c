@@ -298,7 +298,7 @@ struct optab table[] = {
 { SCONV,	INCH,
 	SHLL,	TLL,
 	SANY,	TCHAR|TUCHAR,
-		NBREG|NBSL,	RESC1,
+		NBREG|NBSL|NTEMP,	RESC1,
 		"ZS", },
 
 /* convert (u)long long to (u)short (mem->reg) */
@@ -312,7 +312,7 @@ struct optab table[] = {
 { SCONV,	INAREG,
 	SHLL|SOREG|SNAME,	TLL,
 	SAREG,	TSHORT|TUSHORT,
-		NAREG|NASL,	RESC1,
+		NAREG|NASL|NTEMP,	RESC1,
 		"ZS", },
 
 /* convert long long to int (mem->reg) */
@@ -326,7 +326,7 @@ struct optab table[] = {
 { SCONV,	INAREG,
 	SHLL|SOREG|SNAME,	TLL,
 	SAREG,	TWORD|TPOINT,
-		NAREG|NASL,	RESC1,
+		NAREG|NASL|NTEMP,	RESC1,
 		"ZS", },
 
 /* convert long long (in memory) to floating */

@@ -177,28 +177,45 @@ char *flagstr[] = {
 void
 Wflags(char *str)
 {
-	int i, flagval;
+	int i, isset, iserr;
 
-	if (strncmp("no-", str, 3) == 0) {
-		str += 3;
-		flagval = 0;
-	} else
-		flagval = 1;
-	if (strcmp(str, "error") == 0) {
-		/* special */
+	/* handle -Werror specially */
+	if (strcmp("error", str) == 0) {
 		for (i = 0; i < NUMW; i++)
 			BITSET(werrary, i);
+
 		return;
 	}
+
+	isset = 1;
+	if (strncmp("no-", str, 3) == 0) {
+		str += 3;
+		isset = 0;
+	}
+
+	iserr = 0;
+	if (strncmp("error=", str, 6) == 0) {
+		str += 6;
+		iserr = 1;
+	}
+
 	for (i = 0; i < NUMW; i++) {
 		if (strcmp(flagstr[i], str) != 0)
 			continue;
-		if (flagval)
+
+		if (isset) {
+			if (iserr)
+				BITSET(werrary, i);
 			BITSET(warnary, i);
-		else
+		} else if (iserr) {
+			BITCLEAR(werrary, i);
+		} else {
 			BITCLEAR(warnary, i);
+		}
+
 		return;
 	}
+
 	fprintf(stderr, "unrecognised warning option '%s'\n", str);
 }
 
@@ -229,7 +246,7 @@ warner(int type, ...)
 
 #ifndef MKEXT
 static NODE *freelink;
-static int usednodes;
+int usednodes;
 
 #ifndef LANG_F77
 NODE *
@@ -244,14 +261,14 @@ talloc()
 		freelink = p->next;
 		if (p->n_op != FREE)
 			cerror("node not FREE: %p", p);
-		if (nflag)
+		if (ndebug)
 			printf("alloc node %p from freelist\n", p);
 		return p;
 	}
 
 	p = permalloc(sizeof(NODE));
 	p->n_op = FREE;
-	if (nflag)
+	if (ndebug)
 		printf("alloc node %p from memory\n", p);
 	return p;
 }
@@ -332,7 +349,7 @@ nfree(NODE *p)
 	}
 #endif
 
-	if (nflag)
+	if (ndebug)
 		printf("freeing node %p\n", p);
 	p->n_op = FREE;
 	p->next = freelink;

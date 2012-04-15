@@ -316,12 +316,12 @@ fcomp(NODE *p)
 	static char *fpcb[] = { "jz", "jnz", "jbe", "jc", "jnc", "ja" };
 
 	if ((p->n_su & DORIGHT) == 0)
-		expand(p, 0, "  fxch\n");
-	expand(p, 0, "  fucomip %st(1),%st\n");	/* emit compare insn  */
-	expand(p, 0, "  fstp %st(0)\n");	/* pop fromstack */
+		expand(p, 0, "\tfxch\n");
+	expand(p, 0, "\tfucomip %st(1),%st\n");	/* emit compare insn  */
+	expand(p, 0, "\tfstp %st(0)\n");	/* pop fromstack */
 
 	if (p->n_op == NE || p->n_op == GT || p->n_op == GE)
-		expand(p, 0, "  jp LC\n");
+		expand(p, 0, "\tjp LC\n");
 	else if (p->n_op == EQ)
 		printf("\tjp 1f\n");
 	printf("	%s ", fpcb[p->n_op - EQ]);
@@ -336,6 +336,7 @@ fcomp(NODE *p)
 static void
 ulltofp(NODE *p)
 {
+#if defined(ELFABI) || defined(PECOFFABI)
 	static int loadlab;
 	int jmplab;
 
@@ -354,6 +355,9 @@ ulltofp(NODE *p)
 	printf("	fldt " LABFMT "%s\n", loadlab, kflag ? "@GOTOFF" : "");
 	printf("	faddp %%st,%%st(1)\n");
 	printf(LABFMT ":\n", jmplab);
+#else
+#error incomplete implementation
+#endif
 }
 
 static int
@@ -419,7 +423,7 @@ void
 zzzcode(NODE *p, int c)
 {
 	NODE *l;
-	int pr, lr, s;
+	int pr, lr;
 	char *ch;
 
 	switch (c) {
@@ -598,10 +602,14 @@ zzzcode(NODE *p, int c)
 				break;
 			}
 			/* Must go via stack */
+			expand(p, INAREG, "\tmovl AL,A2\n");
+			expand(p, INBREG, "\tmovb A2,A1\n");
+#ifdef notdef
+			/* cannot use freetemp() in instruction emission */
 			s = BITOOR(freetemp(1));
 			printf("\tmovl %%e%ci,%d(%%ebp)\n", rnames[lr][1], s);
 			printf("\tmovb %d(%%ebp),%s\n", s, rnames[pr]);
-//			comperr("SCONV1 %s->%s", rnames[lr], rnames[pr]);
+#endif
 			break;
 
 		case SHORT:
@@ -1192,7 +1200,6 @@ lastcall(NODE *p)
 	if (kflag)
 		size -= 4;
 #endif
-
 	
 #if defined(MACHOABI)
 	int newsize = (size + 15) & ~15;	/* stack alignment */
@@ -1261,7 +1268,8 @@ myxasm(struct interpass *ip, NODE *p)
 	TWORD t;
 	char *w;
 	int reg;
-	int c, cw, v;
+	int c, cw;
+	CONSZ v;
 
 	cw = xasmcode(p->n_name);
 	if (cw & (XASMASG|XASMINOUT))

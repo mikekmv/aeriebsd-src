@@ -99,6 +99,7 @@ picsymtab(char *p, char *s, char *s2)
 	sp->sap = NULL;
 	sp->sclass = EXTERN;
 	sp->sflags = sp->slevel = 0;
+	sp->stype = 0xdeadbeef;
 	return sp;
 }
 
@@ -175,6 +176,9 @@ picext(NODE *p)
 		sp = picsymtab("L", pspn, buf2);
 		addstub(&nlplist, pspn);
 	}
+
+	sp->stype = p->n_sp->stype;
+
 	q = tempnode(gotnr, PTR+VOID, 0, 0);
 	r = xbcon(0, sp, INT);
 	q = buildtree(PLUS, q, r);
@@ -484,6 +488,54 @@ clocal(NODE *p)
 			
 		break;
 
+#if defined(os_openbsd)
+/*
+ * The called function returns structures according to their aligned size:
+ *  Structures 1, 2 or 4 bytes in size are placed in EAX.
+ *  Structures 8 bytes in size are placed in: EAX and EDX.
+ */
+	case UMUL:
+		o = 0;
+		l = p->n_left;
+		if (l->n_op == PLUS)
+			l = l->n_left, o++;
+		if (l->n_op != PCONV)
+			break;
+		l = l->n_left;
+		if (l->n_op != STCALL && l->n_op != USTCALL)
+			break;
+		m = tsize(DECREF(l->n_type), l->n_df, l->n_ap);
+		if (m != SZCHAR && m != SZSHORT &&
+		    m != SZINT && m != SZLONGLONG)
+			break;
+		/* This is a direct reference to a small struct return */
+		l->n_op -= (STCALL-CALL);
+		if (o == 0) {
+			/* first element in struct */
+			p->n_left = nfree(p->n_left); /* free PCONV */
+			l->n_ap = p->n_ap;
+			l->n_df = p->n_df;
+			l->n_type = p->n_type;
+			if (p->n_type < INT) {
+				/* Need to add SCONV */
+				p->n_op = SCONV;
+			} else
+				p = nfree(p); /* no casts needed */
+		} else {
+			/* convert PLUS to RS */
+			o = p->n_left->n_right->n_lval;
+			l->n_type = (o > 3 ? ULONGLONG : UNSIGNED);
+			nfree(p->n_left->n_right);
+			p->n_left = nfree(p->n_left);
+			p->n_left = nfree(p->n_left);
+			p->n_left = buildtree(RS, p->n_left, bcon(o*8));
+			p->n_left = makety(p->n_left, p->n_type, p->n_qual,
+			    p->n_df, p->n_ap);
+			p = nfree(p);
+		}
+		break;
+#endif
+
 #ifdef notyet
 	/* XXX breaks sometimes */
 	case CBRANCH:
@@ -534,9 +586,6 @@ clocal(NODE *p)
 		if (l->n_op == ADDROF && l->n_left->n_op == TEMP)
 			break;
 
-		/* if conversion to another pointer type, just remove */
-		if (p->n_type > BTMASK && l->n_type > BTMASK)
-			goto delp;
 		break;
 
 	delp:	l->n_type = p->n_type;
@@ -748,6 +797,10 @@ fixnames(NODE *p, void *arg)
 		    ((c = strstr(sp->soname, "$non_lazy_ptr")) == NULL &&
 		    (c = strstr(sp->soname, "-L")) == NULL))
 				cerror("fixnames2");
+
+		if (!ISFTN(sp->stype))
+			return; /* function pointer */
+
 		if (isu) {
 			*c = 0;
 			addstub(&stublist, sp->soname+1);
@@ -1003,8 +1056,18 @@ defzero(struct symtab *sp)
 	off /= SZCHAR;
 #if defined(MACHOABI)
 	al = ispow2(al);
-#endif
-
+	if (sp->sclass == STATIC) {
+		if (sp->slevel == 0)
+			printf("\t.lcomm %s,0%o,%d\n", name, off, al);
+		else
+			printf("\t.lcomm  " LABFMT ",0%o,%d\n", sp->soffset, off, al);
+	} else {
+		if (sp->slevel == 0)
+			printf("\t.comm %s,0%o,%d\n", name, off, al);
+		else
+			printf("\t.comm  " LABFMT ",0%o,%d\n", sp->soffset, off, al);
+	}
+#else
 	if (sp->sclass == STATIC) {
 		if (sp->slevel == 0) {
 			printf("\t.local %s\n", name);
@@ -1015,6 +1078,7 @@ defzero(struct symtab *sp)
 		printf("\t.comm %s,0%o,%d\n", name, off, al);
 	else
 		printf("\t.comm  " LABFMT ",0%o,%d\n", sp->soffset, off, al);
+#endif
 }
 
 static char *
@@ -1103,8 +1167,6 @@ mypragma(char *str)
 		alias = tmpstrdup(a2);
 		return 1;
 	}
-	if (strcmp(str, "ident") == 0)
-		return 1; /* Just ignore */
 
 	return 0;
 }

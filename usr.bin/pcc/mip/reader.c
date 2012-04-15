@@ -70,7 +70,6 @@
 
 /*	some storage declarations */
 int nrecur;
-int x2debug, udebug, odebug;
 int thisline;
 int fregs;
 int p2autooff, p2maxautooff;
@@ -547,7 +546,7 @@ geninsn(NODE *p, int cookie)
 	int q, o, rv = 0;
 
 #ifdef PCC_DEBUG
-	if (odebug) {
+	if (o2debug) {
 		printf("geninsn(%p, %s)\n", p, prcook(cookie));
 		fwalk(p, e2print, 0);
 	}
@@ -674,7 +673,7 @@ again:	switch (o = p->n_op) {
 	if (rv == FRETRY)
 		goto again;
 #ifdef PCC_DEBUG
-	if (odebug) {
+	if (o2debug) {
 		printf("geninsn(%p, %s) rv %d\n", p, prcook(cookie), rv);
 		fwalk(p, e2print, 0);
 	}
@@ -723,8 +722,9 @@ ckmove(NODE *p, NODE *q)
 		return; /* no register */
 
 	/* do we have a need for special reg? */
-	if (t->needs & NSPECIAL)
-		reg = rspecial(t, p->n_left == q ? NLEFT : NRIGHT);
+	if ((t->needs & NSPECIAL) &&
+	    (reg = rspecial(t, p->n_left == q ? NLEFT : NRIGHT)) >= 0)
+		;
 	else
 		reg = DECRA(p->n_reg, 0);
 

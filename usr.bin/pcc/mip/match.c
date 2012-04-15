@@ -66,8 +66,6 @@
 void setclass(int tmp, int class);
 int getclass(int tmp);
 
-int s2debug;
-
 extern char *ltyp[], *rtyp[];
 
 #ifdef PCC_DEBUG

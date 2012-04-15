@@ -414,6 +414,7 @@ parameter_declaration:
 			$$ = block(TYMERGE, $1, $2, INT, 0, gcc_attr_parse($3));
 		}
 		|  declaration_specifiers abstract_declarator { 
+			$1->n_ap = attr_add($1->n_ap, $2->n_ap);
 			$$ = block(TYMERGE, $1, $2, INT, 0, 0);
 		}
 		|  declaration_specifiers {
@@ -448,15 +449,19 @@ abstract_declarator:
 		|  abstract_declarator '[' e ']' attr_var {
 			$$ = block(LB, $1, $3, INT, 0, gcc_attr_parse($5));
 		}
-		|  '(' ')' { $$ = bdty(UCALL, bdty(NAME, NULL)); }
-		|  '(' ib2 parameter_type_list ')' {
-			$$ = bdty(CALL, bdty(NAME, NULL), $3);
+		|  '(' ')' attr_var {
+			$$ = bdty(UCALL, bdty(NAME, NULL));
+			$$->n_ap = gcc_attr_parse($3);
 		}
-		|  abstract_declarator '(' ')' {
-			$$ = bdty(UCALL, $1);
+		|  '(' ib2 parameter_type_list ')' attr_var {
+			$$ = block(CALL, bdty(NAME, NULL), $3, INT, 0,
+			    gcc_attr_parse($5));
 		}
-		|  abstract_declarator '(' ib2 parameter_type_list ')' {
-			$$ = bdty(CALL, $1, $4);
+		|  abstract_declarator '(' ')' attr_var {
+			$$ = block(UCALL, $1, NIL, INT, 0, gcc_attr_parse($4));
+		}
+		|  abstract_declarator '(' ib2 parameter_type_list ')' attr_var {
+			$$ = block(CALL, $1, $4, INT, 0, gcc_attr_parse($6));
 		}
 		;
 
@@ -1295,7 +1300,7 @@ addcase(NODE *p)
 	struct swents **put, *w, *sw = tmpalloc(sizeof(struct swents));
 	CONSZ val;
 
-	p = optim(rmpconv(p));  /* change enum to ints */
+	p = optloop(p);  /* change enum to ints */
 	if (p->n_op != ICON || p->n_sp != NULL) {
 		uerror( "non-constant case expression");
 		return;
@@ -2227,7 +2232,7 @@ eve2:		r = buildtree(p->n_op, p1, eve(p2));
 int
 con_e(NODE *p)
 {
-	return icons(optim(eve(p)));
+	return icons(optloop(eve(p)));
 }
 
 void
@@ -2299,7 +2304,7 @@ aryfix(NODE *p)
 
 	for (q = p; q->n_op != NAME; q = q->n_left) {
 		if (q->n_op == LB) {
-			q->n_right = optim(rmpconv(eve(q->n_right)));
+			q->n_right = optloop(eve(q->n_right));
 			if ((blevel == 0 || rpole != NULL) &&
 			    !nncon(q->n_right))
 				uerror("array size not constant"); 

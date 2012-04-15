@@ -84,10 +84,10 @@ optim(NODE *p)
 {
 	int o, ty;
 	NODE *sp, *q;
-	int i, sz;
+	OFFSZ sz;
+	int i;
 
-	if( oflag ) return(p);
-
+	if (odebug) return(p);
 
 	ty = coptype(p->n_op);
 	if( ty == LTYPE ) return(p);
@@ -240,6 +240,20 @@ again:	o = p->n_op;
 			if (RV(p) == 0)  
 				p = zapleft(p);
 		}
+		break;
+
+	case QUEST:
+		if (LCON(p) == 0)
+			break;
+		if (LV(p) == 0) {
+			q = p->n_right->n_right;
+		} else {
+			q = p->n_right->n_left;
+			p->n_right->n_left = p->n_right->n_right;
+		}
+		p->n_right->n_op = UMUL; /* for tfree() */
+		tfree(p);
+		p = q;
 		break;
 
 	case MINUS:

@@ -38,7 +38,8 @@
  * Brief description of its syntax:
  * - Files that end with .c are passed via cpp->ccom->as->ld
  * - Files that end with .i are passed via ccom->as->ld
- * - Files that end with .s are passed as->ld
+ * - Files that end with .S are passed via cpp->as->ld
+ * - Files that end with .s are passed via as->ld
  * - Files that end with .o are passed directly to ld
  * - Multiple files may be given on the command line.
  * - Unrecognized options are all sent directly to ld.
@@ -62,7 +63,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifdef WIN32
+#ifdef os_win32
 #include <windows.h>
 #include <process.h>
 #include <io.h>
@@ -147,7 +148,7 @@ void dexit(int);
 void idexit(int);
 char *gettmp(void);
 void *ccmalloc(int size);
-#ifdef WIN32
+#ifdef os_win32
 char *win32pathsubst(char *);
 char *win32commandline(char *, char *[]);
 #endif
@@ -157,7 +158,6 @@ char    *olist[MAXFIL];
 char	*llist[MAXLIB];
 char	*aslist[MAXAV];
 char	*cpplist[MAXAV];
-char	alist[20];
 char	*xlist[100];
 int	xnum;
 char	*mlist[100];
@@ -168,7 +168,7 @@ int	nm;
 int	nf;
 int	nw;
 int	sspflag;
-int	dflag;
+int	freestanding;
 int	pflag;
 int	sflag;
 int	cflag;
@@ -195,15 +195,15 @@ int	pthreads;
 int	xcflag, xgnu89, xgnu99;
 int 	ascpp;
 #ifdef CHAR_UNSIGNED
-int	funsigned_char = 1;
+int	xuchar = 1;
 #else
-int	funsigned_char = 0;
+int	xuchar = 0;
 #endif
 int	cxxflag;
 
 char	*passp = LIBEXECDIR PREPROCESSOR;
 char	*pass0 = LIBEXECDIR COMPILER;
-char	*passxx0 = LIBEXECDIR "c++com";
+char	*passxx0 = LIBEXECDIR "cxxcom";
 char	*as = ASSEMBLER;
 char	*ld = LINKER;
 char	*sysroot;
@@ -256,9 +256,13 @@ char *libclibs_profile[] = { "-lc_p", NULL };
 char *incdir = STDINC;
 char *altincdir = INCLUDEDIR "pcc/";
 char *libdir = LIBDIR;
+#ifdef PCCINCDIR
 char *pccincdir = PCCINCDIR;
 char *pxxincdir = PCCINCDIR "/c++";
+#endif
+#ifdef PCCLIBDIR
 char *pcclibdir = PCCLIBDIR;
+#endif
 #ifdef mach_amd64
 int amd64_i386;
 #endif
@@ -268,32 +272,19 @@ struct Wflags {
 	char *name;
 	int flags;
 #define	INWALL		1
-#define	NEGATIVE	2
 } Wflags[] = {
-	{ "-Wtruncate", 0 },
-	{ "-Wno-truncate", NEGATIVE },
-	{ "-Wstrict-prototypes", 0 },
-	{ "-Wno-strict-prototypes", NEGATIVE },
-	{ "-Wmissing-prototypes", 0 },
-	{ "-Wno-missing-prototypes", NEGATIVE },
-	{ "-Wimplicit-int", 0 },
-	{ "-Wno-implicit-int", NEGATIVE },
-	{ "-Wimplicit-function-declaration", 0 },
-	{ "-Wno-implicit-function-declaration", NEGATIVE },
-	{ "-Wshadow", 0 },
-	{ "-Wno-shadow", NEGATIVE },
-	{ "-Wpointer-sign", INWALL },
-	{ "-Wno-pointer-sign", NEGATIVE },
-	{ "-Wsign-compare", 0 },
-	{ "-Wno-sign-compare", NEGATIVE },
-	{ "-Wunknown-pragmas", INWALL },
-	{ "-Wno-unknown-pragmas", NEGATIVE },
-	{ "-Wunreachable-code", 0 },
-	{ "-Wno-unreachable-code", NEGATIVE },
-	{ 0, 0 },
+	{ "truncate", 0 },
+	{ "strict-prototypes", 0 },
+	{ "missing-prototypes", 0 },
+	{ "implicit-int", INWALL },
+	{ "implicit-function-declaration", INWALL },
+	{ "shadow", 0 },
+	{ "pointer-sign", INWALL },
+	{ "sign-compare", 0 },
+	{ "unknown-pragmas", INWALL },
+	{ "unreachable-code", 0 },
+	{ NULL, 0 },
 };
-
-#define	SZWFL	(sizeof(Wflags)/sizeof(Wflags[0]))
 
 #ifndef USHORT
 /* copied from mip/manifest.h */
@@ -365,13 +356,18 @@ main(int argc, char *argv[])
 		pass0 = passxx0;
 	}
 
-#ifdef WIN32
+#ifdef os_win32
 	/* have to prefix path early.  -B may override */
 	incdir = win32pathsubst(incdir);
 	altincdir = win32pathsubst(altincdir);
 	libdir = win32pathsubst(libdir);
+#ifdef PCCINCDIR
 	pccincdir = win32pathsubst(pccincdir);
+	pxxincdir = win32pathsubst(pxxincdir);
+#endif
+#ifdef PCCLIBDIR
 	pcclibdir = win32pathsubst(pcclibdir);
+#endif
 	passp = win32pathsubst(passp);
 	pass0 = win32pathsubst(pass0);
 #ifdef STARTFILES
@@ -496,11 +492,15 @@ main(int argc, char *argv[])
 				} else if (strcmp(argv[i], "-WW") == 0) {
 					Wflag = 1;
 				} else {
-					/* check and set if available */
+					/* pass through, if supported */
+					t = &argv[i][2];
+					if (strncmp(t, "no-", 3) == 0)
+						t += 3;
+					if (strncmp(t, "error=", 6) == 0)
+						t += 6;
 					for (Wf = Wflags; Wf->name; Wf++) {
-						if (strcmp(argv[i], Wf->name))
-							continue;
-						wlist[nw++] = Wf->name;
+						if (strcmp(t, Wf->name) == 0)
+							wlist[nw++] = argv[i];
 					}
 				}
 				break;
@@ -511,24 +511,20 @@ main(int argc, char *argv[])
 				else if (strcmp(argv[i], "-fpic") == 0)
 					kflag = F_pic;
 				else if (strcmp(argv[i], "-ffreestanding") == 0)
-					flist[nf++] = argv[i];
+					freestanding = 1;
 				else if (strcmp(argv[i],
-				    "-fsigned-char") == 0) {
-					flist[nf++] = argv[i];
-					funsigned_char = 0;
-				} else if (strcmp(argv[i],
-				    "-fno-signed-char") == 0) {
-					flist[nf++] = argv[i];
-					funsigned_char = 0;
-				} else if (strcmp(argv[i],
-				    "-funsigned-char") == 0) {
-					flist[nf++] = argv[i];
-					funsigned_char = 1;
-				} else if (strcmp(argv[i],
-				    "-fno-unsigned-char") == 0) {
-					flist[nf++] = argv[i];
-					funsigned_char = 1;
-				} else if (strcmp(argv[i],
+				    "-fsigned-char") == 0)
+					xuchar = 0;
+				else if (strcmp(argv[i],
+				    "-fno-signed-char") == 0)
+					xuchar = 1;
+				else if (strcmp(argv[i],
+				    "-funsigned-char") == 0)
+					xuchar = 1;
+				else if (strcmp(argv[i],
+				    "-fno-unsigned-char") == 0)
+					xuchar = 0;
+				else if (strcmp(argv[i],
 				    "-fstack-protector") == 0) {
 					flist[nf++] = argv[i];
 					sspflag++;
@@ -604,6 +600,8 @@ main(int argc, char *argv[])
 					nostartfiles++;
 				} else if (strcmp(argv[i], "-nostartfiles") == 0)
 					nostartfiles = 1;
+				else if (strcmp(argv[i], "-nodefaultlibs") == 0)
+					nostdlib++;
 				else
 					goto passa;
 				break;
@@ -660,10 +658,14 @@ main(int argc, char *argv[])
 				outfile = argv[++i];
 				break;
 			case 'O':
-				if (argv[i][2] == '0')
-					Oflag = 0;
-				else
+				if (argv[i][2] == '\0')
 					Oflag++;
+				else if (argv[i][3] == '\0' && isdigit((unsigned char)argv[i][2]))
+					Oflag = argv[i][2] - '0';
+				else if (argv[i][3] == '\0' && argv[i][2] == 's')
+					Oflag = 1;	/* optimize for space only */
+				else
+					error("unknown option %s", argv[i]);
 				break;
 			case 'E':
 				Eflag++;
@@ -699,7 +701,7 @@ main(int argc, char *argv[])
 			case 'I':
 			case 'U':
 				*pv++ = argv[i];
-				if (argv[i][2] == 0)
+				if (argv[i][2] == '\0')
 					*pv++ = argv[++i];
 				if (pv >= ptemp+MAXOPT) {
 					error("Too many DIU options");
@@ -717,10 +719,6 @@ main(int argc, char *argv[])
 					shared = 1;
 				} else
 #endif
-				if (strcmp(argv[i], "-d") == 0) {
-					dflag++;
-					strlcpy(alist, argv[i], sizeof (alist));
-				}
 				break;
 			case 'v':
 				printf("%s\n", VERSSTR);
@@ -768,7 +766,8 @@ main(int argc, char *argv[])
 					break;
 			}
 			if ((c=getsuf(t))!='c' && c!='S' &&
-			    c!='s' && c!='i' && j==nl) {
+			    c!='s' && c!='i' && j==nl &&
+			    !(cxxsuf(getsufp(t)) && cxxflag)) {
 				llist[nl++] = t;
 				if (nl >= MAXLIB) {
 					error("Too many object/library files");
@@ -836,9 +835,9 @@ main(int argc, char *argv[])
 		av[na++] = "-D__GNUC_MINOR__=3";
 		av[na++] = "-D__GNUC_PATCHLEVEL__=1";
 		if (xgnu89)
-			av[na++] = "-D__GNUC_GNU_INLINE__=1";
+			av[na++] = "-D__GNUC_GNU_INLINE__";
 		else
-			av[na++] = "-D__GNUC_STDC_INLINE__=1";
+			av[na++] = "-D__GNUC_STDC_INLINE__";
 #endif
 #endif
 		av[na++] = "-D__VERSION__=" MKS(VERSSTR);
@@ -847,12 +846,18 @@ main(int argc, char *argv[])
 		av[na++] = "-D__INT_MAX__=" MKS(MAX_INT);
 		av[na++] = "-D__LONG_MAX__=" MKS(MAX_LONG);
 		av[na++] = "-D__LONG_LONG_MAX__=" MKS(MAX_LONGLONG);
-		if (funsigned_char)
+		if (freestanding)
+			av[na++] = "-D__STDC_HOSTED__=0";
+		else
+			av[na++] = "-D__STDC_HOSTED__=1";
+		if (cxxflag)
+			av[na++] = "-D__cplusplus";
+		if (xuchar)
 			av[na++] = "-D__CHAR_UNSIGNED__";
 		if (ascpp)
 			av[na++] = "-D__ASSEMBLER__";
 		if (sspflag)
-			av[na++] = "-D__SSP__=1";
+			av[na++] = "-D__SSP__";
 		if (pthreads)
 			av[na++] = "-D_PTHREADS";
 		if (Mflag)
@@ -863,8 +868,6 @@ main(int argc, char *argv[])
 		av[na++] = "-D__REGISTER_PREFIX__=" REGISTER_PREFIX;
 		av[na++] = "-D__USER_LABEL_PREFIX__=" USER_LABEL_PREFIX;
 #endif
-		if (dflag)
-			av[na++] = alist;
 		for (j = 0; cppadd[j]; j++)
 			av[na++] = cppadd[j];
 		for (j = 0; j < ncpp; j++)
@@ -877,10 +880,47 @@ main(int argc, char *argv[])
 		av[na++] = "-D__SIZE_TYPE__=" PCC_SIZE_TYPE;
 		av[na++] = "-D__PTRDIFF_TYPE__=" PCC_PTRDIFF_TYPE;
 		av[na++] = "-D__SIZEOF_WINT_T__=4";
-#ifdef os_darwin
+#if defined(os_darwin) || defined(os_netbsd)
+		av[na++] = "-D__FLT_RADIX__=2";
+		av[na++] = "-D__FLT_DIG__=6";
+		av[na++] = "-D__FLT_EPSILON__=1.19209290e-07F";
+		av[na++] = "-D__FLT_MANT_DIG__=24";
+		av[na++] = "-D__FLT_MAX_10_EXP__=38";
+		av[na++] = "-D__FLT_MAX_EXP__=128";
+		av[na++] = "-D__FLT_MAX__=3.40282347e+38F";
+		av[na++] = "-D__FLT_MIN_10_EXP__=(-37)";
+		av[na++] = "-D__FLT_MIN_EXP__=(-125)";
 		av[na++] = "-D__FLT_MIN__=1.17549435e-38F";
+		av[na++] = "-D__DBL_DIG__=15";
+		av[na++] = "-D__DBL_EPSILON__=2.2204460492503131e-16";
+		av[na++] = "-D__DBL_MANT_DIG__=53";
+		av[na++] = "-D__DBL_MAX_10_EXP__=308";
+		av[na++] = "-D__DBL_MAX_EXP__=1024";
+		av[na++] = "-D__DBL_MAX__=1.7976931348623157e+308";
+		av[na++] = "-D__DBL_MIN_10_EXP__=(-307)";
+		av[na++] = "-D__DBL_MIN_EXP__=(-1021)";
 		av[na++] = "-D__DBL_MIN__=2.2250738585072014e-308";
+#if defined(mach_i386) || defined(mach_amd64)
+		av[na++] = "-D__LDBL_DIG__=18";
+		av[na++] = "-D__LDBL_EPSILON__=1.08420217248550443401e-19L";
+		av[na++] = "-D__LDBL_MANT_DIG__=64";
+		av[na++] = "-D__LDBL_MAX_10_EXP__=4932";
+		av[na++] = "-D__LDBL_MAX_EXP__=16384";
+		av[na++] = "-D__LDBL_MAX__=1.18973149535723176502e+4932L";
+		av[na++] = "-D__LDBL_MIN_10_EXP__=(-4931)";
+		av[na++] = "-D__LDBL_MIN_EXP__=(-16381)";
 		av[na++] = "-D__LDBL_MIN__=3.36210314311209350626e-4932L";
+#else
+		av[na++] = "-D__LDBL_DIG__=15";
+		av[na++] = "-D__LDBL_EPSILON__=2.2204460492503131e-16";
+		av[na++] = "-D__LDBL_MANT_DIG__=53";
+		av[na++] = "-D__LDBL_MAX_10_EXP__=308";
+		av[na++] = "-D__LDBL_MAX_EXP__=1024";
+		av[na++] = "-D__LDBL_MAX__=1.7976931348623157e+308";
+		av[na++] = "-D__LDBL_MIN_10_EXP__=(-307)";
+		av[na++] = "-D__LDBL_MIN_EXP__=(-1021)";
+		av[na++] = "-D__LDBL_MIN__=2.2250738585072014e-308";
+#endif
 #endif
 #ifdef MULTITARGET
 		for (k = 0; cppmds[k].mach; k++) {
@@ -901,9 +941,11 @@ main(int argc, char *argv[])
 		if (!nostdinc) {
 			av[na++] = "-S", av[na++] = cat(sysroot, altincdir);
 			av[na++] = "-S", av[na++] = cat(sysroot, incdir);
+#ifdef PCCINCDIR
 			if (cxxflag)
 				av[na++] = "-S", av[na++] = pxxincdir;
 			av[na++] = "-S", av[na++] = pccincdir;
+#endif
 		}
 		if (idirafter) {
 			av[na++] = "-I";
@@ -932,26 +974,19 @@ main(int argc, char *argv[])
 	com:
 		na = 0;
 		av[na++]= cxxflag ? "c++com" : "ccom";
-		if (Wallflag) {
-			/* Set only the same flags as gcc */
+		if (Wflag || Wallflag) {
+			/* -Wall is same as gcc, -WW is all flags */
 			for (Wf = Wflags; Wf->name; Wf++) {
-				if (Wf->flags != INWALL)
-					continue;
-				av[na++] = Wf->name;
-			}
-		}
-		if (Wflag) {
-			/* set all positive flags */
-			for (Wf = Wflags; Wf->name; Wf++) {
-				if (Wf->flags == NEGATIVE)
-					continue;
-				av[na++] = Wf->name;
+				if (Wflag || Wf->flags == INWALL)
+					av[na++] = cat("-W", Wf->name);
 			}
 		}
 		for (j = 0; j < nw; j++)
 			av[na++] = wlist[j];
 		for (j = 0; j < nf; j++)
 			av[na++] = flist[j];
+		if (freestanding)
+			av[na++] = "-ffreestanding";
 #if !defined(os_sunos) && !defined(mach_i386)
 		if (vflag)
 			av[na++] = "-v";
@@ -982,6 +1017,8 @@ main(int argc, char *argv[])
 			av[na++] = "-xgnu89";
 		if (xgnu99)
 			av[na++] = "-xgnu99";
+		if (xuchar)
+			av[na++] = "-xuchar";
 		for (j = 0; j < xnum; j++)
 			av[na++] = xlist[j];
 		for (j = 0; j < nm; j++)
@@ -1072,8 +1109,6 @@ main(int argc, char *argv[])
 		else
 			ermfile = av[na++] = olist[i] = gettmp();
 		av[na++] = assource;
-		if (dflag)
-			av[na++] = alist;
 		av[na++] = 0;
 		if (callsys(as, av)) {
 			cflag++;
@@ -1210,7 +1245,9 @@ nocom:
 #else
 #define	LFLAG	"-L"
 #endif
+#ifdef PCCLIBDIR
 			av[j++] = cat(LFLAG, pcclibdir); 
+#endif
 #ifdef os_win32
 			av[j++] = cat(LFLAG, libdir);
 #endif
@@ -1218,6 +1255,8 @@ nocom:
 				for (i = 0; libclibs_profile[i]; i++)
 					av[j++] = find_file(libclibs_profile[i], R_OK);
 			} else {
+				if (cxxflag)
+					av[j++] = "-lp++";
 				for (i = 0; libclibs[i]; i++)
 					av[j++] = find_file(libclibs[i], R_OK);
 			}
@@ -1412,7 +1451,7 @@ setsuf(char *s, char ch)
 	return(s);
 }
 
-#ifdef WIN32
+#ifdef os_win32
 #define MAX_CMDLINE_LENGTH 32768
 int
 callsys(char *f, char *v[])
@@ -1538,7 +1577,7 @@ cunlink(char *f)
 	return (unlink(f));
 }
 
-#ifdef WIN32
+#ifdef os_win32
 char *
 gettmp(void)
 {
@@ -1588,7 +1627,7 @@ ccmalloc(int size)
 	return rv;
 }
 
-#ifdef WIN32
+#ifdef os_win32
 
 char *
 win32pathsubst(char *s)
@@ -1658,5 +1697,4 @@ win32commandline(char *f, char *args[])
 
 	return cmd;
 }
-
 #endif
