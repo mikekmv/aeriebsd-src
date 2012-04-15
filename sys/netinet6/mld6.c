@@ -78,19 +78,8 @@
 #include <netinet/ip6.h>
 #include <netinet6/ip6_var.h>
 #include <netinet/icmp6.h>
+#include <netinet6/mld6.h>
 #include <netinet6/mld6_var.h>
-
-/*
- * Protocol constants
- */
-
-/* denotes that the MLD max response delay field specifies time in milliseconds */
-#define MLD_TIMER_SCALE	1000
-/*
- * time between repetitions of a node's initial report of interest in a
- * multicast address(in seconds)
- */
-#define MLD_UNSOLICITED_REPORT_INTERVAL	10
 
 static struct ip6_pktopts ip6_opts;
 static int mld_timers_are_running;
@@ -143,7 +132,7 @@ mld6_start_listening(struct in6_multi *in6m)
 	} else {
 		mld6_sendpkt(in6m, MLD_LISTENER_REPORT, NULL);
 		in6m->in6m_timer =
-		    MLD_RANDOM_DELAY(MLD_UNSOLICITED_REPORT_INTERVAL *
+		    MLD_RANDOM_DELAY(MLD_V1_MAX_RI *
 		    PR_FASTHZ);
 		in6m->in6m_state = MLD_IREPORTEDLAST;
 		mld_timers_are_running = 1;
@@ -169,7 +158,7 @@ mld6_stop_listening(struct in6_multi *in6m)
 void
 mld6_input(struct mbuf *m, int off)
 {
-	struct ip6_hdr *ip6 = mtod(m, struct ip6_hdr *);
+	struct ip6_hdr *ip6;
 	struct mld_hdr *mldh;
 	struct ifnet *ifp = m->m_pkthdr.rcvif;
 	struct in6_multi *in6m;
