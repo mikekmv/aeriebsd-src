@@ -6,11 +6,11 @@ BINDIR=	/usr/libexec
 TARGOS=	aeriebsd
 CLEANFILES=cgram.h external.h external.c mkext
 
-CFLAGS+=-DPCC_DEBUG -DGCC_COMPAT -DTARGOS=${TARGOS} -Dos_${TARGOS}
-CFLAGS+=-g -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
+CPPFLAGS+=-DPCC_DEBUG -DGCC_COMPAT -DTARGOS=${TARGOS} -Dos_${TARGOS}
 CPPFLAGS+=-I. -I${.CURDIR}/.. -I${.CURDIR} -I${.CURDIR}/../../mip
 CPPFLAGS+=-I${.CURDIR}/../../${TARGMACH}
 CPPFLAGS+=-I${.CURDIR}/../..
+CFLAGS+=-g -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror
 #LFLAGS+=-CFe
 
 .PATH:	${.CURDIR}/../../${TARGMACH}
