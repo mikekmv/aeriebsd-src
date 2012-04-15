@@ -1,5 +1,3 @@
-/*	$Id: softfloat.c,v 1.1 2012/04/15 22:52:54 mickey Exp $	*/
-
 /*
  * Copyright (c) 2008 Anders Magnusson. All rights reserved.
  *

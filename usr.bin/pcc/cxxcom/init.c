@@ -1,5 +1,3 @@
-/*	$Id: init.c,v 1.1 2012/04/15 22:52:54 mickey Exp $	*/
-
 /*
  * Copyright (c) 2004, 2007 Anders Magnusson (ragge@ludd.ltu.se).
  * All rights reserved.
@@ -26,7 +24,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
