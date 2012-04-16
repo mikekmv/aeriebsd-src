@@ -22,7 +22,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD: scanner.l,v 1.1.1.1 2008/08/26 14:38:59 root Exp $";
+static const char rcsid[] = "@(#) $ABSD: scanner.l,v 1.2 2008/12/26 18:50:38 mickey Exp $";
 #endif
 
 #include <sys/types.h>
@@ -273,6 +273,30 @@ address4|addr4	return ADDR4;
 #endif /*INET6*/
 			}
 {B}:+({B}:+)+		{ bpf_error("bogus ethernet address %s", yytext); }
+icmptype		{ yylval.i = 0; return NUM; }
+icmpcode		{ yylval.i = 1; return NUM; }
+icmp-echoreply		{ yylval.i = 0; return NUM; }
+icmp-unreach		{ yylval.i = 3; return NUM; }
+icmp-sourcequench	{ yylval.i = 4; return NUM; }
+icmp-redirect		{ yylval.i = 5; return NUM; }
+icmp-echo		{ yylval.i = 8; return NUM; }
+icmp-routeradvert	{ yylval.i = 9; return NUM; }
+icmp-routersolicit	{ yylval.i = 10; return NUM; }
+icmp-timxceed		{ yylval.i = 11; return NUM; }
+icmp-paramprob		{ yylval.i = 12; return NUM; }
+icmp-tstamp		{ yylval.i = 13; return NUM; }
+icmp-tstampreply	{ yylval.i = 14; return NUM; }
+icmp-ireq		{ yylval.i = 15; return NUM; }
+icmp-ireqreply		{ yylval.i = 16; return NUM; }
+icmp-maskreq		{ yylval.i = 17; return NUM; }
+icmp-maskreply		{ yylval.i = 18; return NUM; }
+tcpflags		{ yylval.i = 13; return NUM; }
+tcp-fin			{ yylval.i = 0x01; return NUM; }
+tcp-syn			{ yylval.i = 0x02; return NUM; }
+tcp-rst			{ yylval.i = 0x04; return NUM; }
+tcp-push		{ yylval.i = 0x08; return NUM; }
+tcp-ack			{ yylval.i = 0x10; return NUM; }
+tcp-urg			{ yylval.i = 0x20; return NUM; }
 [A-Za-z0-9][-_.A-Za-z0-9]*[.A-Za-z0-9] {
 			 yylval.s = sdup((char *)yytext); return ID; }
 [A-Za-z] {		 yylval.s = sdup((char *)yytext); return ID; }

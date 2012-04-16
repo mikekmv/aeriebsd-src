@@ -21,7 +21,8 @@ MLINKS=	pcap.3 pcap_open_live.3 pcap.3 pcap_open_offline.3 \
 	pcap.3 pcap_datalink_name_to_val.3 pcap.3 pcap_dump_fopen.3 \
 	pcap.3 pcap_sendpacket.3 pcap.3 pcap_next_ex.3 \
 	pcap.3 pcap_setdirection.3 pcap.3 pcap_dump_file.3 \
-	pcap.3 pcap_dump_ftell.3 pcap.3 pcap_fopen_offline.3
+	pcap.3 pcap_dump_ftell.3 pcap.3 pcap_fopen_offline.3 \
+	pcap.3 pcap_dump_flush.3
 
 DEFS=	-DHAVE_SYS_IOCCOM_H -DHAVE_SYS_SOCKIO_H -DHAVE_ETHER_HOSTTON \
 	-DHAVE_STRERROR -DHAVE_SOCKADDR_SA_LEN -DLBL_ALIGN -DHAVE_IFADDRS_H \
