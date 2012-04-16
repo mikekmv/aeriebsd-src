@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: hppa.c,v 1.1 2011/07/24 12:47:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -41,8 +41,8 @@ const struct ldorder hppa_order[] = {
 	{ ldo_symbol,	"_start", N_UNDF, 0, LD_ENTRY },
 	{ ldo_interp,	ELF_INTERP, SHT_PROGBITS, SHF_ALLOC,
 			LD_CONTAINS | LD_DYNAMIC },
-	{ ldo_note,	ELF_NOTE, SHT_NOTE, SHF_ALLOC,
-			LD_CONTAINS | LD_NONMAGIC | LD_NOOMAGIC },
+	{ ldo_section,	ELF_NOTE, SHT_NOTE, SHF_ALLOC,
+			LD_NONMAGIC | LD_NOOMAGIC },
 	{ ldo_section,	ELF_INIT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
 			0, XFILL },
 	{ ldo_section,	ELF_PLT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
