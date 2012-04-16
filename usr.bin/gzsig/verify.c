@@ -1,4 +1,3 @@
-
 /*
  * verify.c
  *
@@ -31,6 +30,10 @@
  *
  * $Vendor: verify.c,v 1.3 2005/04/07 23:19:35 dugsong Exp $
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif /* not lint */
 
 #include <sys/types.h>
 

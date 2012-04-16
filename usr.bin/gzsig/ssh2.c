@@ -16,6 +16,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif /* not lint */
+
 #include <sys/types.h>
 #include <sys/uio.h>
 
@@ -90,7 +94,7 @@ _read_int(struct iovec *iov, int *ival)
 	if (iov->iov_len < 0)
 		return (-1);
 	*ival = GET_32BIT((u_char *)iov->iov_base);
-	(u_char*)iov->iov_base += 4;
+	iov->iov_base = (u_char*)iov->iov_base + 4;
 
 	return (0);
 }
@@ -106,7 +110,7 @@ _read_opaque(struct iovec *iov, u_char **buf, int *len)
 		return (-1);
 
 	*buf = iov->iov_base;
-	(u_char*)iov->iov_base += *len;
+	iov->iov_base = (u_char*)iov->iov_base + *len;
 
 	return (0);
 }

@@ -1,4 +1,3 @@
-
 /*
  * util.c
  *
@@ -31,6 +30,10 @@
  *
  * $Vendor: util.c,v 1.2 2005/04/01 16:47:31 dugsong Exp $
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -1,4 +1,3 @@
-
 /*
  * gzsig.c
  *
@@ -31,6 +30,10 @@
  * 
  * $Vendor: gzsig.c,v 1.2 2005/04/01 16:47:31 dugsong Exp $
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif /* not lint */
 
 #include <stdio.h>
 #include <string.h>
