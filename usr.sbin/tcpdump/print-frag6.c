@@ -21,15 +21,18 @@
  */
 
 #ifndef lint
+#if 0
 static const char rcsid[] =
     "@(#) /master/usr.sbin/tcpdump/tcpdump/print-icmp.c,v 2.1 1995/02/03 18:14:42 polk Exp (LBL)";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
 #endif
 
 #ifdef INET6
 
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 
 #include <net/if.h>
@@ -68,21 +71,14 @@ frag6_print(register const u_char *bp, register const u_char *bp2)
 	/* 'ep' points to the end of avaible data. */
 	ep = snapend;
 
-	TCHECK(dp->ip6f_offlg);
+	TCHECK(dp->ip6f_ident);
 
-	if (vflag) {
-		TCHECK(dp->ip6f_ident);
-		printf("frag (0x%08x:%d|%ld)",
-		       ntohl(dp->ip6f_ident),
-		       ntohs(dp->ip6f_offlg & IP6F_OFF_MASK),
-		       sizeof(struct ip6_hdr) + ntohs(ip6->ip6_plen) -
-			       (long)(bp - bp2) - sizeof(struct ip6_frag));
-	} else {
-		printf("frag (%d|%ld)",
-		       ntohs(dp->ip6f_offlg & IP6F_OFF_MASK),
-		       sizeof(struct ip6_hdr) + ntohs(ip6->ip6_plen) -
-			       (long)(bp - bp2) - sizeof(struct ip6_frag));
-	}
+	printf("frag (0x%08x:%ld@%d%s)",
+	    ntohl(dp->ip6f_ident),
+	    sizeof(struct ip6_hdr) + ntohs(ip6->ip6_plen) -
+		(long)(bp - bp2) - sizeof(struct ip6_frag),
+	    ntohs(dp->ip6f_offlg & IP6F_OFF_MASK),
+	    (dp->ip6f_offlg & IP6F_MORE_FRAG) ? "+" : "");
 
 	/* it is meaningless to decode non-first fragment */
 	if (ntohs(dp->ip6f_offlg & IP6F_OFF_MASK) != 0)

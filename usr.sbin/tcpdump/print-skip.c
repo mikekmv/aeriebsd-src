@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1995 Sun Microsystems, Inc.
  * All rights reserved.
@@ -23,9 +22,12 @@
  * UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <sys/param.h> 
 #include <sys/time.h> 
-#include <sys/types.h>
  
 #include <netinet/in.h>
 #include <netinet/in_systm.h>

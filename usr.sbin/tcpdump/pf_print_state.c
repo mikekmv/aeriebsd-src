@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2001 Daniel Hartmeier
  * All rights reserved.
@@ -28,6 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -115,10 +118,10 @@ print_name(struct pf_addr *addr, sa_family_t af)
 
 	switch (af) {
 	case AF_INET:
-		host = getname((char *)&addr->v4);
+		host = getname((const u_char *)&addr->v4);
 		break;
 	case AF_INET6:
-		host = getname6((char *)&addr->v6);
+		host = getname6((const u_char *)&addr->v6);
 		break;
 	default:
 		host = "?";

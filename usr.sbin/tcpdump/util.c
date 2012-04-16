@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: util.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
 #endif
 
 #include <sys/types.h>
@@ -334,8 +334,9 @@ printb(char *s, unsigned short v, char *bits)
 		printf("%s=%o", s, v);
 	else
 		printf("%s=%x", s, v);
-	bits++;
+
 	if (bits) {
+		bits++;
 		putchar('<');
 		while ((i = *bits++)) {
 			if (v & (1 << (i-1))) {

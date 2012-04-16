@@ -21,15 +21,18 @@
  */
 
 #ifndef lint
+#if 0
 static const char rcsid[] =
     "@(#) /master/usr.sbin/tcpdump/tcpdump/print-rip.c,v 2.1 1995/02/03 18:15:05 polk Exp (LBL)";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
 #endif
 
 #ifdef INET6
 
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 
 #include <netinet/in.h>

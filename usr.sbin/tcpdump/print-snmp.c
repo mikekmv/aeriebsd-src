@@ -54,7 +54,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-snmp.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -190,7 +190,7 @@ char *GenericTrap[] = {
 #define GT_ENTERPRISE 6
 };
 #define DECODE_GenericTrap(t) \
-	( t >= 0 && t <= sizeof(GenericTrap)/sizeof(GenericTrap[0]) \
+	( t >= 0 && t < sizeof(GenericTrap)/sizeof(GenericTrap[0]) \
 	? GenericTrap[t] : (snprintf(buf, sizeof(buf), "gt=%d", t), buf))
 
 /*

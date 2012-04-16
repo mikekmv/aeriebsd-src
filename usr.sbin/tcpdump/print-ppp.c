@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-ppp.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
 #endif
 
 #ifdef PPP
@@ -69,6 +69,7 @@ static struct protonames protonames[] = {
 	{ PPP_COMP,	"COMP" },	/* compressed packet */
 	{ PPP_IPCP,	"IPCP" },	/* IP Control Protocol */
 	{ PPP_IPXCP,	"IPXCP" },	/* IPX Control Protocol (RFC1552) */
+	{ PPP_IPV6CP,	"IPV6CP" },	/* IPv6 Control Protocol */
 	{ PPP_CCP,	"CCP" },	/* Compression Control Protocol */
 	{ PPP_LCP,	"LCP" },	/* Link Control Protocol */
 	{ PPP_PAP,	"PAP" },	/* Password Authentication Protocol */
@@ -200,10 +201,26 @@ static char *papcode[] = {
 #define IPCP_CP		2
 #define IPCP_ADDR	3
 
+/* IPV6CP */
+
+#define IPV6CP_CODE_CFG_REQ	1
+#define IPV6CP_CODE_CFG_ACK	2
+#define IPV6CP_CODE_CFG_NAK	3
+#define IPV6CP_CODE_CFG_REJ	4
+#define IPV6CP_CODE_TRM_REQ	5
+#define IPV6CP_CODE_TRM_ACK	6
+#define IPV6CP_CODE_COD_REJ	7
+
+#define IPV6CP_CODE_MIN IPV6CP_CODE_CFG_REQ
+#define IPV6CP_CODE_MAX IPV6CP_CODE_COD_REJ
+
+#define IPV6CP_IFID	1
+
 static int print_lcp_config_options(u_char *p);
 static void handle_lcp(const u_char *p, int length);
 static void handle_chap(const u_char *p, int length);
 static void handle_ipcp(const u_char *p, int length);
+static void handle_ipv6cp(const u_char *p, int length);
 static void handle_pap(const u_char *p, int length);
 
 struct pppoe_header {
@@ -225,6 +242,7 @@ struct pppoe_header {
 #define	PPPOE_TAG_AC_COOKIE		0x0104	/* Access Concentratr Cookie */
 #define	PPPOE_TAG_VENDOR_SPEC		0x0105	/* Vendor Specific */
 #define	PPPOE_TAG_RELAY_SESSION		0x0110	/* Relay Session Id */
+#define	PPPOE_TAG_MAX_PAYLOAD		0x0120	/* RFC 4638 Max Payload */
 #define	PPPOE_TAG_SERVICE_NAME_ERROR	0x0201	/* Service Name Error */
 #define	PPPOE_TAG_AC_SYSTEM_ERROR	0x0202	/* Acc. Concentrator Error */
 #define	PPPOE_TAG_GENERIC_ERROR		0x0203	/* Generic Error */
@@ -236,8 +254,6 @@ ppp_hdlc_print(p, length)
 {
 	int proto = PPP_PROTOCOL(p);
 	int i;
-
-	printf("ID-%03d ", *(p+5));
 
 	for (i = sizeof(protonames) / sizeof(protonames[0]) - 1; i >= 0; i--) {
 		if (proto == protonames[i].protocol) {
@@ -257,6 +273,9 @@ ppp_hdlc_print(p, length)
 			case PPP_IPCP:
 				handle_ipcp(p, length);
 				break;
+			case PPP_IPV6CP:
+				handle_ipv6cp(p, length);
+				break;
 			}
 			break;
 		}
@@ -275,6 +294,7 @@ handle_lcp(p, length)
 	int x, j;
 	u_char *ptr;
 
+	TCHECK(*(p + 4));
 	x = *(p + 4);
 
 	if ((x >= LCP_MIN) && (x <= LCP_MAX))
@@ -305,6 +325,7 @@ handle_lcp(p, length)
 
 	case LCP_ECHO_REQ:
 	case LCP_ECHO_RPL:
+		TCHECK2(*(p + 8), 4);
 		printf(", Magic-Number=%d", ((*(p+ 8) << 24) + (*(p+9) << 16) +
 					     (*(p+10) <<  8) + (*(p+11))));
 		break;
@@ -316,6 +337,10 @@ handle_lcp(p, length)
 	default:
 		break;
 	}
+	return;
+
+trunc:
+	printf("[|lcp]");
 }
 
 /* LCP config options */
@@ -324,23 +349,30 @@ static int
 print_lcp_config_options(p)
 	u_char *p;
 {
-	int len	= *(p+1);
-	int opt = *p;
+	int len, opt;
+
+	TCHECK2(*p, 2);
+	len = *(p+1);
+	opt = *p;
 
 	if((opt >= LCPOPT_MIN) && (opt <= LCPOPT_MAX))
 		printf(", %s", lcpconfopts[opt]);
 
 	switch(opt) {
 	case LCPOPT_MRU:
-		if(len == 4)
+		if(len == 4) {
+			TCHECK2(*(p + 2), 2);
 			printf("=%d", (*(p+2) << 8) + *(p+3));
+		}
 		break;
 	case LCPOPT_AP:
 		if(len >= 4) {
+			TCHECK2(*(p + 2), 2);
 			if(*(p+2) == 0xc0 && *(p+3) == 0x23)
 				printf(" PAP");
 			else if(*(p+2) == 0xc2 && *(p+3) == 0x23) {
 				printf(" CHAP/");
+				TCHECK(*(p+4));
 				switch(*(p+4)) {
 				default:
 					printf("unknown-algorithm-%d", *(p+4));
@@ -364,6 +396,7 @@ print_lcp_config_options(p)
 		break;
 	case LCPOPT_QP:
 		if(len >= 4) {
+			TCHECK2(*(p + 2), 2);
 			if(*(p+2) == 0xc0 && *(p+3) == 0x25)
 				printf(" LQR");
 			else
@@ -371,9 +404,11 @@ print_lcp_config_options(p)
 		}
 		break;
 	case LCPOPT_MN:
-		if(len == 6)
+		if(len == 6) {
+			TCHECK2(*(p + 2), 4);
 			printf("=%d", ((*(p+2) << 24) + (*(p+3) << 16) +
 				       (*(p+4) <<  8) + (*(p+5))));
+		}
 		break;
 	case LCPOPT_PFC:
 		printf(" PFC");
@@ -383,6 +418,10 @@ print_lcp_config_options(p)
 		break;
 	}
 	return(len);
+
+trunc:
+	printf("[|lcp]");
+	return 0;
 }
 
 /* CHAP */
@@ -395,6 +434,7 @@ handle_chap(p, length)
 	int x;
 	u_char *ptr;
 
+	TCHECK(*(p+4));
 	x = *(p+4);
 
 	if((x >= CHAP_CODEMIN) && (x <= CHAP_CODEMAX))
@@ -410,16 +450,25 @@ handle_chap(p, length)
 	case CHAP_CHAL:
 	case CHAP_RESP:
 		printf(", Value=");
+		TCHECK(*(p+8));
 		x = *(p+8);	/* value size */
 		ptr = (u_char *)p+9;
-		while(--x >= 0)
+		while(--x >= 0) {
+			TCHECK(*ptr);
 			printf("%02x", *ptr++);
+		}
 		x = length - *(p+8) - 1;
 		printf(", Name=");
-		while(--x >= 0)
-			printf("%c", *ptr++);
+		while(--x >= 0) {
+			TCHECK(*ptr);
+			safeputchar(*ptr++);
+		}
 		break;
 	}
+	return;
+
+trunc:
+	printf("[|chap]");
 }
 
 /* PAP */
@@ -432,6 +481,7 @@ handle_pap(p, length)
 	int x;
 	u_char *ptr;
 
+	TCHECK(*(p+4));
 	x = *(p+4);
 
 	if((x >= PAP_CODEMIN) && (x <= PAP_CODEMAX))
@@ -446,19 +496,29 @@ handle_pap(p, length)
 	switch(x) {
 	case PAP_AREQ:
 		printf(", Peer-Id=");
+		TCHECK(*(p+8));
 		x = *(p+8);	/* peerid size */
 		ptr = (u_char *)p+9;
-		while(--x >= 0)
-			printf("%c", *ptr++);
+		while(--x >= 0) {
+			TCHECK(*ptr);
+			safeputchar(*ptr++);
+		}
+		TCHECK(*ptr);
 		x = *ptr++;
 		printf(", Passwd=");
-		while(--x >= 0)
-			printf("%c", *ptr++);
+		while(--x >= 0) {
+			TCHECK(*ptr);
+			safeputchar(*ptr++);
+		}
 		break;
 	case PAP_AACK:
 	case PAP_ANAK:		
 		break;			
 	}
+	return;
+
+trunc:
+	printf("[|pap]");
 }
 
 /* IPCP */
@@ -470,6 +530,7 @@ handle_ipcp(p, length)
 {
 	int x;
 
+	TCHECK(*(p+4));
 	x = *(p+4);
 
 	if((x >= IPCP_CODE_MIN) && (x <= IPCP_CODE_MAX))
@@ -480,10 +541,12 @@ handle_ipcp(p, length)
 	}
 
 	length -= 4;
-	
+
+	TCHECK(*(p+8));	
 	switch(*(p+8)) {
 	case IPCP_2ADDR:
 		printf(", IP-Addresses");
+		TCHECK2(*(p+10), 8);
 		printf(", Src=%d.%d.%d.%d",
 		       *(p+10), *(p+11), *(p+12), *(p+13));
 		printf(", Dst=%d.%d.%d.%d",
@@ -495,6 +558,7 @@ handle_ipcp(p, length)
 		break;
 
 	case IPCP_ADDR:
+		TCHECK2(*(p+10), 4);
 		printf(", IP-Address=%d.%d.%d.%d",
 		       *(p+10), *(p+11), *(p+12), *(p+13));
 		break;
@@ -502,6 +566,50 @@ handle_ipcp(p, length)
 		printf(", Unknown IPCP code 0x%x", *(p+8));
 		break;
 	}
+	return;
+
+trunc:
+	printf("[|ipcp]");
+}
+
+/* IPV6CP */
+
+static void
+handle_ipv6cp(p, length)
+	const u_char *p;
+	int length;
+{
+	int x;
+
+	TCHECK(*(p+4));
+	x = *(p+4);
+
+	if((x >= IPV6CP_CODE_MIN) && (x <= IPV6CP_CODE_MAX))
+		printf("%s", lcpcodes[x-1]);    /* share table with LCP */
+	else {
+		printf("0x%02x", x);
+		return;
+	}
+
+	TCHECK(*(p+8));
+	switch(*(p+8)) {
+	case IPV6CP_IFID:
+		TCHECK2(*(p + 10), 8);
+		printf(", Interface-ID=%04x:%04x:%04x:%04x",
+			EXTRACT_16BITS(p + 10),
+			EXTRACT_16BITS(p + 12),
+			EXTRACT_16BITS(p + 14),
+			EXTRACT_16BITS(p + 16));
+		break;
+
+	default:
+		printf(", Unknown IPV6CP code 0x%x", *(p+8));
+		break;
+	}
+	return;
+
+trunc:
+	printf("[|ipv6cp]");
 }
 
 void
@@ -659,6 +767,9 @@ ppp_ether_if_print(user, h, p)
 			case PPP_IPCP:
 				handle_ipcp(p - 2, length + 2);
 				break;
+			case PPP_IPV6CP:
+				handle_ipv6cp(p - 2, length + 2);
+				break;
 			case PPP_IP:
 				ip_print(p + 2, length - 2);
 				break;
@@ -675,9 +786,7 @@ ppp_ether_if_print(user, h, p)
 		printf("\n\t%04x: ", proto);
 
 	if (xflag)
-	    default_print((const u_char *)
-		(p + sizeof(struct pppoe_header)),
-		 caplen - sizeof(struct pppoe_header));
+	    default_print(p + 2, caplen - 2);
 	putchar('\n');
 }
 
@@ -778,6 +887,9 @@ pppoe_if_print(ethertype, p, length, caplen)
 			case PPPOE_TAG_RELAY_SESSION:
 				printf("Relay-Session");
 				break;
+			case PPPOE_TAG_MAX_PAYLOAD:
+				printf("PPP-Max-Payload");
+				break;
 			case PPPOE_TAG_SERVICE_NAME_ERROR:
 				printf("Service-Name-Error");
 				break;
@@ -830,6 +942,9 @@ pppoe_if_print(ethertype, p, length, caplen)
 					break;
 				case PPP_IPCP:
 					handle_ipcp(p - 2, length + 2);
+					break;
+				case PPP_IPV6CP:
+					handle_ipv6cp(p - 2, length + 2);
 					break;
 				case PPP_IP:
 					ip_print(p + 2, length - 2);

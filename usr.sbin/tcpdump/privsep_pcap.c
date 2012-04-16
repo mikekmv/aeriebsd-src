@@ -28,6 +28,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -172,7 +176,7 @@ priv_pcap_setfilter(pcap_t *hpcap, int oflag, u_int32_t netmask)
 /* privileged part of priv_pcap_live */
 int
 pcap_live(const char *device, int snaplen, int promisc, u_int dlt,
-    pcap_direction_t dirfilt)
+    u_int dirfilt)
 {
 	char		bpf[sizeof "/dev/bpf0000000000"];
 	int		fd, n = 0;
@@ -223,7 +227,7 @@ pcap_live(const char *device, int snaplen, int promisc, u_int dlt,
  */
 pcap_t *
 priv_pcap_live(const char *dev, int slen, int prom, int to_ms,
-    char *ebuf, u_int dlt, pcap_direction_t dirfilt)
+    char *ebuf, u_int dlt, u_int dirfilt)
 {
 	int fd, err;
 	struct bpf_version bv;
@@ -298,6 +302,10 @@ priv_pcap_live(const char *dev, int slen, int prom, int to_ms,
 	}
 #endif
 	p->linktype = v;
+
+	/* XXX hack */
+	if (p->linktype == DLT_PFLOG && p->snapshot < 160)
+		p->snapshot = 160;
 
 	/* set timeout */
 	if (to_ms != 0) {

@@ -15,6 +15,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -263,7 +267,7 @@ lldp_print(const u_char *p, u_int len)
 			_ptrinc(sizeof(u_int8_t));
 			v = *ptr;
 			_ptrinc(sizeof(u_int8_t));
-			if (v <= AFNUM_MAX)
+			if (v < AFNUM_MAX)
 				printf(" %s", afnumber[v]);
 			else
 				printf(" type %d", v);

@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-null.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -90,11 +90,14 @@ null_print(const u_char *p, const struct ip *ip, u_int length)
 		printf("ns: ");
 		break;
 
-#ifdef __OpenBSD__
+#ifdef __AerieBSD__
 	case AF_LINK:
 		ether_print(p + NULL_HDRLEN, length);
 		break;
 #endif
+	case AF_MPLS:
+		printf("mpls: ");
+		break;
 
 	default:
 		printf("AF %d: ", family);
@@ -148,6 +151,10 @@ null_if_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p)
 		ip6_print(p + NULL_HDRLEN, length);
 		break;
 #endif /*INET6*/
+
+	case AF_MPLS:
+		mpls_print(p + NULL_HDRLEN, length);
+		break;
 
 #ifdef __OpenBSD__
 	case AF_LINK:

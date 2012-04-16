@@ -33,7 +33,7 @@ SRCS=	tcpdump.c addrtoname.c privsep.c privsep_fdpass.c privsep_pcap.c \
 	print-ether.c print-ip.c print-arp.c print-tcp.c print-udp.c \
 	print-atalk.c print-domain.c print-tftp.c print-bootp.c print-nfs.c \
 	print-icmp.c print-sl.c print-ppp.c print-rip.c print-timed.c \
-	print-snmp.c print-ntp.c print-null.c print-ospf.c \
+	print-snmp.c print-ntp.c print-null.c print-ospf.c print-gtp.c \
 	print-fddi.c print-llc.c print-sunrpc.c print-hsrp.c print-vqp.c \
 	print-vrrp.c print-wb.c print-decnet.c print-isoclns.c print-ipx.c \
 	print-atm.c print-dvmrp.c print-krb.c print-pim.c print-netbios.c \
@@ -45,7 +45,7 @@ SRCS=	tcpdump.c addrtoname.c privsep.c privsep_fdpass.c privsep_pcap.c \
 	print-etherip.c print-lwres.c print-lldp.c print-cdp.c print-pflog.c \
 	print-pfsync.c pf_print_state.c \
 	print-udpencap.c print-carp.c \
-	print-802_11.c print-iapp.c print-mpls.c \
+	print-802_11.c print-iapp.c print-mpls.c print-slow.c \
 	gmt2local.c savestr.c setsignal.c
 
 # TCP OS Fingerprinting

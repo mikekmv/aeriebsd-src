@@ -31,7 +31,6 @@ static const char rcsid[] =
 
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 
 #include <net/if.h>
@@ -52,15 +51,52 @@ static const char rcsid[] =
 
 #include <netinet/ip6.h>
 #include <netinet/icmp6.h>
+#include <netinet6/mld6.h>
 
 #include "interface.h"
 #include "addrtoname.h"
 
 void icmp6_opt_print(const u_char *, int);
 void mld6_print(const u_char *);
+void mldv2_query_print(const u_char *, u_int);
+void mldv2_report_print(const u_char *, u_int);
+
+/* mldv2 report types */
+static struct tok mldv2report2str[] = {
+	{ 1,	"is_in" },
+	{ 2,	"is_ex" },
+	{ 3,	"to_in" },
+	{ 4,	"to_ex" },
+	{ 5,	"allow" },
+	{ 6,	"block" },
+	{ 0,	NULL }
+};
+
+#define MLDV2_QUERY_QRV			24
+#define MLDV2_QUERY_QQIC 		25
+#define MLDV2_QUERY_NSRCS		26
+#define MLDV2_QUERY_SRC0		28
+
+#define MLDV2_QUERY_QRV_SFLAG	(1 << 3)
+
+#define MLD_V1_QUERY_MINLEN		24
+
+#define MLDV2_REPORT_GROUP0		8
+
+#define MLDV2_REPORT_MINLEN		8
+#define MLDV2_REPORT_MINGRPLEN	20
+
+#define MLDV2_RGROUP_NSRCS		2
+#define MLDV2_RGROUP_MADDR		4
+
+#define MLDV2_MRC_FLOAT			(1 << 15)
+#define MLDV2_MRD(mant, exp)	((mant | 0x1000) << (exp + 3))
+
+#define MLDV2_QQIC_FLOAT		(1 << 7)
+#define MLDV2_QQI(mant, exp)	((mant | 0x10) << (exp + 3))
 
 void
-icmp6_print(register const u_char *bp, register const u_char *bp2)
+icmp6_print(const u_char *bp, u_int length, const u_char *bp2)
 {
 	register const struct icmp6_hdr *dp;
 	register const struct ip6_hdr *ip;
@@ -124,6 +160,7 @@ icmp6_print(register const u_char *bp, register const u_char *bp2)
 			TCHECK(oip->ip6_nxt);
 			hlen = sizeof(struct ip6_hdr);
 			ouh = (struct udphdr *)(((u_char *)oip) + hlen);
+			TCHECK(ouh->uh_dport);
 			dport = ntohs(ouh->uh_dport);
 			switch (oip->ip6_nxt) {
 			case IPPROTO_TCP:
@@ -152,7 +189,7 @@ icmp6_print(register const u_char *bp, register const u_char *bp2)
 		break;
 	case ICMP6_PACKET_TOO_BIG:
 		TCHECK(dp->icmp6_mtu);
-		printf("icmp6: too big %u\n", (u_int32_t)ntohl(dp->icmp6_mtu));
+		printf("icmp6: too big %u", (u_int32_t)ntohl(dp->icmp6_mtu));
 		break;
 	case ICMP6_TIME_EXCEEDED:
 		TCHECK(oip->ip6_dst);
@@ -174,15 +211,15 @@ icmp6_print(register const u_char *bp, register const u_char *bp2)
 		TCHECK(oip->ip6_dst);
 		switch (dp->icmp6_code) {
 		case ICMP6_PARAMPROB_HEADER:
-			printf("icmp6: parameter problem errorneous - octet %u\n",
+			printf("icmp6: parameter problem errorneous - octet %u",
 				(u_int32_t)ntohl(dp->icmp6_pptr));
 			break;
 		case ICMP6_PARAMPROB_NEXTHEADER:
-			printf("icmp6: parameter problem next header - octet %u\n",
+			printf("icmp6: parameter problem next header - octet %u",
 				(u_int32_t)ntohl(dp->icmp6_pptr));
 			break;
 		case ICMP6_PARAMPROB_OPTION:
-			printf("icmp6: parameter problem option - octet %u\n",
+			printf("icmp6: parameter problem option - octet %u",
 				(u_int32_t)ntohl(dp->icmp6_pptr));
 			break;
 		default:
@@ -192,14 +229,25 @@ icmp6_print(register const u_char *bp, register const u_char *bp2)
 		}
 		break;
 	case ICMP6_ECHO_REQUEST:
-		printf("icmp6: echo request");
-		break;
 	case ICMP6_ECHO_REPLY:
-		printf("icmp6: echo reply");
+		printf("icmp6: echo %s", dp->icmp6_type == ICMP6_ECHO_REQUEST ?
+		    "request" : "reply");
+		if (vflag) {
+			TCHECK(dp->icmp6_seq);
+			printf(" (id:%04x seq:%u)",
+			    ntohs(dp->icmp6_id), ntohs(dp->icmp6_seq));
+		}
 		break;
 	case ICMP6_MEMBERSHIP_QUERY:
 		printf("icmp6: multicast listener query ");
-		mld6_print((const u_char *)dp);
+		if (length == MLD_V1_QUERY_MINLEN) {
+			mld6_print((const u_char *)dp);
+		} else if (length >= MLD_V2_QUERY_MINLEN) {
+			printf("v2 ");
+			mldv2_query_print((const u_char *)dp, length);
+		} else {
+			printf("unknown-version (len %u) ", length);
+		}
 		break;
 	case ICMP6_MEMBERSHIP_REPORT:
 		printf("icmp6: multicast listener report ");
@@ -381,14 +429,14 @@ icmp6_print(register const u_char *bp, register const u_char *bp2)
 		if (vflag) {
 			printf(",%s", mode == FQDN ? "FQDN" : "WRU");
 			if (mode == FQDN) {
-				long ttl;
-				ttl = (long)ntohl(*(u_long *)&buf[8]);
+				int ttl;
+				ttl = (int)ntohl(*(u_int32_t *)&buf[8]);
 				if (dp->icmp6_code == 1)
 					printf(",TTL=unknown");
 				else if (ttl < 0)
-					printf(",TTL=%ld:invalid", ttl);
+					printf(",TTL=%d:invalid", ttl);
 				else
-					printf(",TTL=%ld", ttl);
+					printf(",TTL=%d", ttl);
 				if (buf[12] != ep - buf - 13) {
 					(void)printf(",invalid namelen:%d/%u",
 						buf[12],
@@ -400,6 +448,10 @@ icmp6_print(register const u_char *bp, register const u_char *bp2)
 		break;
 	    }
 #endif /*ICMP6_WRUREPLY*/
+	case MLDV2_LISTENER_REPORT:
+		printf("multicast listener report v2");
+		mldv2_report_print((const u_char *) dp, length);
+		break;
 	default:
 		printf("icmp6: type-#%d", dp->icmp6_type);
 		break;
@@ -572,4 +624,146 @@ mld6_print(register const u_char *bp)
 
 	return;
 }
+
+void
+mldv2_report_print(const u_char *bp, u_int len)
+{
+	struct icmp6_hdr *icp = (struct icmp6_hdr *) bp;
+	u_int group, nsrcs, ngroups;
+	u_int i, j;
+
+	if (len < MLDV2_REPORT_MINLEN) {
+		printf(" [invalid len %d]", len);
+		return;
+	}
+
+	TCHECK(icp->icmp6_data16[1]);
+	ngroups = ntohs(icp->icmp6_data16[1]);
+	printf(", %d group record(s)", ngroups);
+	if (vflag > 0) {
+		/* Print the group records */
+		group = MLDV2_REPORT_GROUP0;
+		for (i = 0; i < ngroups; i++) {
+			/* type(1) + auxlen(1) + numsrc(2) + grp(16) */
+			if (len < group + MLDV2_REPORT_MINGRPLEN) {
+				printf(" [invalid number of groups]");
+				return;
+			}
+			TCHECK2(bp[group + MLDV2_RGROUP_MADDR],
+			    sizeof(struct in6_addr));
+			printf(" [gaddr %s",
+			    ip6addr_string(&bp[group + MLDV2_RGROUP_MADDR]));
+			printf(" %s", tok2str(mldv2report2str,
+			    " [v2-report-#%d]", bp[group]));
+			nsrcs = (bp[group + MLDV2_RGROUP_NSRCS] << 8) +
+			    bp[group + MLDV2_RGROUP_NSRCS + 1];
+			/* Check the number of sources and print them */
+			if (len < group + MLDV2_REPORT_MINGRPLEN +
+				    (nsrcs * sizeof(struct in6_addr))) {
+				printf(" [invalid number of sources %d]", nsrcs);
+				return;
+			}
+			if (vflag == 1)
+				printf(", %d source(s)", nsrcs);
+			else {
+				/* Print the sources */
+				(void)printf(" {");
+				for (j = 0; j < nsrcs; j++) {
+					TCHECK2(bp[group +
+					    MLDV2_REPORT_MINGRPLEN +
+					    j * sizeof(struct in6_addr)],
+					    sizeof(struct in6_addr));
+					printf(" %s", ip6addr_string(&bp[group +
+					    MLDV2_REPORT_MINGRPLEN + j *
+					    sizeof(struct in6_addr)]));
+				}
+				(void)printf(" }");
+			}
+			/* Next group record */
+			group += MLDV2_REPORT_MINGRPLEN + nsrcs *
+			    sizeof(struct in6_addr);
+			printf("]");
+		}
+	}
+	return;
+trunc:
+	(void)printf("[|icmp6]");
+	return;
+}
+
+void
+mldv2_query_print(const u_char *bp, u_int len)
+{
+	struct icmp6_hdr *icp = (struct icmp6_hdr *) bp;
+	u_int mrc, qqic;
+	int mrd, qqi;
+	int mant, exp;
+	u_int nsrcs;
+	u_int i;
+
+	if (len < MLD_V2_QUERY_MINLEN) {
+		printf(" [invalid len %d]", len);
+		return;
+	}
+	TCHECK(icp->icmp6_data16[0]);
+	mrc = ntohs(icp->icmp6_data16[0]);
+	if (mrc & MLDV2_MRC_FLOAT) {
+		mant = MLD_MRC_MANT(mrc);
+		exp = MLD_MRC_EXP(mrc);
+		mrd = MLDV2_MRD(mant, exp);
+	} else {
+		mrd = mrc;
+	}
+	if (vflag) {
+		(void)printf(" [max resp delay=%d]", mrd);
+	} 
+	TCHECK2(bp[8], sizeof(struct in6_addr));
+	printf(" [gaddr %s", ip6addr_string(&bp[8]));
+
+	if (vflag) {
+		TCHECK(bp[MLDV2_QUERY_QQIC]);
+		if (bp[MLDV2_QUERY_QRV] & MLDV2_QUERY_QRV_SFLAG) {
+			printf(" sflag");
+		}
+		if (MLD_QRV(bp[MLDV2_QUERY_QRV])) {
+			printf(" robustness=%d", MLD_QRV(bp[MLDV2_QUERY_QRV]));
+		}
+		qqic = bp[MLDV2_QUERY_QQIC];
+		if (qqic & MLDV2_QQIC_FLOAT) {
+			mant = MLD_QQIC_MANT(qqic);
+			exp = MLD_QQIC_EXP(qqic);
+			qqi = MLDV2_QQI(mant, exp);
+		} else {
+			qqi = bp[MLDV2_QUERY_QQIC];
+		}
+		printf(" qqi=%d", qqi);
+	}
+
+	TCHECK2(bp[MLDV2_QUERY_NSRCS], 2);
+	nsrcs = ntohs(*(u_short *)&bp[MLDV2_QUERY_NSRCS]);
+	if (nsrcs > 0) {
+		if (len < MLD_V2_QUERY_MINLEN + nsrcs * sizeof(struct in6_addr))
+			printf(" [invalid number of sources]");
+		else if (vflag > 1) {
+			printf(" {");
+			for (i = 0; i < nsrcs; i++) {
+				TCHECK2(bp[MLDV2_QUERY_SRC0 + i *
+				    sizeof(struct in6_addr)],
+				    sizeof(struct in6_addr));
+				printf(" %s",
+				    ip6addr_string(&bp[MLDV2_QUERY_SRC0 + i *
+				    sizeof(struct in6_addr)]));
+			}
+			printf(" }");
+		} else
+			printf(", %d source(s)", nsrcs);
+	}
+	printf("]");
+	return;
+trunc:
+	(void)printf("[|icmp6]");
+	return;
+}
+
+
 #endif /* INET6 */

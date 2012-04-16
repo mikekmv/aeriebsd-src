@@ -1,5 +1,3 @@
-
-
 /*
  * Copyright (c) 1988, 1989, 1990, 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
@@ -22,15 +20,18 @@
  */
 
 #ifndef lint
+#if 0
 static const char rcsid[] =
     "@(#) /master/usr.sbin/tcpdump/tcpdump/print-icmp.c,v 2.1 1995/02/03 18:14:42 polk Exp (LBL)";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
 #endif
 
 #ifdef INET6
 
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 
 #include <net/if.h>

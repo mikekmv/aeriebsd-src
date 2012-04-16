@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997 Thomas H. Ptacek. All rights reserved.
  *
@@ -25,6 +24,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -217,7 +220,8 @@ static void r_print_string(int code, int len, const u_char *data) {
 	memset(string, 0, 128);
 	memcpy(string, data, len);
 
-	fprintf(stdout, " %s", string);
+	fprintf(stdout, " ");
+	safeputs(string);
 }
 
 static void r_print_hex(int code, int len, const u_char *data) {

@@ -22,11 +22,10 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-igrp.c,v 1.1.1.1 2008/08/26 14:44:36 root Exp $";
 #endif
 
 #include <sys/param.h>
-#include <sys/types.h>			/* concession to AIX */
 #include <sys/socket.h>
 
 #include <netinet/in.h>

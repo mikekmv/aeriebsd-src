@@ -22,12 +22,12 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "$ABSD$";
 #endif
 
-#include <sys/types.h>
 #include <sys/param.h>
 #include <stdio.h>
+#include <strings.h>
 
 #include "l2tp.h"
 #include "interface.h"
@@ -296,7 +296,7 @@ l2tp_bearer_cap_print(const u_char *dat, u_int length)
 static void
 l2tp_tie_breaker_print(const u_char *dat, u_int length)
 {
-	printf("%lx", *(u_long *)dat);	/* XXX */
+	print_octets(dat, (length < 8 ? length : 8));
 }
 
 static void
@@ -617,9 +617,8 @@ l2tp_avp_print(const u_char *dat, u_int length)
 void
 l2tp_print(const u_char *dat, u_int length)
 {
-	const u_short *ptr = (u_short *)dat;
 	u_int cnt = 0;			/* total octets consumed */
-	u_short pad;
+	u_short pad, val;
 	int flag_t, flag_l, flag_s, flag_o, flag_p;
 	u_short l2tp_len;
 
@@ -632,9 +631,11 @@ l2tp_print(const u_char *dat, u_int length)
 		return;
 	}
 
-	if ((ntohs(*ptr) & L2TP_VERSION_MASK) == L2TP_VERSION_L2TP) {
+	TCHECK2(*dat, sizeof(val));
+	memcpy(&val, dat, sizeof(val));
+	if ((ntohs(val) & L2TP_VERSION_MASK) == L2TP_VERSION_L2TP) {
 		printf(" l2tp:");
-	} else if ((ntohs(*ptr) & L2TP_VERSION_MASK) == L2TP_VERSION_L2F) {
+	} else if ((ntohs(val) & L2TP_VERSION_MASK) == L2TP_VERSION_L2F) {
 		printf(" l2f:");
 		return;		/* nothing to do */
 	} else {
@@ -643,53 +644,74 @@ l2tp_print(const u_char *dat, u_int length)
 	}
 
 	printf("[");
-	if (ntohs(*ptr) & L2TP_FLAG_TYPE) {
+	if (ntohs(val) & L2TP_FLAG_TYPE) {
 		flag_t = TRUE;
 		printf("T");
 	}
-	if (ntohs(*ptr) & L2TP_FLAG_LENGTH) {
+	if (ntohs(val) & L2TP_FLAG_LENGTH) {
 		flag_l = TRUE;
 		printf("L");
 	}
-	if (ntohs(*ptr) & L2TP_FLAG_SEQUENCE) {
+	if (ntohs(val) & L2TP_FLAG_SEQUENCE) {
 		flag_s = TRUE;
 		printf("S");
 	}
-	if (ntohs(*ptr) & L2TP_FLAG_OFFSET) {
+	if (ntohs(val) & L2TP_FLAG_OFFSET) {
 		flag_o = TRUE;
 		printf("O");
 	}
-	if (ntohs(*ptr) & L2TP_FLAG_PRIORITY) {
+	if (ntohs(val) & L2TP_FLAG_PRIORITY) {
 		flag_p = TRUE;
 		printf("P");
 	}
 	printf("]");
 
-	ptr++;
+	dat += 2;
 	cnt += 2;
 	
 	if (flag_l) {
-		l2tp_len = ntohs(*ptr++);	/* XXX need to consider 
-						   truncation ?? */
+		TCHECK2(*dat, sizeof(val));
+		memcpy(&val, dat, sizeof(val));
+		l2tp_len = ntohs(val);
+		dat += 2;
 		cnt += 2;
 	} else {
 		l2tp_len = 0;
 	}
 
-	printf("(%d/", ntohs(*ptr++));		/* Tunnel ID */
-	printf("%d)",  ntohs(*ptr++));		/* Session ID */
-	cnt += 4;
+	TCHECK2(*dat, sizeof(val));
+	memcpy(&val, dat, sizeof(val));
+	printf("(%d/", ntohs(val));		/* Tunnel ID */
+	dat += 2;
+	cnt += 2;
+	TCHECK2(*dat, sizeof(val));
+	memcpy(&val, dat, sizeof(val));
+	printf("%d)",  ntohs(val));		/* Session ID */
+	dat += 2;
+	cnt += 2;
 
 	if (flag_s) {
-		printf("Ns=%d,", ntohs(*ptr++));
-		printf("Nr=%d",  ntohs(*ptr++));
-		cnt += 4;
+		TCHECK2(*dat, sizeof(val));
+		memcpy(&val, dat, sizeof(val));
+		printf("Ns=%d,", ntohs(val));
+		dat += 2;
+		cnt += 2;
+		TCHECK2(*dat, sizeof(val));
+		memcpy(&val, dat, sizeof(val));
+		printf("Nr=%d",  ntohs(val));
+		dat += 2;
+		cnt += 2;
 	}
 
 	if (flag_o) {
-		pad =  ntohs(*ptr++);
-		(u_char *)ptr += pad;
-		cnt += (2 + pad);
+		TCHECK2(*dat, sizeof(val));
+		memcpy(&val, dat, sizeof(val));
+		pad =  ntohs(val);
+		dat += 2;
+		cnt += 2;
+		TCHECK2(*dat, pad);
+		dat += pad;
+		cnt += pad;
 	}
 
 	if (flag_t) {
@@ -697,15 +719,18 @@ l2tp_print(const u_char *dat, u_int length)
 			printf(" ZLB");
 		} else {
 			if (length >= cnt)
-				l2tp_avp_print((u_char *)ptr, length - cnt);
+				l2tp_avp_print(dat, length - cnt);
 		}
 	} else {
 #if 0
 		printf(" {");
-		ppp_hdlc_print((u_char *)ptr, length - cnt);
+		ppp_hdlc_print(dat, length - cnt);
 		printf("}");
 #else
 		printf("[hdlc|]");
 #endif
 	}
-}	
+
+trunc:
+	printf("[|l2tp]");
+}

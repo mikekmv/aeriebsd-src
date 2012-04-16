@@ -28,12 +28,11 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-bgp.c,v 1.1.1.1 2008/08/26 14:44:36 root Exp $";
 #endif
 
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 
 #include <netinet/in.h>
@@ -59,6 +58,7 @@ struct bgp {
 #define BGP_UPDATE		2
 #define BGP_NOTIFICATION	3
 #define BGP_KEEPALIVE		4
+#define BGP_ROUTE_REFRESH	5
 
 struct bgp_open {
 	u_int8_t bgpo_marker[16];
@@ -78,7 +78,10 @@ struct bgp_opt {
 	u_int8_t bgpopt_len;
 	/* variable length */
 };
+#define BGP_OPT_CAP		2
 #define BGP_OPT_SIZE		2	/* some compilers may pad to 4 bytes */
+
+#define BGP_UPDATE_MINSIZE	23
 
 struct bgp_notification {
 	u_int8_t bgpn_marker[16];
@@ -89,6 +92,16 @@ struct bgp_notification {
 	/* data should follow */
 };
 #define BGP_NOTIFICATION_SIZE		21	/* unaligned */
+
+struct bgp_route_refresh {
+	u_int8_t bgp_marker[16];
+	u_int16_t len;
+	u_int8_t type;
+	u_int8_t afi[2]; /* unaligned; should be u_int16_t */
+	u_int8_t res;
+	u_int8_t safi;
+};
+#define BGP_ROUTE_REFRESH_SIZE          23
 
 struct bgp_attr {
 	u_int8_t bgpa_flags;
@@ -119,11 +132,35 @@ struct bgp_attr {
 #define	BGPTYPE_RCID_PATH		13	/* RFC1863 */
 #define BGPTYPE_MP_REACH_NLRI		14	/* RFC2283 */
 #define BGPTYPE_MP_UNREACH_NLRI		15	/* RFC2283 */
+#define BGPTYPE_EXTD_COMMUNITIES	16	/* RFC4360 */
+#define BGPTYPE_AS4_PATH		17	/* RFC4893 */
+#define BGPTYPE_AGGREGATOR4		18	/* RFC4893 */
+
+#define BGP_AS_SET             1
+#define BGP_AS_SEQUENCE        2
+#define BGP_CONFED_AS_SEQUENCE 3 /* draft-ietf-idr-rfc3065bis-01 */
+#define BGP_CONFED_AS_SET      4 /* draft-ietf-idr-rfc3065bis-01  */
+
+static struct tok bgp_as_path_segment_open_values[] = {
+	{ BGP_AS_SET,			" {" },
+	{ BGP_AS_SEQUENCE,		" " },
+	{ BGP_CONFED_AS_SEQUENCE,	" (" },
+	{ BGP_CONFED_AS_SET,		" ({" },
+	{ 0, NULL},
+};
+
+static struct tok bgp_as_path_segment_close_values[] = {
+	{ BGP_AS_SET,			"}" },
+	{ BGP_AS_SEQUENCE,		"" },
+	{ BGP_CONFED_AS_SEQUENCE,	")" },
+	{ BGP_CONFED_AS_SET,		"})" },
+	{ 0, NULL},
+};
 
 #define BGP_MP_NLRI_MINSIZE		3
 
 static const char *bgptype[] = {
-	NULL, "OPEN", "UPDATE", "NOTIFICATION", "KEEPALIVE",
+	NULL, "OPEN", "UPDATE", "NOTIFICATION", "KEEPALIVE", "ROUTE-REFRESH",
 };
 #define bgp_type(x) num_or_str(bgptype, sizeof(bgptype)/sizeof(bgptype[0]), (x))
 
@@ -133,29 +170,54 @@ static const char *bgpopt_type[] = {
 #define bgp_opttype(x) \
 	num_or_str(bgpopt_type, sizeof(bgpopt_type)/sizeof(bgpopt_type[0]), (x))
 
+#define BGP_CAPCODE_MP			1
+#define BGP_CAPCODE_REFRESH		2
+#define BGP_CAPCODE_RESTART		64 /* draft-ietf-idr-restart-05  */
+#define BGP_CAPCODE_AS4			65 /* RFC4893 */
+
+static const char *bgp_capcode[] = {
+	NULL, "MULTI_PROTOCOL", "ROUTE_REFRESH",
+	/* 3: RFC5291 */ "OUTBOUND_ROUTE_FILTERING",
+	/* 4: RFC3107 */ "MULTIPLE_ROUTES",
+	/* 5: RFC5549 */ "EXTENDED_NEXTHOP_ENCODING",
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 64: RFC4724 */ "GRACEFUL_RESTART",
+	/* 65: RFC4893 */ "AS4", 0,
+	/* 67: [Chen] */ "DYNAMIC_CAPABILITY",
+	/* 68: [Appanna] */ "MULTISESSION",
+	/* 69: [draft-ietf-idr-add-paths] */ "ADD-PATH",
+};
+
+#define bgp_capcode(x) \
+	num_or_str(bgp_capcode, sizeof(bgp_capcode)/sizeof(bgp_capcode[0]), (x))
+
+#define BGP_NOTIFY_MAJOR_CEASE		6
 static const char *bgpnotify_major[] = {
 	NULL, "Message Header Error",
 	"OPEN Message Error", "UPDATE Message Error",
 	"Hold Timer Expired", "Finite State Machine Error",
-	"Cease",
+	"Cease", "Capability Message Error",
 };
 #define bgp_notify_major(x) \
 	num_or_str(bgpnotify_major, \
 		sizeof(bgpnotify_major)/sizeof(bgpnotify_major[0]), (x))
 
-static const char *bgpnotify_minor_1[] = {
+static const char *bgpnotify_minor_msg[] = {
 	NULL, "Connection Not Synchronized",
 	"Bad Message Length", "Bad Message Type",
 };
 
-static const char *bgpnotify_minor_2[] = {
+static const char *bgpnotify_minor_open[] = {
 	NULL, "Unsupported Version Number",
 	"Bad Peer AS", "Bad BGP Identifier",
 	"Unsupported Optional Parameter", "Authentication Failure",
-	"Unacceptable Hold Time",
+	"Unacceptable Hold Time", "Unsupported Capability",
 };
 
-static const char *bgpnotify_minor_3[] = {
+static const char *bgpnotify_minor_update[] = {
 	NULL, "Malformed Attribute List",
 	"Unrecognized Well-known Attribute", "Missing Well-known Attribute",
 	"Attribute Flags Error", "Attribute Length Error",
@@ -164,13 +226,32 @@ static const char *bgpnotify_minor_3[] = {
 	"Invalid Network Field", "Malformed AS_PATH",
 };
 
+/* RFC 4486 */
+#define BGP_NOTIFY_MINOR_CEASE_MAXPRFX  1
+static const char *bgpnotify_minor_cease[] = {
+	NULL, "Maximum Number of Prefixes Reached", "Administratively Shutdown",
+	"Peer De-configured", "Administratively Reset", "Connection Rejected",
+	"Other Configuration Change", "Connection Collision Resolution",
+	"Out of Resources",
+};
+
+static const char *bgpnotify_minor_cap[] = {
+	NULL, "Invalid Action Value", "Invalid Capability Length",
+	"Malformed Capability Value", "Unsupported Capability Code",
+};
+
 static const char **bgpnotify_minor[] = {
-	NULL, bgpnotify_minor_1, bgpnotify_minor_2, bgpnotify_minor_3,
+	NULL, bgpnotify_minor_msg, bgpnotify_minor_open, bgpnotify_minor_update,
 };
 static const int bgpnotify_minor_siz[] = {
-	0, sizeof(bgpnotify_minor_1)/sizeof(bgpnotify_minor_1[0]),
-	sizeof(bgpnotify_minor_2)/sizeof(bgpnotify_minor_2[0]),
-	sizeof(bgpnotify_minor_3)/sizeof(bgpnotify_minor_3[0]),
+	0,
+	sizeof(bgpnotify_minor_msg)/sizeof(bgpnotify_minor_msg[0]),
+	sizeof(bgpnotify_minor_open)/sizeof(bgpnotify_minor_open[0]),
+	sizeof(bgpnotify_minor_update)/sizeof(bgpnotify_minor_update[0]),
+	0,
+	0,
+	sizeof(bgpnotify_minor_cease)/sizeof(bgpnotify_minor_cease[0]),
+	sizeof(bgpnotify_minor_cap)/sizeof(bgpnotify_minor_cap[0]),
 };
 
 static const char *bgpattr_origin[] = {
@@ -185,6 +266,7 @@ static const char *bgpattr_type[] = {
 	"MULTI_EXIT_DISC", "LOCAL_PREF", "ATOMIC_AGGREGATE", "AGGREGATOR",
 	"COMMUNITIES", "ORIGINATOR_ID", "CLUSTER_LIST", "DPA",
 	"ADVERTISERS", "RCID_PATH", "MP_REACH_NLRI", "MP_UNREACH_NLRI",
+	"EXTD_COMMUNITIES", "AS4_PATH", "AGGREGATOR4",
 };
 #define bgp_attr_type(x) \
 	num_or_str(bgpattr_type, \
@@ -193,6 +275,13 @@ static const char *bgpattr_type[] = {
 /* Subsequent address family identifier, RFC2283 section 7 */
 static const char *bgpattr_nlri_safi[] = {
 	"Reserved", "Unicast", "Multicast", "Unicast+Multicast",
+	"labeled Unicast", /* MPLS BGP RFC3107 */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+	/* 64-66: MPLS BGP RFC3107 */
+	"Tunnel", "VPLS", "MDT",
 };
 #define bgp_attr_nlri_safi(x) \
 	num_or_str(bgpattr_nlri_safi, \
@@ -260,6 +349,7 @@ decode_prefix4(const u_char *pd, char *buf, u_int buflen)
 		       * prefix length is in bits; packet only contains
 		       * enough bytes of address to contain this many bits
 		       */
+	plen = pd[0];
 	if (plen < 0 || 32 < plen)
 		return -1;
 	memset(&addr, 0, sizeof(addr));
@@ -318,11 +408,13 @@ bgp_attr_print(const struct bgp_attr *attr, const u_char *dat, int len)
 	u_int16_t af;
 	u_int8_t safi, snpa;
 	int advance;
-	int tlen;
+	int tlen, asn_bytes;
 	const u_char *p;
 	char buf[MAXHOSTNAMELEN + 100];
 
 	p = dat;
+	tlen = len;
+	asn_bytes = 0;
 
 	switch (attr->bgpa_type) {
 	case BGPTYPE_ORIGIN:
@@ -333,7 +425,18 @@ bgp_attr_print(const struct bgp_attr *attr, const u_char *dat, int len)
 			printf(" %s", bgp_attr_origin(p[0]));
 		}
 		break;
+	case BGPTYPE_AS4_PATH:
+		asn_bytes = 4;
+		/* FALLTHROUGH */
 	case BGPTYPE_AS_PATH:
+	/*
+	 * 2-byte speakers will receive AS4_PATH as well AS_PATH (2-byte).
+	 * 4-byte speakers will only receive AS_PATH but it will be 4-byte.
+	 * To identify which is the case, compare the length of the path
+	 * segment value in bytes, with the path segment length from the
+	 * message (counted in # of AS)
+	 */
+	 
 		if (len % 2) {
 			printf(" invalid len");
 			break;
@@ -343,28 +446,31 @@ bgp_attr_print(const struct bgp_attr *attr, const u_char *dat, int len)
 			break;
 		}
 		while (p < dat + len) {
-			/*
-			 * under RFC1965, p[0] means:
-			 * 1: AS_SET 2: AS_SEQUENCE
-			 * 3: AS_CONFED_SET 4: AS_CONFED_SEQUENCE
-			 */
-			printf(" ");
-			TCHECK(p[1]);
-			if (p[0] == 3 || p[0] == 4)
-				printf("confed");
-			printf("%s", (p[0] & 1) ? "{" : "");
-			for (i = 0; i < p[1] * 2; i += 2) {
-				TCHECK2(p[2 + i], 2); /* ASN is 2-bytes */
-				printf("%s%u", i == 0 ? "" : " ",
-					EXTRACT_16BITS(&p[2 + i]));
+			TCHECK(p[0]);
+			if (asn_bytes == 0) {
+				asn_bytes = (len-2)/p[1];
 			}
-			printf("%s", (p[0] & 1) ? "}" : "");
-			/*
-			 * 1 byte for attr type, 1 byte for path length,
-			 * plus size of ASN (2-bytes for now) * no of ASN
-			 *
-			 */
-			p += 2 + p[1] * 2;
+			printf("%s",
+			    tok2str(bgp_as_path_segment_open_values,
+			    "?", p[0]));
+
+			for (i = 0; i < p[1] * asn_bytes; i += asn_bytes) {
+				TCHECK2(p[2 + i], asn_bytes);
+				printf("%s", i == 0 ? "" : " ");
+				if (asn_bytes == 2 || EXTRACT_16BITS(&p[2 + i]))
+					printf("%u%s",
+					    EXTRACT_16BITS(&p[2 + i]),
+					    asn_bytes == 4 ? "." : "");
+				if (asn_bytes == 4)
+					printf("%u",
+					    EXTRACT_16BITS(&p[2 + i + 2]));
+			}
+			TCHECK(p[0]);
+			printf("%s",
+			    tok2str(bgp_as_path_segment_close_values,
+			    "?", p[0]));
+			TCHECK(p[1]);
+			p += 2 + p[1] * asn_bytes;
 		}
 		break;
 	case BGPTYPE_NEXT_HOP:
@@ -388,24 +494,34 @@ bgp_attr_print(const struct bgp_attr *attr, const u_char *dat, int len)
 		if (len != 0)
 			printf(" invalid len");
 		break;
+	case BGPTYPE_AGGREGATOR4:
 	case BGPTYPE_AGGREGATOR:
-		if (len != 6) {
+	/*
+	 * like AS_PATH/AS4_PATH, AGGREGATOR can contain
+	 * either 2-byte or 4-byte ASN, and AGGREGATOR4
+	 * always contains 4-byte ASN.
+	 */
+		if (len != 6 && len != 8) {
 			printf(" invalid len");
 			break;
 		}
-		TCHECK2(p[0], 6);
-		printf(" AS #%u, origin %s", EXTRACT_16BITS(p),
-			getname(p + 2));
+		TCHECK2(p[0], len);
+		printf(" AS #");
+		if (len == 6 || EXTRACT_16BITS(p))
+			printf("%u%s", EXTRACT_16BITS(p), len == 8 ? "." : "");
+		if (len == 8)
+			printf("%u", EXTRACT_16BITS(p+2));
+		printf(", origin %s", getname(p+len-4));
 		break;
 	case BGPTYPE_COMMUNITIES:
 		if (len % 4) {
 			printf(" invalid len");
 			break;
 		}
-		for (i = 0; i < len; i += 4) {
+		while (tlen>0) {
 			u_int32_t comm;
-			TCHECK2(p[i], 4);
-			comm = EXTRACT_32BITS(&p[i]);
+			TCHECK2(p[0], 4);
+			comm = EXTRACT_32BITS(p);
 			switch (comm) {
 			case BGP_COMMUNITY_NO_EXPORT:
 				printf(" NO_EXPORT");
@@ -424,6 +540,30 @@ bgp_attr_print(const struct bgp_attr *attr, const u_char *dat, int len)
 					(comm >> 16) & 0xffff, comm & 0xffff);
 				break;
 			}
+			tlen -= 4;
+			p += 4;
+		}
+		break;
+	case BGPTYPE_ORIGINATOR_ID:
+		if (len != 4) {
+			printf(" invalid len");
+			break;
+                }
+		TCHECK2(p[0], 4);
+		printf("%s",getname(p));
+		break;
+	case BGPTYPE_CLUSTER_LIST:
+		if (len % 4) {
+			printf(" invalid len");
+			break;
+		}
+		while (tlen>0) {
+			TCHECK2(p[0], 4);
+			printf(" %s%s",
+			    getname(p),
+			    (tlen>4) ? ", " : "");
+			tlen -=4;
+			p +=4;
 		}
 		break;
 	case BGPTYPE_MP_REACH_NLRI:
@@ -431,7 +571,7 @@ bgp_attr_print(const struct bgp_attr *attr, const u_char *dat, int len)
 		af = EXTRACT_16BITS(p);
 		safi = p[2];
 		if (safi >= 128)
-			printf(" %s vendor specific,", af_name(af));
+			printf(" %s vendor specific %u,", af_name(af), safi);
 		else {
 			printf(" %s %s,", af_name(af),
 				bgp_attr_nlri_safi(safi));
@@ -521,7 +661,7 @@ bgp_attr_print(const struct bgp_attr *attr, const u_char *dat, int len)
 		af = EXTRACT_16BITS(p);
 		safi = p[2];
 		if (safi >= 128)
-			printf(" %s vendor specific,", af_name(af));
+			printf(" %s vendor specific %u,", af_name(af), safi);
 		else {
 			printf(" %s %s,", af_name(af),
 				bgp_attr_nlri_safi(safi));
@@ -563,6 +703,87 @@ trunc:
 }
 
 static void
+bgp_open_capa_print(const u_char *opt, int length)
+{
+	int i,cap_type,cap_len,tcap_len,cap_offset;
+
+	i = 0;
+	while (i < length) {
+		TCHECK2(opt[i], 2);
+
+		cap_type=opt[i];
+		cap_len=opt[i+1];
+		printf("%sCAP %s", i == 0 ? "(" : " ", 		/* ) */
+		    bgp_capcode(cap_type));
+
+		/* can we print the capability? */
+		TCHECK2(opt[i+2],cap_len);
+		i += 2;
+
+		switch(cap_type) {
+		case BGP_CAPCODE_MP:
+			if (cap_len != 4) {
+				printf(" BAD ENCODING");
+				break;
+			}
+			printf(" [%s %s]",
+			    af_name(EXTRACT_16BITS(opt+i)),
+			    bgp_attr_nlri_safi(opt[i+3]));
+			break;
+		case BGP_CAPCODE_REFRESH:
+			if (cap_len != 0) {
+				printf(" BAD ENCODING");
+				break;
+			}
+			break;
+		case BGP_CAPCODE_RESTART:
+			if (cap_len < 2 || (cap_len - 2) % 4) {
+				printf(" BAD ENCODING");
+				break;
+			}
+			printf(" [%s], Time %us",
+			    ((opt[i])&0x80) ? "R" : "none",
+			    EXTRACT_16BITS(opt+i)&0xfff);
+			tcap_len=cap_len - 2;
+			cap_offset=2;
+			while(tcap_len>=4) {
+				printf(" (%s %s)%s",
+				    af_name(EXTRACT_16BITS(opt+i+cap_offset)),
+				    bgp_attr_nlri_safi(opt[i+cap_offset+2]),
+				    ((opt[i+cap_offset+3])&0x80) ?
+					" forwarding state preserved" : "" );
+				tcap_len-=4;
+				cap_offset+=4;
+			}
+			break;
+		case BGP_CAPCODE_AS4:
+			if (cap_len != 4) {
+				printf(" BAD ENCODING");
+				break;
+			}
+			printf(" #");
+			if (EXTRACT_16BITS(opt+i))
+				printf("%u.",
+				    EXTRACT_16BITS(opt+i));
+			printf("%u",
+			    EXTRACT_16BITS(opt+i+2));
+			break;
+		default:
+			printf(" len %d", cap_len);
+			break;
+		}
+		i += cap_len;
+		if (i + cap_len < length)
+			printf(",");
+	}
+	/* ( */
+	printf(")");
+	return;
+trunc:
+	printf("[|BGP]");
+}
+
+static void
 bgp_open_print(const u_char *dat, int length)
 {
 	struct bgp_open bgpo;
@@ -579,6 +800,10 @@ bgp_open_print(const u_char *dat, int length)
 	printf(" ID %s,", getname((u_char *)&bgpo.bgpo_id));
 	printf(" Option length %u", bgpo.bgpo_optlen);
 
+	/* sanity checking */
+	if ((length < bgpo.bgpo_optlen+BGP_OPEN_SIZE) || (!bgpo.bgpo_optlen))
+		return;
+
 	/* ugly! */
 	opt = &((const struct bgp_open *)dat)->bgpo_optlen;
 	opt++;
@@ -592,10 +817,27 @@ bgp_open_print(const u_char *dat, int length)
 			break;
 		}
 
-		printf(" (option %s, len=%d)", bgp_opttype(bgpopt.bgpopt_type),
-			bgpopt.bgpopt_len);
+		if (i == 0)
+			printf(" (");		/* ) */
+		else
+			printf(" ");
+
+		switch(bgpopt.bgpopt_type) {
+		case BGP_OPT_CAP:
+			bgp_open_capa_print(opt + i + BGP_OPT_SIZE,
+			    bgpopt.bgpopt_len);
+			break;
+		default:
+			printf(" (option %s, len=%u)",
+			    bgp_opttype(bgpopt.bgpopt_type),
+			    bgpopt.bgpopt_len);
+			break;
+		}
+
 		i += BGP_OPT_SIZE + bgpopt.bgpopt_len;
 	}
+	/* ( */
+	printf(")");	
 	return;
 trunc:
 	printf("[|BGP]");
@@ -637,22 +879,26 @@ bgp_update_print(const u_char *dat, int length)
 			
 		while(i < 2 + len) {
 			wpfx = decode_prefix4(&p[i], buf, sizeof(buf));
-			if (wpfx == -2)
-				goto trunc;
-			else if (wpfx < 0) {
+			if (wpfx == -1) {
 				printf(" (illegal prefix length)");
 				break;
-			}
+			} else if (wpfx == -2)
+				goto trunc;
 			i += wpfx;
 			printf(" %s", buf);
 		}
-		printf(")\n");
+		printf(")");
 #endif
 	}
 	p += 2 + len;
 
 	TCHECK2(p[0], 2);
 	len = EXTRACT_16BITS(p);
+
+	if (len == 0 && length == BGP_UPDATE_MINSIZE) {
+		printf(" End-of-Rib Marker (empty NLRI)");
+		return;
+	}
 
 	if (len) {
 		/* do something more useful!*/
@@ -706,12 +952,11 @@ bgp_update_print(const u_char *dat, int length)
 		while (dat + length > p) {
 			char buf[MAXHOSTNAMELEN + 100];
 			i = decode_prefix4(p, buf, sizeof(buf));
-			if (i == -2)
-				goto trunc;
-			else if (i < 0) {
+			if (i == -1) {
 				printf(" (illegal prefix length)");
 				break;
-			}
+			} else if (i == -2)
+				goto trunc;
 			printf(" %s", buf);
 			p += i;
 		}
@@ -728,13 +973,63 @@ static void
 bgp_notification_print(const u_char *dat, int length)
 {
 	struct bgp_notification bgpn;
+	u_int16_t af;
+	u_int8_t safi;
+	const u_char *p;
 
 	TCHECK2(dat[0], BGP_NOTIFICATION_SIZE);
 	memcpy(&bgpn, dat, BGP_NOTIFICATION_SIZE);
 
+	/* sanity checking */
+	if (length<BGP_NOTIFICATION_SIZE)
+		return;
+
 	printf(": error %s,", bgp_notify_major(bgpn.bgpn_major));
 	printf(" subcode %s",
 		bgp_notify_minor(bgpn.bgpn_major, bgpn.bgpn_minor));
+
+	if (bgpn.bgpn_major == BGP_NOTIFY_MAJOR_CEASE) {
+		/*
+		 * RFC 4486: optional maxprefix subtype of 7 bytes
+		 * may contain AFI, SAFI and MAXPREFIXES
+		 */
+		if(bgpn.bgpn_minor == BGP_NOTIFY_MINOR_CEASE_MAXPRFX && 
+		    length >= BGP_NOTIFICATION_SIZE + 7) {
+
+			p = dat + BGP_NOTIFICATION_SIZE;
+			TCHECK2(*p, 7);
+
+			af = EXTRACT_16BITS(p);
+			safi = p[2];
+			printf(" %s %s,", af_name(af),
+			    bgp_attr_nlri_safi(safi));
+
+			printf(" Max Prefixes: %u", EXTRACT_32BITS(p+3));
+		}
+	}
+
+	return;
+trunc:
+	printf("[|BGP]");
+}
+
+static void
+bgp_route_refresh_print(const u_char *dat, int length)
+{
+	const struct bgp_route_refresh *bgp_route_refresh_header;
+
+	TCHECK2(dat[0], BGP_ROUTE_REFRESH_SIZE);
+
+	/* sanity checking */
+	if (length<BGP_ROUTE_REFRESH_SIZE)
+		return;
+
+	bgp_route_refresh_header = (const struct bgp_route_refresh *)dat;
+
+	printf(" (%s %s)",
+	    af_name(EXTRACT_16BITS(&bgp_route_refresh_header->afi)),
+	    bgp_attr_nlri_safi(bgp_route_refresh_header->safi));
+
 	return;
 trunc:
 	printf("[|BGP]");
@@ -758,6 +1053,13 @@ bgp_header_print(const u_char *dat, int length)
 		break;
 	case BGP_NOTIFICATION:
 		bgp_notification_print(dat, length);
+		break;
+	case BGP_KEEPALIVE:
+		break;
+	case BGP_ROUTE_REFRESH:
+		bgp_route_refresh_print(dat, length);
+	default:
+		TCHECK2(*dat, length);
 		break;
 	}
 
@@ -819,6 +1121,11 @@ bgp_print(const u_char *dat, int length)
 			printf("\n\t");
 		else
 			printf(" ");
+		if (hlen < BGP_SIZE) {
+			printf("\n[|BGP Bogus header length %u < %u]",
+			    hlen, BGP_SIZE);
+			break;
+		}
 		if (TTEST2(p[0], hlen)) {
 			if (!bgp_header_print(p, hlen))
 				return;

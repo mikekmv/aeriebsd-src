@@ -18,7 +18,7 @@
 .\" WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
 .\" MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.Dd $Mdocdate: April 21 2008 $
+.Dd $Mdocdate: August 26 2008 $
 .Dt TCPDUMP 8
 .Os
 .Sh NAME
@@ -73,8 +73,12 @@ Dump packet-matching code as a C program fragment.
 Dump packet-matching code as decimal numbers
 preceded with a count.
 .It Xo
-.Fl E Oo Ar espalg : Oc Ar espkey
+.Fl E
+.Sm off
+.Op Ar espalg No \&:
+.Ar espkey
 .Xc
+.Sm on
 Try to decrypt RFC 2406 ESP
 .Pq Encapsulating Security Payload
 traffic using the specified hex key
@@ -183,8 +187,8 @@ Print absolute, rather than relative, TCP sequence numbers.
 .It Fl s Ar snaplen
 Analyze at most the first
 .Ar snaplen
-bytes of data from each packet rather than the default of 96.
-96 bytes is adequate for IP, ICMP, TCP, and UDP,
+bytes of data from each packet rather than the default of 116.
+116 bytes is adequate for IPv6, ICMP, TCP, and UDP,
 but may truncate protocol information from name server and NFS packets
 .Pq see below .
 Packets truncated because of a limited
@@ -259,16 +263,18 @@ Standard output is used if
 is
 .Ql - .
 .It Fl X
-Print each packet
-.Pq minus its link-level header
-in hex and ASCII.
+Print each packet in hex and ASCII.
+If the
+.Fl e
+option is also specified, the link-level header will be included.
 The smaller of the entire packet or
 .Ar snaplen
 bytes will be printed.
 .It Fl x
-Print each packet
-.Pq minus its link-level header
-in hex.
+Print each packet in hex.
+If the
+.Fl e
+option is also specified, the link-level header will be included.
 The smaller of the entire packet or
 .Ar snaplen
 bytes will be printed.
@@ -711,11 +717,19 @@ The known codes are:
 .Ar match ,
 .Ar bad-offset ,
 .Ar fragment ,
-.Ar bad-timestamp ,
 .Ar short ,
 .Ar normalize ,
+.Ar memory ,
+.Ar bad-timestamp ,
+.Ar congestion ,
+.Ar ip-option ,
+.Ar proto-cksum ,
+.Ar state-mismatch ,
+.Ar state-insert ,
+.Ar state-limit ,
+.Ar src-limit ,
 and
-.Ar memory
+.Ar synproxy
 (applies only to packets logged by
 .Xr pf 4 ) .
 .It Cm rset Ar name
@@ -739,11 +753,8 @@ True if PF took the specified action when the packet was logged.
 Valid actions are:
 .Ar pass ,
 .Ar block ,
-.Ar nat ,
-.Ar rdr ,
-.Ar binat
 and
-.Ar scrub
+.Ar match
 (applies only to packets logged by
 .Xr pf 4 ) .
 .It Cm wlan addr1 Ar ehost
@@ -918,14 +929,14 @@ Negation
 or
 .Dq Cm not
 .Pc
-
+.Pp
 Concatenation
 .Po
 .Dq Cm &&
 or
 .Dq Cm and
 .Pc
-
+.Pp
 Alternation
 .Po
 .Dq Cm ||
@@ -1007,6 +1018,10 @@ of each TCP connection that involves a non-local host:
 # tcpdump 'tcp[13] & 3 != 0 and not src and dst net localnet'
 .Ed
 .Pp
+To print only the SYN packets of http connections
+.Pp
+.Dl # tcpdump 'tcp[tcpflags] = tcp-syn and port http'
+.Pp
 To print IP packets longer than 576 bytes sent through gateway snup:
 .Pp
 .Dl # tcpdump 'gateway snup and ip[2:2] > 576'
@@ -1022,6 +1037,10 @@ To print all ICMP packets that are not echo requests/replies
 .Pq i.e., not ping packets :
 .Pp
 .Dl # tcpdump 'icmp[0] != 8 and icmp[0] != 0'
+.Pp
+To print only echo request ICMP packets:
+.Pp
+.Dl # tcpdump 'icmp[icmptype] = icmp-echo'
 .Pp
 To print and decrypt all ESP packets with SPI 0x00001234:
 .Pp
@@ -1481,14 +1500,14 @@ requests and replies are printed as:
 .Bd -ragged -offset indent
 .Ar src . Ns Ar xid
 >
-.Ar dst . Ns Ar nfs :
-.Ns Ar len
-.Ns Ar op args
-
-.Ar src . Ns Ar nfs
+.Ar dst . Ns nfs :
+.Ar len op args
+.Pp
+.Ar src . Ns nfs
 >
 .Ar dst . Ns Ar xid :
-.Ns Ar reply stat len op results
+reply
+.Ar stat len op results
 .Ed
 .Bd -unfilled -offset indent
 sushi.6709 > wrl.nfs: 112 readlink fh 21,24/10.73165
@@ -1614,10 +1633,8 @@ file may contain blank lines or comment lines
 .Ql # ) .
 .Pp
 AppleTalk addresses are printed in the form
-.Bd -ragged -offset indent
-.Ar net . Ns Ar host .
-.Ns Ar port
-.Ed
+.Pp
+.D1 Ar net . Ns Ar host . Ns Ar port
 .Pp
 For example:
 .Bd -unfilled -offset indent

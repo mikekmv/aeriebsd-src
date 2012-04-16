@@ -21,8 +21,12 @@
  */
 
 #ifndef lint
+#if 0
 static const char rcsid[] =
     "@(#) Header: print-nfs.c,v 1.64 97/06/30 13:51:16 leres Exp $ (LBL)";
+#else
+static const char rcsid[] = "$ABSD$";
+#endif
 #endif
 
 #include <sys/param.h>

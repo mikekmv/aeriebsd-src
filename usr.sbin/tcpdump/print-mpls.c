@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2005 Jason L. Wright (jason@thought.net)
  * All rights reserved.
@@ -25,6 +24,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <stdio.h>
 
 #include "interface.h"
@@ -48,7 +51,7 @@ mpls_print(const u_char *bp, u_int len)
 	bottom = (tag >> 8) & 0x1;
 	ttl = (tag >> 0) & 0xff;
 
-	printf("MPLS(label 0x%x, exp %u, ttl %u) ", label, exp, ttl);
+	printf("MPLS(label %u, exp %u, ttl %u) ", label, exp, ttl);
 
 	/* XXX decode "Router Alert Label" */
 

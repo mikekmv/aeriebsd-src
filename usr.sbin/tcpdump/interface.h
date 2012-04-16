@@ -66,18 +66,13 @@ extern char *device;		/* as specified by -i  */
 #define max(a,b) ((b)>(a)?(b):(a))
 #endif
 
-#ifndef INET6
 /*
  * The default snapshot length.  This value allows most printers to print
  * useful information while keeping the amount of unwanted data down.
- * In particular, it allows for an ethernet header, tcp/ip header, and
- * 14 bytes of data (assuming no ip options).
+ * In particular, it allows ethernet, tcp/ip headers, and a small amount
+ * of data, or to capture IPv6 and TCP headers after pflog encapsulation.
  */
-#define DEFAULT_SNAPLEN 68
-#else
-#define DEFAULT_SNAPLEN 96
-#endif /* INET6 */
-#define SACK_SNAPLEN 94
+#define DEFAULT_SNAPLEN 116
 #define IEEE802_11_SNAPLEN (DEFAULT_SNAPLEN + 30)
 #define IEEE802_11_RADIO_SNAPLEN (IEEE802_11_SNAPLEN + 64)
 
@@ -274,6 +269,8 @@ extern void etherip_print(const u_char *, u_int, u_int, const u_char *);
 extern void ipcomp_print(const u_char *, u_int, const u_char *);
 extern void mpls_print(const u_char *, u_int);
 extern void lldp_print(const u_char *, u_int);
+extern void slow_print(const u_char *, u_int);
+extern void gtp_print(const u_char *, u_int, u_short, u_short);
 
 #ifdef INET6
 extern void ip6_print(const u_char *, int);
@@ -281,11 +278,11 @@ extern void ip6_opt_print(const u_char *, int);
 extern int hbhopt_print(const u_char *);
 extern int dstopt_print(const u_char *);
 extern int frag6_print(const u_char *, const u_char *);
-extern void icmp6_print(const u_char *, const u_char *);
+extern void icmp6_print(const u_char *, u_int, const u_char *);
 extern void ripng_print(const u_char *, int);
 extern int rt6_print(const u_char *, const u_char *);
 extern void ospf6_print(const u_char *, u_int);
 extern void dhcp6_print(const u_char *, u_int, u_short, u_short);
 #endif /*INET6*/
 
-extern u_short in_cksum(const u_short *addr, register int len, u_short csum);
+extern u_short in_cksum(const u_short *addr, register int len, int csum);

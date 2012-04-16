@@ -16,6 +16,10 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
@@ -88,8 +92,10 @@ receive_fd(int sock)
 	msg.msg_control = &cmsgbuf.buf;
 	msg.msg_controllen = sizeof(cmsgbuf.buf);
 
-	if ((n = recvmsg(sock, &msg, 0)) == -1)
+	if ((n = recvmsg(sock, &msg, 0)) == -1) {
 		warn("%s: recvmsg", __func__);
+		return -1;
+	}
 	if (n != sizeof(int))
 		warnx("%s: recvmsg: expected received 1 got %ld",
 		    __func__, (long)n);

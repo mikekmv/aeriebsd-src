@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2006 Kevin Steves <stevesk@openbsd.org>
  *
@@ -41,6 +40,10 @@
  * VQP is layered over UDP.  The default destination port is 1589.
  *
  */
+
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>

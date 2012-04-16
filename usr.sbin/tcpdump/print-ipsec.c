@@ -25,7 +25,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-ipsec.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -106,8 +106,10 @@ esp_init (char *espspec)
 		s[0] = espkey[2*i];
 		s[1] = espkey[2*i + 1];
 		s[2] = 0;
-		if (!isxdigit(s[0]) || !isxdigit(s[1]))
+		if (!isxdigit(s[0]) || !isxdigit(s[1])) {
+			free(key);
 			error("espkey must be specified in hex");
+		}
 		key[i] = strtoul(s, NULL, 16);
 	}
 	EVP_CIPHER_CTX_init(&ctx);
@@ -190,7 +192,7 @@ esp_decrypt (const u_char *bp, u_int len, const u_char *bp2)
 		icmp_print(data, bp2);
 		break;
 	case IPPROTO_ICMPV6:
-		icmp6_print(data, bp2);
+		icmp6_print(data, len, bp2);
 		break;
 	default:
 		printf("ip-proto-%d %d", nh, len);
@@ -230,7 +232,7 @@ esp_print (register const u_char *bp, register u_int len,
 	}
 	esp = (const struct esp_hdr *)bp;
 
-	printf(" spi 0x%08X seq %d len %d",
+	printf(" spi 0x%08x seq %d len %d",
 	    ntohl(esp->esp_spi), ntohl(esp->esp_seq), len);
 
 	if (espinit)
@@ -302,7 +304,8 @@ ah_print (register const u_char *bp, register u_int len,
 			break;
 
 	        case IPPROTO_ICMPV6:
-		        icmp6_print(bp + pl_len, (const u_char *) ip);
+		        icmp6_print(bp + pl_len, len - pl_len,
+				  (const u_char *) ip);
 			break;
 
 	        case IPPROTO_TCP:

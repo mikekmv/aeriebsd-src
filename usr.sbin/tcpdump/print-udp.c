@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-udp.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -291,11 +291,8 @@ rtcp_print(const u_char *hdr, const u_char *ep)
 	return (hdr + len);
 }
 
-static int udp_cksum(register const struct ip *ip,
-		     register const struct udphdr *up,
-		     register int len)
+static int udp_cksum(const struct ip *ip, const struct udphdr *up, int len)
 {
-	int i, tlen;
 	union phu {
 		struct phdr {
 			u_int32_t src;
@@ -306,66 +303,86 @@ static int udp_cksum(register const struct ip *ip,
 		} ph;
 		u_int16_t pa[6];
 	} phu;
-	register const u_int16_t *sp;
+	const u_int16_t *sp;
 	u_int32_t sum;
-	tlen = ntohs(ip->ip_len) - ((const char *)up-(const char*)ip);
 
 	/* pseudo-header.. */
-	phu.ph.len = htons(tlen);
+	phu.ph.len = htons((u_int16_t)len);
 	phu.ph.mbz = 0;
-	phu.ph.proto = ip->ip_p;
+	phu.ph.proto = IPPROTO_UDP;
 	memcpy(&phu.ph.src, &ip->ip_src.s_addr, sizeof(u_int32_t));
 	memcpy(&phu.ph.dst, &ip->ip_dst.s_addr, sizeof(u_int32_t));
 
 	sp = &phu.pa[0];
 	sum = sp[0]+sp[1]+sp[2]+sp[3]+sp[4]+sp[5];
 
-	sp = (const u_int16_t *)up;
-
-	for (i=0; i<(tlen&~1); i+= 2)
-		sum += *sp++;
-
-	if (tlen & 1) {
-		sum += htons( (*(const char *)sp) << 8);
-	}
-
-	while (sum > 0xffff)
-		sum = (sum & 0xffff) + (sum >> 16);
-	sum = ~sum & 0xffff;
-
-	return (sum);
+	return in_cksum((u_short *)up, len, sum);
 }
+
+#ifdef INET6
+static int udp6_cksum(const struct ip6_hdr *ip6, const struct udphdr *up,
+	u_int len)
+{
+	union {
+		struct {
+			struct in6_addr ph_src;
+			struct in6_addr ph_dst;
+			u_int32_t	ph_len;
+			u_int8_t	ph_zero[3];
+			u_int8_t	ph_nxt;
+		} ph;
+		u_int16_t pa[20];
+	} phu;
+	size_t i;
+	u_int32_t sum = 0;
+
+	/* pseudo-header */
+	memset(&phu, 0, sizeof(phu));
+	phu.ph.ph_src = ip6->ip6_src;
+	phu.ph.ph_dst = ip6->ip6_dst;
+	phu.ph.ph_len = htonl(len);
+	phu.ph.ph_nxt = IPPROTO_UDP;
+
+	for (i = 0; i < sizeof(phu.pa) / sizeof(phu.pa[0]); i++)
+		sum += phu.pa[i];
+
+	return in_cksum((u_short *)up, len, sum);
+}
+#endif
 
 
 
 /* XXX probably should use getservbyname() and cache answers */
-#define TFTP_PORT 69		/*XXX*/
-#define KERBEROS_PORT 88	/*XXX*/
-#define SUNRPC_PORT 111		/*XXX*/
-#define SNMP_PORT 161		/*XXX*/
-#define NTP_PORT 123		/*XXX*/
-#define SNMPTRAP_PORT 162	/*XXX*/
-#define RIP_PORT 520		/*XXX*/
-#define KERBEROS_SEC_PORT 750	/*XXX*/
-#define L2TP_PORT 1701		/*XXX*/
-#define ISAKMP_PORT   500	/*XXX*/
-#define UDPENCAP_PORT  4500	/*XXX*/
-#define TIMED_PORT 525		/*XXX*/
-#define NETBIOS_NS_PORT    137	/*XXX*/
-#define NETBIOS_DGRAM_PORT 138	/*XXX*/
-#define OLD_RADIUS_AUTH_PORT 1645
-#define OLD_RADIUS_ACCT_PORT 1646
-#define RADIUS_AUTH_PORT     1812
-#define RADIUS_ACCT_PORT     1813
-#define HSRP_PORT 1985		/*XXX*/
-#define VQP_PORT 1589
-#define LWRES_PORT 921
-#define MULTICASTDNS_PORT 5353
+#define TFTP_PORT		69		/*XXX*/
+#define KERBEROS_PORT		88		/*XXX*/
+#define SUNRPC_PORT		111		/*XXX*/
+#define NTP_PORT		123		/*XXX*/
+#define NETBIOS_NS_PORT		137		/*XXX*/
+#define NETBIOS_DGRAM_PORT	138		/*XXX*/
+#define SNMP_PORT		161		/*XXX*/
+#define SNMPTRAP_PORT		162		/*XXX*/
+#define ISAKMP_PORT		500		/*XXX*/
+#define RIP_PORT		520		/*XXX*/
+#define TIMED_PORT		525		/*XXX*/
+#define KERBEROS_SEC_PORT	750		/*XXX*/
+#define LWRES_PORT		921
+#define VQP_PORT		1589
+#define OLD_RADIUS_AUTH_PORT	1645
+#define OLD_RADIUS_ACCT_PORT	1646
+#define L2TP_PORT		1701		/*XXX*/
+#define RADIUS_AUTH_PORT	1812
+#define RADIUS_ACCT_PORT	1813
+#define HSRP_PORT		1985		/*XXX*/
+#define GTP_C_PORT		2123
+#define GTP_U_PORT		2152
+#define GTP_PRIME_PORT		3386
+#define UDPENCAP_PORT		4500		/*XXX*/
+#define MULTICASTDNS_PORT	5353
 
 #ifdef INET6
-#define RIPNG_PORT 521		/*XXX*/
-#define DHCP6_PORT1 546		/*XXX*/
-#define DHCP6_PORT2 547		/*XXX*/
+#define RIPNG_PORT		521		/*XXX*/
+#define DHCP6_PORT1		546		/*XXX*/
+#define DHCP6_PORT2		547		/*XXX*/
 #endif
 
 void
@@ -555,13 +572,26 @@ udp_print(register const u_char *bp, u_int length, register const u_char *bp2)
 		if (sum == 0) {
 			(void)printf(" [no cksum]");
 		} else if (TTEST2(cp[0], length)) {
-			sum = udp_cksum(ip, up, length);
+			sum = udp_cksum(ip, up, length + sizeof(struct udphdr));
 			if (sum != 0)
 				(void)printf(" [bad udp cksum %x!]", sum);
 			else
 				(void)printf(" [udp sum ok]");
 		}
 	}
+#ifdef INET6
+	if (ip->ip_v == 6 && ip6->ip6_plen && vflag) {
+		int sum = up->uh_sum;
+		/* for IPv6, UDP checksum is mandatory */
+		if (TTEST2(cp[0], length)) {
+			sum = udp6_cksum(ip6, up, length + sizeof(struct udphdr));
+			if (sum != 0)
+				(void)printf(" [bad udp cksum %x!]", sum);
+			else
+				(void)printf(" [udp sum ok]");
+		}
+	}
+#endif
 
 	if (!qflag) {
 #define ISPORT(p) (dport == (p) || sport == (p))
@@ -617,6 +647,10 @@ udp_print(register const u_char *bp, u_int length, register const u_char *bp2)
 				sport, dport);
 		}
 #endif /*INET6*/
+		else if (ISPORT(GTP_C_PORT) || ISPORT(GTP_U_PORT) ||
+		    ISPORT(GTP_PRIME_PORT))
+			gtp_print((const u_char *)(up + 1), length,
+			    sport, dport);
 		/*
 		 * Kludge in test for whiteboard packets.
 		 */

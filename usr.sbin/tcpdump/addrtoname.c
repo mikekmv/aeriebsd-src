@@ -22,13 +22,12 @@
  *  and address to string conversion routines
  */
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: addrtoname.c,v 1.1.1.1 2008/08/26 14:44:35 root Exp $";
 #endif
 
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/types.h>
 
 struct mbuf;
 struct rtentry;

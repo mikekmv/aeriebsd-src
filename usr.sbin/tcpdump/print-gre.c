@@ -30,6 +30,10 @@
  * RFC1701 (GRE), RFC1702 (GRE IPv4), and RFC2637 (Enhanced GRE)
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/uio.h>

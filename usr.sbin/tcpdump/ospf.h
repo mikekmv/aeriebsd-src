@@ -192,7 +192,7 @@ struct ospfhdr {
 
 	/* Database Description packet */
 	struct {
-	    u_char db_zero[2];
+	    u_int16_t db_mtu;
 	    u_char db_options;
 	    u_char db_flags;
 	    u_int32_t db_seq;

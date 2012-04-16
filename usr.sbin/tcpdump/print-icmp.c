@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-icmp.c,v 1.1.1.1 2008/08/26 14:44:36 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -223,6 +223,7 @@ icmp_print(const u_char *bp, const u_char *bp2)
 			oip = &dp->icmp_ip;
 			hlen = oip->ip_hl * 4;
 			ouh = (struct udphdr *)(((u_char *)oip) + hlen);
+			TCHECK(ouh->uh_dport);
 			dport = ntohs(ouh->uh_dport);
 			switch (oip->ip_p) {
 

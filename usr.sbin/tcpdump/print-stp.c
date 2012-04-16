@@ -29,6 +29,10 @@
  * Pretty print 802.1D Bridge Protocol Data Units
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/socket.h>

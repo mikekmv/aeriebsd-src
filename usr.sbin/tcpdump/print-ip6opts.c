@@ -28,10 +28,13 @@
  * SUCH DAMAGE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #ifdef INET6
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 
 #include <netinet/in.h>

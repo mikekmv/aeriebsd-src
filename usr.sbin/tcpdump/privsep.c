@@ -16,6 +16,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -48,7 +52,7 @@
 #include "pfctl_parser.h"
 
 /*
- * tcpdump goes through five states: STATE_INIT is where the
+ * tcpdump goes through four states: STATE_INIT is where the
  * bpf device and the input file is opened. In STATE_BPF, the
  * pcap filter gets set. STATE_FILTER is used for parsing
  * /etc/services and /etc/protocols and opening the output

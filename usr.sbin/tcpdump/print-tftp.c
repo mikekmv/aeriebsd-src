@@ -22,7 +22,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-tftp.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -123,6 +123,7 @@ tftp_print(register const u_char *bp, u_int length)
 		printf(" %s ", tok2str(err2str, "tftp-err-#%d \"",
 				       ntohs(tp->th_code)));
 		/* Print error message string */
+		putchar('"');
 		i = fn_print((const u_char *)tp->th_data, snapend);
 		putchar('"');
 		if (i)

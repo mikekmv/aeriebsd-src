@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-ip.c,v 1.1.1.1 2008/08/26 14:44:37 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -322,7 +322,7 @@ trunc:
  * don't modifiy the packet.
  */
 u_short
-in_cksum(const u_short *addr, register int len, u_short csum)
+in_cksum(const u_short *addr, register int len, int csum)
 {
 	int nleft = len;
 	const u_short *w = addr;

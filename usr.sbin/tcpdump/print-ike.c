@@ -26,7 +26,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "@(#) $ABSD$";
+static const char rcsid[] = "@(#) $ABSD: print-ike.c,v 1.1.1.1 2008/08/26 14:44:36 root Exp $";
 #endif
 
 #include <sys/param.h>
@@ -235,7 +235,7 @@ ike_print (const u_int8_t *cp, u_int length)
 	TCHECK(ih->length, sizeof(ih->length));
 	printf(" len: %d", ntohl(ih->length));
 
-	if (ih->version > 16) {
+	if (ih->version > IKE_VERSION_2) {
 		printf(" new version");
 		return;
 	}
@@ -263,17 +263,17 @@ void
 ike_pl_sa_print (u_int8_t *buf, int len)
 {
 	struct sa_payload *sp = (struct sa_payload *)buf;
-	u_int32_t sit_ipsec;
+	u_int32_t sit_ipsec, doi;
 
 	if (len < sizeof(struct sa_payload)) {
 		printf(" [|payload]");
 		return;
 	}
 
-	sp->doi = ntohl(sp->doi);
-	printf(" DOI: %d", sp->doi);
+	doi = ntohl(sp->doi);
+	printf(" DOI: %d", doi);
 
-	if (sp->doi == IPSEC_DOI) {
+	if (doi == IPSEC_DOI) {
 		if ((sp->situation + sizeof(u_int32_t)) > (buf + len)) {
 			printf(" [|payload]");
 			return;
@@ -305,7 +305,6 @@ ike_attribute_print (u_int8_t *buf, u_int8_t doi, int maxlen)
 	static char *attr_gtype[] = IKE_ATTR_GROUP_INITIALIZER;
 	static char *attr_ltype[] = IKE_ATTR_SA_DURATION_INITIALIZER;
 	static char *ipsec_attrs[] = IPSEC_ATTR_INITIALIZER;
-	static char *ipsec_attr_encap[] = IPSEC_ATTR_ENCAP_INITIALIZER;
 	static char *ipsec_attr_auth[] = IPSEC_ATTR_AUTH_INITIALIZER;
 	static char *ipsec_attr_ltype[] = IPSEC_ATTR_DURATION_INITIALIZER;
 
@@ -359,10 +358,12 @@ ike_attribute_print (u_int8_t *buf, u_int8_t doi, int maxlen)
 	else
 		switch(type) {
 			CASE_PRINT(IPSEC_ATTR_SA_LIFE_TYPE, ipsec_attr_ltype);
-			CASE_PRINT(IPSEC_ATTR_ENCAPSULATION_MODE,
-			    ipsec_attr_encap);
 			CASE_PRINT(IPSEC_ATTR_AUTHENTICATION_ALGORITHM,
 			    ipsec_attr_auth);
+			case IPSEC_ATTR_ENCAPSULATION_MODE:
+				printf("%s", tok2str(ipsec_attr_encap,
+				    "%d", val));
+				break;
 		default:
 			printf("%d", val);
 		}
@@ -572,7 +573,8 @@ void
 ike_pl_delete_print (u_int8_t *buf, int len)
 {
   	struct delete_payload *dp = (struct delete_payload *)buf;
-	u_int16_t s;
+	u_int32_t doi;
+	u_int16_t s, nspis;
 	u_int8_t *data;
 
 	if (len < sizeof (struct delete_payload)) {
@@ -580,25 +582,25 @@ ike_pl_delete_print (u_int8_t *buf, int len)
 		return;
 	}
 
-	dp->doi   = ntohl(dp->doi);
-	dp->nspis = ntohs(dp->nspis);
+	doi   = ntohl(dp->doi);
+	nspis = ntohs(dp->nspis);
 
-	if (dp->doi != ISAKMP_DOI && dp->doi != IPSEC_DOI) {
+	if (doi != ISAKMP_DOI && doi != IPSEC_DOI) {
 		printf(" (unknown DOI)");
 		return;
 	}
 
-	printf(" DOI: %u(%s) proto: %s nspis: %u", dp->doi,
-	    dp->doi == ISAKMP_DOI ? "ISAKMP" : "IPSEC",
+	printf(" DOI: %u(%s) proto: %s nspis: %u", doi,
+	    doi == ISAKMP_DOI ? "ISAKMP" : "IPSEC",
 	    dp->proto < (sizeof ike / sizeof ike[0]) ? ike[dp->proto] :
-	    "(unknown)", dp->nspis);
+	    "(unknown)", nspis);
 
-	if ((dp->spi + dp->nspis * dp->spi_size) > (buf + len)) {
+	if ((dp->spi + nspis * dp->spi_size) > (buf + len)) {
 		printf(" [|payload]");
 		return;
 	}
 
-	for (s = 0; s < dp->nspis; s++) {
+	for (s = 0; s < nspis; s++) {
 		data = dp->spi + s * dp->spi_size;
 		if (dp->spi_size == 16)
 			printf("\n\t%scookie: %s", ike_tab_offset(),
@@ -615,6 +617,8 @@ ike_pl_notification_print (u_int8_t *buf, int len)
   	static const char *nftypes[] = IKE_NOTIFY_TYPES_INITIALIZER;
   	struct notification_payload *np = (struct notification_payload *)buf;
 	u_int32_t *replay, *seq;
+	u_int32_t doi;
+	u_int16_t type;
 	u_int8_t *attr;
 
 	if (len < sizeof (struct notification_payload)) {
@@ -622,21 +626,21 @@ ike_pl_notification_print (u_int8_t *buf, int len)
 		return;
 	}
 
-	np->doi  = ntohl (np->doi);
-	np->type = ntohs (np->type);
+	doi  = ntohl (np->doi);
+	type = ntohs (np->type);
 
-	if (np->doi != ISAKMP_DOI && np->doi != IPSEC_DOI) {
+	if (doi != ISAKMP_DOI && doi != IPSEC_DOI) {
 		printf(" (unknown DOI)");
 		return;
 	}
 
 	printf("\n\t%snotification: ", ike_tab_offset());
 
-	if (np->type > 0 && np->type < (sizeof nftypes / sizeof nftypes[0])) {
-		printf("%s", nftypes[np->type]);
+	if (type > 0 && type < (sizeof nftypes / sizeof nftypes[0])) {
+		printf("%s", nftypes[type]);
 		return;
 	}
-	switch (np->type) {
+	switch (type) {
 
 	case NOTIFY_IPSEC_RESPONDER_LIFETIME:
 		printf("RESPONDER LIFETIME ");
@@ -673,7 +677,7 @@ ike_pl_notification_print (u_int8_t *buf, int len)
 	case NOTIFY_STATUS_DPD_R_U_THERE:
 	case NOTIFY_STATUS_DPD_R_U_THERE_ACK:
 		printf("STATUS_DPD_R_U_THERE%s ",
-		    np->type == NOTIFY_STATUS_DPD_R_U_THERE ? "" : "_ACK");
+		    type == NOTIFY_STATUS_DPD_R_U_THERE ? "" : "_ACK");
 		if (np->spi_size != 16 ||
 		    len < sizeof(struct notification_payload) +
 		    sizeof(u_int32_t))
@@ -686,7 +690,7 @@ ike_pl_notification_print (u_int8_t *buf, int len)
 		
 
 	default:
-	  	printf("%d (unknown)", np->type);
+	  	printf("%d (unknown)", type);
 		break;
 	}
 }
@@ -835,6 +839,7 @@ ike_pl_print (u_int8_t type, u_int8_t *buf, u_int8_t doi)
 	static const char *pltypes[] = IKE_PAYLOAD_TYPES_INITIALIZER;
 	static const char *plprivtypes[] = 
 	    IKE_PRIVATE_PAYLOAD_TYPES_INITIALIZER;
+	static const char *plv2types[] = IKEV2_PAYLOAD_TYPES_INITIALIZER;
 	u_int8_t next_type;
 	u_int16_t this_len;
 
@@ -845,7 +850,10 @@ ike_pl_print (u_int8_t type, u_int8_t *buf, u_int8_t doi)
 	next_type = buf[0];
 	this_len = buf[2]<<8 | buf[3];
 
-	if (type < PAYLOAD_PRIVATE_MIN || type >= PAYLOAD_PRIVATE_MAX)
+	if (type < PAYLOAD_PRIVATE_MIN && type >= PAYLOAD_IKEV2_SA)
+		printf("\n\t%spayload: %s len: %hu", ike_tab_offset(),
+		    plv2types[type - PAYLOAD_IKEV2_SA], this_len);
+	else if (type < PAYLOAD_PRIVATE_MIN || type >= PAYLOAD_PRIVATE_MAX)
 		printf("\n\t%spayload: %s len: %hu", ike_tab_offset(),
 		    (type < (sizeof pltypes/sizeof pltypes[0]) ?
 			pltypes[type] : "<unknown>"), this_len);
@@ -854,7 +862,9 @@ ike_pl_print (u_int8_t type, u_int8_t *buf, u_int8_t doi)
 		    plprivtypes[type - PAYLOAD_PRIVATE_MIN], this_len);
 
 	if ((type < PAYLOAD_RESERVED_MIN &&
-	    this_len < min_payload_lengths[type]) || this_len == 0)
+	    (type < sizeof(min_payload_lengths)/sizeof(min_payload_lengths[0]) &&
+	    this_len < min_payload_lengths[type])) ||
+	    this_len == 0)
 		goto pltrunc;
 
 	if ((type > PAYLOAD_PRIVATE_MIN && type < PAYLOAD_PRIVATE_MAX &&
@@ -920,9 +930,18 @@ ike_pl_print (u_int8_t type, u_int8_t *buf, u_int8_t doi)
 	case PAYLOAD_SEQ:
 	case PAYLOAD_POP:
 	case PAYLOAD_NAT_D:
+		break;
+
 	case PAYLOAD_NAT_OA:
+		/* RFC3947 NAT-OA uses a subset of the ID payload */
+		ipsec_id_print(buf, this_len, doi);
+		break;
+
 	case PAYLOAD_NAT_D_DRAFT:
+		break;
+
 	case PAYLOAD_NAT_OA_DRAFT:
+		ipsec_id_print(buf, this_len, doi);
 		break;
 
 	default:

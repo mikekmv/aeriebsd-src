@@ -24,6 +24,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 /* Cisco NetFlow protocol */
 
 #include <sys/types.h>
@@ -110,7 +114,7 @@ cnfp_print(register const u_char *cp, u_int len, register const u_char *bp)
 		if (ver == 5) {
 			snprintf(buf, sizeof buf, "/%d",
 			    (ntohl(nr->masks) >> 24) & 0xff);
-			snprintf(asbuf, sizeof asbuf, "%d:",
+			snprintf(asbuf, sizeof asbuf, ":%d",
 			    (ntohl(nr->asses) >> 16) & 0xffff);
 		}
 		printf("\n    %s%s%s:%u ", inet_ntoa(nr->src_ina), buf, asbuf,
@@ -119,7 +123,7 @@ cnfp_print(register const u_char *cp, u_int len, register const u_char *bp)
 		if (ver == 5) {
 			snprintf(buf, sizeof buf, "/%d",
 			    (ntohl(nr->masks) >> 16) & 0xff);
-			snprintf(asbuf, sizeof asbuf, "%d:",
+			snprintf(asbuf, sizeof asbuf, ":%d",
 			    ntohl(nr->asses) & 0xffff);
 		}
 		printf("> %s%s%s:%u ", inet_ntoa(nr->dst_ina), buf, asbuf,
