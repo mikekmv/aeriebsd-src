@@ -367,6 +367,7 @@ struct msghdr {
 #define	MSG_DONTWAIT	0x80		/* this message should be nonblocking */
 #define	MSG_BCAST	0x100		/* this message rec'd as broadcast */
 #define	MSG_MCAST	0x200		/* this message rec'd as multicast */
+#define	MSG_NOSIGNAL	0x400		/* do not send SIGPIPE */
 
 /*
  * Header for ancillary data objects in msg_control buffer.

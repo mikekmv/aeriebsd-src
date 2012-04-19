@@ -519,7 +519,7 @@ sendit(struct proc *p, int s, struct msghdr *mp, int flags, register_t *retsize)
 		if (auio.uio_resid != len && (error == ERESTART ||
 		    error == EINTR || error == EWOULDBLOCK))
 			error = 0;
-		if (error == EPIPE)
+		if (error == EPIPE && (flags & MSG_NOSIGNAL) == 0)
 			psignal(p, SIGPIPE);
 	}
 	if (error == 0) {
