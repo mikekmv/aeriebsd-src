@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011 Michael Shalayeff
+ * Copyright (c) 2011-2012 Michael Shalayeff
  * All rights reserved.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: hppa.c,v 1.1 2011/07/24 12:47:53 mickey Exp $";
+static const char rcsid[] = "$ABSD: hppa.c,v 1.2 2012/04/16 12:53:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -37,6 +37,7 @@ static const char rcsid[] = "$ABSD: hppa.c,v 1.1 2011/07/24 12:47:53 mickey Exp 
 
 /* fill text with smth illigal to avoid nop slides */
 #define	XFILL	0x03ffe01f03ffe01fULL	/* break 0x1f, 0x1fff */
+#define	DFILL	0xd0d0d0d0d0d0d0d0ULL
 const struct ldorder hppa_order[] = {
 	{ ldo_symbol,	"_start", N_UNDF, 0, LD_ENTRY },
 	{ ldo_interp,	ELF_INTERP, SHT_PROGBITS, SHF_ALLOC,
@@ -49,38 +50,54 @@ const struct ldorder hppa_order[] = {
 			LD_DYNAMIC, XFILL },
 	{ ldo_section,	ELF_TEXT, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
 			0, XFILL },
+	{ ldo_section,	ELF_GCC_LINK1T, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
+			LD_LINK1, XFILL },
 	{ ldo_section,	ELF_FINI, SHT_PROGBITS, SHF_ALLOC | SHF_EXECINSTR,
 			0, XFILL },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
 	{ ldo_symbol,	"etext", N_ABS },
 	{ ldo_symbol,	"_etext", N_ABS },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
-	{ ldo_section,	ELF_RODATA, SHT_PROGBITS, SHF_ALLOC },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
+	{ ldo_section,	ELF_RODATA, SHT_PROGBITS, SHF_ALLOC, 0, DFILL },
+	{ ldo_section,	ELF_GCC_LINK1R, SHT_PROGBITS, SHF_ALLOC, LD_LINK1,
+			DFILL },
+	{ ldo_section,	ELF_EH_FRAME_H, SHT_PROGBITS, SHF_ALLOC,
+			LD_CONTAINS | LD_IGNORE },
+	{ ldo_section,	ELF_EH_FRAME, SHT_PROGBITS, SHF_ALLOC, LD_IGNORE },
+	{ ldo_section,	ELF_GCC_EXCEPT, SHT_PROGBITS, SHF_ALLOC, LD_IGNORE },
 	{ ldo_section,	ELF_PA_UNWINFO, SHT_PROGBITS, SHF_ALLOC, LD_IGNORE },
 	{ ldo_section,	ELF_PA_UNWIND, SHT_PROGBITS, SHF_ALLOC, LD_IGNORE },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
 	{ ldo_symbol,	"__data_start", N_ABS },
 	{ ldo_section,	ELF_SDATA, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
-	{ ldo_section,	ELF_DATA, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
+	{ ldo_section,	ELF_DATA, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE,
+			0, DFILL },
+	{ ldo_section,	ELF_GCC_LINK1D, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE,
+			LD_LINK1, DFILL },
 	{ ldo_section,	ELF_CTORS, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
 	{ ldo_section,	ELF_DTORS, SHT_PROGBITS, SHF_ALLOC | SHF_WRITE },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
-	{ ldo_symbol,	"__got_start", N_ABS, LD_DYNAMIC },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
+	{ ldo_symbol,	"__got_start", N_ABS, 0, LD_DYNAMIC },
 	{ ldo_symbol,	"_GLOBAL_OFFSET_TABLE_", N_ABS },
 	{ ldo_section,	ELF_GOT, SHT_PROGBITS, SHF_ALLOC, LD_DYNAMIC },
-	{ ldo_symbol,	"__got_end", N_ABS, LD_DYNAMIC },
+	{ ldo_symbol,	"__got_end", N_ABS, 0, LD_DYNAMIC },
 	{ ldo_symbol,	"edata", N_ABS },
 	{ ldo_symbol,	"_edata", N_ABS },
-	{ ldo_expr,	". += 0x1000", 0, LD_NOOMAGIC },
+	{ ldo_expr,	". += 0x1000", 0, 0, LD_NOOMAGIC },
 	{ ldo_symbol,	"__bss_start", N_ABS },
 	{ ldo_section,	ELF_SBSS, SHT_NOBITS, SHF_ALLOC | SHF_WRITE },
 	{ ldo_section,	ELF_BSS, SHT_NOBITS, SHF_ALLOC | SHF_WRITE },
+	{ ldo_section,	ELF_GCC_LINK1B, SHT_NOBITS, SHF_ALLOC | SHF_WRITE,
+			LD_LINK1 },
 	{ ldo_symbol,	"end", N_ABS },
 	{ ldo_symbol,	"_end", N_ABS },
 	{ ldo_shstr,	ELF_SHSTRTAB, SHT_STRTAB, 0, LD_CONTAINS },
+
 	  /* section headers go here */
+
 	{ ldo_symtab,	ELF_SYMTAB, SHT_SYMTAB, 0, LD_CONTAINS | LD_SYMTAB },
 	{ ldo_strtab,	ELF_STRTAB, SHT_STRTAB, 0, LD_CONTAINS | LD_SYMTAB },
+
 	  /* stabs debugging sections */
 	{ ldo_section,	ELF_STAB, SHT_PROGBITS, 0, LD_DEBUG },
 	{ ldo_section,	ELF_STABSTR, SHT_PROGBITS, 0, LD_DEBUG },
@@ -107,10 +124,11 @@ const struct ldorder hppa_order[] = {
 int
 hppa_fix(off_t off, struct section *os, char *sbuf, int len)
 {
+	static uint64_t sb;	/* segment base */
 	struct relist *rp = os->os_rels, *erp = rp + os->os_nrls;
 	Elf32_Shdr *shdr = os->os_sect;
 	char *p, *ep;
-	uint32_t a32;
+	uint64_t a64;
 	int reoff;
 
 /* this evil little loop has to be optimised; for example store last rp on os */
@@ -136,9 +154,9 @@ hppa_fix(off_t off, struct section *os, char *sbuf, int len)
 			return ep - p;
 
 		if (rp->rl_sym->sl_name)
-			a32 = rp->rl_sym->sl_elfsym.sym32.st_value;
+			a64 = rp->rl_sym->sl_elfsym.sym32.st_value;
 		else
-			a32 = ((Elf32_Shdr *)
+			a64 = ((Elf32_Shdr *)
 			    rp->rl_sym->sl_sect->os_sect)->sh_addr;
 
 		switch (rp->rl_type) {
@@ -146,22 +164,31 @@ hppa_fix(off_t off, struct section *os, char *sbuf, int len)
 			break;
 
 		case RELOC_DIR32:
+		case RELOC_DIR64:
 		case RELOC_DIR21L:
 		case RELOC_DIR17R:
 		case RELOC_DIR17F:
 		case RELOC_DIR14R:
-			hppa_fixone(p, a32, rp->rl_addend, rp->rl_type);
+			hppa_fixone(p, a64, rp->rl_addend, rp->rl_type);
 			break;
 
-		case RELOC_PCREL12F:
 		case RELOC_PCREL32:
+		case RELOC_PCREL64:
+		case RELOC_PCREL22C:
+		case RELOC_PCREL22F:
 		case RELOC_PCREL21L:
 		case RELOC_PCREL17R:
 		case RELOC_PCREL17F:
 		case RELOC_PCREL17C:
+		case RELOC_PCREL16F:
+		case RELOC_PCREL16WF:
+		case RELOC_PCREL16DF:
 		case RELOC_PCREL14R:
-			a32 -= shdr->sh_addr + rp->rl_addr + 8;
-			hppa_fixone(p, a32, rp->rl_addend, rp->rl_type);
+		case RELOC_PCREL14WR:
+		case RELOC_PCREL14DR:
+		case RELOC_PCREL12F:
+			a64 -= shdr->sh_addr + rp->rl_addr + 8;
+			hppa_fixone(p, a64, rp->rl_addend, rp->rl_type);
 			break;
 
 		case RELOC_DPREL21L:
@@ -170,8 +197,8 @@ hppa_fix(off_t off, struct section *os, char *sbuf, int len)
 		case RELOC_DPREL14R:
 		case RELOC_GPREL21L:
 		case RELOC_GPREL14R:
-			a32 -= shdr->sh_addr /* + GP */;
-			hppa_fixone(p, a32, rp->rl_addend, rp->rl_type);
+			a64 -= shdr->sh_addr /* + GP */;
+			hppa_fixone(p, a64, rp->rl_addend, rp->rl_type);
 			break;
 
 		case RELOC_LTOFF21L:
@@ -180,17 +207,21 @@ hppa_fix(off_t off, struct section *os, char *sbuf, int len)
 			break;
 
 		case RELOC_PLABEL32:
-			hppa_fixone(p, a32, rp->rl_addend, rp->rl_type);
-			break;
-
-		case RELOC_SEGBASE:
-		case RELOC_SEGREL32:
-			hppa_fixone(p, a32, rp->rl_addend, rp->rl_type);
+			hppa_fixone(p, a64, rp->rl_addend, rp->rl_type);
 			break;
 
 		case RELOC_SECREL32:
-			a32 -= shdr->sh_addr;
-			hppa_fixone(p, a32, rp->rl_addend, rp->rl_type);
+			a64 -= shdr->sh_addr;
+			hppa_fixone(p, a64, rp->rl_addend, rp->rl_type);
+			break;
+
+		case RELOC_SEGBASE:
+			sb = a64;
+			break;
+
+		case RELOC_SEGREL32:
+			a64 -= sb;
+			hppa_fixone(p, a64, rp->rl_addend, rp->rl_type);
 			break;
 
 		case RELOC_SETBASE:
@@ -204,15 +235,6 @@ hppa_fix(off_t off, struct section *os, char *sbuf, int len)
 		case RELOC_LTOFF_FPTR21L:
 		case RELOC_LTOFF_FPTR14R:
 		case RELOC_FPTR64:
-		case RELOC_PCREL64:
-		case RELOC_PCREL22C:
-		case RELOC_PCREL22F:
-		case RELOC_PCREL14WR:
-		case RELOC_PCREL14DR:
-		case RELOC_PCREL16F:
-		case RELOC_PCREL16WF:
-		case RELOC_PCREL16DF:
-		case RELOC_DIR64:
 		case RELOC_DIR14WR:
 		case RELOC_DIR14DR:
 		case RELOC_DIR16F:
@@ -252,7 +274,8 @@ hppa_fix(off_t off, struct section *os, char *sbuf, int len)
 		case RELOC_JMPSLOT:
 		case RELOC_RELATIVE:
 		default:
-			errx(1, "unknown reloc type %d", rp->rl_type);
+			errx(1, "%s: unknown reloc type %d",
+			    os->os_obj->ol_name, rp->rl_type);
 		}
 	}
 
@@ -268,44 +291,109 @@ hppa_fixone(char *p, uint64_t val, uint64_t addend, uint type)
 	v32 = betoh32(v32);
 	switch (type) {
 	case RELOC_DIR32:
+	case RELOC_PCREL32:
+	case RELOC_SECREL32:
+	case RELOC_SEGREL32:
 		v32 += val + addend;
 		break;
 
-	case RELOC_DIR21L:
-	case RELOC_DIR17R:
-	case RELOC_DIR17F:
-	case RELOC_DIR14R:
-	case RELOC_PCREL12F:
-	case RELOC_PCREL32:
-	case RELOC_PCREL21L:
-	case RELOC_PCREL17R:
-	case RELOC_PCREL17F:
-	case RELOC_PCREL17C:
-	case RELOC_PCREL14R:
-	case RELOC_DPREL21L:
-	case RELOC_DPREL14WR:
-	case RELOC_DPREL14DR:
-	case RELOC_DPREL14R:
-	case RELOC_GPREL21L:
-	case RELOC_GPREL14R:
+#define	RND(v)		(((v) + 0x1000) & ~0x1fff)
+
+#define	IMM22(v)	((((v) & 0x3ff0000) >> 3) | (((v) & 4) << 10) | \
+	(((v) & 0x1ff8) >> 1) | ((v) & 1? ~0x8fffff : 0)) 
+#define	ASS22(v)	((((v) >> 21) & 1) | (((v) & 0x7fe000) << 3) | \
+	(((v) >> 10) & 4) | (((v) & 0xffc) << 1))
+
+	case RELOC_PCREL22C:
+	case RELOC_PCREL22F:
+		val += IMM22(v32) + addend;
+		v32 &= 0xfc00e002;
+		v32 |= ASS22(val);
 		break;
 
-	case RELOC_LTOFF21L:
-	case RELOC_LTOFF14R:
-	case RELOC_LTOFF14F:
+#define	IMM21(v)	((((v) & 0xffe) << 30) | (((v) & 0xc000) << 4) | \
+	(((v) & 0x1f0000) >> 3) | (((v) & 0x3000) >> 1) | ((v) & 1? ~0xfffff:0))
+#define	ASS21(v)	((((v) >> 20) & 1) | (((v) & 0x7ff00000) >> 9) | \
+	(((v) & 0xc0000) >> 4) | (((v) & 0x37000) << 3) | (((v) & 1800) << 1))
+
+	case RELOC_PCREL21L:
+		val += IMM21(v32) + addend;
+		v32 &= 0xffe00000;
+		v32 |= ASS21(val);
+		break;
+
+	case RELOC_DIR21L:
+	case RELOC_DPREL21L:
+	case RELOC_GPREL21L:
+		val += IMM21(v32) + RND(addend);
+		v32 &= 0xffe00000;
+		v32 |= ASS21(val);
+		break;
+
+#define	IMM17(v)	((((v) & 0x3e000) >> 3) | (((v) & 4) << 10) | \
+	(((v) & 0x1ff8) >> 1) | ((v) & 1? ~0x80000 : 0))
+#define	ASS17(v)	((((v) & 0x7c00) << 3) | (((v) & 0x1000) >> 10) | \
+	(((v) & 0xffc) << 1) | (((v) & 0x10000) >> 16))
+
+	case RELOC_DIR17R:
+		val += IMM17(v32) + RND(addend);
+		v32 &= 0xffe0e002;
+		v32 |= ASS17(val);
+		break;
+
+	case RELOC_PCREL17R:
+		val += IMM17(v32) + addend;
+		val &= 0x7ff;
+		v32 &= 0xffe0e002;
+		v32 |= ASS17(val);
+		break;
+
+	case RELOC_DIR17F:
+	case RELOC_PCREL17F:
+	case RELOC_PCREL17C:
+		val += IMM17(v32) + addend;
+		v32 &= 0xffe0e002;
+		v32 |= ASS17(val);
+		break;
+
+#define	IMM14(v)	((((v) & 0x3ffe) >> 1) | ((v) & 1? ~0x1fff : 0))
+#define	ASS14(v)	((((v) & 0x1fff) << 1) | (((v) & 1) << 13))
+
+	case RELOC_PCREL14R:
+		val += IMM14(v32) + addend;
+		val &= 0x7ff;
+		v32 &= 0xffe0e002;
+		v32 |= ASS14(val);
+		break;
+
+	case RELOC_DIR14R:
+	case RELOC_DPREL14R:
+	case RELOC_GPREL14R:
+		val += IMM14(v32) + RND(addend) + (addend - RND(addend));
+		val &= 0x7ff;
+		v32 &= 0xffe0e002;
+		v32 |= ASS14(val);
+		break;
+
+#define	IMM12(v)	((((v) & 4) << 10) | (((v) & 0x1ff8) >> 1) | \
+	((v) & 1? ~0x1fff : 0))
+#define	ASS12(v)	((((v) & 0x2000) >> 13) | (((v) & 0x1000) >> 11) | \
+	(((v) & 0xffc) << 1))
+
+	case RELOC_PCREL12F:
+		/* addb/subb/comb/movb XXX must be a bug in gas(1) */
+		val += IMM12(v32) + addend;
+		v32 &= 0xffffe002;
+		v32 |= ASS12(val);
 		break;
 
 	case RELOC_PLABEL32:
 		break;
 
-	case RELOC_SECREL32:
-		break;
-
-	case RELOC_SEGREL32:
-		break;
-
+	case RELOC_DPREL14WR:
+	case RELOC_DPREL14DR:
 	default:
-		errx(1, "unknown reloc type %d", type);
+		errx(1, "unknown reloc type %d insn 0x%08x", type, v32);
 	}
 	v32 = htobe32(v32);
 	memcpy(p, &v32, sizeof v32);
