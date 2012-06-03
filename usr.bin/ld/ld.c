@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld.c,v 1.34 2011/07/23 17:07:16 mickey Exp $";
+    "$ABSD: ld.c,v 1.35 2011/07/24 12:47:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -129,21 +129,21 @@ const struct option longopts[] = {
 };
 
 const struct ldarch ldarchs[] = {
-/*	{ EM_VAX, 0, vax_order, vax_fix }, */
-/*	{ EM_ALPHA, 0, alpha_order, alpha_fix }, */
-	{ EM_386, 0, i386_order, i386_fix },
-	{ EM_AMD64, 0, amd64_order, amd64_fix },
-/*	{ EM_MIPS, 0, mips_order, mips_fix }, */
-/*	{ EM_MIPS64, 0, mips64_order, mips64_fix }, */
-	{ EM_PARISC, 0, hppa_order, hppa_fix },
-/*	{ EM_PARISC64, 0, hppa64_order, hppa64_fix }, */
-/*	{ EM_PPC, 0, ppc_order, ppc_fix }, */
-/*	{ EM_PPC64, 0, ppc64_order, ppc64_fix }, */
-/*	{ EM_SPARC, 0, sparc_order, sparc_fix }, */
-/*	{ EM_SPARC64, 0, sparc64_order, sparc64_fix }, */
-/*	{ EM_SH, 0, sh_order, sh_fix }, */
-	{ EM_ARM, 0, arm_order, arm_fix },
-/*	{ EM_68K, 0, m68k_order, m68k_fix }, */
+/*	{ EM_VAX,	ELFCLASS32, vax_order, vax_fix }, */
+/*	{ EM_ALPHA,	ELFCLASS64, alpha_order, alpha_fix }, */
+	{ EM_386,	ELFCLASS32, i386_order, i386_fix },
+	{ EM_AMD64,	ELFCLASS64, amd64_order, amd64_fix },
+/*	{ EM_MIPS,	ELFCLASS32, mips_order, mips_fix }, */
+/*	{ EM_MIPS64,	ELFCLASS64, mips64_order, mips64_fix }, */
+	{ EM_PARISC,	ELFCLASS32, hppa_order, hppa_fix },
+	{ EM_PARISC,	ELFCLASS64, hppa_order, hppa_fix },
+/*	{ EM_PPC,	ELFCLASS32, ppc_order, ppc_fix }, */
+/*	{ EM_PPC64,	ELFCLASS64, ppc64_order, ppc64_fix }, */
+/*	{ EM_SPARC,	ELFCLASS32, sparc_order, sparc_fix }, */
+/*	{ EM_SPARC64,	ELFCLASS64, sparc64_order, sparc64_fix }, */
+/*	{ EM_SH,	ELFCLASS32, sh_order, sh_fix }, */
+	{ EM_ARM,	ELFCLASS32, arm_order, arm_fix },
+/*	{ EM_68K,	ELFCLASS32, m68k_order, m68k_fix }, */
 };
 const int ldnarch = sizeof(ldarchs)/sizeof(ldarchs[0]);
 const struct ldarch *ldarch;
@@ -431,11 +431,11 @@ ldinit(void)
 	int i;
 
 	for (lda = ldarchs, i = 0; i < ldnarch; lda++, i++)
-		if (lda->la_mach == machine)
+		if (lda->la_mach == machine && lda->la_class == elfclass)
 			break;
 
 	if (i >= ldnarch) {
-		warn("unknown machine %d", machine);
+		warnx("unknown machine %d class %d", machine, elfclass);
 		return NULL;
 	}
 

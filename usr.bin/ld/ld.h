@@ -153,9 +153,7 @@ struct objlist {
  */
 struct ldarch {
 	int	la_mach;
-	int	la_flags;
-#define	LDARCH_BE	0x0001
-#define	LDARCH_64	SECTION_64	/* 0x80000000 */
+	int	la_class;
 	const struct ldorder *la_order;
 	int	(*la_fix)(off_t, struct section *, char *, int);
 };
