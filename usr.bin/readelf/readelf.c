@@ -23,6 +23,10 @@
 #include <elf_abi.h>
 #include <elfuncs.h>
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #include "readelf.h"
 
 #define	OPTSTRING	"aAdDehIlnsSruvVw::Wx:"

@@ -23,6 +23,10 @@
 
 #include "readelf.h"
 
+#ifndef lint
+static const char rcsid[] = "$ABSD$";
+#endif
+
 #if ELFSIZE == 32
 #define	ELF_HDR(h)	((h).elf32)
 #define	ELF_SYM(h)	((h).sym32)
