@@ -24,7 +24,7 @@
 #include <elfuncs.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: readelf.c,v 1.2 2012/06/14 00:11:18 mickey Exp $";
 #endif
 
 #include "readelf.h"
@@ -475,9 +475,53 @@ elf_symbind(int sb)
 	return buf;
 }
 
+const char *elf_rel386[] = {
+	"NONE",
+	"I386_32",
+	"I386_PC32",
+	"I386_GOT32",
+	"I386_PLT32",
+	"I386_COPY",
+	"I386_GLOB_DAT",
+	"I386_JUMP_SLOT",
+	"I386_RELATIVE",
+	"I386_GOTOFF",
+	"I386_GOTPC",
+	"#11",
+	"#12",
+	"#13",
+	"#14",
+	"#15",
+	"#16",
+	"#17",
+	"#18",
+	"#19",
+	"I386_16",
+	"I386_PC16",
+	"I386_8",
+	"I386_PC8",
+};
+
 const char *
 elf_reltype(int m, int r)
 {
+	static char buf[32];
+	const char **b;
+	int n;
 
-	return "";
+	switch (m) {
+	case EM_386:
+		b = elf_rel386;
+		n = sizeof elf_rel386 / sizeof elf_rel386[0];
+		break;
+	default:
+		snprintf(buf, sizeof buf, "0x%x", r);
+		return buf;
+	}
+
+	if (r >= 0 && r < n)
+		return b[r];
+
+	snprintf(buf, sizeof buf, "0x%x", r);
+	return buf;
 }
