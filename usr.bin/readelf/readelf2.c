@@ -24,7 +24,7 @@
 #include "readelf.h"
 
 #ifndef lint
-static const char rcsid[] = "$ABSD$";
+static const char rcsid[] = "$ABSD: readelf2.c,v 1.2 2012/06/14 00:11:18 mickey Exp $";
 #endif
 
 #if ELFSIZE == 32
@@ -307,8 +307,8 @@ elf_prels(FILE *fp, const char *name, off_t off,
 
 			n = sh->sh_size / sh->sh_entsize;
 			printf("\nRelocation section \'%s\' at offset 0x%lx "
-			    "contains %ld entries:\n", sn + sh->sh_name,
-			    sh->sh_offset, n);
+			    "contains %d entries:\n", sn + sh->sh_name,
+			    (long)sh->sh_offset, n);
 			printf("%-8s %-8s %-16s %9s  %s\n", " Offset", "  Info",
 			    " Type", "Sym.Value", "Sym. Name");
 			for (j = 0; j < n; j++) {
@@ -318,11 +318,11 @@ elf_prels(FILE *fp, const char *name, off_t off,
 				if (ELF_R_SYM(r.r_info) >= nsyms)
 					errx(1, "invalid reloc #%d", j);
 				sym = &symidx[ELF_R_SYM(r.r_info)];
-				printf("%08x %08x %-16s  %08x   %s\n",
-				    r.r_offset, r.r_info,
+				printf("%08llx %08x %-16s  %08llx   %s\n",
+				    (uint64_t)r.r_offset, (uint32_t)r.r_info,
 				    elf_reltype(eh->e_machine,
 				      ELF_R_TYPE(r.r_info)),
-				    ELF_SYM(sym->sl_elfsym).st_value, 
+				    (uint64_t)ELF_SYM(sym->sl_elfsym).st_value, 
 				    sym->sl_name);
 			}
 		} else if (sh->sh_type == SHT_RELA) {
