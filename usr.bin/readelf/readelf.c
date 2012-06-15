@@ -24,7 +24,7 @@
 #include <elfuncs.h>
 
 #ifndef lint
-static const char rcsid[] = "$ABSD: readelf.c,v 1.2 2012/06/14 00:11:18 mickey Exp $";
+static const char rcsid[] = "$ABSD: readelf.c,v 1.3 2012/06/14 00:46:15 mickey Exp $";
 #endif
 
 #include "readelf.h"
@@ -175,20 +175,14 @@ main(int argc, char **argv)
 		if (fread(&eh, sizeof eh, 1, fp) != 1)
 			err(1, "fread header: %s", *argv);
 
-		if (!IS_ELF(eh.elf32) ||
-		    eh.elf32.e_ident[EI_VERSION] != ELF_TARG_VER) {
-			warnx("%s: invalid object version", *argv);
-			errs++;
-			continue;
-		}
-
 /* TODO handle archives */
 
-		if (!((eh.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
+		if (!((!elf32_chk_header(&eh.elf32) &&
 		    !elf32_gethdrs(fp, *argv, 0, &eh.elf32,&phs,&shs,&shn)) ||
-		    (eh.elf64.e_ident[EI_CLASS] == ELFCLASS64 &&
+		    (!elf64_chk_header(&eh.elf64) &&
 		    !elf64_gethdrs(fp, *argv, 0, &eh.elf64,&phs,&shs,&shn)))) {
 			warnx("%s: invalid object", *argv);
+			errs++;
 			continue;
 		}
 

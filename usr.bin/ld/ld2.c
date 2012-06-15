@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld2.c,v 1.38 2011/08/05 13:04:14 mickey Exp $";
+    "$ABSD: ld2.c,v 1.39 2011/08/09 10:00:42 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -952,7 +952,7 @@ elf_symadd(struct elf_symtab *es, int is, void *vs, void *v)
 		return 0;
 
 	if (esym->st_name >= es->stabsz)
-		err(1, "%s: invalid symtab entry #%d", es->name, is);
+		errx(1, "%s: invalid symtab entry #%d", es->name, is);
 	name = es->stab + esym->st_name;
 
 	/* convert all unwanted locals to sections */
@@ -1118,7 +1118,6 @@ elf_objadd(struct objlist *ol, FILE *fp, off_t foff)
 	int i, n;
 
 	eh = &ELF_HDR(ol->ol_hdr);
-	elf_fix_header(eh);
 	if (elf_ld_chkhdr(ol->ol_name, eh, ET_REL,
 	    &machine, &elfclass, &endian))
 		return 1;
@@ -1202,11 +1201,6 @@ elf_ld_chkhdr(const char *path, Elf_Ehdr *eh, int type, int *mach,
 
 	if (eh->e_type != type) {
 		warnx("%s: not a relocatable file", path);
-		return EFTYPE;
-	}
-
-	if (eh->e_ehsize < sizeof *eh) {
-		warnx("%s: ELF header is too short", path);
 		return EFTYPE;
 	}
 

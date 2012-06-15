@@ -40,7 +40,7 @@ static const char copyright[] =
 static const char sccsid[] = "@(#)strings.c	8.2 (Berkeley) 1/28/94";
 #endif
 static const char rcsid[] =
-    "$ABSD: strings.c,v 1.5 2009/07/30 12:15:05 mickey Exp $";
+    "$ABSD: strings.c,v 1.6 2011/02/05 15:28:10 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -201,9 +201,7 @@ strings(const char *file)
 	if (!asdata) {
 		if ((head_len = read(fileno(stdin), hbfr, SZXHEAD)) != SZXHEAD)
 			head_len = 0;
-		else if (IS_ELF(*elf32) &&
-		    elf32->e_ident[EI_CLASS] == ELFCLASS32 &&
-		    elf32->e_ident[EI_VERSION] == ELF_TARG_VER) {
+		else if (!elf32_chk_header(elf32)) {
 			Elf32_Phdr *phdr;
 			int i;
 
@@ -233,9 +231,7 @@ strings(const char *file)
 			} else
 				hcnt = 0;
 
-		} else if (IS_ELF(*elf64) &&
-		    elf64->e_ident[EI_CLASS] == ELFCLASS64 &&
-		    elf64->e_ident[EI_VERSION] == ELF_TARG_VER) {
+		} else if (!elf64_chk_header(elf64)) {
 			Elf64_Phdr *phdr;
 			int i;
 

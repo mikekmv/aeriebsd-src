@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld.c,v 1.35 2011/07/24 12:47:53 mickey Exp $";
+    "$ABSD: ld.c,v 1.36 2012/06/03 15:18:49 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -844,17 +844,10 @@ obj_add(const char *path, const char *name, FILE *fp, off_t foff,
 	if (fread(&ol->ol_hdr, sizeof ol->ol_hdr, 1, fp) != 1)
 		err(1, "fread header: %s", ol->ol_name);
 
-	if (IS_ELF(ol->ol_hdr.elf32) &&
-	    ol->ol_hdr.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
-	    ol->ol_hdr.elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
-
+	if (!elf32_chk_header(&ol->ol_hdr.elf32)) {
 		if (elf32_objadd(ol, fp, foff))
 			exit(1);
-
-	} else if (IS_ELF(ol->ol_hdr.elf64) &&
-	    ol->ol_hdr.elf64.e_ident[EI_CLASS] == ELFCLASS64 &&
-	    ol->ol_hdr.elf64.e_ident[EI_VERSION] == ELF_TARG_VER) {
-
+	} else if (!elf64_chk_header(&ol->ol_hdr.elf64)) {
 		if (elf64_objadd(ol, fp, foff))
 			exit(1);
 #if 0

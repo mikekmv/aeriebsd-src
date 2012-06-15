@@ -38,7 +38,7 @@ static const char copyright[] =
 #ifndef lint
 /*static char sccsid[] = "from: @(#)strip.c	5.8 (Berkeley) 11/6/91";*/
 static char const rcsid[] =
-    "$ABSD: strip.c,v 1.7 2011/02/05 15:27:21 mickey Exp $";
+    "$ABSD: strip.c,v 1.8 2011/02/05 17:46:57 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -121,9 +121,7 @@ main(int argc, char *argv[])
 		}
 
 		newsize = 0;
-		if (IS_ELF(eh.elf32) &&
-		    eh.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
-		    eh.elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
+		if (!elf32_chk_header(&eh.elf32)) {
 			Elf32_Shdr *shdr, *sh, *esh;
 			char *shstr;
 
@@ -158,9 +156,7 @@ main(int argc, char *argv[])
 						err(1, "fwrite: %s", fn);
 				}
 
-		} else if (IS_ELF(eh.elf64) &&
-		    eh.elf64.e_ident[EI_CLASS] == ELFCLASS64 &&
-		    eh.elf64.e_ident[EI_VERSION] == ELF_TARG_VER) {
+		} else if (!elf64_chk_header(&eh.elf64)) {
 			Elf64_Shdr *shdr, *sh, *esh;
 			char *shstr;
 

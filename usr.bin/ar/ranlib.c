@@ -36,7 +36,7 @@
 static char sccsid[] = "@(#)build.c	5.3 (Berkeley) 3/12/91";
 static char sccsid[] = "@(#)touch.c	5.3 (Berkeley) 3/12/91";
 #else
-static const char rcsid[] = "$ABSD: ranlib.c,v 1.5 2010/09/14 09:43:13 mickey Exp $";
+static const char rcsid[] = "$ABSD: ranlib.c,v 1.6 2010/09/14 09:44:46 mickey Exp $";
 #endif
 #endif /* not lint */
 
@@ -198,9 +198,7 @@ read_exec(FILE *rfp, FILE *wfp, long *symcnt, long *tsymlen)
 	if (fread(&eh, sizeof(eh), 1, rfp) != 1)
 		err(1, "fread: %s", archive);
 
-	if (IS_ELF(eh.elf32) &&
-	    eh.elf32.e_ident[EI_CLASS] == ELFCLASS32 &&
-	    eh.elf32.e_ident[EI_VERSION] == ELF_TARG_VER) {
+	if (!elf32_chk_header(&eh.elf32)) {
 		Elf32_Sym sbuf;
 		char *shstr;
 		Elf32_Shdr *shdr;
@@ -266,9 +264,7 @@ read_exec(FILE *rfp, FILE *wfp, long *symcnt, long *tsymlen)
 		(void)fseeko(rfp, r_off, SEEK_SET);
 		return MID_ELFFL | eh.elf32.e_machine;
 
-	} else if (IS_ELF(eh.elf64) &&
-	    eh.elf64.e_ident[EI_CLASS] == ELFCLASS64 &&
-	    eh.elf64.e_ident[EI_VERSION] == ELF_TARG_VER) {
+	} else if (!elf64_chk_header(&eh.elf64)) {
 		Elf64_Sym sbuf;
 		char *shstr;
 		Elf64_Shdr *shdr;
