@@ -14,7 +14,7 @@
 .\" AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 .\" OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: February 12 2010 $
+.Dd $Mdocdate: March 31 2010 $
 .Dt ELF 3
 .Os
 .Sh NAME
@@ -24,6 +24,8 @@
 .Fd #include <elfuncs.h>
 .Ft int
 .Fn elf_fix_header "Elf_Ehdr *eh"
+.Ft int
+.Fn elf_chk_header "Elf_Ehdr *eh"
 .Ft int
 .Fn elf_fix_note "Elf_Ehdr *eh" "Elf_Note *en"
 .Ft Elf_Phdr *
@@ -41,7 +43,7 @@
 .Ft int
 .Fn elf_save_shdrs "const char *name" "FILE *fp" "off_t foff" "Elf_Ehdr *eh" "const Elf_Shdr *shdr"
 .Ft int
-.Fn elf_symload "struct elf_symtab *es" "FILE *fp" "off_t foff" "int (*func)(struct elf_symtab *, int, void *, void *)" "void *arg"
+.Fn elf_symload "struct elf_symtab *es" "FILE *fp" "off_t foff" "int (*func)(struct elf_symtab *es, int is, void *sym, void *arg)" "void *arg"
 .Ft int
 .Fn elf_fix_sym "const Elf_Ehdr *eh" "Elf_Sym *sym"
 .Ft int
@@ -62,7 +64,7 @@ library functions only do simple tasks.
 .Pp
 Functions for both 32 and 64 bit ELF formats are provided
 with provisions for byte swapping (thus cross-action).
-For futher simplicity we sill ommit the 32/64 post-prefixes
+For futher simplicity we will ommit the 32/64 post-prefixes
 (following the elf prefix) in function names and ELF structure
 names in the later descriptions.
 .Pp
@@ -70,8 +72,15 @@ names in the later descriptions.
 .It elf_fix_header
 Byteswap the members of the ELF header pointed to by the argument
 between the binary and host order.
-This is in particular useful after loaing or before storing
+This is in particular useful after loading or before storing
 the ELF header.
+.It elf_chk_header
+First byte-swap the header to host order.
+Then check the validity of the object header fields and also 
+check for 32/64 bits classification.
+The
+.Nm e_machine
+field is not checked and left for them users to care.
 .It elf_fix_note
 Byteswp the note section header.
 .It elf_load_phdrs
@@ -91,7 +100,53 @@ Load section headers string table.
 .It elf_fix_sym
 Byteswap symbol entry.
 .It elf_symload
-Load symbols.
+Loads symbols.
+For every symbol table record a callback
+.Nm func
+is called with a
+.Ar sym
+pointer to the
+.Nm Elf_Sym
+record already in the host byte order.
+Storage for the
+.Nm Elf_Sym
+is reused between calls and if desired user has to copy and store
+the record in its own storage.
+The
+.Ar is
+argument is the relative index of the record in the symbol table.
+The
+.Ar arg
+argument is passed opaque as supplied in
+Struct
+.Nm elf_symtab
+is partially filled by the caller and partially by
+.Nm elf_symload
+function.
+Here are the fields description:
+.Bl -tag -width stabsz__
+.It Ar name Fl caller
+The name of the object file for error reporting and other diagnostic purposes.
+.It Ar ehdr Fl caller
+.Nm Elf_Hdr
+ELF header in host byte order.
+.It Ar shdr Fl optional
+Section headers as an array of
+.Nm Elf_Shdr
+records already in host byte order.
+If NULL it will be allocated and filled up properly.
+.It Ar shstr Fl optional
+Section names array also if NULL be allocated and filled up.
+.It Ar stab Fl function
+Symbol names array provided by the function from a linked
+.Nm SHT_STRTAB
+section content.
+.It Ar stabsz Fl function
+The size of the symbols names array as presented above.
+.It Ar nsyms Fl function
+Total number of symbols calculated based on the symbol table size
+and entry size.
+.El
 .It elf2nlist
 Polymorph ELF symbol table item into
 .Xr nlist 3
@@ -128,6 +183,7 @@ Them messages shall be self-explanatory.
 .Xr ld 1 ,
 .Xr nm 1 ,
 .Xr ranlib 1 ,
+.Xr readelf 1 ,
 .Xr a.out 5 ,
 .Xr elf 5
 .Sh HISTORY

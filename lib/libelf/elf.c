@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: elf.c,v 1.29 2011/02/05 15:30:27 mickey Exp $";
+    "$ABSD: elf.c,v 1.30 2011/05/24 22:22:58 mickey Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,7 +48,6 @@ static const char rcsid[] =
 #define	swap_xword	swap32
 #define	swap_half	swap16
 #define	swap_quarter	swap16
-#define	elf_fix_header	elf32_fix_header
 #define	elf_fix_note	elf32_fix_note
 #define	elf_load_shdrs	elf32_load_shdrs
 #define	elf_save_shdrs	elf32_save_shdrs
@@ -59,11 +58,7 @@ static const char rcsid[] =
 #define	elf_fix_sym	elf32_fix_sym
 #define	elf_fix_rel	elf32_fix_rel
 #define	elf_fix_rela	elf32_fix_rela
-#define	elf_size	elf32_size
 #define	elf_shstrload	elf32_shstrload
-#define	elf_strload	elf32_strload
-#define	elf_symloadx	elf32_symloadx
-#define	elf_symload	elf32_symload
 #define	elf2nlist	elf32_2nlist
 #define	elf_shn2type	elf32_shn2type
 #elif ELFSIZE == 64
@@ -80,7 +75,6 @@ static const char rcsid[] =
 #define	swap_xword	swap64
 #define	swap_half	swap32
 #define	swap_quarter	swap16
-#define	elf_fix_header	elf64_fix_header
 #define	elf_fix_note	elf64_fix_note
 #define	elf_load_shdrs	elf64_load_shdrs
 #define	elf_save_shdrs	elf64_save_shdrs
@@ -91,20 +85,12 @@ static const char rcsid[] =
 #define	elf_fix_sym	elf64_fix_sym
 #define	elf_fix_rel	elf64_fix_rel
 #define	elf_fix_rela	elf64_fix_rela
-#define	elf_size	elf64_size
 #define	elf_shstrload	elf64_shstrload
-#define	elf_strload	elf64_strload
-#define	elf_symloadx	elf64_symloadx
-#define	elf_symload	elf64_symload
 #define	elf2nlist	elf64_2nlist
 #define	elf_shn2type	elf64_shn2type
 #else
 #error "Unsupported ELF class"
 #endif
-
-int elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
-    int (*func)(struct elf_symtab *, int, void *, void *), void *arg,
-    const char *, const char *);
 
 #ifndef	SHN_MIPS_ACOMMON
 #define	SHN_MIPS_ACOMMON	SHN_LOPROC + 0
@@ -125,30 +111,6 @@ int elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
 #ifndef	STT_PARISC_MILLI
 #define	STT_PARISC_MILLI	STT_LOPROC + 0
 #endif
-
-int
-elf_fix_header(Elf_Ehdr *eh)
-{
-	/* nothing to do */
-	if (eh->e_ident[EI_DATA] == ELF_TARG_DATA)
-		return (0);
-
-	eh->e_type = swap16(eh->e_type);
-	eh->e_machine = swap16(eh->e_machine);
-	eh->e_version = swap32(eh->e_version);
-	eh->e_entry = swap_addr(eh->e_entry);
-	eh->e_phoff = swap_off(eh->e_phoff);
-	eh->e_shoff = swap_off(eh->e_shoff);
-	eh->e_flags = swap32(eh->e_flags);
-	eh->e_ehsize = swap16(eh->e_ehsize);
-	eh->e_phentsize = swap16(eh->e_phentsize);
-	eh->e_phnum = swap16(eh->e_phnum);
-	eh->e_shentsize = swap16(eh->e_shentsize);
-	eh->e_shnum = swap16(eh->e_shnum);
-	eh->e_shstrndx = swap16(eh->e_shstrndx);
-
-	return (1);
-}
 
 int
 elf_fix_note(Elf_Ehdr *eh, Elf_Note *en)
@@ -493,116 +455,6 @@ elf_fix_rela(Elf_Ehdr *eh, Elf_RelA *rela)
 	return (1);
 }
 
-int
-elf_size(const Elf_Ehdr *eh, const Elf_Shdr *shdr,
-    u_long *ptext, u_long *pdata, u_long *pbss)
-{
-	int i;
-
-	*ptext = *pdata = *pbss = 0;
-
-	for (i = 0; i < eh->e_shnum; i++) {
-		if (!(shdr[i].sh_flags & SHF_ALLOC))
-			continue;
-		else if (shdr[i].sh_flags & SHF_EXECINSTR ||
-		    !(shdr[i].sh_flags & SHF_WRITE))
-			*ptext += shdr[i].sh_size;
-		else if (shdr[i].sh_type == SHT_NOBITS)
-			*pbss += shdr[i].sh_size;
-		else
-			*pdata += shdr[i].sh_size;
-	}
-
-	return (0);
-}
-
-char *
-elf_strload(const char *fn, FILE *fp, off_t foff, const Elf_Ehdr *eh,
-    const Elf_Shdr *shdr, const char *shstr, const char *strtab,
-    size_t *pstabsize)
-{
-	char *ret = NULL;
-	int i;
-
-	for (i = 1; i < eh->e_shnum; i++) {
-		if (shdr[i].sh_type == SHT_STRTAB &&
-		    !strcmp(shstr + shdr[i].sh_name, strtab)) {
-			*pstabsize = shdr[i].sh_size;
-			if (*pstabsize > SIZE_T_MAX) {
-				warnx("%s: corrupt file", fn);
-				return (NULL);
-			}
-
-			if ((ret = malloc(*pstabsize)) == NULL) {
-				warn("malloc(%d)", (int)*pstabsize);
-				break;
-			} else if (pread(fileno(fp), ret, *pstabsize,
-			    foff + shdr[i].sh_offset) != *pstabsize) {
-				warn("pread: %s", fn);
-				free(ret);
-				ret = NULL;
-				break;
-			}
-		}
-	}
-
-	return ret;
-}
-
-int
-elf_symloadx(struct elf_symtab *es, FILE *fp, off_t foff,
-    int (*func)(struct elf_symtab *, int, void *, void *), void *arg,
-    const char *strtab, const char *symtab)
-{
-	const Elf_Ehdr *eh = es->ehdr;
-	const Elf_Shdr *shdr = es->shdr;
-	size_t symsize;
-	Elf_Sym sbuf;
-	int i, is;
-
-	if (!(es->stab = elf_strload(es->name, fp, foff, eh, shdr, es->shstr,
-	    strtab, &es->stabsz)))
-		return (1);
-
-	for (i = 0; i < eh->e_shnum; shdr++, i++) {
-		if (!strcmp(es->shstr + shdr->sh_name, symtab)) {
-			if (shdr->sh_entsize < sizeof sbuf) {
-				warn("%s: invalid symtab section", es->name);
-				return (1);
-			}
-
-			symsize = shdr->sh_size;
-			if (fseeko(fp, foff + shdr->sh_offset, SEEK_SET)) {
-				warn("%s: fseeko", es->name);
-				return (1);
-			}
-
-			es->nsyms = symsize / shdr->sh_entsize;
-			for (is = 0; is < es->nsyms; is++) {
-				if (fread(&sbuf, sizeof sbuf, 1, fp) != 1) {
-					warn("%s: read symbol", es->name);
-					return (1);
-				}
-				if (shdr->sh_entsize > sizeof sbuf &&
-				    fseeko(fp, shdr->sh_entsize - sizeof sbuf,
-				    SEEK_CUR)) {
-					warn("%s: fseeko", es->name);
-					return (1);
-				}
-
-				elf_fix_sym(eh, &sbuf);
-				if (sbuf.st_name >= es->stabsz)
-					continue;
-
-				if ((*func)(es, is, &sbuf, arg))
-					return 1;
-			}
-		}
-	}
-
-	return (0);
-}
-
 char *
 elf_shstrload(const char *fn, FILE *fp, off_t foff, const Elf_Ehdr *eh,
     const Elf_Shdr *shdr)
@@ -639,34 +491,4 @@ elf_shstrload(const char *fn, FILE *fp, off_t foff, const Elf_Ehdr *eh,
 	}
 
 	return shstr;
-}
-
-int
-elf_symload(struct elf_symtab *es, FILE *fp, off_t foff,
-    int (*func)(struct elf_symtab *, int, void *, void *), void *arg)
-{
-	int rv;
-
-	if (!es->shdr) {
-		if (!(es->shdr = elf_load_shdrs(es->name, fp, foff, es->ehdr)))
-			return 1;
-		elf_fix_shdrs(es->ehdr, es->shdr);
-	}
-
-	if (!es->shstr && !(es->shstr = elf_shstrload(es->name, fp, foff,
-	    es->ehdr, es->shdr)))
-		return 1;
-
-	es->stab = NULL;
-	if (elf_symloadx(es, fp, foff, func, arg, ELF_STRTAB, ELF_SYMTAB)) {
-		free(es->stab);
-		es->stab = NULL;
-		if ((rv = elf_symloadx(es, fp, foff, func, arg,
-		    ELF_DYNSTR, ELF_DYNSYM))) {
-			free(es->stab);
-			return rv;
-		}
-	}
-
-	return (0);
 }

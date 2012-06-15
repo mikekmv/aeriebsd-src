@@ -41,6 +41,7 @@ struct elf_symtab {
 int	elf_checkoff(const char *, FILE *, off_t, off_t);
 
 int	elf32_fix_header(Elf32_Ehdr *eh);
+int	elf32_chk_header(Elf32_Ehdr *eh);
 int	elf32_fix_note(Elf32_Ehdr *, Elf32_Note *);
 Elf32_Shdr*elf32_load_shdrs(const char *, FILE *, off_t, const Elf32_Ehdr *);
 int	elf32_save_shdrs(const char *, FILE *, off_t, const Elf32_Ehdr *,
@@ -65,6 +66,7 @@ int	elf32_symload(struct elf_symtab *, FILE *, off_t,
 	    int (*func)(struct elf_symtab *, int, void *, void *), void *arg);
 
 int	elf64_fix_header(Elf64_Ehdr *eh);
+int	elf64_chk_header(Elf64_Ehdr *eh);
 int	elf64_fix_note(Elf64_Ehdr *, Elf64_Note *);
 Elf64_Shdr*elf64_load_shdrs(const char *, FILE *, off_t, const Elf64_Ehdr *);
 int	elf64_save_shdrs(const char *, FILE *, off_t, const Elf64_Ehdr *,
