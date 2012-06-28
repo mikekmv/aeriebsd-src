@@ -84,8 +84,6 @@ struct incs {
 	dev_t dev;
 	ino_t ino;
 } *incdir[2];
-#define	INCINC 0
-#define	SYSINC 1
 
 static struct symtab *filloc;
 static struct symtab *linloc;
@@ -127,13 +125,9 @@ usch *stringbuf = sbf;
 static int readargs(struct symtab *sp, const usch **args);
 static void exparg(int);
 static void subarg(struct symtab *sp, const usch **args, int);
-void define(void);
-void include(void);
-void include_next(void);
-void line(void);
-void flbuf(void);
-void usage(void);
-usch *xstrdup(const usch *str);
+static void flbuf(void);
+static void usage(void);
+static usch *xstrdup(const usch *str);
 static void addidir(char *idir, struct incs **ww);
 
 int
@@ -150,15 +144,15 @@ main(int argc, char **argv)
 	(void)gettimeofday(&t1, NULL);
 #endif
 
-	while ((ch = getopt(argc, argv, "CD:I:MPS:U:d:i:tvV?")) != -1)
+	while ((ch = getopt(argc, argv, "CD:d:I:i:MPS:tU:Vv")) != -1) {
 		switch (ch) {
 		case 'C': /* Do not discard comments */
 			Cflag++;
 			break;
 
+		case 'D': /* define something */
 		case 'i': /* include */
 		case 'U': /* undef */
-		case 'D': /* define something */
 			/* XXX should not need malloc() here */
 			if ((it = malloc(sizeof(struct initar))) == NULL)
 				error("couldn't apply -%c %s", ch, optarg);
@@ -166,6 +160,26 @@ main(int argc, char **argv)
 			it->str = optarg;
 			it->next = initar;
 			initar = it;
+			break;
+
+		case 'd':
+			while (*optarg) {
+				switch(*optarg) {
+				case 'M': /* display macro definitions */
+					dMflag = 1;
+					Mflag = 1;
+					break;
+
+				default: /* ignore others */
+					break;
+				}
+				optarg++;
+			}
+			break;
+
+		case 'I':
+		case 'S':
+			addidir(optarg, &incdir[ch == 'I' ? INCINC : SYSINC]);
 			break;
 
 		case 'M': /* Generate dependencies for make */
@@ -176,9 +190,8 @@ main(int argc, char **argv)
 			Pflag++;
 			break;
 
-		case 'S':
-		case 'I':
-			addidir(optarg, &incdir[ch == 'I' ? INCINC : SYSINC]);
+		case 't':
+			tflag = 1;
 			break;
 
 #ifdef PCC_DEBUG
@@ -189,23 +202,13 @@ main(int argc, char **argv)
 		case 'v':
 			printf("cpp: %s\n", VERSSTR);
 			break;
-		case 'd':
-			if (optarg[0] == 'M') {
-				dMflag = 1;
-				Mflag = 1;
-			}
-			/* ignore others */
-			break;
-
-		case 't':
-			tflag = 1;
-			break;
 
 		case '?':
-			usage();
 		default:
-			error("bad arg %c\n", ch);
+			usage();
 		}
+	}
+
 	argc -= optind;
 	argv += optind;
 
@@ -309,7 +312,7 @@ addidir(char *idir, struct incs **ww)
 		return; /* ignore */
 	if (*ww != NULL) {
 		for (w = *ww; w->next; w = w->next) {
-#ifdef WIN32
+#ifdef os_win32
 			if (strcmp(w->dir, idir) == 0)
 				return;
 #else
@@ -317,7 +320,7 @@ addidir(char *idir, struct incs **ww)
 				return;
 #endif
 		}
-#ifdef WIN32
+#ifdef os_win32
 		if (strcmp(w->dir, idir) == 0)
 			return;
 #else
@@ -335,7 +338,7 @@ addidir(char *idir, struct incs **ww)
 }
 
 void
-line()
+line(void)
 {
 	static usch *lbuf;
 	static int llen;
@@ -410,7 +413,7 @@ prem(void)
  * - For "..." files, first search "current" dir, then as <...> files.
  */
 void
-include()
+include(void)
 {
 	struct symtab *nl;
 	usch *osp;
@@ -492,7 +495,7 @@ okret:
 }
 
 void
-include_next()
+include_next(void)
 {
 	struct symtab *nl;
 	usch *osp;
@@ -623,7 +626,7 @@ isell(void)
 }
 
 void
-define()
+define(void)
 {
 	struct symtab *np;
 	usch *args[MAXARGS+1], *ubuf, *sbeg;
@@ -1811,8 +1814,8 @@ unpstr(const usch *c)
 	}
 }
 
-void
-flbuf()
+static void
+flbuf(void)
 {
 	if (obufp == 0)
 		return;
@@ -1897,8 +1900,8 @@ sheap(const char *fmt, ...)
 	return op;
 }
 
-void
-usage()
+static void
+usage(void)
 {
 	error("Usage: cpp [-Cdt] [-Dvar=val] [-Uvar] [-Ipath] [-Spath]");
 }
@@ -2060,7 +2063,7 @@ lookup(const usch *key, int enterf)
 	return (struct symtab *)new->lr[bit];
 }
 
-usch *
+static usch *
 xstrdup(const usch *str)
 {
 	size_t len = strlen((const char *)str)+1;

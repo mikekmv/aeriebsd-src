@@ -250,7 +250,7 @@ int usednodes;
 
 #ifndef LANG_F77
 NODE *
-talloc()
+talloc(void)
 {
 	register NODE *p;
 
@@ -300,7 +300,7 @@ tcopy(NODE *p)
  * ensure that all nodes have been freed
  */
 void
-tcheck()
+tcheck(void)
 {
 	extern int inlnodecnt;
 
@@ -481,7 +481,7 @@ struct dopest {
 };
 
 void
-mkdope()
+mkdope(void)
 {
 	struct dopest *q;
 
@@ -681,7 +681,7 @@ tmpalloc(int size)
 }
 
 void
-tmpfree()
+tmpfree(void)
 {
 	struct xalloc *x1;
 

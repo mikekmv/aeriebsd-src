@@ -410,7 +410,7 @@ if (bitsz == 64) {
 #define	P(x)	fprintf x
 
 void
-mktables()
+mktables(void)
 {
 	struct optab *op;
 	int mxalen = 0, curalen;

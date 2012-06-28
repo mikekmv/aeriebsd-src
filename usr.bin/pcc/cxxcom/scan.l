@@ -1,6 +1,4 @@
 %{
-/*	$Id: scan.l,v 1.1 2012/04/15 22:52:54 mickey Exp $	*/
-
 /*
  * Copyright (c) 2002 Anders Magnusson. All rights reserved.
  *
@@ -224,7 +222,7 @@ int lineno;
 char *ftitle = "<stdin>";
 
 static int
-namechk()
+namechk(void)
 { 	
 	struct symtab *s;
 	int i;
@@ -334,7 +332,11 @@ f2(char *str)
 	long double dc;
 	char *eptr;
 
+#ifdef HAVE_STRTOLD
 	dc = strtold(str, &eptr); /* XXX - avoid strtod() */
+#else
+	dc = strtod(str, &eptr); /* XXX - avoid strtod() */
+#endif
 	dc = typround(dc, eptr, &tw);
 	p = block(FCON, NIL, NIL, tw, 0, 0);
 	p->n_dcon = dc;
@@ -793,11 +795,12 @@ struct pragmas {
 	{ "ident", NULL },
 	{ 0 },
 };
+
 /*
  * got a full pragma line.  Split it up here.
  */
 static void
-pragma()
+pragma(void)
 {
 	struct pragmas *p;
 	char *t, *pt;

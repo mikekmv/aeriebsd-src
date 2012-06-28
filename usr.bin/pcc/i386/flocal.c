@@ -42,7 +42,6 @@ prchars(int *s)
 	printf("\t.byte 0%o,0%o\n", s[0], s[1]);
 }
 
-
 void
 setloc(int l)
 {
@@ -179,12 +178,12 @@ prext(char *name, ftnint leng, int init)
 }
 
 void
-prendproc()
+prendproc(void)
 {
 }
 
 void
-prtail()
+prtail(void)
 {
 }
 
@@ -194,10 +193,8 @@ prolog(struct entrypoint *ep, struct bigblock *argvec)
 	/* Ignore for now.  ENTRY is not supported */
 }
 
-
-
 void
-prdbginfo()
+prdbginfo(void)
 {
 }
 

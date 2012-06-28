@@ -386,7 +386,7 @@ bfcode(struct symtab **sp, int cnt)
  * End-of-Function code:
  */
 void
-efcode()
+efcode(void)
 {
 	NODE *p, *q;
 	int tempnr;
@@ -426,7 +426,7 @@ efcode()
  * End-of-job: called just before final exit.
  */
 void
-ejobcode(int flag )
+ejobcode(int flag)
 {
 	printf("\t.ident \"PCC: %s\"\n", VERSSTR);
 }
@@ -437,7 +437,7 @@ ejobcode(int flag )
  * Initialise data structures specific for the local machine.
  */
 void
-bjobcode()
+bjobcode(void)
 {
 }
 

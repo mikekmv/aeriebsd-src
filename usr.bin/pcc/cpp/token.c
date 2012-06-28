@@ -64,9 +64,6 @@ static void cppwarning(void);
 static void elifstmt(void);
 static void badop(const char *);
 static int chktg(void);
-void  include(void);
-void  include_next(void);
-void  define(void);
 static int inpch(void);
 
 extern int yyget_lineno (void);
@@ -405,7 +402,7 @@ con:			PUTCH(ch);
 }
 
 int
-sloscan()
+sloscan(void)
 {
 	int ch;
 	int yyp;
@@ -609,7 +606,7 @@ yyret:
 }
 
 int
-yylex()
+yylex(void)
 {
 	static int ifdef, noex;
 	struct symtab *nl;
@@ -863,7 +860,7 @@ pushfile(const usch *file, const usch *fn, int idx, void *incs)
  * Print current position to output file.
  */
 void
-prtline()
+prtline(void)
 {
 	usch *s, *os = stringbuf;
 
@@ -874,8 +871,12 @@ prtline()
 			s = sheap("%s: %s\n", Mfile, ifiles->fname);
 			write(ofd, s, strlen((char *)s));
 		}
-	} else if (!Pflag)
-		putstr(sheap("\n# %d \"%s\"\n", ifiles->lineno, ifiles->fname));
+	} else if (!Pflag) {
+		putstr(sheap("\n# %d \"%s\"", ifiles->lineno, ifiles->fname));
+		if (ifiles->idx == SYSINC)
+			putstr(sheap(" 3"));
+		putstr(sheap("\n"));
+	}
 	stringbuf = os;
 }
 
@@ -1241,7 +1242,7 @@ badop(const char *op)
 }
 
 int
-cinput()
+cinput(void)
 {
 	return inch();
 }
@@ -1250,7 +1251,7 @@ cinput()
  * Check for (and convert) trigraphs.
  */
 int
-chktg()
+chktg(void)
 {
 	int c;
 

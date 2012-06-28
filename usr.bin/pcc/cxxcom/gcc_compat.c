@@ -96,7 +96,7 @@ static char *g77n[] = { "__g77_integer", "__g77_uinteger",
 	"__g77_longint", "__g77_ulongint" };
 
 void
-gcc_init()
+gcc_init(void)
 {
 	struct kw *kwp;
 	NODE *p;
@@ -115,7 +115,6 @@ gcc_init()
 		defid(p, TYPEDEF);
 		nfree(p);
 	}
-
 }
 
 #define	TS	"\n#pragma tls\n# %d\n"

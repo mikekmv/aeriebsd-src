@@ -70,7 +70,7 @@ defloc(struct symtab *sp)
 }
 
 void
-efcode()
+efcode(void)
 {
 	/* XXX */
 }
@@ -114,7 +114,7 @@ ejobcode(int flag)
 }
 
 void
-bjobcode()
+bjobcode(void)
 {
 	astypnames[USHORT] = astypnames[SHORT] = "\t.half";
 	astypnames[INT] = astypnames[UNSIGNED] = "\t.long";

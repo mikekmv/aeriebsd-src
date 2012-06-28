@@ -393,6 +393,18 @@ again:	o = p->n_op;
 	case ULE:
 	case UGT:
 	case UGE:
+		if (LCON(p) && RCON(p) &&
+		    !ISPTR(p->n_left->n_type) && !ISPTR(p->n_right->n_type)) {
+			/* Do constant evaluation */
+			q = p->n_left;
+			if (conval(q, o, p->n_right)) {
+				nfree(p->n_right);
+				nfree(p);
+				p = q;
+				break;
+			}
+		}
+
 		if( !LCON(p) ) break;
 
 		/* exchange operands */
@@ -402,6 +414,20 @@ again:	o = p->n_op;
 		p->n_right = sp;
 		p->n_op = revrel[p->n_op - EQ ];
 		break;
+
+	case CBRANCH:
+		if (LCON(p)) {
+			if (LV(p) == 0) {
+				tfree(p);
+				p = bcon(0);
+			} else {
+				tfree(p->n_left);
+				p->n_left = p->n_right;
+				p->n_op = GOTO;
+			}
+		}
+		break;
+				
 
 #ifdef notyet
 	case ASSIGN:
@@ -432,7 +458,8 @@ ispow2(CONSZ c)
 }
 
 int
-nncon( p ) NODE *p; {
+nncon(NODE *p)
+{
 	/* is p a constant without a name */
 	return( p->n_op == ICON && p->n_sp == NULL );
-	}
+}

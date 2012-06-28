@@ -1282,13 +1282,13 @@ oreg2(NODE *p, void *arg)
 }
 
 void
-canon(p) NODE *p; {
+canon(NODE *p)
+{
 	/* put p in canonical form */
 
 	walkf(p, setleft, 0);	/* ptrs at left node for arithmetic */
 	walkf(p, oreg2, 0);	/* look for and create OREG nodes */
 	mycanon(p);		/* your own canonicalization routine(s) */
-
 }
 
 void
