@@ -718,9 +718,8 @@ nametree(struct symtab *sp)
 
 #ifdef GCC_COMPAT
 	/* Get a label name */
-	if (sp->sflags == SLBLNAME) {
-		p->n_type = VOID;
-	}
+	if (sp->sflags == SLBLNAME)
+		sp->stype = p->n_type = VOID;
 #endif
 	if (sp->stype == UNDEF) {
 		uerror("%s undefined", sp->sname);
@@ -2327,6 +2326,7 @@ has_se(NODE *p)
 /*
  * Read an unaligned bitfield from position pointed to by p starting at
  * off and size fsz and return a tree of type t with resulting data.
+ * ct is the type we must use to read data.
  */
 static NODE *
 rdualfld(NODE *p, TWORD t, TWORD ct, int off, int fsz)
@@ -2338,7 +2338,7 @@ rdualfld(NODE *p, TWORD t, TWORD ct, int off, int fsz)
 	ctsz = (int)tsize(ct, 0, 0);
 
 	/* traverse until first data byte */
-	for (t2f = 0; off > ctsz; t2f++, off -= ctsz)
+	for (t2f = 0; off >= ctsz; t2f++, off -= ctsz)
 		;
 #ifdef UNALIGNED_ACCESS
 	/* try to squeeze it into an int */
@@ -2406,7 +2406,7 @@ wrualfld(NODE *val, NODE *d, TWORD t, TWORD ct, int off, int fsz)
 	ct = ENUNSIGN(ct);
 	d = makety(d, PTR|ct, 0, 0, 0);
 
-	for (t2f = 0; off > ctsz; t2f++, off -= ctsz)
+	for (t2f = 0; off >= ctsz; t2f++, off -= ctsz)
 		;
  
 	if (off + fsz <= ctsz) {
@@ -2871,7 +2871,7 @@ pprop(NODE *p, TWORD t, struct attr *ap)
 	case PLUS:
 		if (!ISPTR(p->n_left->n_type)) {
 			if (!ISPTR(p->n_right->n_type))
-				cerror("no * in PLUS");
+				cerror("%p: no * in PLUS", p);
 			p->n_right = pprop(p->n_right, t, ap);
 		} else
 			p->n_left = pprop(p->n_left, t, ap);
@@ -2897,6 +2897,10 @@ pprop(NODE *p, TWORD t, struct attr *ap)
 
 	case ASSIGN:
 		break;
+
+	case COMOP:
+		p->n_right = pprop(p->n_right, t, ap);
+		return p;
 
 	default:
 		if (coptype(o) == LTYPE)
@@ -3057,6 +3061,7 @@ send_passt(int type, ...)
 		ip->ip_lbl = va_arg(ap, int);
 		ipp->ip_tmpnum = va_arg(ap, int);
 		ipp->ip_lblnum = crslab;
+		ipp->ip_labels = va_arg(ap, int *);;
 		if (type == IP_PROLOG)
 			ipp->ip_lblnum--;
 		break;
@@ -3101,6 +3106,7 @@ copst(int op)
 	SNAM(TYPE,TYPE)
 	SNAM(COMOP,COMOP)
 	SNAM(QUEST,?)
+	SNAM(BIQUEST,?:)
 	SNAM(COLON,:)
 	SNAM(ANDAND,&&)
 	SNAM(OROR,||)
@@ -3151,6 +3157,7 @@ cdope(int op)
 	case SZOF:
 	case COMOP:
 	case QUEST:
+	case BIQUEST:
 	case COLON:
 	case LB:
 	case TYMERGE:

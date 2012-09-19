@@ -82,7 +82,7 @@ defloc(struct symtab *sp)
  * deals with struct return here
  */
 void
-efcode()
+efcode(void)
 {
 	NODE *p, *q;
 	int sz;
@@ -139,7 +139,7 @@ bfcode(struct symtab **a, int cnt)
 
 	if (cftnsp->stype == STRTY+FTN || cftnsp->stype == UNIONTY+FTN) {
 		/* Function returns struct, adjust arg offset */
-		for (i = 0; i < n; i++)
+		for (i = 0; i < cnt; i++)
 			a[i]->soffset += SZPOINT(LONG);
 	}
 
@@ -178,9 +178,9 @@ bfcode(struct symtab **a, int cnt)
 /* called just before final exit */
 /* flag is 1 if errors, 0 if none */
 void
-ejobcode(int errors)
+ejobcode(int flag)
 {
-	if (errors)
+	if (flag)
 		return;
 
 	printf("\t.end\n");

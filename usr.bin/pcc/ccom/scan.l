@@ -32,8 +32,8 @@ L			[a-zA-Z_]
 H			[a-fA-F0-9]
 E			[Ee][+-]?{D}+
 P			[Pp][+-]?{D}+
-FS			(f|F|l|L)?i?
-IS			(u|U|l|L)*
+FS			(f|F|l|L|i)*
+IS			(u|U|l|L|i)*
 UL			({L}|\\u{H}{H}{H}{H}|\\U{H}{H}{H}{H}{H}{H}{H}{H})
 
 %{
@@ -195,7 +195,8 @@ L?\"(\\.|[^\\"])*\"	{ yylval.strp = yytext; return C_STRING; }
 ";"			{ notype = 0; return(';'); }
 ("{"|"<%")		{ notype = 0; return('{'); }
 ("}"|"%>")		{ if (rpole) notype = 1; return('}'); }
-","			{ if (parbal && !inoso) notype = 0; return(','); }
+","			{ if (parbal && !inoso) notype = 0;
+				if (parbal == 0) notype = 1; return(','); }
 ":"			{ if (doing_init) nodinit--; return(':'); }
 "="			{ return('='); }
 "("			{ parbal++; notype = 0; return('('); }
@@ -288,7 +289,7 @@ typround(long double dc, char *e, TWORD *tw)
 			break;
 		case 'l':
 		case 'L':
-			*tw = LDOUBLE;
+			*tw = ctype(LDOUBLE);
 			break;
 		case 'i':
 		case 'I':
@@ -488,6 +489,8 @@ cvtdig(int radix)
 			ntype+=2, numl++;
 		else if ((*ch == 'u' || *ch == 'U') && numu < 1)
 			ntype = ENUNSIGN(ntype), numu++;
+		else if (*ch == 'i')
+			ntype = DOUBLE;
 		else
 			break;
 		ch++;
@@ -497,6 +500,11 @@ cvtdig(int radix)
 
 	otype = ntype;
 	switch (ntype) {
+	case DOUBLE: /* special case */
+		p = block(FCON, NIL, NIL, IMAG, 0, 0);
+		p->n_dcon = FLOAT_CAST(v, DOUBLE);
+		return p;
+
 	case INT:
 	case LONG:
 	case LONGLONG:
@@ -654,7 +662,6 @@ bad:
 
 int pragma_allpacked;
 int pragma_packed, pragma_aligned;
-char *pragma_renamed;
 
 static int
 pragmas_weak(char *str)
@@ -752,15 +759,11 @@ pragmas_pack(char *t)
 	return eat(')');
 }
 
-static int
-pragmas_renamed(char *t)
-{
-	char *f = pragtok(0);
-
-	if (f == 0)
-		return 1;
-	pragma_renamed = newstring(f, strlen(f));
-	return 0;
+static int      
+pragmas_unsupp(char *t) 
+{ 
+	werror("#pragma %s unsupported", t);
+	return 0; /* Just ignore */
 }
 
 static int
@@ -776,7 +779,7 @@ struct pragmas {
 	{ "pack", pragmas_pack },
 	{ "packed", pragmas_alpack },
 	{ "aligned", pragmas_alpack },
-	{ "rename", pragmas_renamed },
+	{ "rename", pragmas_unsupp },
 #ifdef GCC_COMPAT
 	{ "GCC", pragmas_gcc },
 #endif

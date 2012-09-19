@@ -49,6 +49,15 @@ prologue(struct interpass_prolog *ipp)
 	printf("	.word 0x%llx\n", (unsigned long long)ipp->ipp_regs[0]);
 	if (p2maxautooff)
 		printf("	subl2 $%d,%%sp\n", p2maxautooff);
+	if (pflag) {
+		int i = getlab2();
+		printf("\tmovab\t" LABFMT ",%%r0\n", i);
+		printf("\tjsb\t__mcount\n");
+		printf("\t.data\n");
+		printf("\t.align  2\n");
+		printf(LABFMT ":\t.long\t0\n", i);
+		printf("\t.text\n");
+	}
 }
 
 /*
@@ -602,6 +611,7 @@ zzzcode(NODE *p, int c)
 			else if( r->n_op == REG ) r->n_op = OREG;
 			else if( r->n_op != OREG ) cerror( "STASG-r" );
 
+		if (size != 0) {
 			if( size <= 0 || size > 65535 )
 				cerror("structure size <0=0 or >65535");
 
@@ -626,6 +636,7 @@ zzzcode(NODE *p, int c)
 			printf(",");
 			adrput(stdout, l);
 			printf("\n");
+		}
 
 			if( r->n_op == NAME ) r->n_op = ICON;
 			else if( r->n_op == OREG ) r->n_op = REG;
@@ -889,6 +900,8 @@ upput(NODE *p, int size)
 		break;
 
 	case NAME:
+		if (kflag)
+			comperr("upput NAME");
 	case OREG:
 		p->n_lval += size;
 		adrput(stdout, p);
@@ -1140,7 +1153,7 @@ mkcall(NODE *p, char *name)
 	p->n_op = CALL;
 	p->n_right = mkunode(FUNARG, p->n_left, 0, p->n_left->n_type);
 	p->n_left = mklnode(ICON, 0, 0, FTN|p->n_type);
-	p->n_left->n_name = "__fixunsdfdi";
+	p->n_left->n_name = name;
 }
 
 /* do local tree transformations and optimizations */
@@ -1240,7 +1253,7 @@ optim2(NODE *p, void *arg)
 			else if (lt == ULONGLONG) {
 				p->n_left = mkunode(SCONV, p->n_left,0, DOUBLE);
 				p->n_type = FLOAT;
-				mkcall(p->n_left, "__floatunsdidf");
+				mkcall(p->n_left, "__floatundidf");
 			} else if (lt == UNSIGNED) {
 				/* insert an extra double-to-float sconv */
 				p->n_left = mkunode(SCONV, p->n_left,0, DOUBLE);
@@ -1250,11 +1263,31 @@ optim2(NODE *p, void *arg)
 			if (lt == LONGLONG)
 				mkcall(p, "__floatdidf");
 			else if (lt == ULONGLONG)
-				mkcall(p->n_left, "__floatunsdidf");
+				mkcall(p, "__floatundidf");
 			break;
 			
 		}
 		break;
+	}
+}
+
+static void
+aofname(NODE *p, void *arg)
+{
+	int o = optype(p->n_op);
+	TWORD t;
+
+	if (o == LTYPE || p->n_op == ADDROF)
+		return;
+	t = p->n_left->n_type;
+	if (p->n_left->n_op == NAME && ISLONGLONG(t))
+		p->n_left = mkunode(UMUL,
+		    mkunode(ADDROF, p->n_left, 0, INCREF(t)), 0, t);
+	if (o == BITYPE && p->n_right->n_op == NAME &&
+	    ISLONGLONG(p->n_right->n_type)) {
+		t = p->n_right->n_type;
+		p->n_right = mkunode(UMUL,
+		    mkunode(ADDROF, p->n_right, 0, INCREF(t)), 0, t);
 	}
 }
 
@@ -1266,6 +1299,8 @@ myreader(struct interpass *ipole)
 	DLIST_FOREACH(ip, ipole, qelem) {
 		if (ip->type != IP_NODE)
 			continue;
+		if (kflag)
+			walkf(ip->ip_node, aofname, 0);
 		walkf(ip->ip_node, optim2, 0);
 	}
 }
@@ -1375,6 +1410,17 @@ mflags(char *str)
 int
 myxasm(struct interpass *ip, NODE *p)
 {
+	char *c;
+	int i;
+
+	/* Discard o<> constraints since they will not be generated */
+	for (c = p->n_name; *c; c++) {
+		if (*c == 'o' || *c == '<' || *c == '>') {
+			for (i = 0; c[i]; i++)
+				c[i] = c[i+1];
+			c--;
+		}
+	}
 	return 0;
 }
 

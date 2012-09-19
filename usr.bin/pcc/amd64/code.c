@@ -497,7 +497,7 @@ mkstkref(int off, TWORD typ)
 }
 
 NODE *
-amd64_builtin_stdarg_start(NODE *f, NODE *a, TWORD t)
+amd64_builtin_stdarg_start(const struct bitable *bt, NODE *a)
 {
 	NODE *p, *r;
 
@@ -515,15 +515,15 @@ amd64_builtin_stdarg_start(NODE *f, NODE *a, TWORD t)
 	    buildtree(ASSIGN, structref(ccopy(p), STREF, fp_offset),
 	    bcon(thissse*(SZDOUBLE*2/SZCHAR)+48)));
 
-	tfree(f);
 	tfree(a);
 	return r;
 }
 
 NODE *
-amd64_builtin_va_arg(NODE *f, NODE *a, TWORD t)
+amd64_builtin_va_arg(const struct bitable *bt, NODE *a)
 {
 	NODE *ap, *r, *dp;
+	NODE *f = block(NAME, NIL, NIL, INT, 0, 0);
 
 	ap = a->n_left;
 	dp = a->n_right;
@@ -584,17 +584,17 @@ bad:
 }
 
 NODE *
-amd64_builtin_va_end(NODE *f, NODE *a, TWORD t)
+amd64_builtin_va_end(const struct bitable *bt, NODE *a)
 {
-	tfree(f);
 	tfree(a);
 	return bcon(0); /* nothing */
 }
 
 NODE *
-amd64_builtin_va_copy(NODE *f, NODE *a, TWORD t)
+amd64_builtin_va_copy(const struct bitable *bt, NODE *a)
 {
-	tfree(f);
+	NODE *f;
+
 	f = buildtree(ASSIGN, buildtree(UMUL, a->n_left, NIL),
 	    buildtree(UMUL, a->n_right, NIL));
 	nfree(a);
@@ -751,7 +751,7 @@ argput(NODE *p)
 			r = (typ == STRCPX ? XMM0 + nsse++ : argregsi[ngpr++]);
 			ql = movtoreg(ql, r);
 
-			p = buildtree(COMOP, p, ql);
+			p = buildtree(CM, p, ql);
 		} else
 			cerror("STRREG");
 		break;
@@ -816,7 +816,8 @@ argsort(NODE *p)
 		q = p->n_right->n_left;
 		p->n_right->n_left = p->n_left;
 		p->n_left = p->n_right;
-		p->n_right = q;
+		p->n_right = p->n_left->n_right;
+		p->n_left->n_right = q;
 	}
 	if (p->n_right->n_op == ASSIGN && p->n_right->n_left->n_op == REG &&
 	    coptype(p->n_right->n_right->n_op) != LTYPE) {
@@ -917,4 +918,62 @@ int
 mygenswitch(int num, TWORD type, struct swents **p, int n)
 {
 	return 0;
+}
+
+/*
+ * Return return as given by a.
+ */
+NODE *
+builtin_return_address(const struct bitable *bt, NODE *a)
+{
+	int nframes;
+	NODE *f;
+
+	nframes = a->n_lval;
+	tfree(a);
+
+	f = block(REG, NIL, NIL, PTR+VOID, 0, 0);
+	regno(f) = FPREG;
+
+	while (nframes--)
+		f = block(UMUL, f, NIL, PTR+VOID, 0, 0);
+
+	f = block(PLUS, f, bcon(8), INCREF(PTR+VOID), 0, 0);
+	f = buildtree(UMUL, f, NIL);
+
+	return f;
+}
+
+/*
+ * Return frame as given by a.
+ */
+NODE *
+builtin_frame_address(const struct bitable *bt, NODE *a)
+{
+	int nframes;
+	NODE *f;
+
+	nframes = a->n_lval;
+	tfree(a);
+
+	f = block(REG, NIL, NIL, PTR+VOID, 0, 0);
+	regno(f) = FPREG;
+
+	while (nframes--)
+		f = block(UMUL, f, NIL, PTR+VOID, 0, 0);
+
+	return f;
+}
+
+/*
+ * Return "canonical frame address".
+ */
+NODE *
+builtin_cfa(const struct bitable *bt, NODE *a)
+{
+	NODE *f;
+
+	f = block(REG, NIL, NIL, PTR+VOID, 0, 0);
+	regno(f) = FPREG;
+	return block(PLUS, f, bcon(16), INCREF(PTR+VOID), 0, 0);
 }

@@ -129,6 +129,12 @@ static void lcommadd(struct symtab *sp);
 static NODE *mkcmplx(NODE *p, TWORD dt);
 extern int fun_inline;
 
+void
+defid(NODE *q, int class)
+{
+	defid2(q, class, 0);
+}
+
 /*
  * Declaration of an identifier.  Handles redeclarations, hiding,
  * incomplete types and forward declarations.
@@ -139,7 +145,7 @@ extern int fun_inline;
  */
 
 void
-defid(NODE *q, int class)
+defid2(NODE *q, int class, char *astr)
 {
 	struct attr *ap;
 	struct symtab *p;
@@ -152,6 +158,9 @@ defid(NODE *q, int class)
 	if (q == NIL)
 		return;  /* an error was detected */
 
+#ifdef GCC_COMPAT
+	gcc_modefix(q);
+#endif
 	p = q->n_sp;
 
 	if (p->sname == NULL)
@@ -159,7 +168,7 @@ defid(NODE *q, int class)
 
 #ifdef PCC_DEBUG
 	if (ddebug) {
-		printf("defid(%s (%p), ", p->sname, p);
+		printf("defid(%s '%s'(%p), ", p->sname, p->soname , p);
 		tprint(stdout, q->n_type, q->n_qual);
 		printf(", %s, (%p)), level %d\n\t", scnames(class),
 		    q->n_df, blevel);
@@ -283,9 +292,8 @@ defid(NODE *q, int class)
 	switch(class) {
 
 	case EXTERN:
-		if (pragma_renamed)
-			p->soname = pragma_renamed;
-		pragma_renamed = NULL;
+		if (astr)
+			p->soname = astr;
 		switch( scl ){
 		case STATIC:
 		case USTATIC:
@@ -352,8 +360,13 @@ defid(NODE *q, int class)
 	case REGISTER:
 		break;  /* mismatch.. */
 	case SNULL:
-		if (fun_inline && ISFTN(type))
+		if (fun_inline && ISFTN(type)) {
+			if (scl == EXTERN) {
+				p->sclass = EXTDEF;
+				inline_ref(p);
+			}
 			goto done;
+		}
 		break;
 	}
 
@@ -362,7 +375,7 @@ defid(NODE *q, int class)
 	/*
 	 * Only allowed for automatic variables.
 	 */
-	if (blevel <= slev || class == EXTERN) {
+	if ((blevel == 2 && slev == 1) || blevel <= slev || class == EXTERN) {
 		uerror("redeclaration of %s", p->sname);
 		return;
 	}
@@ -374,12 +387,6 @@ defid(NODE *q, int class)
 	if(ddebug)
 		printf("	new entry made\n");
 #endif
-	if (type < BTMASK && (ap = attr_find(q->n_ap, GCC_ATYP_MODE))) {
-		int u = ISUNSIGNED(type);
-		type = u ? ENUNSIGN(ap->iarg(0)) : (TWORD)ap->iarg(0);
-		if (type == XTYPE)
-			uerror("fix XTYPE basetyp");
-	}
 	p->stype = type;
 	p->squal = qual;
 	p->sclass = (char)class;
@@ -403,8 +410,10 @@ defid(NODE *q, int class)
 	} else switch (class) {
 
 	case REGISTER:
-		cerror("register var");
-
+		if (astr != NULL)
+			werror("no register assignment (yet)");
+		p->sclass = class = AUTO;
+		/* FALLTHROUGH */
 	case AUTO:
 		if (isdyn(p)) {
 			p->sflags |= SDYNARRAY;
@@ -422,9 +431,8 @@ defid(NODE *q, int class)
 	case EXTDEF:
 	case EXTERN:
 		p->soffset = getlab();
-		if (pragma_renamed)
-			p->soname = pragma_renamed;
-		pragma_renamed = NULL;
+		if (astr)
+			p->soname = astr;
 		break;
 
 	case MOU:
@@ -488,6 +496,7 @@ void
 ftnend(void)
 {
 	struct attr *gc, *gd;
+	extern int *mkclabs(void);
 	extern NODE *cftnod;
 	extern struct savbc *savbc;
 	extern struct swdef *swpole;
@@ -503,7 +512,8 @@ ftnend(void)
 			c = addname(exname(cftnsp->sname));
 		SETOFF(maxautooff, ALCHAR);
 		send_passt(IP_EPILOG, maxautooff/SZCHAR, c,
-		    cftnsp->stype, cftnsp->sclass == EXTDEF, retlab, tvaloff);
+		    cftnsp->stype, cftnsp->sclass == EXTDEF,
+		    retlab, tvaloff, mkclabs());
 	}
 
 	cftnod = NIL;
@@ -1547,6 +1557,12 @@ commchk(struct symtab *sp)
 	}
 }
 
+void
+nidcl(NODE *p, int class)
+{
+	nidcl2(p, class, 0);
+}
+
 /*
  * handle unitialized declarations assumed to be not functions:
  * int a;
@@ -1554,7 +1570,7 @@ commchk(struct symtab *sp)
  * static int a;
  */
 void
-nidcl(NODE *p, int class)
+nidcl2(NODE *p, int class, char *astr)
 {
 	struct symtab *sp;
 	int commflag = 0;
@@ -1569,7 +1585,7 @@ nidcl(NODE *p, int class)
 			commflag = 1, class = EXTERN;
 	}
 
-	defid(p, class);
+	defid2(p, class, astr);
 
 	sp = p->n_sp;
 	/* check if forward decl */
@@ -1884,85 +1900,6 @@ struct tylnk {
 	union dimfun df;
 };
 
-static void tyreduce(NODE *p, struct tylnk **, int *);
-
-static void
-tylkadd(union dimfun dim, struct tylnk **tylkp, int *ntdim)
-{
-	(*tylkp)->next = tmpalloc(sizeof(struct tylnk));
-	*tylkp = (*tylkp)->next;
-	(*tylkp)->next = NULL;
-	(*tylkp)->df = dim;
-	(*ntdim)++;
-}
-
-/*
- * merge type typ with identifier idp.
- * idp is returned as a NAME node with correct types,
- * typ is untouched since multiple declarations uses it.
- * typ has type attributes, idp can never carry such attributes
- * so on return just a pointer to the typ attributes is returned.
- */
-NODE *
-tymerge(NODE *typ, NODE *idp)
-{
-	TWORD t;
-	NODE *p;
-	union dimfun *j;
-	struct tylnk *base, tylnk, *tylkp;
-	struct attr *bap;
-	int ntdim, i;
-
-#ifdef PCC_DEBUG
-	if (ddebug > 2) {
-		printf("tymerge(%p,%p)\n", typ, idp);
-		fwalk(typ, eprint, 0);
-		fwalk(idp, eprint, 0);
-	}
-#endif
-
-	if (typ->n_op != TYPE)
-		cerror("tymerge: arg 1");
-
-	bap = typ->n_ap;
-
-	idp->n_type = typ->n_type;
-	idp->n_qual |= typ->n_qual;
-
-	tylkp = &tylnk;
-	tylkp->next = NULL;
-	ntdim = 0;
-
-	tyreduce(idp, &tylkp, &ntdim);
-
-	for (t = typ->n_type, j = typ->n_df; t&TMASK; t = DECREF(t))
-		if (ISARY(t) || ISFTN(t))
-			tylkadd(*j++, &tylkp, &ntdim);
-
-	if (ntdim) {
-		union dimfun *a = permalloc(sizeof(union dimfun) * ntdim);
-		dimfuncnt += ntdim;
-		for (i = 0, base = tylnk.next; base; base = base->next, i++)
-			a[i] = base->df;
-		idp->n_df = a;
-	} else
-		idp->n_df = NULL;
-
-	/* now idp is a single node: fix up type */
-	if ((t = ctype(idp->n_type)) != idp->n_type)
-		idp->n_type = t;
-	
-	if (idp->n_op != NAME) {
-		for (p = idp->n_left; p->n_op != NAME; p = p->n_left)
-			nfree(p);
-		nfree(p);
-		idp->n_op = NAME;
-	}
-	idp->n_ap = bap;
-
-	return(idp);
-}
-
 /*
  * Retrieve all CM-separated argument types, sizes and dimensions and
  * put them in an array.
@@ -2069,12 +2006,22 @@ arglist(NODE *n)
 	return al;
 }
 
+static void
+tylkadd(union dimfun dim, struct tylnk **tylkp, int *ntdim)
+{
+	(*tylkp)->next = tmpalloc(sizeof(struct tylnk));
+	*tylkp = (*tylkp)->next;
+	(*tylkp)->next = NULL;
+	(*tylkp)->df = dim;
+	(*ntdim)++;
+}
+
 /*
  * build a type, and stash away dimensions,
  * from a parse tree of the declaration
  * the type is build top down, the dimensions bottom up
  */
-void
+static void
 tyreduce(NODE *p, struct tylnk **tylkp, int *ntdim)
 {
 	union dimfun dim;
@@ -2131,6 +2078,73 @@ tyreduce(NODE *p, struct tylnk **tylkp, int *ntdim)
 	p->n_sp = p->n_left->n_sp;
 	p->n_type = p->n_left->n_type;
 	p->n_qual = p->n_left->n_qual;
+}
+
+/*
+ * merge type typ with identifier idp.
+ * idp is returned as a NAME node with correct types,
+ * typ is untouched since multiple declarations uses it.
+ * typ has type attributes, idp can never carry such attributes
+ * so on return just a pointer to the typ attributes is returned.
+ */
+NODE *
+tymerge(NODE *typ, NODE *idp)
+{
+	TWORD t;
+	NODE *p;
+	union dimfun *j;
+	struct tylnk *base, tylnk, *tylkp;
+	struct attr *bap;
+	int ntdim, i;
+
+#ifdef PCC_DEBUG
+	if (ddebug > 2) {
+		printf("tymerge(%p,%p)\n", typ, idp);
+		fwalk(typ, eprint, 0);
+		fwalk(idp, eprint, 0);
+	}
+#endif
+
+	if (typ->n_op != TYPE)
+		cerror("tymerge: arg 1");
+
+	bap = typ->n_ap;
+
+	idp->n_type = typ->n_type;
+	idp->n_qual |= typ->n_qual;
+
+	tylkp = &tylnk;
+	tylkp->next = NULL;
+	ntdim = 0;
+
+	tyreduce(idp, &tylkp, &ntdim);
+
+	for (t = typ->n_type, j = typ->n_df; t&TMASK; t = DECREF(t))
+		if (ISARY(t) || ISFTN(t))
+			tylkadd(*j++, &tylkp, &ntdim);
+
+	if (ntdim) {
+		union dimfun *a = permalloc(sizeof(union dimfun) * ntdim);
+		dimfuncnt += ntdim;
+		for (i = 0, base = tylnk.next; base; base = base->next, i++)
+			a[i] = base->df;
+		idp->n_df = a;
+	} else
+		idp->n_df = NULL;
+
+	/* now idp is a single node: fix up type */
+	if ((t = ctype(idp->n_type)) != idp->n_type)
+		idp->n_type = t;
+	
+	if (idp->n_op != NAME) {
+		for (p = idp->n_left; p->n_op != NAME; p = p->n_left)
+			nfree(p);
+		nfree(p);
+		idp->n_op = NAME;
+	}
+	idp->n_ap = bap;
+
+	return(idp);
 }
 
 static NODE *
@@ -2247,14 +2261,6 @@ doacall(struct symtab *sp, NODE *f, NODE *a)
 	    (f->n_left->n_left->n_type & 0x7e0) == 0x4c0)
 		goto build;
 /* XXX XXX hack */
-
-#ifndef NO_C_BUILTINS
-	/* check for builtins. function pointers are not allowed */
-	if (f->n_op == NAME &&
-	    f->n_sp->sname[0] == '_' && f->n_sp->sname[1] == '_')
-		if ((w = builtin_check(f, a)) != NIL)
-			return w;
-#endif
 
 	/* Check for undefined or late defined enums */
 	if (BTYPE(f->n_type) == ENUMTY) {
@@ -2659,7 +2665,7 @@ fixclass(int class, TWORD type)
 		if (blevel == 1)
 			return(PARAM);
 		else
-			return(AUTO);
+			return(REGISTER);
 
 	case AUTO:
 		if( blevel < 2 ) uerror( "illegal ULABEL class" );
@@ -2689,8 +2695,10 @@ gotolabel(char *name)
 {
 	struct symtab *s = lookup(name, SLBLNAME);
 
-	if (s->soffset == 0)
+	if (s->soffset == 0) {
 		s->soffset = -getlab();
+		s->sclass = STATIC;
+	}
 	branch(s->soffset < 0 ? -s->soffset : s->soffset);
 }
 
@@ -2705,8 +2713,10 @@ deflabel(char *name, NODE *p)
 	s->sap = gcc_attr_parse(p);
 	if (s->soffset > 0)
 		uerror("label '%s' redefined", name);
-	if (s->soffset == 0)
+	if (s->soffset == 0) {
 		s->soffset = getlab();
+		s->sclass = STATIC;
+	}
 	if (s->soffset < 0)
 		s->soffset = -s->soffset;
 	plabel( s->soffset);
@@ -3047,6 +3057,9 @@ cxstore(TWORD t)
 
 #define	comop(x,y) buildtree(COMOP, x, y)
 
+/*
+ * Convert node p to complex type dt.
+ */
 static NODE *
 mkcmplx(NODE *p, TWORD dt)
 {
@@ -3328,8 +3341,6 @@ cxconj(NODE *p)
 NODE *
 cxret(NODE *p, NODE *q)
 {
-//printf("cxret\n");
-//fwalk(p, eprint, 0);
 	if (ANYCX(q)) { /* Return complex type */
 		p = mkcmplx(p, strmemb(q->n_ap)->stype);
 	} else if (ISFTY(q->n_type) || ISITY(q->n_type)) { /* real or imag */
@@ -3339,5 +3350,23 @@ cxret(NODE *p, NODE *q)
 	} else 
 		cerror("cxred failing type");
 	return p;
+}
+
+/*
+ * either p1 or p2 is complex, so fixup the remaining type accordingly.
+ */
+NODE *
+cxcast(NODE *p1, NODE *p2)
+{
+	if (ANYCX(p1) && ANYCX(p2)) {
+		if (p1->n_type != p2->n_type)
+			p2 = mkcmplx(p2, p1->n_type);
+	} else if (ANYCX(p1)) {
+		p2 = mkcmplx(p2, p1->n_type);
+	} else /* if (ANYCX(p2)) */ {
+		p2 = cast(structref(p2, DOT, real), p1->n_type, 0);
+	}
+	nfree(p1);
+	return p2;
 }
 #endif

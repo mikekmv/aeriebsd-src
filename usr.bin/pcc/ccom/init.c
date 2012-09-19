@@ -244,7 +244,9 @@ inval(CONSZ off, int fsz, NODE *p)
 			printf("+");
 		if (sp != NULL) {
 			if ((sp->sclass == STATIC && sp->slevel > 0)) {
-				printf(LABFMT, sp->soffset);
+				/* fix problem with &&label not defined yet */
+				int o = sp->soffset;
+				printf(LABFMT, o < 0 ? -o : o);
 			} else
 				printf("%s", sp->soname ?
 				    sp->soname : exname(sp->sname));
@@ -675,8 +677,10 @@ scalinit(NODE *p)
 		stkpush();
 		/* If we are doing auto struct init */
 		if (ISSOU(pstk->in_t) && ISSOU(p->n_type) &&
-		    suemeq(pstk->in_sym->sap, p->n_ap))
+		    suemeq(pstk->in_sym->sap, p->n_ap)) {
+			pstk->in_lnk = NULL; /* this elem is initialized */
 			break;
+		}
 	}
 
 	if (ISSOU(pstk->in_t) == 0) {
@@ -1187,6 +1191,22 @@ simpleinit(struct symtab *sp, NODE *p)
 			break;
 		}
 #endif
+#ifdef TARGET_TIMODE
+		struct attr *ap;
+		if ((ap = attr_find(sp->sap, GCC_ATYP_MODE)) &&
+		    strcmp(ap->aa[0].sarg, "TI") == 0) {
+			if (p->n_op != ICON)
+				uerror("need to handle TImode initializer ");
+			sz = (int)tsize(sp->stype, sp->sdf, sp->sap);
+			p->n_type = ctype(LONGLONG);
+			inval(0, sz/2, p);
+			p->n_lval = 0; /* XXX fix signed types */
+			inval(0, sz/2, p);
+			tfree(p);
+			tfree(q);
+			break;
+		}
+#endif
 		p = optloop(buildtree(ASSIGN, nt, p));
 		q = p->n_right;
 		t = q->n_type;
@@ -1200,6 +1220,11 @@ simpleinit(struct symtab *sp, NODE *p)
 		if (ISARY(sp->stype))
 			cerror("no array init");
 		q = nt;
+#ifdef TARGET_TIMODE
+		if ((r = gcc_eval_timode(ASSIGN, q, p)) != NULL)
+			;
+		else
+#endif
 #ifndef NO_COMPLEX
 
 		if (ANYCX(q) || ANYCX(p))

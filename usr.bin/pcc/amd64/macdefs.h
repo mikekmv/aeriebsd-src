@@ -81,9 +81,9 @@
 #define	MIN_INT		(-0x7fffffff-1)
 #define	MAX_INT		0x7fffffff
 #define	MAX_UNSIGNED	0xffffffffU
-#define	MIN_LONG	0x8000000000000000L
-#define	MAX_LONG	0x7fffffffffffffffL
-#define	MAX_ULONG	0xffffffffffffffffUL
+#define	MIN_LONG	0x8000000000000000LL
+#define	MAX_LONG	0x7fffffffffffffffLL
+#define	MAX_ULONG	0xffffffffffffffffULL
 #define	MIN_LONGLONG	0x8000000000000000LL
 #define	MAX_LONGLONG	0x7fffffffffffffffLL
 #define	MAX_ULONGLONG	0xffffffffffffffffULL
@@ -260,23 +260,24 @@ int numconv(void *ip, void *p, void *q);
 /*
  * builtins.
  */
+#define TARGET_TIMODE
 #define TARGET_VALIST
 #define TARGET_STDARGS
 #define TARGET_BUILTINS							\
-	{ "__builtin_stdarg_start", amd64_builtin_stdarg_start, 2 },	\
-	{ "__builtin_va_start", amd64_builtin_stdarg_start, 2 },	\
-	{ "__builtin_va_arg", amd64_builtin_va_arg, 2 },		\
-	{ "__builtin_va_end", amd64_builtin_va_end, 1 },		\
-	{ "__builtin_va_copy", amd64_builtin_va_copy, 2 },		\
-	{ "__builtin_frame_address", i386_builtin_frame_address, -1 },	\
-	{ "__builtin_return_address", i386_builtin_return_address, -1 },
+	{ "__builtin_stdarg_start", amd64_builtin_stdarg_start, 	\
+						0, 2, 0, VOID },	\
+	{ "__builtin_va_start", amd64_builtin_stdarg_start,		\
+						0, 2, 0, VOID },	\
+	{ "__builtin_va_arg", amd64_builtin_va_arg, BTNORVAL|BTNOPROTO,	\
+							2, 0, 0 },	\
+	{ "__builtin_va_end", amd64_builtin_va_end, 0, 1, 0, VOID },	\
+	{ "__builtin_va_copy", amd64_builtin_va_copy, 0, 2, 0, VOID },
 
 #define NODE struct node
 struct node;
-NODE *amd64_builtin_stdarg_start(NODE *f, NODE *a, unsigned int);
-NODE *amd64_builtin_va_arg(NODE *f, NODE *a, unsigned int);
-NODE *amd64_builtin_va_end(NODE *f, NODE *a, unsigned int);
-NODE *amd64_builtin_va_copy(NODE *f, NODE *a, unsigned int);
-NODE *i386_builtin_frame_address(NODE *f, NODE *a, unsigned int);
-NODE *i386_builtin_return_address(NODE *f, NODE *a, unsigned int);
+struct bitable;
+NODE *amd64_builtin_stdarg_start(const struct bitable *, NODE *a);
+NODE *amd64_builtin_va_arg(const struct bitable *, NODE *a);
+NODE *amd64_builtin_va_end(const struct bitable *, NODE *a);
+NODE *amd64_builtin_va_copy(const struct bitable *, NODE *a);
 #undef NODE

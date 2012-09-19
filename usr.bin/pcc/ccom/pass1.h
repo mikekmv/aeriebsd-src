@@ -92,6 +92,7 @@ extern	char *scnames(int);
 #define	SDYNARRAY	00200	/* symbol is dynamic array on stack */
 #define	SINLINE		00400	/* function is of type inline */
 #define	STNODE		01000	/* symbol shall be a temporary node */
+#define	SBUILTIN	02000	/* this is a builtin function */
 #define	SASG		04000	/* symbol is assigned to already */
 #define	SLOCAL1		010000
 #define	SLOCAL2		020000
@@ -275,7 +276,7 @@ int oalloc(struct symtab *, int *);
 void deflabel(char *, NODE *);
 void gotolabel(char *);
 unsigned int esccon(char **);
-void inline_start(struct symtab *);
+void inline_start(struct symtab *, int class);
 void inline_end(void);
 void inline_addarg(struct interpass *);
 void inline_ref(struct symtab *);
@@ -360,6 +361,7 @@ NODE *cxop(int op, NODE *l, NODE *r);
 NODE *imop(int op, NODE *l, NODE *r);
 NODE *cxelem(int op, NODE *p);
 NODE *cxconj(NODE *p);
+NODE *cxcast(NODE *p1, NODE *p2);
 NODE *cxret(NODE *p, NODE *q);
 NODE *cast(NODE *p, TWORD t, TWORD q);
 NODE *ccast(NODE *p, TWORD t, TWORD u, union dimfun *df, struct attr *sue);
@@ -367,10 +369,12 @@ int andable(NODE *);
 int conval(NODE *, int, NODE *);
 int ispow2(CONSZ);
 void defid(NODE *q, int class);
+void defid2(NODE *q, int class, char *astr);
 void efcode(void);
 void ecomp(NODE *p);
 int upoff(int size, int alignment, int *poff);
 void nidcl(NODE *p, int class);
+void nidcl2(NODE *p, int class, char *astr);
 void eprint(NODE *, int, int *, int *);
 int uclass(int class);
 int notlval(NODE *);
@@ -384,7 +388,6 @@ void yyerror(char *);
 int pragmas_gcc(char *t);
 NODE *cstknode(TWORD t, union dimfun *df, struct attr *ap);
 int concast(NODE *p, TWORD t);
-NODE *builtin_check(NODE *f, NODE *a);
 #ifdef WORD_ADDRESSED
 #define rmpconv(p) (p)
 #else
@@ -392,7 +395,6 @@ NODE *rmpconv(NODE *);
 #endif
 NODE *optloop(NODE *);
 NODE *nlabel(int label);
-
 
 #ifdef SOFTFLOAT
 typedef struct softfloat SF;
@@ -493,6 +495,7 @@ enum {	ATTR_NONE,
 	GCC_ATYP_ALIASWEAK,
 	GCC_ATYP_RETURNS_TWICE,
 	GCC_ATYP_WARNING,
+	GCC_ATYP_NOCLONE,
 
 	/* other stuff */
 	GCC_ATYP_BOUNDED,	/* OpenBSD extra boundary checks */
@@ -536,12 +539,42 @@ struct attr *gcc_attr_parse(NODE *);
 void gcc_tcattrfix(NODE *);
 struct gcc_attrib *gcc_get_attr(struct suedef *, int);
 void dump_attr(struct attr *gap);
+void gcc_modefix(NODE *);
+NODE *gcc_eval_timode(int op, NODE *, NODE *);
+NODE *gcc_eval_ticast(int op, NODE *, NODE *);
+NODE *gcc_eval_tiuni(int op, NODE *);
+struct attr *isti(NODE *p);
+
 
 struct attr *attr_add(struct attr *orig, struct attr *new);
 struct attr *attr_new(int, int);
 struct attr *attr_find(struct attr *, int);
 struct attr *attr_copy(struct attr *src, struct attr *dst, int nelem);
 struct attr *attr_dup(struct attr *ap, int n);
+
+#ifndef NO_C_BUILTINS
+struct bitable {
+	char *name;
+	NODE *(*fun)(const struct bitable *, NODE *a);
+	short flags;
+#define	BTNOPROTO	001
+#define	BTNORVAL	002
+#define	BTNOEVE		004
+#define	BTGNUONLY	010
+	short narg;
+	TWORD *tp;
+	TWORD rt;
+};
+
+NODE *builtin_check(struct symtab *, NODE *a);
+void builtin_init(void);
+
+/* Some builtins targets need to implement */
+NODE *builtin_frame_address(const struct bitable *bt, NODE *a);
+NODE *builtin_return_address(const struct bitable *bt, NODE *a);
+NODE *builtin_cfa(const struct bitable *bt, NODE *a);
+#endif
+
 
 #ifdef STABS
 void stabs_init(void);
@@ -618,6 +651,7 @@ void stabs_struct(struct symtab *, struct attr *);
 #define XIMAG		(MAXOP+32)
 #define TYMERGE		(MAXOP+33)
 #define LABEL		(MAXOP+34)
+#define BIQUEST		(MAXOP+35)
 
 
 /*

@@ -184,6 +184,7 @@ Wflags(char *str)
 		for (i = 0; i < NUMW; i++)
 			BITSET(werrary, i);
 
+		warniserr = 1;
 		return;
 	}
 
@@ -227,6 +228,10 @@ warner(int type, ...)
 {
 	va_list ap;
 	char *w;
+	extern int issyshdr;
+
+	if (issyshdr && type == Wtruncate)
+		return; /* Too many false positives */
 
 	if (TESTBIT(warnary, type) == 0)
 		return; /* no warning */
@@ -571,11 +576,11 @@ struct balloc {
 #define	ROUNDUP(x) (((x) + ((ALIGNMENT)-1)) & ~((ALIGNMENT)-1))
 
 static char *allocpole;
-static int allocleft;
-int permallocsize, tmpallocsize, lostmem;
+static size_t allocleft;
+size_t permallocsize, tmpallocsize, lostmem;
 
 void *
-permalloc(int size)
+permalloc(size_t size)
 {
 	void *rv;
 
@@ -584,7 +589,7 @@ permalloc(int size)
 			cerror("permalloc: missing %d bytes", size);
 		return rv;
 	}
-	if (size <= 0)
+	if (size == 0)
 		cerror("permalloc2");
 	if (allocleft < size) {
 		/* loses unused bytes */
@@ -601,7 +606,7 @@ permalloc(int size)
 }
 
 void *
-tmpcalloc(int size)
+tmpcalloc(size_t size)
 {
 	void *rv;
 
@@ -616,7 +621,7 @@ tmpcalloc(int size)
 char *
 tmpstrdup(char *str)
 {
-	int len;
+	size_t len;
 
 	len = strlen(str) + 1;
 	return memcpy(tmpalloc(len), str, len);
@@ -644,20 +649,19 @@ struct xalloc {
 int uselem = NELEM; /* next unused element */
 
 void *
-tmpalloc(int size)
+tmpalloc(size_t size)
 {
 	struct xalloc *xp;
 	void *rv;
 	size_t nelem;
 
 	nelem = ROUNDUP(size)/ELEMSZ;
-	ALLDEBUG(("tmpalloc(%ld,%ld) %d (%zd) ", ELEMSZ, NELEM, size, nelem));
+	ALLDEBUG(("tmpalloc(%ld,%ld) %zd (%zd) ", ELEMSZ, NELEM, size, nelem));
 	if (nelem > NELEM/2) {
-		xp = malloc(size + ROUNDUP(sizeof(struct xalloc *)));
-		if (xp == NULL)
+		size += ROUNDUP(sizeof(struct xalloc *));
+		if ((xp = malloc(size)) == NULL)
 			cerror("out of memory");
-		ALLDEBUG(("XMEM! (%ld,%p) ",
-		    size + ROUNDUP(sizeof(struct xalloc *)), xp));
+		ALLDEBUG(("XMEM! (%zd,%p) ", size, xp));
 		xp->next = tmpole;
 		tmpole = xp;
 		ALLDEBUG(("rv %p\n", &xp->u.elm[0]));
@@ -739,7 +743,7 @@ markfree(struct mark *m)
  * Return the new address.
  */
 char *
-newstring(char *s, int len)
+newstring(char *s, size_t len)
 {
 	char *u, *c;
 
@@ -748,7 +752,8 @@ newstring(char *s, int len)
 		u = c = permalloc(len);
 	} else {
 		u = c = &allocpole[MEMCHUNKSZ-allocleft];
-		allocleft -= ROUNDUP(len+1);
+		allocleft -= ROUNDUP(len);
+		permallocsize += ROUNDUP(len);
 	}
 	while (len--)
 		*c++ = *s++;

@@ -408,7 +408,7 @@ pass2_compile(struct interpass *ip)
 	optimize(p2e);
 	ngenregs(p2e);
 
-	if (xssa && xtemps && xdeljumps)
+	if (xtemps && xdeljumps)
 		deljumps(p2e);
 
 	DLIST_FOREACH(ip, &p2e->ipole, qelem)
@@ -1354,7 +1354,7 @@ freetemp(int k)
 		p2maxautooff = p2autooff;
 	return( -p2autooff );
 #endif
-	}
+}
 
 NODE *
 mklnode(int op, CONSZ lval, int rval, TWORD type)
@@ -1447,6 +1447,10 @@ delnums(NODE *p, void *arg)
 	NODE *q;
 	TWORD t;
 	int cnt, num;
+
+	/* gcc allows % in constraints, but we ignore it */
+	if (p->n_name[0] == '%' && p->n_name[1] >= '0' && p->n_name[1] <= '9')
+		p->n_name++;
 
 	if (p->n_name[0] < '0' || p->n_name[0] > '9')
 		return; /* not numeric */

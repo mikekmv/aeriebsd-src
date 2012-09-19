@@ -42,19 +42,36 @@ setseg(int seg, char *name)
 {
 	switch (seg) {
 	case PROG: name = ".text"; break;
+
 	case DATA:
 	case LDATA: name = ".data"; break;
+
 	case STRNG:
 	case RDATA: name = ".section .rodata"; break;
+
 	case UDATA: break;
-	case PICLDATA:
-	case PICDATA:
-	case PICRDATA:
+
+	case DTORS:
+		name = ".section .dtors,\"aw\",@progbits";
+		break;
+	case CTORS:
+		name = ".section .ctors,\"aw\",@progbits";
+		break;
+
 	case TLSDATA:
 	case TLSUDATA:
-	case CTORS:
-	case DTORS:
-		uerror("FIXME: unsupported segment");
+		uerror("FIXME: unsupported segment %d", seg);
+		break;
+
+	case PICRDATA:
+		name = ".section .data.rel.ro.local,\"aw\",@progbits";
+		break;
+
+	case PICLDATA:
+	case PICDATA:
+		name = ".section .data.rel.local,\"aw\",@progbits";
+		break;
+
 	case NMSEG: 
 		printf("\t.section %s,\"aw\",@progbits\n", name);
 		return;
@@ -342,12 +359,11 @@ funcode(NODE *p)
  * Generate the builtin code for FFS.
  */
 NODE *
-builtin_ffs(NODE *f, NODE *a, TWORD t)
+builtin_ffs(const struct bitable *bt, NODE *a)
 {
 	NODE *p, *q, *r;
 
-	nfree(f);
-	p = tempnode(0, t, 0, 0);
+	p = tempnode(0, bt->rt, 0, 0);
 	r = block(XARG, ccopy(p), NIL, INT, 0, 0);
 	r->n_name = "=&r";
 	q = block(XARG, a, NIL, INT, 0, 0);
@@ -355,21 +371,34 @@ builtin_ffs(NODE *f, NODE *a, TWORD t)
 	q = block(CM, r, q, INT, 0, 0);
 	q = block(XASM, q, block(ICON, 0, 0, STRTY, 0, 0), INT, 0, 0);
 	q->n_name = "ffs $0,$32,%1,%0;bneq 1f;mnegl $1,%0;1:;incl %0";
-	p = block(COMOP, q, p, t, 0, 0);
+	p = block(COMOP, q, p, bt->rt, 0, 0);
 	return p;
 }
 
-NODE *
-vax_builtin_return_address(NODE *f, NODE *a, TWORD t)
-{
+NODE *  
+builtin_ffsl(const struct bitable *bt, NODE *a)
+{       
+	return builtin_ffs(bt, a);
+}
 
-	if (a == NULL || a->n_op != ICON)
+NODE *  
+builtin_ffsll(const struct bitable *bt, NODE *a)
+{
+	cerror("builtin_ffsll unimplemented");
+	return NIL;
+}
+
+NODE *
+builtin_return_address(const struct bitable *bt, NODE *a)
+{
+	NODE *f;
+
+	if (a->n_op != ICON)
 		goto bad;
 
 	if (a->n_lval != 0)
 		werror("unsupported argument");
 
-	tfree(f);
 	tfree(a);
 
 	f = block(REG, NIL, NIL, INCREF(PTR+CHAR), 0, 0);
@@ -386,16 +415,16 @@ bad:
 }
 
 NODE *
-vax_builtin_frame_address(NODE *f, NODE *a, TWORD t)
+builtin_frame_address(const struct bitable *bt, NODE *a)
 {
 	int nframes;
+	NODE *f;
 
-	if (a == NULL || a->n_op != ICON)
+	if (a->n_op != ICON)
 		goto bad;
 
 	nframes = a->n_lval;
 
-	tfree(f);
 	tfree(a);
 
 	f = block(REG, NIL, NIL, PTR+CHAR, 0, 0);
@@ -414,3 +443,14 @@ bad:
 	uerror("bad argument to __builtin_frame_address");
 	return bcon(0);
 }
+
+/*
+ * Return "canonical frame address".
+ */
+NODE *
+builtin_cfa(const struct bitable *bt, NODE *a)
+{
+	uerror("missing builtin_cfa");
+	return bcon(0);
+}
+

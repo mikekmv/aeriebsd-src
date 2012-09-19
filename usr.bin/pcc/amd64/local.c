@@ -528,7 +528,7 @@ myp2tree(NODE *p)
 
 		sp = p->n_left->n_sp;
 		if ((s = strstr(sp->sname, "@GOTPCREL")) != NULL) {
-			strcpy(s, "@PLT");
+			memcpy(s, "@PLT", sizeof("@PLT"));
 			p->n_left->n_op = ICON;
 		}
 		return;
@@ -538,8 +538,9 @@ myp2tree(NODE *p)
 
 #ifdef mach_amd64
 	{
-		/* Do not loose negative zeros */
-		long long *llp = (long long *)(&p->n_dcon);
+		/* Do not lose negative zeros */
+		long double *d = &p->n_dcon;
+		long long *llp = (long long *)d;
 		short *ssp = (short *)&llp[1];
 		if (*llp == 0 && *ssp == 0)
 			return;
@@ -743,17 +744,17 @@ defzero(struct symtab *sp)
 }
 
 static char *
-section2string(char *name, int len)
+section2string(char *name)
 {
-	char *s;
-	int n;
+	int len = strlen(name);
 
 	if (strncmp(name, "link_set", 8) == 0) {
-		const char *postfix = ",\"aw\",@progbits";
-		n = len + strlen(postfix) + 1;
-		s = IALLOC(n);
-		strlcpy(s, name, n);
-		strlcat(s, postfix, n);
+		const char postfix[] = ",\"aw\",@progbits";
+		char *s;
+
+		s = IALLOC(len + sizeof(postfix));
+		memcpy(s, name, len);
+		memcpy(s + len, postfix, sizeof(postfix));
 		return s;
 	}
 
@@ -787,7 +788,7 @@ mypragma(char *str)
 		return 1;
 	}
 	if (strcmp(str, "section") == 0 && a2 != NULL) {
-		nextsect = section2string(a2, strlen(a2));
+		nextsect = section2string(a2);
 		return 1;
 	}
 	if (strcmp(str, "alias") == 0 && a2 != NULL) {
@@ -851,59 +852,6 @@ fixdef(struct symtab *sp)
 		sp->sap = attr_add(sp->sap, gcc_attr_parse(p));
 		constructor = destructor = 0;
 	}
-}
-
-NODE *
-i386_builtin_return_address(NODE *f, NODE *a, TWORD t)
-{
-	int nframes;
-
-	if (a == NULL || a->n_op != ICON)
-		goto bad;
-
-	nframes = a->n_lval;
-
-	tfree(f);
-	tfree(a);
-
-	f = block(REG, NIL, NIL, PTR+VOID, 0, 0);
-	regno(f) = FPREG;
-
-	while (nframes--)
-		f = block(UMUL, f, NIL, PTR+VOID, 0, 0);
-
-	f = block(PLUS, f, bcon(4), INCREF(PTR+VOID), 0, 0);
-	f = buildtree(UMUL, f, NIL);
-
-	return f;
-bad:
-        uerror("bad argument to __builtin_return_address");
-        return bcon(0);
-}
-
-NODE *
-i386_builtin_frame_address(NODE *f, NODE *a, TWORD t)
-{
-	int nframes;
-
-	if (a == NULL || a->n_op != ICON)
-		goto bad;
-
-	nframes = a->n_lval;
-
-	tfree(f);
-	tfree(a);
-
-	f = block(REG, NIL, NIL, PTR+VOID, 0, 0);
-	regno(f) = FPREG;
-
-	while (nframes--)
-		f = block(UMUL, f, NIL, PTR+VOID, 0, 0);
-
-	return f;
-bad:
-        uerror("bad argument to __builtin_frame_address");
-        return bcon(0);
 }
 
 void
