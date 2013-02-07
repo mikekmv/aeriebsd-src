@@ -3317,6 +3317,37 @@ uvmspace_exec(struct proc *p, vaddr_t start, vaddr_t end)
 }
 
 /*
+ * uvmspace_unmap: unmap all mappings in vmspace
+ * - XXX: no locking on vmspace
+ */
+
+void
+uvmspace_unmap(struct vmspace *vm)
+{ 
+	vm_map_entry_t dead_entries;
+	UVMHIST_FUNC("uvmspace_unmap"); UVMHIST_CALLED(maphist);
+
+	UVMHIST_LOG(maphist,"(vm=0x%x) ref=%d", vm, vm->vm_refcnt,0,0);
+	if (vm->vm_refcnt == 1) {
+		/*
+		 * lock the map, to wait out all other references to it. delete
+		 * all of the mappings and pages they hold, then call the pmap
+		 * module to reclaim anything left.
+		 */
+		vm_map_lock(&vm->vm_map);
+		if (vm->vm_map.nentries) {
+			uvm_unmap_remove(&vm->vm_map,
+			    vm->vm_map.min_offset, vm->vm_map.max_offset,
+			    &dead_entries, NULL);
+			if (dead_entries != NULL)
+				uvm_unmap_detach(dead_entries, 0);
+		}
+		vm_map_unlock(&vm->vm_map);
+	}
+	UVMHIST_LOG(maphist,"<- done", 0,0,0,0);
+}
+
+/*
  * uvmspace_free: free a vmspace data structure
  *
  * - XXX: no locking on vmspace

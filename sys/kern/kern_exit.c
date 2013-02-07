@@ -230,6 +230,11 @@ exit1(struct proc *p, int rv, int flags)
 		systrace_exit(p);
 #endif
 	/*
+	 * unmap all user space now as we will not need it anymore
+	 */
+	uvmspace_unmap(p->p_vmspace);
+
+	/*
 	 * NOTE: WE ARE NO LONGER ALLOWED TO SLEEP!
 	 */
 	p->p_stat = SDEAD;
@@ -346,7 +351,7 @@ exit1(struct proc *p, int rv, int flags)
  * proclist.  Processes on this proclist are also on zombproc;
  * we use the p_hash member to linkup to deadproc.
  */
-struct mutex deadproc_mutex = MUTEX_INITIALIZER(IPL_NONE);
+struct mutex deadproc_mutex = MUTEX_INITIALIZER(IPL_SCHED);
 struct proclist deadproc = LIST_HEAD_INITIALIZER(deadproc);
 
 /*
