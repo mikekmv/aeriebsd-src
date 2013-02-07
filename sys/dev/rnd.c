@@ -998,8 +998,7 @@ randomclose(dev_t dev, int flag, int mode, struct proc *p)
 int
 randomread(dev_t dev, struct uio *uio, int ioflag)
 {
-	int		ret = 0;
-	int		i;
+	int		i, cnt, ret = 0;
 	u_int32_t	*buf;
 
 	if (uio->uio_resid == 0)
@@ -1007,8 +1006,9 @@ randomread(dev_t dev, struct uio *uio, int ioflag)
 
 	buf = malloc(POOLBYTES, M_TEMP, M_WAITOK);
 
-	while (!ret && uio->uio_resid > 0) {
-		int	n = min(POOLBYTES, uio->uio_resid);
+	cnt = MIN(uio->uio_resid, MAXPHYS);
+	while (!ret && cnt > 0) {
+		int	n = min(POOLBYTES, cnt);
 
 		switch(minor(dev)) {
 		case RND_RND:
@@ -1061,8 +1061,9 @@ randomread(dev_t dev, struct uio *uio, int ioflag)
 		default:
 			ret = ENXIO;
 		}
-		if (n != 0 && ret == 0)
-			ret = uiomove((caddr_t)buf, n, uio);
+		if (n > 0 && ret == 0 &&
+		    !(ret = uiomove((caddr_t)buf, n, uio)))
+			cnt -= n;
 	}
 
 	free(buf, M_TEMP);
