@@ -519,7 +519,7 @@ config_detach(struct device *dev, int flags)
 	if (rv != 0) {
 		if ((flags & DETACH_FORCE) == 0)
 			return (rv);
-		else
+		else if (rv != EOPNOTSUPP)
 			panic("config_detach: forced detach of %s failed (%d)",
 			    dev->dv_xname, rv);
 	}
