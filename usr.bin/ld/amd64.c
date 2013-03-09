@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: amd64.c,v 1.6 2011/05/25 12:23:49 mickey Exp $";
+    "$ABSD: amd64.c,v 1.7 2011/07/23 17:08:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -59,7 +59,7 @@ const struct ldorder amd64_order[] = {
 	{ ldo_section,	ELF_RODATA, SHT_PROGBITS, SHF_ALLOC,
 			0, DFILL },
 	{ ldo_section,	ELF_GCC_LINK1R, SHT_PROGBITS, SHF_ALLOC, LD_LINK1 },
-	{ ldo_section,	ELF_EH_FRAME_H, SHT_PROGBITS, SHF_ALLOC,
+	{ ldo_ehfrh,	ELF_EH_FRAME_H, SHT_PROGBITS, SHF_ALLOC,
 			LD_CONTAINS | LD_IGNORE },
 	{ ldo_section,	ELF_EH_FRAME, SHT_PROGBITS, SHF_ALLOC, LD_IGNORE },
 	{ ldo_section,	ELF_GCC_EXCEPT, SHT_PROGBITS, SHF_ALLOC, LD_IGNORE },
