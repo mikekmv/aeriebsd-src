@@ -17,7 +17,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "$ABSD: ld.c,v 1.38 2013/03/09 23:23:25 mickey Exp $";
+    "$ABSD: ld.c,v 1.39 2013/03/09 23:34:53 mickey Exp $";
 #endif
 
 #include <sys/param.h>
@@ -953,7 +953,7 @@ ldorder(const struct ldarch *lda)
 		case ldo_ehfrh:
 			neworder = order_clone(lda, order);
 			neworder->ldo_wurst = calloc(1, 4);
-			neworder->ldo_wsize = ALIGN(neworder->ldo_wurst);
+			neworder->ldo_wsize = 4;
 			{
 				uint8_t *p = neworder->ldo_wurst;
 				p[0] = 1;	/* version */
